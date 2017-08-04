@@ -1,0 +1,8 @@
+{
+	"depends": [],
+	"description": "Node.lua SDK and application build tools",
+	"name": "build",
+	"tags": ["build", "runtime"],
+	"title": "Builder",
+	"version": "1.0.12"
+}

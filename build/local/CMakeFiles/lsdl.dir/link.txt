@@ -1,0 +1,1 @@
+/usr/bin/cc  -fPIC   -shared -Wl,-soname,lsdl.so -o lsdl.so CMakeFiles/lsdl.dir/modules/src/sdl/src/gpio_lua.c.o CMakeFiles/lsdl.dir/modules/src/sdl/src/i2c.c.o CMakeFiles/lsdl.dir/modules/src/sdl/src/i2c_lua.c.o CMakeFiles/lsdl.dir/modules/src/sdl/src/sdl_lua.c.o 

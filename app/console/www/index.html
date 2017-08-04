@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Settings</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <script>
+    window.onhashchange = OnLeftMenuHashChange;
+    window.onresize = OnLeftMenuPageResize;
+
+    $(document).ready(function() {
+        $translate(document.body)
+
+        OnLeftMenuInit()
+    });
+
+  </script>
+  <style>
+    .frame-body { background: #000; }
+    #left-wrapper { background: #111; top: 0; border: none; width: 140px; }
+    #container { left: 140px; top: 0; }
+  </style>
+</head>
+<body class="frame-body" style="display:none;">
+
+<div id="wrapper" class="frame-wrapper">
+  <div id="left-wrapper"> 
+    <div id="sidebar" class="sidebar"><div class="block leftmenu" id="basic_menu">
+        <a class="home" href="/index.html"><svg xmlns="http://www.w3.org/2000/svg" style="left: 0px; margin-right: 8px; top: 7px; width: 24px; height: 24px; color: rgba(255, 255, 255, 1); display: inline-block; position: relative; fill: #999;" viewBox="0 0 24 24"><path d="M 3 18 h 18 v -2 H 3 v 2 Z m 0 -5 h 18 v -2 H 3 v 2 Z m 0 -7 v 2 h 18 V 6 H 3 Z" /></svg>${Home}</a>
+    </div></div>
+  </div>
+
+  <div id="container">
+    <div id="frame-content-wrapper"><div id="container-header">X</div><iframe 
+      id="frame-content" name="frame-content" frameborder="0" src="webconsole.html"></iframe></div>
+  </div>
+</div>
+
+</body>
+</html>
+

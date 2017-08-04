@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>iNode</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+  <link rel="shortcut icon" href="/favicon.ico?v=100003" type="image/x-icon"/>
+  <link rel="stylesheet" href="style.css?v=100003"/>
+  <script src="jquery.js?v=100003"></script>
+  <script src="common.js?v=100003"></script>
+  <script>
+
+	function GetAppIconHTML(app) {
+		var name  = app.name
+		if (!name) {
+			return ''
+		}
+
+		var title   = app.title   || name
+		var path    = app.path    || name
+		var versoin = app.version || VISION_VERSION
+
+		// localization title name
+		if ($.lang.locale == 'zh-cn') {
+			if (app["title_zh_cn"]) {
+				title = app["title_zh_cn"]
+			}
+		}
+
+		var date = new Date()
+		var time = date.getMonth() + '' + date.getDate() + "."
+
+		var html = "";
+		html += '<a class="appicon-wrapper" href="/'
+		html += path
+		html += '/?v=' + time
+		html += versoin
+		html += '">'
+    	html += '<div class="appicon"><img class="appicon-img" src="/'
+		html += path
+		html += '/icon.png?v=' + time
+		html += versoin
+		html += '"/></div>'
+    	html += '<label>'
+		html += title
+		html += '</label></a>'
+		return html
+	}
+
+	function GetAppIconGridHTML(apps) {
+		if (!apps) {
+			return ''
+		}
+
+		var html = "";
+		for (var i = 0; i < apps.length; i++) {
+			html += GetAppIconHTML(apps[i] || {})
+		}
+		return html
+	}
+
+	function LoadAppIcons() {
+		var url = "/api.lua?api=/applications"
+		var wrapper = $("#app-icons-wrapper")
+		wrapper.html('<p>Loadding...</p>')
+		$.get(url, function(apps) {
+			wrapper.hide().html(GetAppIconGridHTML(apps)).fadeIn()
+		})
+	}
+
+	$(document).ready(function() {
+		$translate(document.body)
+
+		$('#logout_item').click(OnLogout);
+
+		LoadAppIcons()
+	});
+
+  </script>
+  <style>
+	.home-body { background: #f8f8f8; }
+
+	#app-icons-wrapper { max-width: 901px; margin: 0 auto; }
+	#app-icons-wrapper .appicon-wrapper:hover { text-decoration: none; background: #eee; }
+	#app-icons-wrapper .appicon-wrapper { display: inline-block; text-align: center; cursor: pointer; }
+
+	@media screen and (max-width: 480px) { 
+		#app-icons-wrapper { padding: 16px 0; width: 320px; }
+
+		.appicon-wrapper { width: 158px; padding: 16px 0; }
+		.appicon-wrapper .appicon { display: inline-block; width: 80px; height: 80px; }
+		.appicon-wrapper .appicon-img { margin-top: 0; width: 80px; height: 80px; }
+		.appicon-wrapper label { display: block; font-size: 16px; line-height: 32px; }
+	}
+	
+	@media screen and (min-width: 480px) { 
+		#app-icons-wrapper { width: 480px; padding: 32px 0;  }
+
+		.appicon-wrapper { width: 180px; padding: 32px 0; }
+		.appicon-wrapper .appicon { display: inline-block; width: 80px; height: 80px; }
+		.appicon-wrapper .appicon-img { margin-top: 0; width: 80px; height: 80px; }
+		.appicon-wrapper label { display: block; font-size: 16px; line-height: 48px; }
+	}
+
+	@media screen and (min-width: 540px) { 
+		#app-icons-wrapper { width: 540px; }
+	}
+
+	@media screen and (min-width: 720px) { 
+		#app-icons-wrapper { width: 720px; }
+	}	
+
+	@media screen and (min-width: 900px) { 
+		#app-icons-wrapper { width: 900px; }
+	}
+  </style>
+</head>
+<body class="home-body" style="display:none">
+
+  <header id="header" class="header-wrapper"><div class="header-inner">
+	<div class="header-right">
+	  <a id="website_item" target="node_lua_dev" href="http://node.sae-sz.com/">${DevCenter}</a> |
+	  <a id="logout_item" href="#logout">${UserLogout}</a>
+	</div>
+
+	<a class="logo" href="/?v=100003"><h1>${Applications}</h1></a>
+  </div></header>
+
+  <div class="home-wrapper"><div id="app-icons-wrapper"></div></div>
+
+  <footer id="footer"></footer>
+
+</body>
+</html>

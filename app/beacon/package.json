@@ -1,0 +1,9 @@
+{
+	"depends": ["httpd"],
+	"description": "Wireless Gateway",
+	"title": "Beaconice",
+	"title_zh_cn": "蓝牙网关",
+	"name": "beacon",
+	"tags": ["switch", "runtime"],
+	"version": "1.0.11"
+}

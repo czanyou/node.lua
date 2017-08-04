@@ -1,0 +1,17 @@
+{
+	"depends": ["httpd"],
+	"description": "Network Manager.",
+	"title": "Network",
+	"title_zh_cn": "网络",
+	"name": "netd",
+	"tags": ["netd", "ssdp", "udhcpc", "wifi", "runtime"],
+	"settings": [
+		{ "name":"lan.mode",      "desc":"Set the mode of LAN" },
+		{ "name":"lan.ip",        "desc":"Set the IP address of LAN" },
+		{ "name":"lan.netmask",   "desc":"Set the subnet mask of LAN" },
+		{ "name":"lan.gateway",   "desc":"Set the default gateway of LAN" },
+		{ "name":"lan.dns",       "desc":"Set the DNS servers of LAN" }
+	],
+	"version": "1.0.0"
+}
+

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Firmware Upgrade</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>  
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <script src="lang.js?v=100003"></script>
+  <script type="text/javascript">
+
+	var params = {};
+
+	function OnPageLoad(params) {
+		$.form.init(params);
+
+		$("#firmware_time").val(params.firmware_time || "");
+		$("#firmware_version").val(params.firmware_version || "");
+		$("#firmware_latest").val(params.firmware_latest || "");
+	}
+
+	function OnUpgrade() {
+		if (window.confirm(T("UpgradeConfirm"))) {
+			$.get('api.lua?api=/device/upgrade', function() {
+				alert(T("UpgradeCompleted"));
+			});
+		}
+
+		return false;
+	}
+
+	function OnUpgradeCheck() {
+		$("#firmware_latest").val("Querying...");
+
+		$.get('api.lua?api=/device/update', function(result) {
+			if (result && result.firmware_latest) {
+				$("#firmware_latest").val(result.firmware_latest || "");
+				
+			} else {
+				$("#firmware_latest").val('Network Error!')
+			}
+		});
+		
+		return false;
+	}
+
+	function OnStatusTimer() {
+		$.get("api.lua?api=/upgrade_status", function(result) {
+			$('#fwFrame').hide();
+			$('#upgrade_status').show().html(result);
+			
+			if (result.indexOf('Upgrade Completed') <= 0) {
+				setTimeout(OnStatusTimer, 2000);
+
+			} else {
+				$('#upgrade-info').hide();
+			}
+		});
+	}
+
+	function OnStatusRefresh() {
+		setTimeout(OnStatusTimer, 1000);
+	}
+
+	$(document).ready(function() {
+		$translate(document.body)
+
+		var url = "api.lua?api=/settings/firmware";
+		$.get(url, function(result) {
+				OnPageLoad(result || {})
+		});
+
+		OnUpgradeCheck()
+
+	});
+
+  //-->
+  </script>
+  <style type="text/css">
+	#fwFrame { border: 1px solid #eee; width: 100%; }
+
+  </style>
+</head>
+<body style="display:none;">
+
+<div id="wrapper" class="form-wrapper">
+	
+	<fieldset class="block">
+	  <h3>${UpgradeOnline}</h3>
+	  <dl>
+		<dt><label class="label">${FirmwareVersion}:</label>
+		  <input type="text" readonly="readonly" id="firmware_version" name="firmware_version" class="text readonly" size="32"//></dt>
+
+		<dt><label class="label">${FirmwareLatest}:</label>
+		  <input type="text" readonly="readonly" id="firmware_latest" name="firmware_latest" class="text readonly" size="32"/></dt>
+	  </dl>
+	</fieldset>
+
+	<fieldset class="block footer">
+		<dl>
+		  <dt class="buttons">
+			<input class="button" type="button" onclick="return OnUpgradeCheck();" value="${UpgradeCheck}"/>
+			<input class="button submit" type="button" onclick="return OnUpgrade();" value="${Upgrade}"/>
+			</dt>
+		</dl>
+	</fieldset>
+
+
+  <form id="upgradeForm" name="upgradeForm" action="api.lua?api=/settings/upgrade" method="post" enctype="multipart/form-data">
+	  
+	  <fieldset class="block">
+		<h3>${UpgradeLocal}</h3>
+		<dl>
+		  <dt><label class="label">${UpgradeFile}:</label>
+				<input type="file" class="text" name="file" size="24" maxlength="36"/> </dt>
+
+		</dl></fieldset>
+
+	  <fieldset class="block footer">
+	    <dl><dt class="buttons">
+			<input class="button submit" type="submit" value="${Upgrade}"/>
+		  </dt>
+		</dl></fieldset>
+	</form>
+
+
+
+	<fieldset id="info-block" class="block">
+	  <dl>
+		<dd>${UpgradeNote}</dd>
+	  </dl>
+	</fieldset>
+</div>
+
+</body>
+</html>

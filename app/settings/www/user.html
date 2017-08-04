@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User Settings - Vision Cam</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>  
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <script src="lang.js?v=100003"></script>
+  <script>
+	var params = {};
+
+	function OnPageLoad() {
+		$.form.init();
+	}
+
+	function onUserFormSubmit(frm) {
+		if (frm.password.value.length <= 0) {
+			alert(T('UserEmptyPass'));
+			frm.password.focus();
+			return false;
+		}
+
+		if (frm.oldpassword.value.length <= 0) {
+			alert(T('UserEmptyPass'));
+			frm.oldpassword.focus();
+			return false;
+		}
+
+		if (frm.password.value != frm.repassword.value) {
+			alert(T('UserReenterPass'));
+			frm.repassword.focus();
+			return false;
+		}
+
+		var formData = $("#userForm").serialize()
+		var url = "api.lua?api=/settings/user&action=edit&" + formData;
+		$.get(url, function(result) {
+				result = result || {}
+				if (result.error) {
+					alert(result.error)
+
+				} else {
+					alert("Done")
+				}
+		});
+
+		return false;
+	}
+
+	$(document).ready(function() {
+		$translate(document.body)
+
+		OnPageLoad()
+	});
+
+  </script>
+</head>
+<body style="display:none;">
+<div id="wrapper" class="form-wrapper">
+
+  <form class="form form-aligned" id="userForm" name="userForm" method="get" action="api.lua?api=/settings/user" onsubmit="return onUserFormSubmit(this);">
+	  <fieldset>
+		<legend>${UserPasswordEdit}</legend>
+		<dl>
+		  <dt><label class="label">${UserCurrentPassword}:</label>
+				<input type="password" name="oldpassword" maxlength="36"/></dt>
+
+		  <dt><label class="label">${UserNewPassword}:</label>
+				<input type="password" name="password" maxlength="36"/></dt>
+
+		  <dt><label class="label">${UserRePassword}:</label>
+				<input type="password" name="repassword" maxlength="36"/></dt>
+		</dl></fieldset>
+
+	  <fieldset class="form-footer">
+	    <dl><dt>
+		  <label class="label" >&nbsp;</label>
+			<input type="hidden" name="user" value="admin"/>
+			<input class="button button-primary" type="submit" value="${Apply}"/>
+		  </dt>
+		</dl></fieldset>
+	</form>
+</div>
+
+<footer id="footer"></footer>
+
+</body>
+</html>

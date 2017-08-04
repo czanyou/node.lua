@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Network Settings - Vision Cam</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <script src="lang.js?v=100003"></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>  
+  <script type="text/javascript">
+
+	var params = {};
+
+	function OnFormDefault() {
+		$.form.init(params);
+
+		UpdateEthernetForm();
+	}
+
+	function OnFormSubmit() {
+		var ret = window.confirm(T('NetworkConfirm'));
+		if (!ret) {
+			return false
+		}
+
+		var formData = $("#netForm").serialize()
+		var url = "api.lua?api=/settings/network&action=edit&" + formData;
+		$.get(url, function(result) {
+			try {
+				console.log(result)
+
+			} catch (e) {
+				alert(e);
+			}
+		});
+
+		return false;
+	}
+
+	function OnPageLoad(result) {
+		params = result || {}
+		params.lan_mode = params.lan_mode || "dhcp";
+
+		OnFormDefault(); 
+	}
+
+	function UpdateEthernetForm() {
+		var frm = document.forms[0];
+		var isStaticAddress = (frm.lan_mode.value == 'static');
+
+		if (isStaticAddress) {
+			//$("#static_address_panel").show("fast");
+
+		} else {
+			//$("#static_address_panel").hide("fast");
+		}
+	}
+
+	$(document).ready(function() {
+		$translate(document.body)
+
+		var url = "api.lua?api=/settings/network";
+		$.get(url, function(result) {
+				OnPageLoad(result || {})
+		});
+
+	});
+
+  </script>
+  <style type="text/css">
+	dl.ip_dhcp dt.ipconfig label { color: #bbb; } 
+	dl.ip_dhcp dt.ipconfig input { border-color: #e8e8e8; color: #999; } 
+	dt.readonly #labels { color: #aaa; }  
+  </style>
+</head>
+<body style="display:none;">
+<div id="wrapper" class="form-wrapper">
+	<form id="netForm" name="netForm" action="api.lua" method="get" onsubmit="return OnFormSubmit();">
+	  
+	  <fieldset class="block"><h3>${IPSettings}</h3>
+		<dl>
+		  <dt><label class="label">${NetIPMode}:</label>
+			<select name="lan_mode" id="lan_mode" onchange="UpdateEthernetForm();">
+			  <option value="dhcp">${NetDhcpMode}</option>
+			  <option value="static">${NetStaticMode}</option>
+			</select></dt>
+		</dl>
+
+		<dl id="static_address_panel">
+		  <dt><label class="label">${NetIPAddress}:</label>
+			<input type="text" class="text" name="lan_ip" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+
+		  <dt><label class="label">${NetSubnetMask}:</label>
+			<input type="text" class="text" name="lan_netmask" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+
+		  <dt><label class="label">${NetGateway}:</label>
+			<input type="text" class="text" name="lan_gateway" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+
+		  <dt><label class="label">${NetDNSServer1}:</label>
+			<input type="text" class="text" name="lan_dns1" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+
+		  <dt><label class="label">${NetDNSServer2}:</label>
+			<input type="text" class="text" name="lan_dns2" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+		</dl>
+
+	  </fieldset>
+
+	  <fieldset class="block footer">
+	    <dl><dt class="label">
+		  <input class="button submit" type="submit" value="${Apply}"/>
+		</dt></dl>
+	</fieldset>
+  </form>
+</div>
+
+<footer id="footer"></footer>
+
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>iNode</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>  
+  <link rel="shortcut icon" href="/favicon.ico?v=100003" type="image/x-icon">
+  <link rel="stylesheet" href="style.css?v=100003"/>
+  <script src="jquery.js?v=100003"></script>
+  <script src="common.js?v=100003"></script>
+  <script>
+
+	function OnUserLogin(username, password, callback) {
+		var url = "api.lua?api=/login&format=json&username=";
+		url += encodeURIComponent(username);
+		url += "&password=";
+		url += encodeURIComponent(password);
+
+		$.get(url, function(result) {
+			if (result.ret == 0) {
+				callback()
+
+			} else {
+				callback(result.error || 'error')
+			}
+		});
+	}
+
+	function OnFormSubmit() {
+		var form     = document.forms[0];
+		var username = 'admin'
+		var password = form.password.value;
+
+		var loginTip = $("#login_tip")
+
+		if (!password) {
+			loginTip.html(T("UserPasswordEmpty")).show();
+			return false;
+		}
+
+		loginTip.html(T("UserLogining")).show();
+		form.password.disabled = true;
+		form.login_button.disabled = true;
+
+		OnUserLogin(username, password, function(err) {
+			if (err) {
+				loginTip.html(T("UserPasswordError")).show();
+				form.password.disabled = false;
+				form.login_button.disabled = false;
+
+			} else {
+				location.href = "/?v=" + VISION_VERSION;
+			}
+		})
+
+		return false;
+	}
+
+    $(document).ready(function() {
+ 		if (window.top.location != window.self.location) {
+		    window.top.location = window.self.location;
+		    return
+		}
+		   	
+		$translate(document.body)
+
+		$("#forgot-text").click(function() {
+			$("#forgot-desc").toggle()
+		})
+    });
+
+  </script>
+  <style>
+	@media screen and (max-width: 800px) { 
+		#loginForm h2 { font-size: 180%; color: #5CADDB; padding: 32px 0 16px 0; }
+
+		fieldset.block input.text { border-color: #d5d5d5; padding: 8px 5px; 
+			width: 240px; max-width: 240px; }
+	}
+
+	@media screen and (min-width: 800px) { 
+		.login-wrapper { position: relative; }
+
+		fieldset.block { padding: 30px 30px; border: none; margin: 0; }
+		fieldset.block input.text { border-color: #d5d5d5; padding: 6px 5px; width: 100%;
+			border: none; border-bottom: 1px solid #ccc; background: none; margin-top: 16px; }
+		fieldset.block input.text:hover { border-bottom: 1px solid #777; }
+		fieldset.block input.text:focus { border-bottom: 1px solid #111; outline: none; }
+		fieldset.block #labels { display: block; text-align: left; font-weight: bold; 
+			color: #333; margin: 5px 0; }
+		fieldset.block select { width: 270px; max-width: 270px; }
+		fieldset.block .buttons { text-align: left; }
+
+		#loginForm { margin: 0 auto; width: 400px; border: 1px solid #e5e5e5; 
+		    border-radius: 3px; box-shadow: 0 0 10px #eee; background: #fff; }
+		#loginForm h2 { font-size: 180%; color: #5CADDB; padding: 10px 0; }
+		#loginForm .buttons { margin-top: 16px; text-align: right; } 
+		
+		.login-form-height { height: 100px; font-family: inherit;
+			background-image: linear-gradient(top, #eee, #f8f8f9); }
+		#login_tip { padding: 5px 8px; line-height: 20px; color: #c85305; }
+	}
+
+	</style>
+</head>
+<body class="login-body" style="display:none;">
+
+<header id="header" class="header-wrapper"><div class="header-inner">
+  <div class="header-right">
+	  <a href="javascript:$.lang.select('en')">${en}</a> |
+	  <a href="javascript:$.lang.select('zh-cn')">${zh_cn}</a>
+  </div>
+
+  <a class="logo" href="index.html"><h1>${DeviceTitle}</h1></a>
+</div></header>
+
+<div class="login-wrapper">
+  <div class="login-form-height">&nbsp;</div>
+  
+  <form id="loginForm" method="post" onsubmit="return OnFormSubmit();">
+    <fieldset class="block login-block"><dl class="noborder">
+      <dt class="noborder"><h2>${UserLogin}</h2></dt>
+	  <dt class="password-text"><label>${UserLoginTip}</label></dt>
+	  <dt class="noborder" style="min-height: 1px;"></dt>
+	  <dt><input class="text" id="login_password" name="password" type="password" placeholder="${UserPasswordTip}" size="32" maxlength="32"/></dt>
+
+	  <dt><a id="forgot-text" href="javascript:">${UserForgot}</a></dt>
+	  <dt><label id="forgot-desc" style="display:none;">${UserForgotDesc}</label></dt>
+
+	  <dt class="buttons">
+	  	<input type="hidden" name="login_name" value="admin"/>
+	    <input type="submit" name="login_button" class="button submit" value="${UserLogin}"/></dt>
+
+	  <dt class="password-text" id="login_tip" style="display:none;"></dt>
+    </dl></fieldset>
+  </form>
+</div>
+
+<footer id="footer"></footer>
+
+</body>
+</html>
+

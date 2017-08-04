@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Network Settings - Vision Cam</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <script src="lang.js?v=100003"></script>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>  
+  <script type="text/javascript">
+  <!--
+	var params = {};
+
+	function OnFormDefault() {
+		$.form.init(params);
+
+		UpdateEthernetForm();
+	}
+
+	function OnFormSubmit() {
+		var ret = window.confirm(T('NetworkConfirm'));
+		if (!ret) {
+			return false
+		}
+
+		var formData = $("#netForm").serializeWithCheckbox()
+		var url = "api.lua?api=/settings/wireless&action=edit&" + formData;
+		$.get(url, function(result) {
+			try {
+				console.log(result)
+
+			} catch (e) {
+				alert(e);
+			}
+		});
+
+		return false;
+	}
+
+	function OnPageLoad(result) {
+		params = result || {}
+		params.wl_mode = params.wl_mode || "dhcp";
+
+		OnFormDefault(); 
+	}
+
+	function OnApClick(name, channel) {
+		var frm = document.forms[0];
+		frm.wl_ssid.value = name;
+	}
+
+	function OnWlanRefresh() {
+		var frame = document.getElementById('wl_ifname');
+		if (frame) {
+			frame.src = "wireless_list.html";
+		}
+	}
+
+	window.OnApClick = OnApClick;
+
+	function UpdateEthernetForm() {
+		var frm = document.forms[0];
+		var isStaticAddress = (frm.wl_mode.value == 'static');
+	}
+
+	function OnApnSelect() {
+		
+	}
+
+	function OnWlanSelect() {
+		$("#wl_list").toggle("fast");
+
+		var frame = document.getElementById('wl_ifname');
+		if (!frame.src) {
+			OnWlanRefresh();
+		}
+	}
+
+	$(document).ready(function() {
+		$translate(document.body)
+
+		var url = "api.lua?api=/settings/wireless";
+		$.get(url, function(result) {
+			OnPageLoad(result || {})
+		});
+
+	});
+
+  //-->
+  </script>
+  <style type="text/css">
+	dl.ip_dhcp dt.ipconfig label { color: #bbb; } 
+	dl.ip_dhcp dt.ipconfig input { border-color: #e8e8e8; color: #999; } 
+	dt.readonly #labels { color: #aaa; }  
+  </style>
+</head>
+<body style="display:none;">
+<div id="wrapper" class="form-wrapper">
+	<form id="netForm" name="netForm" action="api.lua" method="get" onsubmit="return OnFormSubmit();">
+	  
+	  <!--#if expr="has_wifi" -->
+	  <fieldset class="block"><h3>${WirelessSettings}</h3>
+		<dl class="group">
+		  <dt class="label"><input type="checkbox" name="wl_enabled" value="1" id="wl_enabled"/>
+		  	<label for="wl_enabled">${WirelessEnable}</label>
+			</dt>
+
+		  <dt>
+			<label class="label">${WlESSID}:</label>
+			<input type="text" class="text" name="wl_ssid" id="wl_ssid" size="24" autocapitalize="off" autocorrect="off" placeholder="SSID"/></dt>
+
+		  <dt>
+			<label class="label">${WlKey}:</label>
+			<input type="text" class="text" name="wl_key" id="wl_key" size="24" placeholder="Password"/></dt>
+
+		  <dt class="button-wrapper"><label class="label"></label>
+		    <a class="button" href="#" onclick="OnWlanSelect();">${WlSelect}</a></dt>
+
+		</dl>
+		<dl id="wl_list" class="group noborder" style="display:none;">
+		  <dt>
+			<label class="label" style="vertical-align:top;" >${WlNetwork}:</label>
+			<div id="wl_info" style="padding: 3px 18px; display:none;"><div id="info" class="info-box">${WirelessNotFound}</div></div>
+
+			<iframe id="wl_ifname" frameborder="0"></iframe>
+		  </dt>
+		  <dt class="button-wrapper"><label class="label"></label>
+		    <a class="button" href="#" onclick="OnWlanRefresh();">${WlScan}</a></dt>
+		</dl></fieldset><!--#endif -->
+
+	  <fieldset class="block"><h3>${IPSettings}</h3>
+		<dl>
+		  <dt><label class="label">${NetIPMode}:</label>
+			<select name="wl_mode" id="wl_mode" onchange="UpdateEthernetForm();">
+			  <option value="dhcp">${NetDhcpMode}</option>
+			  <option value="static">${NetStaticMode}</option>
+			</select></dt>
+		</dl>
+
+		<dl id="static_address_panel">
+		  <dt><label class="label">${NetIPAddress}:</label>
+			<input type="text" class="text" name="wl_ip" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+
+		  <dt><label class="label">${NetSubnetMask}:</label>
+			<input type="text" class="text" name="wl_netmask" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+
+		  <dt><label class="label">${NetGateway}:</label>
+			<input type="text" class="text" name="wl_gateway" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+
+		  <dt><label class="label">${NetDNSServer1}:</label>
+			<input type="text" class="text" name="wl_dns1" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+
+		  <dt><label class="label">${NetDNSServer2}:</label>
+			<input type="text" class="text" name="wl_dns2" size="24" maxlength="15" onblur="validateIPAddress(this, 1);" autocapitalize="off" autocorrect="off"/></dt>
+		</dl>
+
+	  </fieldset>
+
+	  <fieldset class="block footer">
+	    <dl><dt class="buttons">
+		  <input class="button submit" type="submit" value="${Apply}"/>
+		</dt></dl>
+	</fieldset>
+  </form>
+</div>
+
+<footer id="footer"></footer>
+
+</body>
+</html>

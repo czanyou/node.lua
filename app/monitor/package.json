@@ -1,0 +1,8 @@
+{
+	"depends": ["lnode", "vision"],
+	"description": "Node.lua Monitor",
+	"name": "monitor",
+	"title": "Monitor",
+	"tags": ["monitor", "runtime"],
+	"version": "1.0.1"
+}

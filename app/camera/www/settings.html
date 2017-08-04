@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Streaming Settings</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>  
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <script src="lang.js?v=100003"></script>
+  <script>
+
+	var params = {};
+
+	function OnPageLoad(result) {
+		params = result || {}
+
+		OnFormInit();
+		$.form.init();
+	}
+
+	function OnFormInit() {
+
+	}
+
+	function OnFormSubmit() {
+		var formData = $("#mediaForm").serializeWithCheckbox()
+		var url = "api.lua?api=/settings/camera&action=edit&" + formData;
+		$.get(url, function(result) {
+			try {
+				console.log(result)
+				alert("Done.")
+
+			} catch (e) {
+				alert(e);
+			}
+		});
+
+		return false;
+	}
+
+	$(document).ready(function() {
+		$translate(document.body)
+
+		var url = "api.lua?api=/settings/camera";
+		$.get(url, function(result) {
+			console.log(result)
+			OnPageLoad(result || {})
+		});
+	});
+
+  </script>
+</head>
+<body style="display:none;">
+<div id="wrapper" class="form-wrapper">
+  <form id="mediaForm" method="get" onsubmit="return OnFormSubmit();">
+
+	<fieldset class="block">
+	  <h3>${VideoMainStream} 1</h3>
+	  <dl>
+		  <dt><label class="label">
+		  	${VideoWidth}:</label>
+			<input class="text" id="width1" name='video_1_width'/></dt>
+
+		  <dt><label class="label">
+		  	${VideoHeight}:</label>
+			<input class="text" id="height1" name='video_1_height'/></dt>
+
+		  <dt><label class="label">
+		  	${VideoFrameRate}:</label>
+			<input class="text" id="frame_rate1" name='video_1_frame_rate'/></dt>
+
+		  <dt><label class="label">
+		  	${VideoBitrate}:</label>
+			<input class="text" id="bitrate1" name="video_1_bitrate"/></dt>
+
+		  <dt><label class="label">
+		  	${VideoEncodeMode}:</label>
+			<select id="bitrate_mode1" name='video_1_bitrate_mode'>
+			  <option value="vbr" id="$VideoVBR">VBR</option>
+			  <option value="cbr" id="$VideoCBR">CBR</option>
+			</select></dt>
+
+	  </dl>
+	</fieldset>
+
+	<fieldset class="block"><h3>${VideoSubStream} 2</h3>
+		<dl>
+		  <dt><label class="label">
+		  	${VideoWidth}:</label>
+			<input class="text" id="width2" name='video_2_width'/></dt>
+
+		  <dt><label class="label">
+		  	${VideoHeight}:</label>
+			<input class="text" id="height2" name='video_2_height'/></dt>
+
+		  <dt><label class="label">${VideoFrameRate}:</label>
+			<input class="text" id="frame_rate2" name='video_2_frame_rate'/></dt>
+
+		  <dt><label class="label">${VideoBitrate}:</label>
+			<input class="text" id="bitrate2" name="video_2_bitrate"/></dt>
+	</dl></fieldset>
+
+	<fieldset class="block"><h3>${VideoSubStream} 3</h3>
+		<dl>
+		  <dt><label class="label">
+		  	${VideoWidth}:</label>
+			<input class="text" id="width3" name='video_3_width'/></dt>
+
+		  <dt><label class="label">
+		  	${VideoHeight}:</label>
+			<input class="text" id="height3" name='video_3_height'/></dt>
+
+		  <dt><label class="label">${VideoFrameRate}:</label>
+			<input class="text" id="frame_rate3" name='video_3_frame_rate'/></dt>
+
+		  <dt><label class="label">${VideoBitrate}:</label>
+			<input class="text" id="bitrate3" name="video_3_bitrate"/></dt>
+	</dl></fieldset>	
+
+	<fieldset class="block"><h3>${OSDSettings}</h3>
+	  <dl>
+	    <dt><label class="label">${OSDText}:</label>
+		  <input type="text" id="text" class="text" size="45" maxlength="36" 
+		    name='video_text' placeholder="${OSDText}"/></dt>
+
+	    <dt class="label"><input type="checkbox" id="video_overlay" value="1" 
+	        name='video_overlay'/><label for="video_overlay">${OSDEnable}</label>
+	      </dt>
+	  </dl>
+	</fieldset>
+
+	<fieldset class="block footer">
+	  <dl><dt class="buttons">
+		<input class="button submit" type="submit" value="${Apply}"/>
+	  </dt></dl></fieldset>
+  </form>
+</div>
+
+<footer id="footer"></footer>
+</body>
+</html>

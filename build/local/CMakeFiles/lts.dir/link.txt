@@ -1,0 +1,1 @@
+/usr/bin/cc  -fPIC   -shared -Wl,-soname,lts.so -o lts.so CMakeFiles/lts.dir/modules/src/ts/src/ts_common.c.o CMakeFiles/lts.dir/modules/src/ts/src/ts_reader.c.o CMakeFiles/lts.dir/modules/src/ts/src/ts_reader_lua.c.o CMakeFiles/lts.dir/modules/src/ts/src/ts_writer.c.o CMakeFiles/lts.dir/modules/src/ts/src/ts_writer_lua.c.o 

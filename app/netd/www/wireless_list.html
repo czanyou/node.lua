@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Wireless</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>  
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script type="text/javascript" src="/jquery.js?v=100003"></script>
+  <script type="text/javascript" src="/common.js?v=100003"></script>
+  <script type="text/javascript">
+
+	function OnApClick(name, channel) {
+		if (parent && parent.OnApClick) {
+			parent.OnApClick(name, channel);
+		}
+	}
+
+	function OnPageLoad(status) {
+
+		var html = [];
+		html.push('<table style="width:100%;">');
+		html.push('<col/>');
+		html.push('<col style="width:20px;"/> ');
+		html.push('<col style="width:20px;"/> ');
+
+		var tokens = status || [{"address":"test", "ssid":"Not found"}];
+		for (var i = 0; i < tokens.length; i++) {
+			html.push("<tr>");
+			var token		= tokens[i] || {};
+			var name		= token.ssid	 || "noname";
+			var channel		= token.channel  || "";
+			var address		= token.address  || "";
+			var protocol	= token.protocol || "";
+			var rate		= token.nt		 || "";
+			var mode		= token.ext		 || "";
+			var quality		= token.quality  || "";
+			var lock		= token.security && (token.security != "NONE");
+			var security	= token.security || "";
+
+			var level = "";
+			if (quality >= 50) {
+				level = "signal5";
+			} else if (quality >= 30) {
+				level = "signal4";
+			} else if (quality >= 20) {
+				level = "signal3";
+			} else if (quality >= 10) {
+				level = "signal2";
+			} else if (quality >= 0) {
+				level = "signal1";
+			}
+			var signal = '<span class="modem_signal ' + level + '" title="' + quality + '">&nbsp;</span>';
+
+			if (lock) {
+				lock = '<span class="wlan_lock" title="' + security + '">&nbsp;</span>';
+			} else {
+				lock  = "";
+			}
+
+			if (!address) {
+				continue;
+			}
+
+			html.push('<td title="Address: ');
+			html.push(address);
+			html.push('\r\nProtocol: ');
+			html.push(protocol);
+			html.push('\r\nNT: ');
+			html.push(rate);
+			html.push('\r\nChannel: ');
+			html.push(channel);
+			html.push('\r\nExt: ');
+			html.push(mode);
+			html.push('\r\nAuth: ');
+			html.push(security);
+			html.push('">');
+			html.push('<a href="javascript:OnApClick(\'' + name + '\', ' + channel + ');">' + name + "</a></td>");
+			html.push("<td>" + lock + "</td>");
+			html.push("<td>" + signal + "</td>");
+			html.push("</tr>");
+		}
+
+		html.push("</table>");
+		$("#ap_list").html(html.join(""));
+	}
+  </script>
+  <style type="text/css">
+	#ap_list td, #ap_list th { padding: 3px 5px; border-bottom: 1px dotted #eee; }
+	th { text-align: left; font-weight: 700; }
+  </style>
+</head>
+<body style="border: none; background: #fff;">
+<div id="ap_list">Scanning now... please wait!</div>
+<textarea id="wl_status" style="display:none;"><!--#echo status="/status/scan" --></textarea>
+<script type="text/javascript">
+	OnPageLoad();
+</script>
+</body>
+</html>

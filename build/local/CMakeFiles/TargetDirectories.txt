@@ -1,0 +1,15 @@
+/mnt/e/workspace/main/node/build/local/CMakeFiles/lupdate.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/lnode.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/edit_cache.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/luajson.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/lualib.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/uv.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/luauv.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/sml.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/lsqlite.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/luazip.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/lts.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/lsdl.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/luautils.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/rebuild_cache.dir
+/mnt/e/workspace/main/node/build/local/CMakeFiles/lmedia.dir

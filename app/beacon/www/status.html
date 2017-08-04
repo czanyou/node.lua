@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sensor Status</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" href="/style.css?v=100001"/>
+  <script src="/jquery.js?v=100001"></script>
+  <script src="/common.js?v=100001"></script>
+  <script src="lang.js?v=100001"></script>
+  <script type="text/javascript">
+
+    var taskID;
+
+    function iBeaonMap(map) {
+      var html = ''
+      var array = []
+      var index = 0
+      for (key in map) {
+        array[index++] = { rssi : key, value : map[key]}
+      }
+
+      array.sort(function(a, b) { return b.value - a.value; })
+
+      var count = Math.min(array.length, 10)
+      for (var i = 0; i < count; i++) {
+        var item = array[i]
+        html += item.rssi 
+        html += ":"
+        html += item.value
+        html += ", "
+      }
+      return html
+    }
+
+    function formatUpdate(updated) {
+        if (updated < 2000) {
+            return updated / 1000
+
+        } else if (updated < 2 * 60 * 1000) {
+            return Math.floor(updated / 1000) + "S"
+
+        } else if (updated < 2 * 3600 * 1000) {
+            return Math.floor(updated / (60 * 1000)) + "M"
+
+        } else {
+            return Math.floor(updated / (3600 * 1000)) + "H"
+        }
+    }
+
+    function iBeacon2Html(ibeacon) {
+        var date = new Date()
+        var now = date.getTime()
+        var span = now - ibeacon.updated * 1000
+
+        return '<tr class="item" >' +
+            '<td>' + ibeacon.mac + '</td>'+
+            '<td>' + ibeacon.uuid + '</td>'+
+            '<td>'+ ibeacon.major +'</td>'+ 
+            '<td>'+ ibeacon.minor + '</td>'+
+            '<td>'+ ibeacon.power + '</td>'+
+            '<td>'+ formatUpdate(span) + '</td>'+
+            '<td>'+ ibeacon.distance + ' M</td>'+
+            '<td>'+ iBeaonMap(ibeacon.map) + '</td>'+
+        '</tr>';
+    }
+
+    function showBeacons(result) {
+        var html = '';
+        if (result.length <= 0) {
+            return
+        }
+
+        $("#total-label").text("记录数: " + result.length)
+
+        var sort = $("#sort-select").val() || 'distance'
+
+        result.sort(function(a, b) {
+            if (sort == 'mac' || sort == 'uuid') {
+                return a[sort] < b[sort] ? 1 : -1
+
+            } else if (sort == 'updated') {
+                return a[sort] - b[sort]
+                
+            } else {
+                return b[sort] - a[sort]
+            }
+        })
+
+        html += "<table class='table'>"
+        html += "<tr>"
+        html += "<th>MAC</th><th>UUID</th><th>Major</th><th>Minor</th>"
+        html += "<th>Power</th><th>Updated</th><th>Distance</th><th>...</th>"
+        html += "</tr>"
+
+        var filter = $("#filter").val() || ''
+
+        for (var i = result.length - 1; i >= 0; i--) {
+            var ibeacon = result[i]
+            ibeacon.distance = Math.floor(ibeacon.distance * 100) / 100
+           
+            // console.log('txPower : ' + txPower)
+            //var factor = $("#factor").val()
+            //var pow = (txPower + ibeacon.rssi) / (10 * factor);   
+            //var distance = Math.pow(10, pow);
+
+            if (filter == '') {
+                html += iBeacon2Html(ibeacon)
+
+            } else if (filter == ibeacon.mac) {
+                html += iBeacon2Html(ibeacon)
+            }
+        }
+
+        html += "</table>"
+        
+        $('#ibeacons').html(html)
+    }
+
+    function reloadStatus() {
+        $(document).ajaxError(function(event, request, options, exc) {
+          if (request.statusText) {
+            var html = "Server returned: " + request.statusText
+            $("#error-info-wrapper").text(html).show()
+          }
+        })
+
+        var url = "api.lua?api=/list";
+        $.get(url, function(result) {
+            console.log(result)
+            if (!result) {
+                var html = "<div style='padding: 8px 16px;'>No records</div>"
+                $("#error-info-wrapper").html(html).show()
+                return
+            }
+
+            showBeacons(result || [])
+            $("#error-info-wrapper").hide()
+        });
+    }
+
+  	$(document).ready(function() {
+  		$translate(document.body)
+
+        reloadStatus()
+        taskID = setInterval(reloadStatus, 2000);
+
+        $("#refresh-button").click(function() {
+            reloadStatus()
+        })
+  	})
+
+  </script>
+  <style>
+  .toolbar { border-bottom: 1px solid #ddd; padding: 12px 0; background: #f8f8f8; }
+  .toolbar label { margin-left: 16px; }
+  .toolbar button { vertical-align: middle; float: right; margin-right: 16px; }
+  .toolbar select { padding: 5px 8px; }
+  .table { margin: 8px 8px; }
+  .table td { padding: 6px 6px; border-bottom: 1px solid #ddd; }
+  .table th { padding: 6px 6px; border-bottom: 2px solid #ddd; font-weight: bold;  }
+  </style>
+</head>
+<body>
+
+<div id="wrapper" >
+    <div >
+      <div class="toolbar">
+        <label class="value">排序方式:</label>
+        <select id="sort-select">
+          <option value="mac">MAC</option>
+          <option value="uuid">UUID</option>
+          <option value="major">Major</option>
+          <option value="minor">Minor</option>
+          <option value="updated">Updated</option>
+          <option value="distance" selected="selected">Distance</option>
+        </select>
+
+        <label class="value">环境因子:</label>
+        <select id="factor" type="button">
+          <option>1</option>
+          <option>1.5</option>
+          <option>2</option>
+          <option>2.5</option>
+          <option selected="selected">3</option>
+          <option>3.5</option>
+          <option>4</option>
+          <option>4.5</option>
+          <option>5</option>
+          <option>5.5</option>
+        </select>
+
+        <label class="value">MAC过滤</label>
+        <input id="filter" type="text" class="text" size="24" maxlength="30"/>
+        <label id="total-label" class="value"></label>
+
+        <button id="refresh-button">刷新</button>
+      </div>
+    </div>
+
+    <div id="error-info-wrapper" style="display:none;"></div>
+    <div id="ibeacons"></div> 
+</div>
+
+<footer id="footer"></footer>
+</body>
+</html>

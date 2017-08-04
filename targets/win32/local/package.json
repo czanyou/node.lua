@@ -1,0 +1,9 @@
+{
+	"description": "Windows PC",
+	"name": "win32",
+	"tags": ["win32", "core"],
+    "applications": ["httpd", "ssdp", "lhost", "settings", "mqtt"],
+	"files": ["install.bat"],
+    "libs": ["lts.dll", "lsqlite.dll"],
+	"version": "0.0.1"
+}

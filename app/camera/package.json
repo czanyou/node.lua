@@ -1,0 +1,20 @@
+{
+	"depends": ["httpd", "vision"],
+	"description": "Network camera and streaming server.",
+	"name": "camera",
+	"title_zh_cn": "相机",
+	"tags": ["camera", "rtsp"],
+	"title": "Camera",
+	"settings": [
+		{ "name": "video.[name].bitrate",    "desc":"Set the bitrate in kbps" },
+		{ "name": "video.[name].width",      "desc":"Set the image width in pixel" },
+		{ "name": "video.[name].height",     "desc":"Set the image height in pixel" },
+		{ "name": "video.[name].framerate",  "desc":"Set the framerate in fps" },
+		{ "name": "audio.in.id",  		  	"desc":"Set the card ID (0, 1, 2...)" },
+		{ "name": "audio.in.sampleRate",  	"desc":"Set sample rate (default 8000)" },
+		{ "name": "audio.in.channels",  	"desc":"Set the channels (default 1)" },
+		{ "name": "audio.in.codec",  		"desc":"Set the codec type (AAC or PCM)" },
+		{ "name": "audio.in.disabled",  	"desc":"Set whe disabled (0 or 1)" }
+	],
+	"version": "1.2.0"
+}

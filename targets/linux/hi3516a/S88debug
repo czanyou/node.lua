@@ -1,0 +1,43 @@
+#!/usr/bin/env sh
+
+# 初始开发模式
+# ======
+
+# 这个脚本只在开发时使用不会被打包, 需在开发前手动复制到开发板 `/etc/init.d/` 目录下
+
+# IPv4 address
+# 配置默认的固定 IP 地址, 需和开发服务器在同一网段, 请按需修改
+ifconfig eth0 192.168.77.113 netmask 255.255.255.0
+
+# Gateway
+# 设置所在网络的网关地址, 请按需修改
+route add default gw 192.168.77.1
+
+# 设置主机名称
+hostname hi3516a
+
+# tmpfs
+# 将 /tmp 挂接为内存文件系统, /tmp 下文件经常变动且都为临时文件, 
+# 所以用内存文件系统提高系统效率
+mount tmpfs /tmp -t tmpfs
+
+# FTP Server
+# 可以通过 FTP 方便上传和下载开发板上的文件
+# 通过匿名的方式即可访问
+tcpsvd 0 21 ftpd -w / &
+
+# WiFi
+#cd /ko
+#insmod 8188eu.ko
+#ifconfig wlan0 up
+
+# telnet
+# 远程网络调试必备, 开发机可通过 telnet 协议连接到开发板
+telnetd
+
+# 在开机时自动加载所有驱动程序
+cd /ko
+./load3516a -a -sensor imx178 -osmem 64
+
+#mount -t nfs -o nolock 192.168.77.125:/system/main/node /nfsroot &
+

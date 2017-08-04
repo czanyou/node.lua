@@ -1,0 +1,1 @@
+/usr/bin/cc     CMakeFiles/lupdate.dir/node.lua/deps/update/src/main.c.o  -o lupdate -rdynamic -ldl -lm -lrt 

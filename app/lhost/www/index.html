@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MQTT Status</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <script src="lang.js?v=100003"></script>
+  <script> 
+
+    function formatTime(now, value) {
+        var ret = Math.floor((now - value) / 1000)
+        return ret
+    }
+
+    function getHtml(result) {
+        var html = ''
+
+        html += '<table class="base-table">'
+        html += '<tr>'
+        html += '<th>' + T('Name') + '</th>'
+        html += '<th>' + T('Status') + '</th>'
+        html += '<th>' + T('Title') + '</th>'
+        html += '<th>' + T('Title') + ' (cn)</th>'
+        html += '<th>' + T('Version') + '</th>'
+        html += '<th>' + T('PID') + '</th>'
+        html += '<th>' + T('Action') + '</th>'
+        html += '<th>' + T('Description') + '</th>'
+        html += '</tr>'
+
+        var settings = result.settings || {}
+        var status = result.status || {}
+        var applications = result.applications || []
+        var count = applications.length || 0
+        if (count <= 0) {
+            html += '<dt>No Applications</dt>'
+        }
+
+        for (var i = 0; i < count; i++) {
+            var application = applications[i]
+            var name = application.name || ''
+
+            html += '<tr>'
+            html += '<td>'
+            html += name
+            html += '</td><td>'
+          
+            if (settings[name]) {
+              html += '[ = ]'
+            } else {
+              html += '  '
+            }
+            html += '</td><td>'
+            html += application.title || ''
+            html += '</td><td>'
+            html += application.title_zh_cn || ''
+            html += '</td><td>'
+            html += application.version || ''
+            html += '</td><td>'
+            html += status[name] || ''
+            html += '</td><td>'
+            html += '<button onclick="onRestart(\'' + name + '\')">' + T('Restart') + '</button> '
+            html += '<button onclick="onStop(\'' + name + '\')">' + T('Stop') + '</button>'
+            html += '</td><td>'
+            html += application.description || ''
+
+            html += '</td>'
+            html += '</tr>'
+        }
+        html += "</table>"
+
+        return html
+    }
+
+    function onRefresh() {
+        var url = 'api.lua?api=/list'
+        $.get(url, function(result) {
+            $("#status-inner").html(getHtml(result))
+        })
+
+    }
+
+    function onRestart(name) {
+        if (!confirm('Restart ' + name + "?")) {
+            return
+        }
+
+        var url = 'api.lua?api=/restart&name=' + name
+        $.get(url, function(result) {
+            onRefresh()
+        })
+    }
+
+    function onStop(name) {
+        if (!confirm('Stop ' + name + "?")) {
+            return
+        }
+
+        var url = 'api.lua?api=/stop&name=' + name
+        $.get(url, function(result) {
+            onRefresh()
+        })
+    }
+
+    $(document).ready(function() {
+        $translate(document.body)
+        onRefresh()
+
+        setInterval(function() {
+            onRefresh()
+        }, 2000)
+    });
+
+  </script>
+  <style>
+    #status-wrapper {  padding-top: 8px; max-width: 1024px; margin: 0 auto; }
+  </style>
+</head>
+<body style="display:none">
+
+  <header id="header" class="header-wrapper"><div class="header-inner">
+    <div class="header-right">
+      <a id="return_item" href="/">${Close}</a>
+    </div>
+
+    <a class="logo" href="/"><h1>${Applications}</h1></a>
+  </div></header>
+
+  <div id="status-wrapper"><div id="status-inner">
+  </div></div>
+</body>
+</html>

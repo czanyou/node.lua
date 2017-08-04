@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register Settings</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>  
+  <script>
+
+	var params = {}
+
+	function OnPageLoad(result) {
+		params = result || {}
+	}
+
+  $(document).ready(function() {
+		$translate(document.body)
+		$.form.init();
+
+		var url = "api.lua?api=/settings/register";
+		$.get(url, function(result) {
+				OnPageLoad(result || {})
+		});
+
+  });
+
+	function OnFormSubmit(frm) {
+		var formData = $("#registerForm").serialize()
+		var url = "api.lua?api=/settings/register&action=edit&" + formData;
+		$.get(url, function(result) {
+			try {
+				console.log(result)
+
+			} catch (e) {
+				alert(e);
+			}
+		});
+
+		return false;
+	}
+
+  </script>
+</head>
+<body style="display:none;">
+<div id="wrapper" class="form-wrapper">
+  <form id="registerForm" name="registerForm" action="api.lua" method="get" onsubmit="return OnFormSubmit();">
+	<fieldset class="block"><h3>${SipSettings}</h3>
+	  <dl>
+		  <dt><input type="checkbox" name="register_enabled" value="1" id="register_enabled"/>
+		  	<label for="register_enabled">${SipEnabled}:</label>
+			</dt>	
+
+		  <dt><label class="label">${SipServer}:</label>
+			<input type="text" class="text" name="register_server" size="32" maxlength="255" placeholder="${SipServer}"/></dt>
+
+		  <dt><label class="label">${SipUsername}:</label>
+			<input type="text" class="text" name="register_account" size="24" maxlength="255" placeholder="${SipUsername}"/></dt>
+
+		  <dt><label class="label">${SipPassword}:</label>
+			<input type="text" class="text" name="register_password" size="24" maxlength="36" placeholder="${SipPassword}"/></dt>
+
+	  </dl>
+	</fieldset>
+
+	<fieldset class="block footer">
+	  <dl><dt>
+		  <input class="button submit" type="submit" value="${Apply}"/>
+		</dt>
+	  </dl></fieldset>
+  </form>
+
+</div>
+
+</body>
+</html>

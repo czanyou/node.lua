@@ -1,0 +1,15 @@
+Package: nodelua
+Version: 2.1.103
+Architecture: i386
+Maintainer: PC_Qi
+Installed-Size: 1500
+Pre-Depends: dpkg (>= 1.15.7.2)
+Depends: bluez,libbluetooth-dev
+Recommends: 
+Suggests: 
+Breaks: 
+Provides: SAE-CMPP
+Section: x11
+Priority: optional
+Homepage: http://www.sae-sz.cn
+Description: Modern IoT device embedded software development platform.

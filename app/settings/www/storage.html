@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Record</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script type="text/javascript" src="/jquery.js?v=100003"></script>
+  <script type="text/javascript" src="/common.js?v=100003"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>  
+  <script type="text/javascript">
+	var params = {};
+	var settings = {};
+
+	String.prototype.startsWith = function (str){
+		return this.slice(0, str.length) == str;
+	};
+
+	function OnPageLoad(params) {
+		$.form.init();
+
+		ShowPartitions(params || {});
+	}
+
+	function OnFormDefault() {
+		
+	}
+
+	function OnFormat(name) {
+		if (!name) {
+			return;
+		}
+
+		if (confirm(T("PartitionsFormatTip"))) {
+			var url = location.protocol + "//" + location.host + "/do/format?action=format&name=" + name;
+			var html = '<iframe src="' + url + '" frameborder="0" style="width:580px;height:400px; margin: 0 16px;"></iframe>';
+			$('#status_block').html(html);
+		}
+	}
+
+	function OnMount(name) {
+		if (name) {
+			var url = location.protocol + "//" + location.host + "/do/format?action=mount&name=" + name;
+			$.get(url, function(result) { location.reload(); });
+		}
+	}
+
+	function OnUmount(name) {
+		if (name) {
+			var url = location.protocol + "//" + location.host + "/do/format?action=umount&name=" + name;
+			$.get(url, function(result) { location.reload(); });
+		}
+	}
+	
+	function ShowPartitions(modem_status) {
+		var entry = modem_status.entry || [];
+		
+		var html = "";
+		
+		if (entry.length < 1) {
+			html += '<dt><label class="label">' + T("PartitionsStatus") + ':</label><label>'
+			html += T('NotFound') + '</label></dt>';
+		}
+
+		var device = null;
+
+		for (var i = 0; i < entry.length; i++) {
+			var part = entry[i] || {};
+			if (part.minor <= 0) {
+				part.master = true;
+				part.partCount = 0;
+
+				device = part;
+				device.parts = [];
+
+			} else if (device) {
+				var name = part.name || "";
+				if (name.startsWith(device.name)) {
+					device.partCount++;
+					part.parent = device;
+					device.parts.push(part);
+				}
+			}
+		}
+
+		for (var i = 0; i < entry.length; i++) {
+			var part = entry[i] || {};
+			if (part.partCount > 0) {
+				part.type = T("PartitionsMaster");	
+
+			} else if (!part.fs) {
+				part.type = T("PartitionsIsUmount");
+			} 
+
+			if (part.blocks < 1024 * 128) {
+				continue;
+
+			} else if (part.parent) {
+				continue;
+			}
+
+			html += getPartHtml(part);
+
+			if (part.partCount > 0) {
+				html += getPartsHtml(part.parts);
+			}
+		}
+
+		//html += "</tbody></table>"
+		$("#partitions_block").html(html);
+	}
+
+	function getPartsHtml(parts) {
+		var html = "";
+		var entry = parts || [];
+
+		html += '<div class="block" style="margin-left: s0px;">';
+		for (var i = 0; i < entry.length; i++) {
+			var part = entry[i] || {};
+			if (!part.fs) {
+				part.type = T("PartitionsIsUmount");
+			} 
+
+			if (part.blocks < 1024 * 128) {
+				continue;
+			}
+
+			html += getPartHtml(part);
+		}
+
+		html += '</div>';
+		return html;
+	}
+
+	function getPartHtml(part) {
+		var html = '';
+
+		// Names
+		html += '<dt><label class="label">';
+		html += part.name || "-";
+		html += ':</label> <label class="value">(';
+		html += part.type || "";
+		html += part.readonly ? " <span style='color:red;'>(" + T("Readonly") + ")<span>" : "";
+		html += ')</label></dt>';
+
+		// Size
+		if (part.fs) {
+			html += '<dt><label class="label">' + T("StorageSize") + ': </label> <label class="value">'
+			html +=  T("StorageFree") + ' ' + $.format.formatBytes(part.free * 1024);
+			html += " / " + T("StorageTotal") + ' ' + $.format.formatBytes(part.blocks * 1024);
+			html += "</label>";
+			
+			// File system
+			html += '<dt><label class="label">' + T("FileSystem") + ': </label> <label class="value">'
+			html += (part.fs || "-") + ' (' + (part.mount || "-") + ')';
+			html += "</label>";
+
+		} else {
+			html += '<dt><label class="label">' + T("StorageSize") + ': </label> <label class="value">'
+			html += T("StorageTotal") + ' ' + $.format.formatBytes(part.blocks * 1024);
+			html += "</label>";
+		}
+
+		html += "</dt>";
+
+		// Actions
+		html += '<dt class="label">';
+		html += '<input type="button" class="button small-button" value=" ' + T("PartitionsFormat") + ' "';
+
+		if (part.fs) {
+			html += ' disabled="disabled"/> &nbsp;';
+			html += '<input type="button" class="button small-button" value=" ' + T("PartitionsUmount") + ' "'; 
+			html += ' onclick="OnUmount(' + "'" + part.name + "'" + ');"/>';
+
+		} else if (!(part.partCount > 0)) {
+			html += ' onclick="OnFormat(' + "'" + part.name + "'" + ');"/> &nbsp;'
+			html += '<input type="button" class="button small-button" value=" ' + T("PartitionsMount") + ' "';
+			html += ' onclick="OnMount(' + "'" + part.name + "'" + ');"/>';
+
+		} else {
+			html += ' onclick="OnFormat(' + "'" + part.name + "'" + ');"/>';
+		}
+		html += '</dt>';
+
+		html += '<dt class="hr"><hr/></dt>';
+		return html;
+	}
+
+    $(document).ready(OnPageLoad);
+
+  </script>
+</head>
+
+<body>
+<div id="wrapper" class="form-wrapper">
+  <form id="schedulesForm" action="/do/apply" method="get">
+	<fieldset class="block">
+	  <h3>${StorageSettings}</h3>
+	  <dl id="partitions_block"></dl>
+	  <div id="status_block"></div>
+	</fieldset>
+  </form>
+</div>
+
+<footer id="footer"></footer>
+</body>
+</html>

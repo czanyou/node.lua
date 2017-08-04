@@ -1,0 +1,9 @@
+{
+    "depends": ["lnode", "vision"],
+    "description": "WEB Settings",
+    "title": "Settings",
+	"title_zh_cn": "系统",
+    "name": "settings",
+    "tags": ["settings", "runtime"],
+    "version": "1.0.12"
+}

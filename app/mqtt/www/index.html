@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MQTT Status</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <script> 
+
+    function formatTime(now, value) {
+        var ret = Math.floor((now - value) / 1000)
+        return ret
+    }
+
+    function getHtml(result) {
+        var html = ''
+        html += "<h3>Options</h3>"
+        html += "<dl>"
+
+        if (!result || !result.now) {
+            html += "<dt>Status</dt><dd>Not start</dd>"
+            html += "</dl>"
+            return html
+        }
+
+        var now = result.now || 0
+
+        delete(result.options.callback)
+        for (key in result.options) {
+            html += '<dt>'
+            html += key
+            html += '</dt><dd>'
+            html += result.options[key] 
+            html += '</dd>'
+        }
+        html += "</dl>"
+
+        html += "<h3>State</h3>"
+        html += "<dl>"
+
+        var state = result.state
+        state.lastConnectTime = formatTime(now, state.lastConnectTime)
+        state.lastActivityOut = formatTime(now, state.lastActivityOut)
+        state.lastActivityIn  = formatTime(now, state.lastActivityIn)
+
+        for (key in state) {
+            html += '<dt>'
+            html += key
+            html += '</dt><dd>'
+            html += state[key] 
+            html += '</dd>'
+        }
+        html += "</dl>"
+
+        html += "<h3>Subscribers</h3>"
+        html += "<dl>"
+        var count = result.subscribes.length || 0
+        if (count <= 0) {
+            html += '<dt>No Topic</dt>'
+        }
+
+        for (var i = 0; i < count; i++) {
+            var subscribe = result.subscribes[i]
+            subscribe.timestamp  = formatTime(now, subscribe.timestamp)
+
+            for (key in subscribe) {
+                html += '<dt>'
+                html += key
+                html += '</dt><dd>'
+                html += subscribe[key] 
+                html += '</dd>'
+            }
+        }
+        html += "</dl>"
+
+        return html
+    }
+
+    $(document).ready(function() {
+    $translate(document.body)
+
+        var url = 'api.lua?api=/status'
+        $.get(url, function(result) {
+            console.log(result)
+      $("#status-inner").html(getHtml(result))
+    })
+  });
+
+  </script>
+  <style>
+    #status-wrapper {  padding-top: 8px; max-width: 1024px; margin: 0 auto; }
+  </style>
+</head>
+<body style="display:none">
+
+  <header id="header" class="header-wrapper"><div class="header-inner">
+    <div class="header-right">
+      <a id="return_item" href="/">${Close}</a>
+    </div>
+
+    <a class="logo" href="/"><h1>MQTT</h1></a>
+  </div></header>
+
+  <div id="status-wrapper"><div id="status-inner">
+  </div></div>
+</body>
+</html>

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsml.a  CMakeFiles/sml.dir/targets/linux/local/src/media_audio.c.o CMakeFiles/sml.dir/targets/linux/local/src/media_system.c.o CMakeFiles/sml.dir/targets/linux/local/src/media_v4l2.c.o CMakeFiles/sml.dir/targets/linux/local/src/media_video.c.o
+/usr/bin/ranlib libsml.a
