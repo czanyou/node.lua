@@ -87,6 +87,21 @@ function exports.passwd(password)
 	console.log(profile)
 end
 
+function exports.ssdp()
+    local ssdp = require('./lua/ssdp')
+	ssdp.start()
+end
+
+function exports.info()
+    local ssdp = require('./lua/ssdp')
+	ssdp.info()
+end
+
+function exports.view()
+    local ssdp = require('./lua/ssdp')
+	ssdp.view()
+end
+
 function exports.start(port, ...)
 	local lockfd = app.tryLock('httpd')
     if (not lockfd) then
@@ -153,6 +168,10 @@ function exports.start(port, ...)
 	end
 
 	app:listen(listenPort)
+
+	-- ===================================
+	local ssdp = require('./lua/ssdp')
+	ssdp.start()
 end
 
 app(exports)

@@ -135,7 +135,8 @@ function sdk.build_common_sdk(target, packageInfo)
 		xcopy(nodeluaPath .. "/lua", 	       nodePath .. "/lua")
 
 		-- copy target files
-		local targetPath = join(cwd, "targets/linux/local")
+		local dirname = utils.dirname()
+		local targetPath = join(dirname, "targets/linux/local")
 		xcopy(join(targetPath, "usr"),  join(sdkPath , "usr"))
 
 		console.log(targetPath)
@@ -200,10 +201,13 @@ end
 function sdk.build_sdk(target, type)
 	local board = get_make_board()
 
+	--console.log(utils.dirname())
+	local dirname = utils.dirname()
+
 	-- build sdk filesystem
 	local filename = path.join(cwd, 'package.json')
 	if (not fs.existsSync(filename)) then
-		filename = path.join(cwd, 'targets', platform, board, 'package.json')
+		filename = path.join(dirname, 'targets', platform, board, 'package.json')
 	end
 
 	print('package.json: ' .. filename)
@@ -218,13 +222,6 @@ function sdk.build_sdk(target, type)
 	packageInfo.version = get_make_version()
 	packageInfo.target  = target
 	packageInfo.type    = type
-
-	-- 'mt7688', 'mt7688'
-	-- 'hi3516a', 'hi3516a'
-	-- 'hi3518', 'hi3518'
-	-- 'local', 'pi'
-	-- 'local', 'linux'
-	-- 'local', 'platform'
 
 	if (platform == 'win32') then
 		sdk.build_win_sdk(target, packageInfo)
@@ -275,7 +272,7 @@ function sdk.build_deb_package()
 	local packageInfo = sdk.build_sdk(target)
 
 	local sdk_name = "nodelua-" .. target .. "-sdk"
-	local deb_name = "nodelua-" .. target
+	local deb_name = "nodelua-" .. os.arch() .. "-" .. target
 	local sdk_path  = path.join(cwd, "/build/", sdk_name)
 	local deb_path  = path.join(cwd, "/build/", deb_name .. "-deb")
 
@@ -284,15 +281,14 @@ function sdk.build_deb_package()
 	os.execute('rm -rf ' .. deb_path .. '/usr/local/lnode/*')
 	os.execute('cp -rf ' .. sdk_path .. '/usr/local/lnode/* ' .. deb_path .. '/usr/local/lnode/')
 
-	local version = packageInfo.version or ''
-
 	-- deb meta files
-	local src = path.join(cwd, 'targets/linux/deb')
+	local dirname = utils.dirname()
+	local src = path.join(dirname, 'targets/linux/deb')
 	os.execute('cp -rf ' .. src .. '/* ' .. deb_path .. '/')
 	os.execute('chmod -R 775 ' .. deb_path .. '/DEBIAN')
 
 	-- build deb package
-	local deb_file = path.join(cwd, "/build/", deb_name .. "-sdk." .. version .. ".deb")
+	local deb_file = path.join(cwd, "/build/", deb_name .. ".deb")
     local cmd = 'dpkg -b ' .. deb_path .. ' ' .. deb_file
     local options = { timeout = 30 * 1000, env = process.env }
     exec(cmd, options, function(err, stdout, stderr) 

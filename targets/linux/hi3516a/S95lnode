@@ -1,9 +1,0 @@
-#!/usr/bin/env sh
-
-# Node.lua
-# ======
-
-# Enter recovery mode
-
-/usr/local/lnode/bin/init.sh
-

@@ -1,0 +1,15 @@
+Package: node-lua-i386
+Version: 0.0.2
+Architecture: i386
+Maintainer: PC_Qi
+Installed-Size: 1500
+Pre-Depends: dpkg (>= 1.15.7.2)
+Depends: bluez,libbluetooth-dev
+Recommends: 
+Suggests: 
+Breaks: 
+Provides: SAE
+Section: x11
+Priority: optional
+Homepage: http://www.sae-sz.cn
+Description: This is a deb package making test package

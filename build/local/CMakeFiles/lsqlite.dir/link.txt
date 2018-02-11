@@ -1,1 +1,0 @@
-/usr/bin/cc  -fPIC   -shared -Wl,-soname,lsqlite.so -o lsqlite.so CMakeFiles/lsqlite.dir/modules/src/sqlite/src/sqlite3.c.o CMakeFiles/lsqlite.dir/modules/src/sqlite/src/sqlite3_lua.c.o 

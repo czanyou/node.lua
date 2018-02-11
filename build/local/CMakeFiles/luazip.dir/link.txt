@@ -1,2 +1,0 @@
-/usr/bin/ar qc libluazip.a  CMakeFiles/luazip.dir/node.lua/deps/luazip/src/lminiz.c.o
-/usr/bin/ranlib libluazip.a

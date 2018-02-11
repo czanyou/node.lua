@@ -80,7 +80,7 @@ static int luv_udp_getsockname(lua_State* L) {
   int addrlen = sizeof(address);
   int ret = uv_udp_getsockname(handle, (struct sockaddr*)&address, &addrlen);
   if (ret < 0) return luv_error(L, ret);
-  parse_sockaddr(L, &address, addrlen);
+  parse_sockaddr(L, &address);
   return 1;
 }
 
@@ -228,11 +228,14 @@ static void luv_udp_recv_cb(uv_udp_t* handle, ssize_t nread, const uv_buf_t* buf
   else if (nread > 0) {
     lua_pushlstring(L, buf->base, nread);
   }
+  else {
+    lua_pushnil(L);
+  }
   if (buf) free(buf->base);
 
   // address
   if (addr) {
-    parse_sockaddr(L, (struct sockaddr_storage*)addr, sizeof *addr);
+    parse_sockaddr(L, (struct sockaddr_storage*)addr);
   }
   else {
     lua_pushnil(L);

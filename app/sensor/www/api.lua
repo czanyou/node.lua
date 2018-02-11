@@ -6,7 +6,7 @@ local json  = require('json')
 local fs    = require('fs')
 local httpd = require('httpd')
 
-local data  = require('sqlite3/data')
+local data  = require('./../lua/data')
 
 local thread = require('thread')
 local querystring = require('querystring')
@@ -15,7 +15,7 @@ data.dirname = path.dirname(utils.dirname())
 
 local function asyncReadSensor(callback)
     local function _work_func()
-        local sensor = require('device/sht20')
+        local sensor = require('sdl/sht20')
         return sensor.temperatureAndHumidity()
     end
 
@@ -94,27 +94,6 @@ local function on_sensor_chart(request, response)
     local stream  = query.type or 'temperature' -- stream type
 
     local options = {}
-
-    if (stream == 'temperature') then
-        if (mode ~= 'day') then
-            options.max = true
-            options.min = true
-
-        else
-            options.avg = true
-        end
-
-        options.limit = 1
-
-    else
-        if (mode ~= 'day') then
-            options.max = true
-            options.min = true
-
-        else
-            options.avg = true
-        end
-    end
 
     local content = data.query(stream, mode, offset, options)
     response:json(content)

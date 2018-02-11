@@ -1,2 +1,0 @@
-/usr/bin/ar qc libluauv.a  CMakeFiles/luauv.dir/node.lua/deps/luauv/src/luv.c.o
-/usr/bin/ranlib libluauv.a

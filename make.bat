@@ -2,82 +2,60 @@
 
 rem -------------------------------------------
 
-:main
-
-set target="%1"
-
-if %target% equ "clean"   goto clean
-if %target% equ "install" goto install
-if %target% equ "latest"  goto latest
-if %target% equ "local"   goto local
-if %target% equ "sdk"     goto sdk
-
-goto menu
-
+if "%1" equ "local"   goto build
+if "%1" equ "build"   goto build
+if "%1" equ "sdk"     goto sdk
+if "%1" equ "install" goto install
 
 rem -------------------------------------------
-
 :menu
 
 echo Node.lua Windows Build System
 echo ========
 echo.
 
-echo clean   - Clean all build output
-echo install - Install the SDK to current system
-echo latest  - Publish the SDK package to the server
-echo local   - build for current system
-echo sdk     - Build the SDK package
+echo build   - build for current system
+echo sdk     - generate the SDK package
+echo install - install the Lua runtime environment for current system
 echo.
 
 goto exit
 
-
 rem -------------------------------------------
+:build
 
-:clean
-
-goto exit
-
-
-rem -------------------------------------------
-
-:local
+echo build
 
 cmake -H. -Bbuild/win32
 cmake --build build/win32 --config Release
 
-set base_path=%CD%\build\win32\Release
-
-copy %base_path%\lnode.exe    %CD%\node.lua\bin
-copy %base_path%\lua53.dll    %CD%\node.lua\bin
-copy %base_path%\lmbedtls.dll %CD%\node.lua\bin
-copy %base_path%\lsqlite.dll  %CD%\node.lua\bin
+copy %CD%\build\win32\Release\lnode.exe %CD%\node.lua\bin
+copy %CD%\build\win32\Release\lua53.dll %CD%\node.lua\bin
+copy %CD%\build\win32\Release\lmbedtls.dll %CD%\node.lua\bin
+copy %CD%\build\win32\Release\lsqlite.dll %CD%\node.lua\bin
 
 goto exit
 
-
 rem -------------------------------------------
-
 :sdk
+
+echo sdk
 
 lpm build sdk
 
 goto exit
 
-
 rem -------------------------------------------
-
-:upload
-
-lpm build upload
-
-goto exit
-
-
-rem -------------------------------------------
-
 :install
+
+echo install
+
+xcopy /Y /Q %CD%\modules\sdl\lua %CD%\node.lua\lib\sdl\
+xcopy /Y /Q %CD%\modules\bluetooth\lua %CD%\node.lua\lib\bluetooth\
+xcopy /Y /Q %CD%\modules\express\lua %CD%\node.lua\lib\express\
+xcopy /Y /Q %CD%\modules\mqtt\lua %CD%\node.lua\lib\mqtt\
+xcopy /Y /Q %CD%\modules\sqlite3\lua %CD%\node.lua\lib\sqlite3\
+xcopy /Y /Q %CD%\modules\ssdp\lua %CD%\node.lua\lib\ssdp\
 
 cd node.lua
 
@@ -87,17 +65,20 @@ cd ..
 
 goto exit
 
-
 rem -------------------------------------------
+:remove
 
-:latest
+echo remove
 
-lpm build upload latest
+cd node.lua
+
+CALL install.bat remove
+
+cd ..
 
 goto exit
 
-
 rem -------------------------------------------
-
 :exit
 
+echo done.

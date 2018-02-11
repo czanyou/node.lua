@@ -1,0 +1,9 @@
+{
+	"depends": ["httpd"],
+	"description": "Wireless Gateway",
+	"title": "Gateway ",
+	"title_zh_cn": "蓝牙网关",
+	"name": "gateway",
+	"tags": ["gateway", "runtime"],
+	"version": "1.0.11"
+}

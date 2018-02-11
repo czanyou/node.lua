@@ -1,8 +1,0 @@
-#!/bin/sh
-
-export NODE_ROOT=/usr/local/lnode
-
-mkdir -p ${NODE_ROOT}/app/
-mkdir -p ${NODE_ROOT}/bin/
-mkdir -p ${NODE_ROOT}/lib/
-mkdir -p ${NODE_ROOT}/lua/

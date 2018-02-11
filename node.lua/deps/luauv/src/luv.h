@@ -24,7 +24,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <math.h>
 
 #if defined(_WIN32)
 # include <fcntl.h>
@@ -56,7 +55,9 @@
 /* lua_...uservalue: Something very different, but it should get the job done */
 # define lua_getuservalue lua_getfenv
 # define lua_setuservalue lua_setfenv
+#ifndef luaL_newlib
 # define luaL_newlib(L,l) (lua_newtable(L), luaL_register(L,NULL,l))
+#endif
 # define luaL_setfuncs(L,l,n) (assert(n==0), luaL_register(L,NULL,l))
 # define lua_resume(L,F,n) lua_resume(L,n)
 # define lua_pushglobaltable(L) lua_pushvalue(L, LUA_GLOBALSINDEX)
@@ -92,7 +93,7 @@ static void luv_check_buf(lua_State *L, int idx, uv_buf_t *pbuf);
 static uv_buf_t* luv_prep_bufs(lua_State* L, int index, size_t *count);
 
 /* from tcp.c */
-static void parse_sockaddr(lua_State* L, struct sockaddr_storage* address, int addrlen);
+static void parse_sockaddr(lua_State* L, struct sockaddr_storage* address);
 static void luv_connect_cb(uv_connect_t* req, int status);
 
 /* From fs.c */

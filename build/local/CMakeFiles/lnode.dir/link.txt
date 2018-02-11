@@ -1,1 +1,0 @@
-/usr/bin/cc     CMakeFiles/lnode.dir/node.lua/deps/main/src/lnode.c.o CMakeFiles/lnode.dir/node.lua/deps/main/src/main.c.o  -o lnode -rdynamic liblua53.a -ldl -lm -lrt libluazip.a libluajson.a libluautils.a libluauv.a libuv.a -lpthread 

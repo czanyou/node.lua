@@ -4,22 +4,6 @@
 
 提供最新的 SDK 和源代码以及交叉编译工具下载.
 
-## 最新开发版本
-
-这里的最新发布的开发中的版本, 可能会不稳定, 请谨慎下载.
-
-- [Node.lua SDK 源代码](download/dist/source/nodelua-source.dev.zip)
-- [Node.lua Windows SDK](download/dist/win/nodelua-win-sdk.dev.zip)
-- [Node.lua Linux SDK](download/dist/linux/nodelua-linux-sdk.dev.zip)
-- [Node.lua macOS SDK](download/dist/macos/nodelua-macos-sdk.dev.zip)
-- [Node.lua Hi3516A SDK](download/dist/hi3516a/nodelua-hi3516a-sdk.dev.zip)
-- [Node.lua MT7688 SDK](download/dist/mt7688/nodelua-mt7688-sdk.dev.zip)
-- [Node.lua Raspberry Pi 2 SDK](download/dist/pi/nodelua-raspi-sdk.dev.zip)
-
-## 历史版本
-
-- [历史版本下载](download/?dir=dist/)
-
 ## 交叉编译工具
 
 ### MT7688

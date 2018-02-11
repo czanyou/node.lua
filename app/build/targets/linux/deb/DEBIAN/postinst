@@ -1,0 +1,21 @@
+#!/bin/sh
+
+export NODE_ROOT=/usr/local/lnode
+
+# add execute permissions
+chmod -R 777 ${NODE_ROOT}/bin/*
+
+export USR_SBIN=/usr/sbin
+
+rm -rf ${USR_SBIN}/lnode
+rm -rf ${USR_SBIN}/lpm
+
+ln -s ${NODE_ROOT}/bin/lnode ${USR_SBIN}/lnode
+ln -s ${NODE_ROOT}/bin/lpm ${USR_SBIN}/lpm
+ln -s ${NODE_ROOT}/bin/libbluetooth.so /usr/lib/libbluetooth.so.3
+
+#sudo cp ${NODE_ROOT}/bin/init.sh /etc/rc.local
+#/etc/rc.local
+
+echo 'Finish!'
+

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sensor Status</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" href="/bootstrap.min.css?v=100003"/>
+  <link rel="stylesheet" href="/theme.css?v=100003"/>
+  <script src="/jquery.js?v=100003"></script>
+  <script src="/common.js?v=100003"></script>
+  <script src="/popper.min.js"></script>
+  <script src="/bootstrap.min.js"></script>
+  <script src="lang.js?v=100001"></script>
+  <script type="text/javascript">
+
+    var taskID;
+
+    function iBeaonMap(map) {
+      var html = ''
+      var array = []
+      var index = 0
+      for (key in map) {
+        array[index++] = { rssi : key, value : map[key]}
+      }
+
+      array.sort(function(a, b) { return b.value - a.value; })
+
+      var count = Math.min(array.length, 10)
+      for (var i = 0; i < count; i++) {
+        var item = array[i]
+        html += item.rssi 
+        html += ":"
+        html += item.value
+        html += ", "
+      }
+      return html
+    }
+
+    function formatUpdate(updated) {
+        if (updated < 2000) {
+            return updated / 1000
+
+        } else if (updated < 2 * 60 * 1000) {
+            return Math.floor(updated / 1000) + "S"
+
+        } else if (updated < 2 * 3600 * 1000) {
+            return Math.floor(updated / (60 * 1000)) + "M"
+
+        } else {
+            return Math.floor(updated / (3600 * 1000)) + "H"
+        }
+    }
+
+    function iBeacon2Html(ibeacon) {
+        var date = new Date()
+        var now = date.getTime()
+        var span = now - ibeacon.updated * 1000
+
+        return '<tr class="item" >' +
+            '<td>' + ibeacon.mac + '</td>'+
+            '<td>' + ibeacon.uuid + '</td>'+
+            '<td>'+ ibeacon.major +'</td>'+ 
+            '<td>'+ ibeacon.minor + '</td>'+
+            '<td>'+ ibeacon.power + '</td>'+
+            '<td>'+ formatUpdate(span) + '</td>'+
+            '<td>'+ ibeacon.distance + ' M</td>'+
+            '<td>'+ iBeaonMap(ibeacon.map) + '</td>'+
+        '</tr>';
+    }
+
+    function showBeacons(result) {
+        var html = '';
+        if (result.length <= 0) {
+            return
+        }
+
+        $("#total-label").text("记录数: " + result.length)
+
+        var sort = $("#sort-select").val() || 'distance'
+
+        result.sort(function(a, b) {
+            if (sort == 'mac' || sort == 'uuid') {
+                return a[sort] < b[sort] ? 1 : -1
+
+            } else if (sort == 'updated') {
+                return a[sort] - b[sort]
+                
+            } else {
+                return b[sort] - a[sort]
+            }
+        })
+
+        html += "<table class='table'>"
+        html += "<tr>"
+        html += "<th>MAC</th><th>UUID</th><th>Major</th><th>Minor</th>"
+        html += "<th>Power</th><th>Updated</th><th>Distance</th><th>...</th>"
+        html += "</tr>"
+
+        var filter = $("#filter").val() || ''
+
+        for (var i = result.length - 1; i >= 0; i--) {
+            var ibeacon = result[i]
+            ibeacon.distance = Math.floor(ibeacon.distance * 100) / 100
+           
+            if (filter == '') {
+                html += iBeacon2Html(ibeacon)
+
+            } else if (filter == ibeacon.mac) {
+                html += iBeacon2Html(ibeacon)
+            }
+        }
+
+        html += "</table>"
+        
+        $('#ibeacons').html(html)
+    }
+
+    function reloadStatus() {
+        $(document).ajaxError(function(event, request, options, exc) {
+          if (request.statusText) {
+            var html = "Server returned: " + request.statusText
+            $("#error-info-wrapper").text(html).show()
+          }
+        })
+
+        var url = "api.lua?api=/list";
+        $.get(url, function(result) {
+            //console.log(result)
+            if (!result) {
+                var html = "<div style='padding: 8px 16px;'>No records</div>"
+                $("#error-info-wrapper").html(html).show()
+                return
+            }
+
+            showBeacons(result || [])
+            $("#error-info-wrapper").hide()
+        });
+    }
+
+  	$(document).ready(function() {
+  		$translate(document.body)
+
+        reloadStatus()
+        taskID = setInterval(reloadStatus, 2000);
+
+        $("#refresh-button").click(function() {
+            reloadStatus()
+        })
+  	})
+
+  </script>
+  <style></style>
+</head>
+<body>
+<div class="container">
+  <header id="header" class="header-wrapper"><div class="header-inner">
+    <div class="header-right">
+      <a id="return_item" href="/">${Close}</a>
+    </div>
+
+    <a class="logo" href="/"><h1>${Beacon Geteway}</h1></a>
+  </div></header>
+
+<div id="wrapper" >
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Beacons</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item">
+        <a class="nav-link disabled" href="#" id="total-label"></a>
+      </li>
+    </ul>
+
+    <form class="form-inline my-2 my-lg-0">
+        <label class="nav-link" href="#">排序方式:</label>
+        <select id="sort-select" class="form-control mr-sm-2">
+          <option value="mac">MAC</option>
+          <option value="uuid">UUID</option>
+          <option value="major">Major</option>
+          <option value="minor">Minor</option>
+          <option value="updated">Updated</option>
+          <option value="distance" selected="selected">Distance</option>
+        </select>
+        <label class="nav-link" href="#">过滤:</label>
+      <input id="filter" class="form-control mr-sm-2" type="search" placeholder="MAC 地址" aria-label="Search">
+      <button class="btn btn-outline-success my-2 my-sm-0" type="button" id="refresh-button">Refresh</button>
+    </form>
+  </div>
+
+  </nav>
+    <div id="error-info-wrapper" style="display:none;"></div>
+    <div id="ibeacons"></div> 
+</div>
+
+<footer id="footer"></footer>
+</body>
+</div>
+</html>

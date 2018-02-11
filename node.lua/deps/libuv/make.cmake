@@ -119,11 +119,14 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
     -D_GNU_SOURCE
   )
   set(SOURCES ${SOURCES}
-    ${LIBUVDIR}/src/unix/proctitle.c
     ${LIBUVDIR}/src/unix/linux-core.c
     ${LIBUVDIR}/src/unix/linux-inotify.c
     ${LIBUVDIR}/src/unix/linux-syscalls.c
     ${LIBUVDIR}/src/unix/linux-syscalls.h
+    ${LIBUVDIR}/src/unix/procfs-exepath.c
+    ${LIBUVDIR}/src/unix/proctitle.c
+    ${LIBUVDIR}/src/unix/sysinfo-loadavg.c
+    ${LIBUVDIR}/src/unix/sysinfo-memory.c
   )
 endif()
 

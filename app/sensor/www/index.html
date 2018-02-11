@@ -1,52 +1,177 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Settings</title>
+  <title>Sensor Status</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
-  <link rel="stylesheet" href="/style.css?v=100003"/>
+  <link rel="stylesheet" href="/bootstrap.min.css?v=100003"/>
+  <link rel="stylesheet" href="/theme.css?v=100003"/>
   <script src="/jquery.js?v=100003"></script>
   <script src="/common.js?v=100003"></script>
+  <script src="/popper.min.js"></script>
+  <script src="/bootstrap.min.js"></script>
+  <script src="echarts.common.min.js"></script>
   <script src="lang.js?v=100003"></script>
-
+  
   <script>
-    window.onhashchange = OnLeftMenuHashChange;
-    window.onresize = OnLeftMenuPageResize;
+	function UpdateSensorStatus(params) {
+		$('#sensor_temperature').html((params.temperature || "-") + '℃');
+		$('#sensor_humidity').html((params.humidity || "0") + '%');
+	}
 
-    $(document).ready(function() {
-        $translate(document.body)
+	function OnLiveRefresh() {
+		var url = "api.lua?api=/status";
+		$.get(url, function(result) {
+			UpdateSensorStatus(result || {})
+		});
+	}
 
-        OnLeftMenuInit()
-    });
+	function OnChartRefresh(mode, offset) {
+		var url = 'api.lua?api=/chart&mode=' + (mode || 'day') + '&offset=' + (offset || 0);
+		$.get(url + "&type=temperature", function(result) {
+			initChart(result.data)
+		})
+	}
+
+	$(document).ready(function() {
+		$translate(document.body)
+
+		$('#logout_item').click(OnLogout);
+
+		OnLiveRefresh();
+		setInterval(OnLiveRefresh, 2000);
+
+		OnChartRefresh('day');
+	})
+
+	function getChartSize() {
+		viewWidth = $('#chart-block').width() || 300 - 32
+		viewWidth = Math.min(640, viewWidth - 1)
+		return { width : viewWidth, height : Math.floor(viewWidth / 3) }
+	}
 
   </script>
   <style>
-      
+  	#chart-main { width: 100%; height: 240px; }
+
+  	.container { min-width: 210px; }
+  	.panel-body-b { padding: 16px 16px; }
+  	.panel-body-b { margin: 24px -8px; background: #f8f8f8; }
+
+  	@media screen and (min-width: 768px) { 
+   		#chart-main { width: 100%; height: 300px; }
+
+  		.panel-body { padding: 16px 32px; }
+  		.panel-body-b { margin: 16px 0; background: #f8f8f8; }
+  	}
   </style>
 </head>
-<body class="frame-body" style="display:none;">
+<body style="display:none">
+<div class="container">
+
   <header id="header" class="header-wrapper"><div class="header-inner">
     <div class="header-right">
       <a id="return_item" href="/">${Close}</a>
     </div>
 
-    <a class="logo" href="/"><h1>${Camera}</h1></a>
-  </div></header> 
+    <a class="logo" href="/"><h1>${Humiture}</h1></a>
+  </div></header>
 
-<div id="wrapper" class="frame-wrapper">
-  <div id="left-wrapper"> 
-    <div id="sidebar" class="sidebar"><div class="block leftmenu" id="basic_menu">
-        <ul id="left_menu_list">
-        <li><a id="menu_item" name="menu_item" href="#sensor">${Humiture}</a></li>
-        </ul>
-    </div></div>
+  <div class="row">
+    <div class="col-lg-3 col-sm-6 col-6">
+      <div class="panel panel-filled"><div class="panel-body panel-body-b">
+        <h2 class="m-b-none" id="sensor_temperature">-</h2>
+        <div class="small">Temperature</div>
+        <div class="slight m-t-sm"><i class="fa fa-clock-o"> </i> Updated: <span class="c-white">10:22pm</span>  </div>
+      </div></div>
+    </div>
+
+    <div class="col-lg-3 col-sm-6 col-6">
+      <div class="panel panel-filled"><div class="panel-body panel-body-b">
+        <h2 class="m-b-none" id="sensor_humidity">-</h2>
+        <div class="small">Humidity</div>
+        <div class="slight m-t-sm"><i class="fa fa-clock-o"> </i> Updated: <span class="c-white">10:22pm</span>  </div>
+      </div></div>
+    </div>    
   </div>
 
-  <div id="container">
-    <div id="frame-content-wrapper"><div id="container-header">X</div><iframe id="frame-content" name="frame-content" frameborder="0"></iframe></div>
-  </div>
+  <div class="row">
+  	<div class="col-12 col-xs-12">
+  	  <div class="panel panel-filled"><div class="panel-body">
+  		<div class="btn-group" role="group">
+	      <button type="button" class="btn btn-secondary" onclick="OnChartRefresh('day');"> ${Today} </button>
+	      <button type="button" class="btn btn-secondary" onclick="OnChartRefresh('day', -1);">${Yesterday} </button>
+	      <button type="button" class="btn btn-secondary" onclick="OnChartRefresh('week', -9);"> ${Week} </button>
+	      <button type="button" class="btn btn-secondary" onclick="OnChartRefresh('month', -2);"> ${Month} </button>
+	      <button type="button" class="btn btn-secondary" onclick="OnChartRefresh('year');"> ${Year} </button>
+	    </div>
+
+  		<div id="chart-main">...</div>
+  	  </div></div>
+  	</div>
+  </div>    		
 </div>
 
+<script type="text/javascript">
+
+function initChart(dataStream) {
+	// 基于准备好的dom，初始化echarts实例
+	var myChart = echarts.init(document.getElementById('chart-main'));
+
+	var data = [];
+	var count = dataStream.length
+	for (var i = 0; i < count; i++) {
+		var item = []
+		var row = dataStream[i]
+		item[0] = row.date,
+		item[1] = Math.floor(row.avg * 100) / 100
+
+		data.push(item)
+	}
+
+
+	var dateList = data.map(function (item) {
+	    return item[0];
+	});
+
+	var valueList = data.map(function (item) {
+	    return item[1];
+	});
+
+	//console.log(dateList, valueList)
+	var axisLine  = { show: true, lineStyle: { color: '#ddd' } }
+	var splitLine = { show: true, lineStyle: { type: 'dotted', color: '#ddd' } }
+	var axisLabel = { color: '#666' }
+	var tooltip   = { trigger: 'axis', textStyle: { fontSize: 11 } }
+	var grid      = { top: "32px", bottom: "40px", left: "32px", right: "0px" }
+	var lineStyle = { normal: { color: '#0099cc', width: 1 } }
+
+	var option = {
+	    backgroundColor: '#fff',
+	    tooltip: tooltip,
+	    xAxis: [{
+	        axisLabel: axisLabel, axisLine: axisLine, data: dateList
+	    }],
+	    yAxis: [{
+	        splitNumber: 4, splitLine: splitLine, axisLabel: axisLabel, axisLine: axisLine
+	    }],
+	    grid: [ grid ],
+	    series: [{
+	        type: 'line', showSymbol: false, lineStyle: lineStyle, data: valueList
+	    }]
+	};
+
+	// 使用刚指定的配置项和数据显示图表。
+	myChart.setOption(option);
+
+	setTimeout(function () {
+    window.onresize = function () {
+	        myChart.resize();
+	    }
+	}, 200)
+}
+</script>
+
+<footer id="footer"></footer>
 </body>
 </html>
-

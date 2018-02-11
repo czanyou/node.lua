@@ -1,2 +1,0 @@
-/usr/bin/ar qc libluajson.a  CMakeFiles/luajson.dir/node.lua/deps/luajson/src/lua_cjson.c.o CMakeFiles/luajson.dir/node.lua/deps/luajson/src/fpconv.c.o CMakeFiles/luajson.dir/node.lua/deps/luajson/src/strbuf.c.o
-/usr/bin/ranlib libluajson.a

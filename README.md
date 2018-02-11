@@ -1,7 +1,7 @@
 # Node.lua
 
 > - 编写：成真
-> - 版本：3.0
+> - 版本：5.0
 
 现代的 IoT 设备嵌入式软件开发平台.
 
@@ -40,23 +40,17 @@ Using the event-driven, asynchronous I/O model, so IoT device embedded software 
 
 提供和 Node.js 极度类似的 API 接口，无需太多的学习，使 WEB 工程师也能轻松开发智能硬件
 
-
 ## 目录结构
 
 | 目录       | 描述
 | ---        | ---
 | app        | 应用程序
 | docs       | 项目开发文档，包含文档首页，样式表，js 脚本等资源文件等等。
-| media.lua  | C 扩展库, 主要媒体抽象层, GPIO 等 C 语言实现的扩展接库。
+| modules    | Lua 扩展库，主要包括 SSDP 等 Lua 实现的扩展库。
 | node.lua   | 核心项目，包括 lnode 主程序, lpm 工具以及 Lua 核心库。
-| vision.lua | Lua 扩展库，主要包括 RTSP, SSDP 等 Lua 实现的扩展库。
-
+| targets    | 编译平台配置文件
 
 ## 构建 - Build
-
-如果只需要开发应用程序，则只需下载相应的 SDK 安装包即可。
-
-如果要自己构建和编译 SDK 项目，则需要下载并编译 SDK 源代码.
 
 Node.lua SDK 可以被编译到多个平台, 并只需要很少的依赖项:
 
@@ -67,34 +61,18 @@ Node.lua was designed to build seamlessly with minimal dependencies on most plat
 - MacOS: CMake, XCode
 - Linux: CMake, Make, GCC
 
-### Windows，Linux and macOS PC platform
-
 ```sh
-# 编译主程序以及扩展模块 
-$ make local  
+# 编译 C 语言源文件并生成主程序以及扩展模块 
+$ make local
 
-# 安装 Node.lua 开发和运行环境
+# 安装 Lua 语言运行环境
 $ make install
 
 ```
 
-### 交叉编译
-
-交叉编译之前需先按前一节编译和安装本地的 SDK
-
-构建项目还需要相关交叉编译工具链，构建前请先安装。
-
-在命令行下运行 `make <target>` 即可, target 表示目标板的名称
-
-当前支持的目标板有：
-
-- hi3518
-- hi3516a
-- mt7688
-
 ## 打包 - Package
 
-将生成的目标文件发布为 SDK 包, 并可以安装到其他机器上运行.
+将生成的目标文件打包为 SDK.
 
 ```sh
 # 打包 SDK 
@@ -102,45 +80,22 @@ $ make sdk
 
 ```
 
-
 ## 安装 - Install
 
 ### Windows 
 
-复制 `nodelua-win-sdk.zip` 这个文件到其他电脑上，解压并执行目录中的 install.bat 即可安装.
+解压 `nodelua-win-sdk.zip` 这个文件，并执行目录中的 install.bat.
 
-安装后打开一个新的 cmd 窗口，执行 `lpm`, 如果运行成功且打印出版本号则表示安装正确.
+安装后打开一个新的 cmd 窗口，执行 `lpm`, 如果打印出版本号等信息则表示安装成功.
 
 ### Linux and macOS
 
-复制 `nodelua-xxxxx-sdk.zip` 这个文件到其他电脑上，解压并执行目录中的 install.sh 即可安装.
+解压 `nodelua-xxxxx-sdk.zip` 这个文件，并执行目录中的 install.sh.
 
-在系统命令行提示下执行 `lpm`, 如果运行成功且打印出版本号则表示安装正确
+在命令行提示下执行 `lpm`, 如果打印出版本号等信息则表示安装成功
 
 ## 文档 - Documents
 
 更多详细的文档请访问下面的网址:
 
 [http://node.sae-sz.com/](http://node.sae-sz.com/)
-
-
-## 常见问题解答 - FAQ
-
-### 为什么不直接使用 Node.js - Why not use Node.js directly
-
-Node.js 安装包非常大，在 20M 以上，不适合在较小的 SPI Flash 系统上运行. 很多嵌入式平台 Flash 总共都不超过 8M.
-
-Node.js 在嵌入式平台上加载速度比较慢.
-
-### 为什么不使用 Python - Why not use Python
-
-Python 的核心库也比较大，而且 Python 运行效率也不太理想。
-
-### 为什么使用 Lua 语言 - Why use Lua language
-
-Lua 的虚拟机和核心库都非常小，所以特别适合嵌入式系统使用，对系统要求非常低。
-
-Lua 特别容易集成到 C/C++ 程序中, 用 C 开发扩展库也非常容易。
-
-Lua 语法和 JavaScript 很类似，很适合做为 JavaScript 在嵌入式下的替代语言。
-

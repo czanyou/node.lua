@@ -284,8 +284,8 @@ LUALIB_API int lnode_init(lua_State* L) {
   const char* fmt = "package.path='"
     "%s/lua/?.lua;"
     "%s/lua/?/init.lua;"
-    "%s/modules/lua/?.lua;"
-    "%s/modules/lua/?/init.lua;"
+    "%s/lib/?.lua;"
+    "%s/lib/?/init.lua;"
     "%s/app/?/lua/init.lua;"
     "./lua/?.lua;"
     "./lua/?/init.lua;"
@@ -300,7 +300,7 @@ LUALIB_API int lnode_init(lua_State* L) {
     "'\n";
 
   snprintf(buffer, PATH_MAX, fmt, 
-    nodeRoot, nodeRoot,  root, root, root, 
+    nodeRoot, nodeRoot,  nodeRoot, nodeRoot, root, 
     nodeRoot, root, nodeRoot);
 
 #else
