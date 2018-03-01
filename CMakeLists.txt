@@ -4,8 +4,9 @@ project(Node.lua)  # Project Name
 
 # Project Version Code
 set(LNODE_MAJOR_VERSION 3)
-set(LNODE_MINOR_VERSION 1)
-set(LNODE_PATCH_VERSION 106) # The PATCH version see `lua/process.lua`
+set(LNODE_MINOR_VERSION 2)
+
+# The PATCH version see `app/lhost/lua/init.lua`
 
 set(LNODE_VERSION ${LNODE_MAJOR_VERSION}.${LNODE_MINOR_VERSION})
 add_definitions(-DLNODE_MAJOR_VERSION=${LNODE_MAJOR_VERSION})
@@ -45,7 +46,6 @@ elseif (APPLE)
   set(CMAKE_MACOSX_RPATH 0)
 
 elseif (LINUX)
-  set(BUILD_SDL ON)
 
 endif ()
 
@@ -73,11 +73,13 @@ message(STATUS "Build: CC: ${CMAKE_C_COMPILER}")
 if (WIN32)
   add_definitions("/wd4005" "/wd4244" "/wd4819" "/wd4996")
 
-  # see `deps/lua/src/luaconf.h`
+  # See `deps/lua/src/luaconf.h`
   add_definitions(-DLUA_BUILD_AS_DLL -DLUA_LIB)
+
+  # The install path
   add_definitions(-DNODE_LUA_ROOT="C:/Program Files/lnode")
 
-  # replace /MD to /MT to avoid link msvcr*.dll
+  # Replace /MD to /MT to avoid link msvcr*.dll
   set(CompilerFlags
     CMAKE_C_FLAGS
     CMAKE_C_FLAGS_DEBUG
@@ -90,15 +92,12 @@ if (WIN32)
     message(STATUS "Build: ${CompilerFlag} = ${${CompilerFlag}}")
   endforeach()
 
-  set(BUILD_SDL OFF)
-
 elseif (APPLE)
-  # see `deps/lua/src/luaconf.h`
+  # See `deps/lua/src/luaconf.h`
   add_definitions(-DLUA_USE_POSIX -DLUA_USE_DLOPEN)
-  add_definitions(-DNODE_LUA_ROOT="/usr/local/lnode")
-  add_definitions(-DLUA_USE_LSQLITE)
 
-  set(BUILD_BLUE_TOOTH      OFF)
+  # The install path
+  add_definitions(-DNODE_LUA_ROOT="/usr/local/lnode")
 
 
   set(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
@@ -117,8 +116,10 @@ elseif (LINUX)
   # Retain function names, etc., to facilitate dlopen or debugging
   add_definitions("-rdynamic")
 
-  # see `deps/lua/src/luaconf.h`
-  add_definitions(-DLUA_USE_POSIX -DLUA_USE_DLOPEN)  
+  # See `deps/lua/src/luaconf.h`
+  add_definitions(-DLUA_USE_POSIX -DLUA_USE_DLOPEN)
+
+  # The install path
   add_definitions(-DNODE_LUA_ROOT="/usr/local/lnode")
 
 endif ()

@@ -199,6 +199,7 @@ static int push_fs_result(lua_State* L, uv_fs_t* req) {
     case UV_FS_FCHOWN:
     case UV_FS_UTIME:
     case UV_FS_FUTIME:
+    case UV_FS_COPYFILE: // add by chengzhen
       lua_pushboolean(L, 1);
       return 1;
 

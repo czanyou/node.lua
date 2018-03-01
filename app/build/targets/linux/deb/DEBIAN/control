@@ -1,7 +1,7 @@
 Package: node-lua-i386
-Version: 0.0.2
+Version: 3.0.200
 Architecture: i386
-Maintainer: PC_Qi
+Maintainer: CMPP
 Installed-Size: 1500
 Pre-Depends: dpkg (>= 1.15.7.2)
 Depends: bluez,libbluetooth-dev
@@ -11,5 +11,5 @@ Breaks:
 Provides: SAE
 Section: x11
 Priority: optional
-Homepage: http://www.sae-sz.cn
-Description: This is a deb package making test package
+Homepage: http://beaconice.sae.com.hk
+Description: Modern IoT device embedded software development platform.

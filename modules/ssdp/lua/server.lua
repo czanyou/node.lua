@@ -18,7 +18,7 @@ limitations under the License.
 local json   = require('json')
 local path 	 = require('path')
 local ssdp   = require('ssdp/ssdp')
-local utils  = require('utils')
+local utils  = require('util')
 
 local exports = {}
 

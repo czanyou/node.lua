@@ -1,5 +1,5 @@
 local lsqlite = require('lsqlite')
-local utils   = require('utils')
+local utils   = require('util')
 
 console.log(lsqlite)
 

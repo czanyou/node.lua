@@ -9,9 +9,14 @@ a, button, input { outline: 0; }
 a:hover { color: #53589a; text-decoration: underline; }
 area { border: 1px solid #999; cursor: pointer; }
 h1, h2, h3, h4, h5, h6 { color: #333; }
-h1 { margin: 32px 0 24px; color: #555; }
-h2 { margin: 32px 0 20px; }
-h3 { margin: 24px 0 16px; }
+h1 { padding: 24px 0 12px; margin: 20px 0 20px; font-size: 36px;
+	color: #777; border-bottom: 0px solid #ddd; }
+h2 { margin: 20px 0 10px; padding: 10px 0 8px; font-size: 30px; 
+	border-bottom: 1px solid #eee; }
+h3 { margin: 24px 0 10px; font-size: 24px; }
+h4 { margin: 16px 0 8px; font-size: 20px;  }
+h5 { margin: 8px 0 4px; font-size: 16px; font-weight: bold; }
+h6, h7 { margin: 4px 0 2px;font-size: 100%; font-weight: bold; }
 hr { height: 1px; border: none; border-top: 1px dashed #ddd; }
 p code { padding: 0 8px; }
 strong { font-weight: bold; }
@@ -89,12 +94,13 @@ strong { font-weight: bold; }
 .article { min-width: 320px; padding-right: 320px; }
 .article .toc { position: fixed; top: 4px; right: 4px; bottom: 4px;
 	width: 300px; box-sizing: border-box; }
-.article .toc ul { margin: 0 0 8px 18px; box-sizing: border-box; padding: 0; }
+.article .toc ul { margin: 0 0 8px 12px; box-sizing: border-box; padding: 0; }
 .article .toc ul.l1 { display: block; height: 100%; overflow: auto; width: auto; 
-	margin:0; padding: 16px 8px 16px 18px;  }
-.article .toc ul li { line-height: 27px; list-style-type: none; 
+	margin:0; padding: 16px 8px 16px 18px; }
+.article .toc ul.l2 { margin-left: 0; }	
+.article .toc ul li { line-height: 160%; list-style-type: none; 
 	white-space:nowrap; padding: 0; }
-.article .toc ul li a { color: #767676; }	
+.article .toc ul li a { color: #767676; font-size: 12px; }	
 .article .toc ul li a:hover { color: #009ad2; }
 .article .toc ul li a.toc-current {  font-weight: bold; color: #000; }
 

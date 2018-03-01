@@ -39,7 +39,6 @@ define sdk_install
 
 	$(call make_link,${PWD}/app,${NODE_ROOTPATH}/app)
 	$(call make_link,${PWD}/build/local/lnode,${LOCAL_BIN_PATH}/lnode)
-	$(call make_link,${PWD}/node.lua/bin/ldb,${LOCAL_BIN_PATH}/ldb)
 	$(call make_link,${PWD}/node.lua/bin/lpm,${LOCAL_BIN_PATH}/lpm)
 
 	$(call make_lib_link,bluetooth)
@@ -58,7 +57,6 @@ define sdk_install
 
 	@sudo chmod 777 ${LOCAL_BIN_PATH}/lnode
 	@sudo chmod 777 ${LOCAL_BIN_PATH}/lpm
-	@sudo chmod 777 ${LOCAL_BIN_PATH}/ldb
 
 	@echo "Install finish!"
 	@echo ""

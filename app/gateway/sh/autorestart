@@ -1,0 +1,5 @@
+#!/bin/sh
+sudo killall lnode
+sudo lpm start lhost
+sudo lpm start httpd
+sudo lpm start gateway

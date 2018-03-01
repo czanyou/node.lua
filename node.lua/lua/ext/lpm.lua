@@ -20,8 +20,8 @@ local core   	= require('core')
 local fs     	= require('fs')
 local json   	= require('json')
 local path   	= require('path')
-local utils  	= require('utils')
-local conf    	= require('ext/conf')
+local utils  	= require('util')
+local conf    	= require('app/conf')
 local app 		= require('app')
 
 -------------------------------------------------------------------------------
@@ -236,30 +236,22 @@ end
 -------------------------------------------------------------------------------
 -- package & upgrade
 
-function exports.check(...)
-	local upgrade 	= require('ext/upgrade')
-	upgrade.check(...)
-end
-
 function exports.colors(...)
 	console.colors(...)
 end
 
 function exports.install(...)
-	local upgrade 	= require('ext/upgrade')
-	upgrade.install(...)
+	require('app/upgrade').install(...)
 end
 
 -- Retrieve new lists of packages
 function exports.update(...)
-	local upgrade 	= require('ext/upgrade')
-	upgrade.update(...)
+	require('app/upgrade').update(...)
 end
 
 -- Perform an upgrade
 function exports.upgrade(...)
-	local upgrade 	= require('ext/upgrade')
-	upgrade.upgrade(...)
+	require('app/upgrade').upgrade(...)
 end
 
 -------------------------------------------------------------------------------
@@ -267,7 +259,11 @@ end
 
 -- Scanning for nearby devices
 function exports.scan(...)
-	local client = require('ssdp/client')
+	local err, client = pcall(require, 'ssdp/client')
+	if (not client) then
+		return
+	end
+
     local list = {}
 
     local grid = app.table({20, 24, 24})
@@ -343,9 +339,9 @@ function exports.info(...)
 		print(list[i])
 	end	
 
-	print(console.colorful('${string}app.rootURL:  ${normal}') .. app.rootURL)
-	print(console.colorful('${string}app.rootPath: ${normal}') .. app.rootPath)
-	print(console.colorful('${string}app.target:   ${normal}') .. app.target())
+	print(console.colorful('${string}app.rootURL:  ${normal}') .. (app.rootURL or '-'))
+	print(console.colorful('${string}app.rootPath: ${normal}') .. (app.rootPath or '-'))
+	print(console.colorful('${string}app.target:   ${normal}') .. (app.target() or '-'))
 	print(console.colorful('${string}os.arch:      ${normal}') .. os.arch())
 	print(console.colorful('${string}os.time:      ${normal}') .. os.time())
 	print(console.colorful('${string}os.uptime:    ${normal}') .. os.uptime())
@@ -412,6 +408,7 @@ System information:
 end
 
 function exports.usage()
+	local appPath = path.join( app.rootPath, 'app')
 	local fmt = [[
 
 This is the CLI for Node.lua.
@@ -429,7 +426,7 @@ where <command> is one of:
    or: ${highlight}lpm <name> <command> [args]${normal}
 ${braces}
 where <name> is the name of the application, located in 
-    ']] .. app.rootPath .. [[/app/', the supported values of <command>
+    ']] .. appPath .. [[', the supported values of <command>
     depend on the invoked application.${normal}
 
 

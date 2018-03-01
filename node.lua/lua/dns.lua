@@ -35,7 +35,7 @@ local net   = require('net')
 local timer = require('timer')
 
 local Error  = require('core').Error
-local adapt  = require('utils').adapt
+local adapt  = require('util').adapt
 local crypto = require('tls/lcrypto')
 
 local DEFAULT_SERVERS = {

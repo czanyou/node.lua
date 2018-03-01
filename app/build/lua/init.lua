@@ -26,12 +26,12 @@ local path   = require('path')
 local thread = require('thread')
 local timer  = require('timer')
 local url    = require('url')
-local utils  = require('utils')
+local utils  = require('util')
 local uv     = require('uv')
 local app    = require('app')
 
 local zlib	 = require('zlib')
-local conf   = require('ext/conf')
+local conf   = require('app/conf')
 
 local exports = {}
 
@@ -674,7 +674,7 @@ function PackageManager:installPackage(packageInfo)
 	local target = path.join(appPath, packageInfo.name)
 	local tmpfile = target .. ".tmp"
 
-	fs.copySync(filename, tmpfile)
+	fs.copyfileSync(filename, tmpfile)
 	if (not fs.existsSync(tmpfile)) then
 		self:onError('  Copy package file failed: ' .. filename)
 		return

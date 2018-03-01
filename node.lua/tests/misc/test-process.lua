@@ -3,8 +3,8 @@ local lnode     = require('lnode')
 local assert    = require('assert')
 
 if (process.getgid) then
-	console.log(process.getgid())
-	console.log(process.getuid())
+	console.log('gid', process.getgid())
+	console.log('uid', process.getuid())
 end
 
 require('ext/tap')(function (test)

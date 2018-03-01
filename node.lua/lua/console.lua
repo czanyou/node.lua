@@ -443,7 +443,7 @@ end
 -------------------------------------------------------------------------------
 
 function exports.log(message, ...)
-    local utils = require('utils')
+    local utils = require('util')
     local file, line = utils.filename(3)
     local path = require('path')
     file = path.basename(file) or ''

@@ -28,7 +28,7 @@ local exports = { meta = meta }
 local miniz = require('miniz')
 local path  = require('path')
 local fs    = require('fs')
-local utils = require('utils')
+local utils = require('util')
 local core  = require('core')
 
 local Error  = core.Error

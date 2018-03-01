@@ -1,5 +1,5 @@
 local tap 	    = require("ext/tap")
-local utils     = require('utils')
+local utils     = require('util')
 local path      = require('path')
 local assert    = require('assert')
 local sqlite3   = require('sqlite3')

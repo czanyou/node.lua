@@ -18,7 +18,7 @@ limitations under the License.
 
 local http  = require('http')
 local url   = require('url')
-local utils = require('utils')
+local utils = require('util')
 
 local request = require('http/request')
 

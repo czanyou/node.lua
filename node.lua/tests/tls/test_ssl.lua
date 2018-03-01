@@ -1,5 +1,5 @@
 local tls 		= require('lmbedtls.tls')
-local utils 	= require('utils')
+local utils 	= require('util')
 local lcrypto 	= require('tls/lcrypto')
 local tap 		= require('ext/tap')
 local net 		= require('net')

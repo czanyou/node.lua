@@ -1,10 +1,9 @@
 local app       = require('app')
-local utils 	= require('utils')
+local utils 	= require('util')
 local thread 	= require('thread')
 local path 		= require('path')
 local json 		= require('json')
-local lpm       = require('ext/lpm')
-local conf      = require('ext/conf')
+local conf      = require('app/conf')
 local sensor    = require('sdl/sht20')
 local fs 		= require('fs')
 

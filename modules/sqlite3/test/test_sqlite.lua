@@ -1,5 +1,5 @@
 local sqlite = require('sqlite3')
-local utils  = require('utils')
+local utils  = require('util')
 
 console.log('sqlite', sqlite)
 

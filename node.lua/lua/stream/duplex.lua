@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local utils = require('utils')
+local utils = require('util')
 local timer = require('timer')
 
 local Readable = require('stream/readable').Readable

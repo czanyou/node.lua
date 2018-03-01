@@ -24,7 +24,7 @@ meta.tags        = { "lnode", "buffer" }
 
 local core   = require('core')
 local lutils = require('lutils')
-local utils  = require('utils')
+local utils  = require('util')
 
 local exports = { meta = meta }
 

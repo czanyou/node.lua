@@ -2,7 +2,7 @@ local path 	 	= require('path')
 local thread 	= require('thread')
 local process 	= require('process')
 local express 	= require('express')
-local conf  	= require('ext/conf')
+local conf  	= require('app/conf')
 
 local interval 	= 100
 

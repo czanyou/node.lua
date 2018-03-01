@@ -1,25 +1,3 @@
 #!/bin/sh
 
-#if [ -d /usr/bin/hw ] ; then
-#	cp /usr/bin/hw /usr/bin/
-#fi
-
-# 安装 Node.lua
-# ======
-
-# 这个脚本用于将 Node.lua 安装到开发板上
-# 打包时将复制此文件到升级包根目录
-
-export NODE_ROOT=/usr/local/lnode
-
-mkdir -p ${NODE_ROOT}/app/
-mkdir -p ${NODE_ROOT}/bin/
-mkdir -p ${NODE_ROOT}/lib/
-mkdir -p ${NODE_ROOT}/lua/
-
-#cp -rf ${NODE_ROOT}/app ${NODE_ROOT}/app/ the copy operation is auto run in dpkg,no need run in there
-#cp -rf ${NODE_ROOT}/bin ${NODE_ROOT}/bin/
-#cp -rf ${NODE_ROOT}/lib ${NODE_ROOT}/lib/
-#cp -rf ${NODE_ROOT}/lua ${NODE_ROOT}/lua/
-#cp -rf ${NODE_ROOT}/package.json ${NODE_ROOT}/
 

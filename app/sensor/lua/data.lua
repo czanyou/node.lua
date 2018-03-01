@@ -1,7 +1,7 @@
 local json 		= require('json')
 local path 		= require('path')
 local thread 	= require('thread')
-local utils 	= require('utils')
+local utils 	= require('util')
 
 local sqlite 	= require('sqlite3')
 

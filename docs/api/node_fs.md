@@ -102,6 +102,19 @@ end)
 
 fs.appendFile 的同步版本。
 
+## fs.copyfile
+
+    fs.copyfile(src, dest, [flags], callback)
+
+异步版的 copyfile(2). 完成时的回调函数 (callback) 
+
+## fs.copyfileSync
+
+    fs.copyfileSync(src, dest, [flags], mode)
+
+同步版的 copyfile(2).
+
+
 ## fs.chmod
 
     fs.chmod(path, mode, callback)

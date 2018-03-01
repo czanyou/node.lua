@@ -30,6 +30,8 @@ LUALIB_API int lnode_create_arg_table(lua_State *L, char **argv, int argc, int o
 LUALIB_API int lnode_init(lua_State* L);
 LUALIB_API int lnode_openlibs(lua_State* L);
 LUALIB_API int lnode_run_as_deamon();
+LUALIB_API int lnode_get_script_path(char* buffer, size_t size);
+LUALIB_API int lnode_set_script_path(const char* buffer);
 
 const char* lnode_get_realpath(const char* filename, char* realname);
 

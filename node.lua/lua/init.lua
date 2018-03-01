@@ -35,52 +35,6 @@ local function bundleSearcher(name)
     if (type(name) ~= 'string') then
         return nil
     end
-    
-    local _filename = function()
-        --console.trace()
-
-        local waitRequire = false
-        local filename = nil
-        local currentline = nil
-
-        for i = 1, 10 do
-            local info = debug.getinfo(i, nil, 'Sln')
-            if (not info) then
-                return
-            end
-
-            if (info.name == 'require') then
-                waitRequire = true
-
-            elseif (waitRequire) then
-                filename = info.source or ''
-                currentline = info.currentline
-                break
-            end
-        end
-
-        -- [[
-        --local info = debug.getinfo(4, 'Sl') or {}
-        --local filename = info.source or ''
-        if (filename:startsWith("@")) then
-            filename = filename:sub(2)
-        end
-        return filename, currentline or -1
-    end
-
-    local load_local_file = function(name)
-        local basePath = _filename()
-        if (not basePath) then
-            return nil
-        end
-
-        local path = require('path')
-        basePath = path.dirname(basePath)
-
-        local filename = path.join(basePath, name .. ".lua")
-        --print('_filename', filename)
-        return loadfile(filename)
-    end
 
     local bundle_reader = function (filename)
         if (not _G._miniz_readers) then
@@ -138,12 +92,6 @@ local function bundleSearcher(name)
         end
     end
 
-    --_print('bundleLoader', name, name:byte(1))
-    -- 如果是相对目录
-    if (name:byte(1) == 46) then -- startsWith: `.`
-        return load_local_file(name)
-    end
-
     local ret = load_bundle_file('lnode', name)
     if (ret) then
         return ret
@@ -159,7 +107,157 @@ local function bundleSearcher(name)
     return nil
 end
 
-package.searchers[5] = bundleSearcher
+local function localSearcher(name)
+    if (type(name) ~= 'string') then
+        return nil
+    end
+
+    local _get_script_filename = function()
+        --console.trace()
+
+        local waitRequire = false
+        local filename = nil
+        local currentline = nil
+
+        for i = 1, 10 do
+            local info = debug.getinfo(i, nil, 'Sln')
+            if (not info) then
+                return
+            end
+
+            if (info.name == 'require') then
+                waitRequire = true
+
+            elseif (waitRequire) then
+                filename = info.source or ''
+                currentline = info.currentline
+                break
+            end
+        end
+
+        -- [[
+        --local info = debug.getinfo(4, 'Sl') or {}
+        --local filename = info.source or ''
+        if (filename:startsWith("@")) then
+            filename = filename:sub(2)
+        end
+        return filename, currentline or -1
+    end
+
+    local load_local_file = function(name)
+        local basePath = _get_script_filename()
+        if (not basePath) then
+            return nil
+        end
+
+        local path = require('path')
+        basePath = path.dirname(basePath)
+
+        local filename = path.join(basePath, name .. ".lua")
+        
+        local ret, err = loadfile(filename)
+        if (err) then print(err); os.exit() end
+        return ret, err
+    end
+
+    if (name:byte(1) == 46) then -- startsWith: `.`
+        return load_local_file(name)
+    end
+end
+
+local function moduleSearcher(name)
+    if (type(name) ~= 'string') then
+        return nil
+    end
+
+    local lnode = require('lnode')
+    local path  = require('path')
+    local fs    = require('fs')
+
+    local basePath = lnode.NODE_LUA_ROOT
+    if (not basePath) then
+        return nil
+    end
+
+    if (not fs.existsSync(path.join(basePath, 'modules'))) then
+        basePath = path.dirname(basePath)
+    end
+    if (not basePath) then
+        return nil
+    end
+
+    local filename = nil;
+
+    --console.log(basePath)
+    local index = name:find('/')
+    if (index) then
+        local libname = name:sub(1, index - 1)
+        local subpath = name:sub(index + 1)
+
+        filename = path.join(basePath, 'modules', libname, 'lua', subpath .. ".lua")
+
+    else
+        filename = path.join(basePath, 'modules', name, 'lua', "init.lua")
+    end
+
+    if (not fs.existsSync(filename)) then
+        return nil
+    end
+
+    local ret, err = loadfile(filename)
+    if (err) then print(err); os.exit() end
+    return ret
+end
+
+local function appSearcher(name)
+    if (type(name) ~= 'string') then
+        return nil
+    end
+
+    local lnode = require('lnode')
+    local path  = require('path')
+    local fs    = require('fs')
+
+    local basePath = lnode.NODE_LUA_ROOT
+    if (not basePath) then
+        return nil
+    end
+
+    if (not fs.existsSync(path.join(basePath, 'app'))) then
+        basePath = path.dirname(basePath)
+    end
+
+    if (not basePath) then
+        return nil
+    end
+
+    local filename = nil
+
+    --console.log(basePath)
+    local index = name:find('/')
+    if (index) then
+        local libname = name:sub(1, index - 1)
+        local subpath = name:sub(index + 1)
+
+        filename = path.join(basePath, 'app', libname, 'lua', subpath .. ".lua")
+
+    else
+        filename = path.join(basePath, 'app', name, 'lua', "init.lua")
+    end
+
+    if (not fs.existsSync(filename)) then
+        return nil
+    end
+
+    local ret, err = loadfile(filename)
+    if (err) then print(err); os.exit() end
+    return ret, err
+end
+
+package.searchers[5] = localSearcher
+package.searchers[6] = bundleSearcher
+package.searchers[7] = moduleSearcher
+package.searchers[8] = appSearcher
 
 -------------------------------------------------------------------------------
 -- run loop

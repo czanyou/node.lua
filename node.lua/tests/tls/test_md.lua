@@ -1,5 +1,5 @@
 local ret, md  	= pcall(require, 'lmbedtls.md')
-local utils 	= require('utils')
+local utils 	= require('util')
 local assert 	= require('assert')
 local tap 		= require('ext/tap')
 

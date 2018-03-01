@@ -1,4 +1,4 @@
-local utils = require('utils')
+local utils = require('util')
 local gpio  = require('sdl/gpio')
 
 local await = utils.await

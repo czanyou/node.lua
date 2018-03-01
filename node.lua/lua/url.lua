@@ -205,7 +205,7 @@ function exports.format(urlObj)
         return nil
     end
 
-    local utils = require("utils")
+    local utils = require('util')
 
     local sb = utils.StringBuffer:new()
     local host = urlObj.hostname or urlObj.host

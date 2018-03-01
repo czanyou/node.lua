@@ -1,4 +1,4 @@
-local rpc 	= require('ext/rpc')
+local rpc 	= require('app/rpc')
 local path  = require('path')
 
 

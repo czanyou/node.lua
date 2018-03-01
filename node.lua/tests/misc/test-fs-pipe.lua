@@ -16,17 +16,18 @@ limitations under the License.
 
 --]]
 
-local path = require('path')
-local fs   = require('fs')
+local path  = require('path')
+local fs    = require('fs')
+local util  = require('util')
 
 require('ext/tap')(function (test)
 
-    local __dirname = process.cwd()
+    local __dirname = util.dirname()
 
-    local __tmpname = path.join(process.cwd(), "..", "tmp")
+    local __tmpname = os.tmpdir
     fs.mkdirpSync(__tmpname)
 
-    --print('__dirname', __dirname, __tmpname)
+    print('__dirname', __dirname, __tmpname)
 
     local name = 'test-pipe'
     local tmp_file = path.join(__tmpname, name)

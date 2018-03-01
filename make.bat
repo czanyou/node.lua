@@ -50,13 +50,6 @@ rem -------------------------------------------
 
 echo install
 
-xcopy /Y /Q %CD%\modules\sdl\lua %CD%\node.lua\lib\sdl\
-xcopy /Y /Q %CD%\modules\bluetooth\lua %CD%\node.lua\lib\bluetooth\
-xcopy /Y /Q %CD%\modules\express\lua %CD%\node.lua\lib\express\
-xcopy /Y /Q %CD%\modules\mqtt\lua %CD%\node.lua\lib\mqtt\
-xcopy /Y /Q %CD%\modules\sqlite3\lua %CD%\node.lua\lib\sqlite3\
-xcopy /Y /Q %CD%\modules\ssdp\lua %CD%\node.lua\lib\ssdp\
-
 cd node.lua
 
 CALL install.bat

@@ -1,5 +1,5 @@
 local ret, rng 	= pcall(require, 'lmbedtls.rng')
-local utils 	= require('utils')
+local utils 	= require('util')
 local lcrypto 	= require('tls/lcrypto')
 local tap 		= require('ext/tap')
 

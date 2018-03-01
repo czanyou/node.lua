@@ -224,7 +224,7 @@ local server = app.rpc('foo', {
 })
 
 -- client
-local rpc = require('ext/rpc')
+local rpc = require('app/rpc')
 rpc.call('foo', 'bar', 100)
 
 -- print:

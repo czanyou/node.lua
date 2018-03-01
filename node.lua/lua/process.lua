@@ -26,7 +26,6 @@ local meta = { }
 meta.description = "Node-style process module for lnode"
 meta.license     = "Apache 2"
 meta.name        = "lnode/process"
-meta.patch         = 103
 meta.tags        = { "lnode", "process" }
 meta.version     = "1.0.1"
 
@@ -211,7 +210,11 @@ exports.versions    = lnode.versions    -- A property exposing version strings o
 
 -- 
 
-exports.version = exports.version .. '.' .. meta.patch
+local ret, patch = pcall(require, 'lhost')
+if (not ret) then patch = nil end
+patch = (patch and patch.version) or '0'
+
+exports.version = exports.version .. '.' .. patch
 
 -------------------------------------------------------------------------------
 -- stream
@@ -226,7 +229,7 @@ local function _newWritable(pipe)
     end
 
     local Writable  = require('stream').Writable
-    local utils     = require('utils')
+    local utils     = require('util')
 
     local UvStreamWritable = Writable:extend()
 
@@ -252,7 +255,7 @@ local function _newReadable(pipe)
     end
 
     local Readable  = require('stream').Readable
-    local utils     = require('utils')
+    local utils     = require('util')
 
     UvStreamReadable = Readable:extend()
     function UvStreamReadable:initialize(handle)

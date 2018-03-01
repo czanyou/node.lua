@@ -1,17 +1,16 @@
-local conf   = require('ext/conf')
-local lpm    = require('ext/lpm')
+local conf   = require('app/conf')
 local json   = require('json')
 local path   = require('path')
-local utils  = require('utils')
+local utils  = require('util')
 local fs     = require('fs')
 local httpd  = require('httpd')
 
 local profile
 
 local function get_app_path()
-    local appPath = path.join(lpm.rootPath, "app")
+    local appPath = path.join(conf.rootPath, "app")
     if (not fs.existsSync(appPath)) then
-        appPath = path.join(path.dirname(lpm.rootPath), "app")
+        appPath = path.join(path.dirname(conf.rootPath), "app")
     end
 
     return appPath

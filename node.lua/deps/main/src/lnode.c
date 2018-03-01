@@ -45,18 +45,34 @@ LUALIB_API int luaopen_lhttp_parser (lua_State* const L);
 LUALIB_API int luaopen_lmessage     (lua_State* const L);
 LUALIB_API int luaopen_lutils       (lua_State* const L);
 LUALIB_API int luaopen_miniz        (lua_State* const L);
-
-
 LUALIB_API int luaopen_lsqlite      (lua_State* const L);
-//LUALIB_API int luaopen_lmedia       (lua_State* const L);
-LUALIB_API int luaopen_lts_reader(lua_State* const L);
-LUALIB_API int luaopen_lts_writer(lua_State* const L);
-
 
 static int lua_table_set(lua_State *L, const char* key, const char* value)
 {
   lua_pushstring(L, value);
   lua_setfield(L, -2, key);
+  return 0;
+}
+
+static char script_path[PATH_MAX];
+
+int lnode_get_script_path(char* buffer, size_t size) {
+  if (buffer == NULL || size <= 0) {
+    return -1;
+  }
+
+  memset(buffer, 0, size);
+  strncpy(buffer, script_path, PATH_MAX);
+  return 0;
+}
+
+int lnode_set_script_path(const char* buffer) {
+  memset(script_path, 0, PATH_MAX);
+  if (buffer == NULL) {
+    return -1;
+  }
+
+  strncpy(script_path, buffer, PATH_MAX);
   return 0;
 }
 
@@ -272,7 +288,17 @@ LUALIB_API int lnode_init(lua_State* L) {
 
   char root[PATH_MAX];
   memset(root, 0, sizeof(root));
+
+  char appPath[PATH_MAX];
+  memset(appPath, 0, sizeof(appPath));
+
   lnode_get_root(root);
+  lnode_get_script_path(appPath, PATH_MAX);
+  //printf("SCRIPT: %s\r\n", appPath);
+
+  lnode_get_dirname(appPath);
+
+  //printf("APP: %s\r\n", appPath);
 
 #ifdef _WIN32
   char nodeRoot[PATH_MAX];
@@ -284,9 +310,6 @@ LUALIB_API int lnode_init(lua_State* L) {
   const char* fmt = "package.path='"
     "%s/lua/?.lua;"
     "%s/lua/?/init.lua;"
-    "%s/lib/?.lua;"
-    "%s/lib/?/init.lua;"
-    "%s/app/?/lua/init.lua;"
     "./lua/?.lua;"
     "./lua/?/init.lua;"
     "./?.lua;"
@@ -294,14 +317,12 @@ LUALIB_API int lnode_init(lua_State* L) {
     "'\n"
     "package.cpath='"
     "%s/bin/?.dll;"
-    "%s/app/?/?.dll;"
     "./?.dll;"
     "%s/bin/loadall.dll;"
     "'\n";
 
   snprintf(buffer, PATH_MAX, fmt, 
-    nodeRoot, nodeRoot,  nodeRoot, nodeRoot, root, 
-    nodeRoot, root, nodeRoot);
+    nodeRoot, nodeRoot, nodeRoot, nodeRoot);
 
 #else
   const char* fmt = "package.path='"
@@ -309,7 +330,6 @@ LUALIB_API int lnode_init(lua_State* L) {
     "%s/lua/?/init.lua;"
     "%s/lib/?.lua;"
     "%s/lib/?/init.lua;"
-    "%s/app/?/lua/init.lua;"
     "./lua/?.lua;"
     "./lua/?/init.lua;"
     "./?.lua;"
@@ -318,14 +338,13 @@ LUALIB_API int lnode_init(lua_State* L) {
     "package.cpath='"
     "%s/bin/?.so;"
     "%s/lib/?.so;"
-    "%s/app/?/?.so;"
     "./?.so;"
     "%s/bin/loadall.so;"
     "'\n";
  
   snprintf(buffer, PATH_MAX, fmt,  
-    root, root, root, root, root,  
-    root, root, root, root);
+    root, root, root, root,  
+    root, root, root);
 #endif
   //printf("%s\n", buffer);
  
@@ -412,17 +431,6 @@ LUALIB_API int lnode_openlibs(lua_State* L) {
 #ifdef WITH_MINIZ
   lua_pushcfunction(L, luaopen_miniz);
   lua_setfield(L, -2, "miniz");
-#endif
-
-#ifdef LUA_USE_LMEDIA
-  //lua_pushcfunction(L, luaopen_lmedia);
-  //lua_setfield(L, -2, "lmedia");
-
-  lua_pushcfunction(L, luaopen_lts_reader);
-  lua_setfield(L, -2, "lts.reader");
-
-  lua_pushcfunction(L, luaopen_lts_writer);
-  lua_setfield(L, -2, "lts.writer");
 #endif
 
 #ifdef LUA_USE_LSQLITE

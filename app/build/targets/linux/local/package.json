@@ -1,9 +1,9 @@
 {
-	"description": "linux PC",
+	"description": "Linux Gateway",
 	"name": "linux",
 	"tags": ["linux", "core"],
-    "applications": ["httpd", "ssdp", "lhost", "beacon", "monitor"],
-	"start": ["httpd", "ssdp", "lhost"],
-    "libs": ["lsdl.so", "lts.so", "lmedia.so", "lsqlite.so", "lbluetooth.so"],
+    "applications": ["httpd", "lhost", "gateway"],
+	"start": ["httpd", "lhost", "gateway"],
+    "libs": ["lsdl.so", "lsqlite.so", "lbluetooth.so"],
 	"version": "0.0.1"
 }

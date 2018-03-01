@@ -1,10 +1,10 @@
-local utils     = require('utils')
+local utils     = require('util')
 local path 	    = require('path')
-local conf      = require('ext/conf')
+local conf      = require('app/conf')
 local json      = require('json')
 local fs        = require('fs')
 local thread    = require('thread')
-local rpc       = require('ext/rpc')
+local rpc       = require('app/rpc')
 local httpd     = require('httpd')
 local app       = require('app')
 

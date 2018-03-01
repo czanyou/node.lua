@@ -1,5 +1,5 @@
 local tap 	    = require("ext/tap")
-local utils     = require('utils')
+local utils     = require('util')
 local assert    = require('assert')
 local Buffer    = require('buffer').Buffer
 

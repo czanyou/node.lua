@@ -507,8 +507,16 @@ os.totalmem           = uv.get_total_memory     -- total amount of system memory
 os.type               = lutils.os_platform      -- operating system name.
 os.uptime             = uv.uptime               -- system uptime in seconds.
 
+os.getppid            = uv.os_getppid
+os.getpid             = uv.os_getpid
+os.ifname             = uv.if_indextoname
+os.ifid               = uv.if_indextoiid
+
 os.setenv             = uv.os_setenv
 os.unsetenv           = uv.os_unsetenv
+
+os.all_handles        = uv.print_all_handles
+os.active_handles     = uv.print_active_handles
 
 if (not uv.os_setenv) then
     local env = require('env')

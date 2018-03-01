@@ -3,10 +3,10 @@ local fs        = require('fs')
 local express   = require('express')
 local request   = require('http/request')
 local server    = require('ssdp/server')
-local utils     = require('utils')
+local utils     = require('util')
 local path      = require('path')
 local json      = require('json')
-local conf      = require('ext/conf')
+local conf      = require('app/conf')
 local device    = require('sdl')
 
 local WEB_PORT  = 9100

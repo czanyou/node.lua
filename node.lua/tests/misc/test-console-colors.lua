@@ -16,7 +16,7 @@ limitations under the License.
 
 --]]
 
-local utils = require('utils')
+local utils = require('util')
 local dump  = console.dump
 local strip = console.strip
 

@@ -1,7 +1,8 @@
 local app       = require('app')
-local utils     = require('utils')
+local utils     = require('util')
 local path      = require('path')
 local fs        = require('fs')
+local rpc       = require('app/rpc')
 
 -------------------------------------------------------------------------------
 -- exports
@@ -23,6 +24,21 @@ function exports.check()
         console.log('start:', name)
         os.execute("lpm start " .. name)
     end
+end
+
+-- 检查应用rpc是否还有反应(暂时只有gateway程序)
+function exports.rpc()
+    local RPC_PORT = 38888
+    local method = 'alive'
+    local params    = {}
+    rpc.call(RPC_PORT, method, params, function(err, result)
+        if (result) then
+            -- console.log(result)
+        else
+            print('App gateway is down,restart now')
+            os.execute('lpm restart gateway')
+        end
+    end)
 end
 
 -- 不允许指定名称的应用在后台一直运行
@@ -89,6 +105,7 @@ function exports.start(interval, ...)
     interval = tonumber(interval) or 3
     setInterval(interval * 1000, function()
         exports.check()
+        exports.rpc()
     end)
 end
 

@@ -13,9 +13,6 @@
 
 export PATH=$PATH:/usr/local/bin
 
-lpm start lhost
-lpm start httpd
-lpm start monitor
-lpm start beacon
+lpm start lhost httpd gateway
 
 exit 0

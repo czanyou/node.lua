@@ -42,7 +42,7 @@ conf 文件内容为 JSON 文本格式, 支持多级参数
 
 默认会保存到 `/usr/local/lnode/conf/user.conf` 文件中, 如果是要修改指定文件, 则在 key 前添加文件名和 `:` 号, 如 `network:lan.ipaddr`
 
-在源代码中可以通过 require('ext/conf') 模块来访问配置文件.
+在源代码中可以通过 require('app/conf') 模块来访问配置文件.
 
 比如:
 

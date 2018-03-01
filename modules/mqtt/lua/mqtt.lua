@@ -17,7 +17,7 @@ limitations under the License.
 --]]
 local core  = require('core')
 local url   = require('url')
-local utils = require('utils')
+local utils = require('util')
 local uv    = require('uv')
 
 local packet = require('mqtt/packet')

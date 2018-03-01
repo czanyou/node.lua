@@ -21,7 +21,7 @@ local dgram  = require('dgram')
 local http   = require('http')
 local json   = require('json')
 local path 	 = require('path')
-local utils  = require('utils')
+local utils  = require('util')
 
 local TAG = 'SsdpObject'
 

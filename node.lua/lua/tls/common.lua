@@ -23,7 +23,7 @@ local fs      = require('fs')
 local net     = require('net')
 local path    = require('path')
 local timer   = require('timer')
-local utils   = require('utils')
+local utils   = require('util')
 local uv      = require('uv')
 
 local _, openssl = pcall(require, 'ssl')

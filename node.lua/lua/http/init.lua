@@ -28,7 +28,7 @@ local exports = { meta = meta }
 
 local net   = require('net')
 local url   = require('url')
-local utils = require('utils')
+local utils = require('util')
 local codec = require('http/codec')
 
 local Writable = require('stream').Writable

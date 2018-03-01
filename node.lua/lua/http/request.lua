@@ -25,11 +25,11 @@ meta.tags        = { "request", "http", "client" }
 
 local http  = require('http')
 local url   = require('url')
-local utils = require('utils')
+local utils = require('util')
 local timer = require('timer')
 
 local querystring   = require('querystring')
-local ext           = require('ext/utils')
+local ext           = require('app/utils')
 
 -- Simplified HTTP client
 -- ======

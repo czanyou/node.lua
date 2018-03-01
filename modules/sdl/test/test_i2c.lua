@@ -1,6 +1,6 @@
 local lmedia = require('lmedia')
 local li2c   = require('lmedia.i2c')
-local utils  = require('utils')
+local utils  = require('util')
 
 --console.log(lmedia)
 local delay = lmedia.delay

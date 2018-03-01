@@ -1,5 +1,5 @@
 local ret, cipher  = pcall(require, 'lmbedtls.cipher')
-local utils = require('utils')
+local utils = require('util')
 
 console.log(cipher)
 

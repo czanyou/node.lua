@@ -28,7 +28,7 @@ local exports = { meta = meta }
 local uv = require('uv')
 
 local Object = require('core').Object
-local bind   = require('utils').bind
+local bind   = require('util').bind
 
 -------------------------------------------------------------------------------
 --- Timer
@@ -174,7 +174,7 @@ function exports.setImmediate(callback, ...)
     -- Turn them back on.
     
     if #immediateQueue == 0 then
-        local pprint  = require('utils').pprint
+        local pprint  = require('util').pprint
 
         if (not uv.is_closing(checker)) then
             checker:start(_onCheck)

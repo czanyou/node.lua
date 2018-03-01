@@ -1,4 +1,4 @@
-local utils = require('utils')
+local utils = require('util')
 local path  = require('path')
 local fs    = require('fs')
 local tap   = require("ext/tap")

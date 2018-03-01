@@ -1,14 +1,13 @@
 local app 		= require('app')
-local utils 	= require('utils')
+local utils 	= require('util')
 local path  	= require('path')
 local fs  		= require('fs')
 local zlib  	= require('zlib')
 local json  	= require('json')
-local lpm   	= require('ext/lpm')
 
 local exec      = require('child_process').exec
 
-local copy  	= fs.copySync
+local copy  	= fs.copyfileSync
 local cwd		= process.cwd()
 local join  	= path.join
 
@@ -17,12 +16,6 @@ local join  	= path.join
 
 local platform = os.platform()
 local arch = os.arch()
-
-if (platform == 'linux') then
-	copy = function(src, dest) 
-		os.execute('cp -u "' .. tostring(src) .. '" "' .. tostring(dest) .. '"')
-	end
-end
 
 -------------------------------------------------------------------------------
 -- 
@@ -111,8 +104,21 @@ function sdk.build_common_sdk(target, packageInfo)
 	end
 
 	-- copy modules lua files
-	local visionPath = join(cwd, "modules/lua")
-	xcopy(visionPath, join(nodePath, "lib"))
+	local visionPath = join(cwd, "modules")
+	--xcopy(visionPath, join(nodePath, "lib"))
+
+	local files = fs.readdirSync(visionPath)
+	if (files) then
+		for i = 1, #files do
+			local name = files[i]
+			local luaPath = join(visionPath, name, "lua")
+			console.log(luaPath)
+
+			if (fs.existsSync(luaPath)) then
+				xcopy(luaPath, join(nodePath, "lib", name))
+			end
+		end
+	end
 
 	-- copy app files
 	mkdir(join(nodePath, "app"))
@@ -170,7 +176,6 @@ function sdk.build_win_sdk(target, packageInfo)
 	-- copy node lua files
 	copy(nodePath .. "/install.lua", 		sdkPath .. "/lnode/install.lua")
 	copy(nodePath .. "/install.bat", 		sdkPath .. "/lnode/install.bat")
-	copy(nodePath .. "/bin/lpm",     		sdkPath .. "/lnode/bin/lpm")
 	copy(nodePath .. "/bin/lpm.bat", 		sdkPath .. "/lnode/bin/lpm.bat")
 	copy(nodePath .. "/bin/lts.dll", 		sdkPath .. "/lnode/bin/lts.dll")
 	copy(nodePath .. "/bin/lsqlite.dll",	sdkPath .. "/lnode/bin/lsqlite.dll")
@@ -181,6 +186,14 @@ function sdk.build_win_sdk(target, packageInfo)
 	-- copy vision lua files
 	local visionPath = join(cwd, "modules/lua")
 	xcopy(visionPath, join(sdkPath, "lnode/lib"))
+	local modulePath = join(nodePath, "../modules")
+
+	xcopy(join(modulePath, 'bluetooth/lua'), 	join(sdkPath, "lnode/lib/bluetooth"))
+	xcopy(join(modulePath, 'express/lua'), 		join(sdkPath, "lnode/lib/express"))
+	xcopy(join(modulePath, 'mqtt/lua'), 		join(sdkPath, "lnode/lib/mqtt"))
+	xcopy(join(modulePath, 'sdl/lua'), 			join(sdkPath, "lnode/lib/sdl"))
+	xcopy(join(modulePath, 'sqlite3/lua'), 		join(sdkPath, "lnode/lib/sqlite3"))
+	xcopy(join(modulePath, 'ssdp/lua'), 		join(sdkPath, "lnode/lib/ssdp"))
 
 	-- copy app files
 	local applications = {"httpd", "ssdp", "mqtt", "sdcp", "lhost"}
@@ -272,7 +285,7 @@ function sdk.build_deb_package()
 	local packageInfo = sdk.build_sdk(target)
 
 	local sdk_name = "nodelua-" .. target .. "-sdk"
-	local deb_name = "nodelua-" .. os.arch() .. "-" .. target
+	local deb_name = "nodelua-" .. target
 	local sdk_path  = path.join(cwd, "/build/", sdk_name)
 	local deb_path  = path.join(cwd, "/build/", deb_name .. "-deb")
 
@@ -285,7 +298,7 @@ function sdk.build_deb_package()
 	local dirname = utils.dirname()
 	local src = path.join(dirname, 'targets/linux/deb')
 	os.execute('cp -rf ' .. src .. '/* ' .. deb_path .. '/')
-	os.execute('chmod -R 775 ' .. deb_path .. '/DEBIAN')
+	os.execute('chmod -R 755 ' .. deb_path .. '/DEBIAN')
 
 	-- build deb package
 	local deb_file = path.join(cwd, "/build/", deb_name .. ".deb")
@@ -304,7 +317,7 @@ end
 @param target {String} 构建目标，如 win,linux,pi 等等.
 --]]
 function sdk.build_sdk_package_info(target, packageInfo)
-	local utils 	= require('utils')
+	local utils 	= require('util')
 	local json 		= require('json')
 
 	local name 		= "nodelua-" .. target .. "-" .. (packageInfo.type or "sdk")
@@ -438,7 +451,8 @@ local function build_install_sh(name, url)
 	local filename = path.join(cwd, 'build', name .. ".sh")
 	fs.writeFileSync(filename, data)
 end
-		-- wget http://node.sae-sz.com/download/dist/linux/nodelua-linux-sdk-dev.sh -q -O - | sh
+
+-- wget http://node.sae-sz.com/download/dist/linux/nodelua-linux-sdk-dev.sh -q -O - | sh
 
 --[[
 上传已打包的 SDK 包文件以及其描述文件。

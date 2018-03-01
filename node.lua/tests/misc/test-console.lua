@@ -1,7 +1,7 @@
-local utils = require('utils')
+local utils = require('util')
 local dump  = console.dump
 local strip = console.strip
-local ext = require('ext/utils')
+local ext = require('app/utils')
 
 require('ext/tap')(function (test)
 

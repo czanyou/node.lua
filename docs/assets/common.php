@@ -119,6 +119,7 @@ function md_head($title) {
     <title><?=$title?></title>
     <link rel="stylesheet" href="assets/css/bootstrap.min.css?q=<?=$Q?>" />
     <link rel="stylesheet" href="assets/css/style.css?q=<?=$Q?>" />
+    <link rel="stylesheet" href="assets/css/custom.css?q=<?=$Q?>" />
     <link rel="stylesheet" href="assets/css/highlight.css?q=<?=$Q?>">
     <link href="favicon.ico?q=<?=$Q?>" rel="shortcut icon">
     <script src="assets/js/jquery.js?q=<?=$Q?>"></script>
@@ -127,6 +128,7 @@ function md_head($title) {
     <script src="assets/js/raphael.js?q=<?=$Q?>"></script>
     <script src="assets/js/underscore.js?q=<?=$Q?>"></script>
     <script src="assets/js/sequence-diagram.js?q=<?=$Q?>"></script>
+    <script src="assets/js/flowchart.min.js?q=<?=$Q?>"></script>
     <script src="assets/js/highlight.js?q=<?=$Q?>"></script>
 </head>
 
@@ -137,7 +139,7 @@ function md_head($title) {
 
 function md_main_nav($title, $nav) {
     global $Q;
-?><a class="logo" href="?h=home&q=<?=$Q?>">
+?><a class="logo" href="/">
       <img src="assets/logo.png?q=<?=$Q?>.1" alt="logo"
       /><span><?=$title?></span></a>
     <nav id="header-nav">
@@ -270,10 +272,11 @@ function md_sub_frame($page, $file) {
         }
     }
 
+
     $(document).ready(function() {
         // init sequence diagram
         init_sequence_diagram()
-
+        
         // highlight language
         hljs.initHighlighting();
         $('pre code').each(function(i, block) {

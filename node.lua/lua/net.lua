@@ -33,7 +33,7 @@ local exports = { meta = meta }
 
 local uv    = require('uv')
 local timer = require('timer')
-local utils = require('utils')
+local utils = require('util')
 
 local Emitter = require('core').Emitter
 local Duplex  = require('stream').Duplex

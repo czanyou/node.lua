@@ -1,5 +1,4 @@
 local tap 	= require("ext/tap")
-local uv  	= require("uv")
-local utils = require("utils")
+local util  = require('util')
 
-tap.testAll(utils.dirname())
+tap.testAll(util.dirname())

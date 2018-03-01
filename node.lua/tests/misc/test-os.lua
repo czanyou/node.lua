@@ -27,6 +27,20 @@ print('totalmem', os.totalmem())
 print('type:   ', os.type())
 print('uptime: ', os.uptime())
 
+print('getpid: ', os.getpid())
+print('getppid: ', os.getppid())
+
+print('ifid: ', os.ifid(1))
+print('ifname: ', os.ifname(1))
+
+print('ifid: ', os.ifid(0))
+print('ifname: ', os.ifname(0))
+
+if (os.all_handles) then
+	print('all_handles: ',    os.all_handles())
+	print('active_handles: ', os.active_handles())
+end
+
 print('title:  ', process.title)
 print('PATH:   ', os.getenv('PATH'))
 print('EOL:   [', os.EOL, ']')
@@ -36,6 +50,8 @@ print('set TEST:   ', os.getenv('TEST'))
 
 os.unsetenv("TEST")
 print('unset TEST:   ', os.getenv('TEST'))
+
+console.log(os)
 
 end)
 

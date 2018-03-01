@@ -26,7 +26,7 @@ meta.tags        = { "lnode", "fs", "stream" }
 
 local lutils    = require('lutils')
 local uv        = require('uv')
-local adapt     = require('utils').adapt
+local adapt     = require('util').adapt
 local Error     = require('core').Error
 
 local exports = { meta = meta }
@@ -115,44 +115,17 @@ function fs.closeSync(fd)
     return uv.fs_close(fd)
 end
 
-function fs.copy(sourceFile, destFile, callback)
-    local fileInfo = fs.stat(sourceFile, function(err, fileInfo)
-        if (not fileInfo) or (err) then
-            if (callback) then
-                callback(err or 'Bad source file')
-            end       
-            return
-        end
+function fs.copyfile(src, dest, flags, callback)
+    if (type(flags) == 'function') then
+        callback = flags
+        flags = 0
+    end
 
-        fs.readFile(sourceFile, function(err, fileData)
-            if (not fileData) or (err) then
-                if (callback) then
-                    callback(err or 'Bad source file')
-                end 
-                return
-            end
-
-            fs.writeFile(destFile, fileData, function(err)
-                if (callback) then
-                    callback(err)
-                end
-            end)
-        end)
-    end)
+    return adapt(callback, uv.fs_copyfile, src, dest, (flags or 0))
 end
 
-function fs.copySync(sourceFile, destFile)
-    local fileInfo = fs.statSync(sourceFile)
-    if (not fileInfo) then
-        return
-    end
-
-    local fileData = fs.readFileSync(sourceFile)
-    if (fileData) then
-        fs.writeFileSync(destFile, fileData)
-    end
-
-    return true
+function fs.copyfileSync(src, dest, flags)
+    return uv.fs_copyfile(src, dest, (flags or 0))
 end
 
 function fs.exists(path, callback)

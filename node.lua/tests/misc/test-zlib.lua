@@ -1,4 +1,4 @@
-local utils    = require('utils')
+local utils    = require('util')
 local zlib     = require('zlib')
 local assert  = require('assert')
 

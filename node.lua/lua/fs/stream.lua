@@ -18,8 +18,8 @@ limitations under the License.
 --]]
 
 local uv        = require('uv')
-local adapt     = require('utils').adapt
-local bind      = require('utils').bind
+local adapt     = require('util').adapt
+local bind      = require('util').bind
 
 local Writable  = require('stream').Writable
 local Readable  = require('stream').Readable

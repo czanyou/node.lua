@@ -24,7 +24,7 @@ end
 -- Update current user 'Path' environment variable (Windows Only)
 local function updatePathEnvironment(isAdd)
 	local init  = require('init')
-	local utils = require('utils')
+	local utils = require('util')
 	local path  = require('path')
 	local fs    = require('fs')
 

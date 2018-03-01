@@ -17,7 +17,7 @@ limitations under the License.
 --]]
 
 local core 	= require('core')
-local utils = require('utils')
+local utils = require('util')
 local http 	= require('http')
 local url 	= require('url')
 local fs 	= require('fs')

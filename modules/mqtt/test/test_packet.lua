@@ -1,4 +1,4 @@
-local utils   = require('utils')
+local utils   = require('util')
 local timer   = require('timer')
 local assert  = require('assert')
 local tap     = require('ext/tap')

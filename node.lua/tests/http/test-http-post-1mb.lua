@@ -19,7 +19,7 @@ limitations under the License.
 local http = require('http')
 local string = require('string')
 local assert = require('assert')
-local utils  = require('utils')
+local utils  = require('util')
 
 local HOST = "127.0.0.1"
 local PORT = process.env.PORT or 10085

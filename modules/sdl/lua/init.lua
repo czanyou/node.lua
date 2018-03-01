@@ -1,7 +1,7 @@
-local conf      = require('ext/conf')
+local conf      = require('app/conf')
 local json      = require('json')
 local fs        = require('fs')
-local utils     = require('utils')
+local utils     = require('util')
 
 local exports 	= {}
 

@@ -29,7 +29,7 @@ local exports = { meta = meta }
 local core   = require('core')
 local net    = require('net')
 local uv     = require('uv')
-local utils  = require('utils')
+local utils  = require('util')
 
 local adapt  = utils.adapt
 

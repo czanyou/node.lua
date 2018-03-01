@@ -1,7 +1,7 @@
 # Node.lua
 
-> - 编写：成真
-> - 版本：5.0
+> - 编写(Author)：成真 (ChengZhen)
+> - 版本(Version)：5.0
 
 现代的 IoT 设备嵌入式软件开发平台.
 
@@ -19,18 +19,30 @@ Using the event-driven, asynchronous I/O model, so IoT device embedded software 
 
 - 使用纯 C 语言实现，移植方便，性能优越，灵活小巧
 - 使用成熟的 libuv, sqlite 等框架，成熟稳定
-- 使用简洁易用的 Lua 做为应用开发语言，使用和 Node.js 一致的核心 API，上手容易
+- 使用简洁易用的 Lua 做为应用开发语言
+- 使用和 Node.js 一致的核心 API，上手容易
 - 应用程序无需编译，直接运行，一键部署
-- 提供完善的内置库和 API，并且容易扩展
+- 提供常用的扩展库，并且容易自行扩展
 - 专门针对嵌入式优化，运行速度快，占用空间少，集成功能多
+
+- using pure C language, easy to transplant, superior performance, flexible and compact.
+- using mature libuv, sqlite and other frameworks, mature and stable.
+- use the simple and easy-to-use Lua as the application development language, using the core API consistent with node.js, easy to use.
+- the application does not need to compile, run directly, and deploy one key.
+- provides a complete built-in library and API, and is easy to extend.
+- specific to embedded optimization, fast running speed, less space, more integration, compared to node.js requires very little memory space.
 
 #### 快速开发 - Rapid Development
 
 提供全平台的 SDK，广泛支持 Windows，Linux，MacOS, iOS 等平台，不同的平台提供一样的应用程序运行环境，在 PC 开发的应用程序可以直接在开发板上运行.
 
+Provide full platform SDK, broad support for Windows, Linux, MacOS, iOS platform, such as different platform provides the same application running environment, in the development of the PC application can run directly on the development board.
+
 #### 快速迭代 - Fast Iterative
 
 使用动态语言开发嵌入式应用程序，可以将注意力集中在应用逻辑，快速响应急速变化的需求，实现更快的功能迭代。
+
+Using dynamic languages to develop embedded applications, you can focus on application logic, quickly respond to rapidly changing requirements, and implement faster functional iterations.
 
 #### 广泛支持 - Wide Support
 
@@ -40,7 +52,18 @@ Using the event-driven, asynchronous I/O model, so IoT device embedded software 
 
 提供和 Node.js 极度类似的 API 接口，无需太多的学习，使 WEB 工程师也能轻松开发智能硬件
 
-## 目录结构
+Support for common I/O interfaces and simple and easy-to-use apis that support various sensors and peripherals and stimulate unlimited creativity.
+
+## 简介
+
+### 概述
+
+- 提供一个主程序: lnode, 相当于 lua 程序解释器
+- 提供一个命令行工具: lpm, 用于辅助开发和运行
+- 支持 lua 扩展库格式插件功能
+- 提供一个简单的 APP 应用程序框架
+
+### 目录结构
 
 | 目录       | 描述
 | ---        | ---
@@ -48,7 +71,6 @@ Using the event-driven, asynchronous I/O model, so IoT device embedded software 
 | docs       | 项目开发文档，包含文档首页，样式表，js 脚本等资源文件等等。
 | modules    | Lua 扩展库，主要包括 SSDP 等 Lua 实现的扩展库。
 | node.lua   | 核心项目，包括 lnode 主程序, lpm 工具以及 Lua 核心库。
-| targets    | 编译平台配置文件
 
 ## 构建 - Build
 
@@ -74,13 +96,15 @@ $ make install
 
 将生成的目标文件打包为 SDK.
 
+Package the generated target file as the SDK.
+
 ```sh
 # 打包 SDK 
 $ make sdk
 
 ```
 
-## 安装 - Install
+## SDK 安装 - Install SDK
 
 ### Windows 
 
@@ -98,4 +122,3 @@ $ make sdk
 
 更多详细的文档请访问下面的网址:
 
-[http://node.sae-sz.com/](http://node.sae-sz.com/)

@@ -4,7 +4,7 @@ local rng 		= require('lmbedtls.rng')
 local cipher 	= require('lmbedtls.cipher')
 local csr 		= require('lmbedtls.x509.csr')
 
-local utils = require('utils')
+local utils = require('util')
 
 local KEY   = rng.new('gen key')
 

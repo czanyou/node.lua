@@ -1,5 +1,5 @@
 local url     = require("url")
-local utils   = require('utils')
+local utils   = require('util')
 
 local deepEqual = require('assert').isDeepEqual
 

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MQTT Status</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"/>
+  <link rel="stylesheet" href="/style.css?v=100001"/>
+  <script src="/jquery.js?v=100001"></script>
+  <script src="/common.js?v=100001"></script>
+  <script src="lang.js?v=100001"></script>
+  <script> 
+    var params = null
+
+    function OnPageLoad(result) {
+        params = result
+        $.form.init();
+    }
+
+    function OnFormSubmit() {
+        var ret = window.confirm(T('Confirm'));
+        if (!ret) {
+            return false
+        }
+
+        var form = $("#settingsForm")
+
+        var formData = form.serializeWithCheckbox()
+        var url = "api.lua?api=/settings&action=edit&" + formData;
+        $.get(url, function(result) {
+            try {
+                //console.log(result)
+                form.hide().fadeIn()
+
+            } catch (e) {
+                alert(e);
+            }
+        });
+
+        return false;
+    }
+
+    $(document).ready(function() {
+        $translate(document.body)
+
+        var url = "api.lua?api=/settings";
+        $.get(url, function(result) {
+            OnPageLoad(result || {})
+        });
+
+    });
+
+  </script>
+  <style>
+
+  </style>
+</head>
+<body style="display:none">
+<div id="wrapper" class="form-wrapper">
+    <form id="settingsForm" name="settingsForm" action="api.lua" method="get" onsubmit="return OnFormSubmit();">
+      
+      <fieldset class="block"><h3>${Settings}</h3>
+        <dl id="static_address_panel">
+          <dt><label class="label">${ServerAddress}:</label>
+            <input type="text" class="text" name="reader_server" size="32" maxlength="128" placeholder="${Default}" /></dt>
+
+          <dt><label class="label">${DeviceID}:</label>
+            <input type="text" class="text" name="reader_id" size="32" maxlength="64" placeholder="${Default}" /></dt>
+
+           <dt><label class="label">${DeviceKey}:</label>
+            <input type="text" class="text" name="reader_key" size="32" maxlength="64" placeholder="${Default}" /></dt>
+
+           <dt><label class="label">${StatTimeout}:</label>
+            <input type="text" class="text" name="reader_stat_timeout" size="32" maxlength="16" placeholder="${Default}" /></dt>
+
+          <dt><label class="label">${StatMaxTime}:</label>
+            <input type="text" class="text" name="reader_stat_max_time" size="32" maxlength="16" placeholder="${Default}" /></dt>
+
+          <dt><label class="label">${StatMaxCount}:</label>
+            <input type="text" class="text" name="reader_stat_max_count" size="32" maxlength="16" placeholder="${Default}" /></dt>
+
+          <dt><label class="label">${StatEnvFactor}:</label>
+            <input type="text" class="text" name="reader_stat_factor" size="32" maxlength="16" placeholder="${Default}" /></dt>                        
+        </dl>
+
+      </fieldset>
+
+      <fieldset class="block footer">
+        <dl><dt class="label">
+          <input class="button submit" type="submit" value="${Apply}"/>
+        </dt></dl>
+    </fieldset>
+  </form>
+</div>
+
+</body>
+</html>
