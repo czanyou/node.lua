@@ -1,6 +1,0 @@
-#!/usr/bin/env lnode
-
-local ldb = require('ext/ldb')
-
-ldb(arg)
-
