@@ -2,5 +2,5 @@
 
 ## Node.lua API
 
-- (APP)[node_app.md]
+-[APP](node_app.md)
 

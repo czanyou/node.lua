@@ -103,7 +103,7 @@ $ make sdk
 
 ## 文档 - Documents
 
-(更多详细的文档请访问下面的网址)[tree/master/docs/index.md]:
+[更多详细的文档请访问下面的网址](tree/master/docs/index.md)
 
 ## License
 
