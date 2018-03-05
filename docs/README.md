@@ -2,15 +2,15 @@
 
 ## Getting Started
 
--[Getting Started](docs)
+-[Getting Started](docs/README.md)
 
 
 ## Node.lua API Reference
 
--[Node.lua API Reference](api)
+-[Node.lua API Reference](api/README.md)
 
 
 ## Vision API Reference
 
--[Vision API Reference](vision)
+-[Vision API Reference](vision/README.md)
 
