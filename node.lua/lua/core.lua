@@ -141,15 +141,22 @@ Caveats: This function returns true for classes.
     assert(instanceof(Emitter, Object))
 ]]
 function exports.instanceof(obj, class)
-    if type(obj) ~= 'table' or obj.meta == nil or not class then
+    if (type(obj) ~= 'table') or (not class) then
         return false
     end
 
-    if obj.meta.__index == class then
+    local meta = obj.meta
+    if (meta == nil) then
+        return false
+    end
+
+    if meta == class.meta then
+        return true
+
+    elseif meta.__index == class then
         return true
     end
 
-    local meta = obj.meta
     while meta do
         if meta.super == class then
             return true

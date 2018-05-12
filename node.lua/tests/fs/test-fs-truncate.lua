@@ -20,7 +20,6 @@ require('ext/tap')(function(test)
 
   local FS = require('fs')
   local Path = require('path')
-  local Buffer = require('buffer').Buffer
   local string = require('string')
 
   local tmp = Path.dirname(os.tmpname())

@@ -39,7 +39,7 @@ local function updatePathEnvironment(isAdd)
 	if (file) then
 		local result = file:read("*all")
 		if (result) then
-	 		tokens = result:split('\n') or {}
+			 tokens = result:split('\n') or {}
 		end
 	end
 
@@ -64,29 +64,27 @@ local function updatePathEnvironment(isAdd)
 		items = value:split(';') or {}
 	end
 
-	local skip = false
+	-- tokens
 	local paths = {}
 	for index, token in pairs(items) do
 		token = token:trim()
-		if (token == pathname) then
-			skip = true;
-		end
 
 		if (#token > 0) then
-			table.insert(paths, token)
+			local filename = path.join(token, "lnode.exe")
+			if (not fs.existsSync(filename)) then
+				table.insert(paths, token)
+			end
 		end
 	end
+	table.insert(paths, pathname)
 
-	if (not skip) then
-		table.insert(paths, pathname)
-		local BIN_PATH = table.concat(paths, ";")
+	-- update PATH
+	local BIN_PATH = table.concat(paths, ";")
+	if (oldPath ~= BIN_PATH) then
 		os.execute('SETX PATH "' .. BIN_PATH .. '"')
 		printPathList("SET BIN_PATH=", BIN_PATH)
-		
-	else 
-		local BIN_PATH = table.concat(paths, ";")
-		printPathList("SET BIN_PATH=", BIN_PATH)
 	end
+
 end
 
 -------------------------------------------------------------------------------

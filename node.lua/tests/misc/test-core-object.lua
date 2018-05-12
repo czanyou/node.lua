@@ -18,11 +18,15 @@ limitations under the License.
 
 require("ext/tap")(function (test)
 
+local core = require('core')
+
 test("Foo:new returns new instances", function ()
-    local Foo = require('core').Object:extend()
+
+    local Foo = core.Object:extend()
     function Foo:initialize(bar)
       self.bar = bar
     end
+
     function Foo.meta.__tostring(table)
       return tostring(table.bar)
     end
@@ -32,12 +36,23 @@ test("Foo:new returns new instances", function ()
     local foo1 = Foo:new(1)
     local foo2 = Foo:new(1)
     assert(foo1 ~= foo2)
+
     assert(tostring(foo1) == tostring(foo2))
     assert(foo1.bar == foo2.bar)
 
     local msg = 'asd'
     local baz1 = Baz:new(msg)
     assert(tostring(baz1) == msg)
+
+    console.log(baz1)
+    console.log(core.instanceof(baz1, Baz))
+    console.log(core.instanceof(baz1, Foo))
+    console.log(core.instanceof(baz1, core.Object))
+
+    console.log(foo1)
+    console.log(core.instanceof(foo1, Baz))
+    console.log(core.instanceof(foo1, Foo))
+    console.log(core.instanceof(foo1, core.Object)) 
 end)
 
 end)

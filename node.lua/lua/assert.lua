@@ -26,23 +26,31 @@ meta.description = "Provides a simple set of assertion tests that can be used to
 -------------------------------------------------------------------------------
 -- Assertion Testing
 
+-- The assert module provides a simple set of assertion tests that can be used to test invariants.
 local exports = { meta = meta }
 
-function exports.deepEqual(actual, expected)
-    local ret, message = exports.isDeepEqual(actual, expected)
+-- Tests for deep equality between the actual and expected parameters.
+function exports.deepEqual(actual, expected, message)
+    local ret, defaultMessage = exports.isDeepEqual(actual, expected)
     if (not ret) then
-        error(message or 'is deep equal')
+        error(message or defaultMessage or 'is deep equal')
     end
 
     return true
 end
 
 function exports.equal(actual, expected, message)
-	if (actual ~= expected) then
-		exports.fail(actual, expected, message, '==')
+    if (actual == expected) then
+        return true
+    end
+
+    local newActual   = tonumber(actual)
+    local newExpected = tonumber(expected)
+    if (newActual ~= nil) and (newActual == newExpected) then
+        return true
 	end
 
-    return true
+    exports.fail(actual, expected, message, '==')
 end
 
 function exports.fail(actual, expected, message, operator)
@@ -118,6 +126,13 @@ end
 
 function exports.notEqual(actual, expected, message)
     if (actual == expected) then
+        exports.fail(actual, expected, message, '!=')
+    end
+
+    local newActual   = tonumber(actual)
+    local newExpected = tonumber(expected)
+    
+    if (newActual ~= nil) and (newActual == newExpected) then
         exports.fail(actual, expected, message, '!=')
     end
 

@@ -17,6 +17,8 @@ limitations under the License.
 --]]
 
 local core = require("core")
+local buffer = require("buffer")
+
 local Object = core.Object
 local Emitter = core.Emitter
 local instanceof = core.instanceof
@@ -25,6 +27,15 @@ require('ext/tap')(function (test)
   test("test instanceof", function()
     local o = Object:new()
     local e = Emitter:new()
+    local b = buffer.Buffer:new(1)
+
+    --console.log(b.meta)
+    --console.log(buffer.Buffer)
+    --console.log(buffer.Buffer.meta)
+
+    assert(instanceof(b, Object)) 
+    assert(instanceof(b, buffer.Buffer)) 
+    assert(not instanceof(b, Emitter)) 
 
     assert(instanceof(o, Object))
     assert(not instanceof(o, Emitter))

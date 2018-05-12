@@ -1,6 +1,6 @@
 # Node.lua
 
-> - Author：ChengZhen
+> - Author：ChengZhen (anyou@qq.com)
 > - Version：3.2
 
 Platform for Internet of Things with Lua.
@@ -10,7 +10,7 @@ Modern IoT device embedded software development platform.
 
 Using dynamic languages to develop embedded applications, you can focus on application logic, quickly respond to rapidly changing requirements, and implement faster functional iterations.
 
-## 特色 -  Features
+## 特色 - Features
 
 - Use pure C language, easy to transplant, superior performance, flexible and compact
 - Use mature frameworks like libuv
@@ -19,20 +19,20 @@ Using dynamic languages to develop embedded applications, you can focus on appli
 - provide a common extension of the library, and easy to expand on their own
 - Specifically for embedded optimization, fast running, less space
 
-### Supported platforms
+### 支持的平台 - Supported Platforms
 
 Current supported platforms are Linux.
 
 macOS & Windows as development host.
 
-#### H/W boards
+#### 开发板 - H/W boards
 
 - Raspberry Pi
 - Nano Pi
 - MT7688
 - Hi3516
 
-### 目录结构
+### 目录结构 - Directory Structure
 
 | Path       | Description
 | ---        | ---

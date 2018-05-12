@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "iosfwd": "c",
+        "initializer_list": "c",
+        "xutility": "c",
+        "type_traits": "c",
+        "xstddef": "c",
+        "xtr1common": "c"
+    }
+}

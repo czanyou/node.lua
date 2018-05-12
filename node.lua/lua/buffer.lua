@@ -65,9 +65,9 @@ function Buffer:initialize(param)
     elseif (type(param) == "string") then
         self.buffer = lutils.new_buffer(#param)
 
-        self.buffer:put_bytes(1, param, 1, #param)
         self.buffer:position(1)
         self.buffer:limit(#param + 1)
+        self.buffer:put_bytes(1, param, 1, #param)
 
     else
         error("Input must be a string or number")
@@ -75,23 +75,23 @@ function Buffer:initialize(param)
 end
 
 function Buffer.meta:__concat(other)
+    --console.log('__concat', tostring(self))
     return tostring(self) .. tostring(other)
 end
 
 function Buffer.meta:__index(key)
     if type(key) == "number" then
-        if key < 1 or key > self:length() then error("Index out of bounds") end
-
-        local position = self:position() + key - 1
-        return self.buffer:get_byte(position)
+        if key < 1 or key > self:size() then return nil end
+        return self.buffer:get_byte(key)
     end
+
     return Buffer[key]
 end
 
 function Buffer.meta:__ipairs()
-    local index = 1
+    local index = 0
     return function()
-        if index <= self:length() then
+        if index < self:size() then
             index = index + 1
             return index, self.buffer.get_byte(index)
         end
@@ -100,10 +100,8 @@ end
 
 function Buffer.meta:__newindex(key, value)
     if type(key) == "number" then
-        if key < 1 or key > self:length() then error("Index out of bounds") end
-
-        local position = self:position() + key - 1
-        self.buffer:put_byte(position, value)
+        if key < 1 or key > self:size() then error("Index out of bounds") end
+        self.buffer:put_byte(key , value)
         return
     end
 
@@ -111,72 +109,82 @@ function Buffer.meta:__newindex(key, value)
 end
 
 function Buffer.meta:__tostring()
-    return self.buffer:get_bytes(self:position(), self:limit() - self:position())
+    return self.buffer:get_bytes(1, self:size())
+end
+
+
+function Buffer:compare(target, targetStart, targetEnd, sourceStart, sourceEnd )
+    if (target.buffer == nil) then
+        return -1
+
+    elseif (self.buffer == nil) then
+        return -1        
+    end
+
+    return target.buffer:compare(targetStart or 0, targetEnd or 0, self.buffer, sourceStart or 0, sourceEnd or 0)
 end
 
 function Buffer:compress()
-    if (self:isEmpty()) then
-        return
-    end
-
-    local size = self:limit() - self:position()
-    if (self:position() > 1) and (size > 0) then
-        self.buffer:move(1, self:position(), size)
-
-        self:position(1)
-        self:limit(self:position() + size)
-    end
+    return self.buffer:compress()
 end
 
-function Buffer:concat(list, totalLength)
-    -- TODO:
+function Buffer:copy(target, targetStart, sourceStart, sourceEnd)
+    return target.buffer:copy(targetStart or 0, self.buffer, sourceStart or 0, sourceEnd or 0)
 end
 
-function Buffer:copy(targetBuffer, targetStart, sourceStart, sourceEnd)
-    local length = sourceEnd - sourceStart + 1;
-    return targetBuffer.buffer:copy(targetStart, self.buffer, sourceStart, length)
+function Buffer:equals(otherBuffer)
+    if (otherBuffer:size() ~= self:size()) then
+        return false
+    end
+
+    return self:compare(otherBuffer) == 0;
 end
 
 function Buffer:expand(size)
     if (size == 0) then
         return 0
-
-    elseif (self:limit() + size < self:position()) then
-        return 0        
-
-    elseif (self:limit() + size > self:length() + 1) then
-        return 0
     end
 
-    self:limit(self:limit() + size)
-
-    if (self:limit() == self:position()) then
-        self:position(1)
-        self:limit(1)
-    end
-
-    return size
+    return self.buffer:expand(size)
 end
 
-function Buffer:fill(value, startPos, endPos)
-    if (endPos < startPos) then
+function Buffer:fill(value, offset, endPos)
+    if (endPos < offset) then
         return 
     end
 
-    local position = self:position() + startPos - 1
-    return self.buffer:fill(value, position, endPos - startPos + 1)
+    if (type(value) == 'string') then
+        value = value:byte(1)
+    else
+        value = tonumber(value)
+    end
+
+    --local position = self:position() + offset - 1
+    return self.buffer:fill(value or 0, offset, endPos)
+end
+
+function Buffer:includes(value, offset)
+    return self.buffer:index_of(value, offset) > 0
+end
+
+function Buffer:indexOf(value, offset)
+   return self.buffer:index_of(value, offset)
+end
+
+function Buffer:lastIndexOf(value, offset)
+    return self.buffer:last_index_of(value, offset)
 end
 
 function Buffer:inspect()
     local parts = { }
-    for i = 1, tonumber(self:length()) do
-        parts[i] = bit.tohex(self[i], 2)
+    for i = 1, tonumber(self:size()) do
+        parts[i] = string.format("%02X", self[i])
     end
     return "<Buffer " .. table.concat(parts, " ") .. ">"
 end
 
 function Buffer:isEmpty()
-    return self:position() == self:limit()
+    return (self:size() <= 0)
 end
 
 function Buffer:length()
@@ -196,9 +204,8 @@ function Buffer:limit(limit)
 
     if (not limit) then
         return buffer:limit() or 1
-    end
 
-    if (limit >= self:position()) and (limit <= self:length() + 1) then
+    else
         buffer:limit(limit)
     end
 end
@@ -211,20 +218,19 @@ function Buffer:position(position)
 
     if (not position) then
         return buffer:position() or 1
-    end
 
-    if (position >= 1) and (position <= self:length()) and (position <= self:limit()) then
+    else
         buffer:position(position)
     end
 end
 
 function Buffer:put(offset, value)
-    local position = self:limit() + offset
-    return self.buffer:put_byte(position, value)
+    return self.buffer:put_byte(offset, value)
 end
 
 function Buffer:putBytes(data, offset, length)
-    local position = self:limit()
+    local position = self:size() + 1
+
     if (not offset) then
         offset = 1
     end
@@ -233,9 +239,9 @@ function Buffer:putBytes(data, offset, length)
         length = #data + 1 - offset
     end
 
-    local ret = self.buffer:put_bytes(position, data, offset, length)
-    if (ret == length) then
-        self:limit(self:limit() + length)
+    local ret = self:expand(length)
+    if (ret > 0) then 
+        self.buffer:put_bytes(position, data, offset, length)
     end
 
     return ret
@@ -292,47 +298,38 @@ function Buffer:readUInt32LE(offset)
 end
 
 function Buffer:size()
-    return self:limit() - self:position()
+    return self.buffer:size()
 end
 
 function Buffer:skip(size)
     if (size == 0) then
         return 0
-
-    elseif (self:position() + size < 1) then
-        return 0
-
-    elseif (self:position() + size > self:limit()) then
-        return 0
     end
 
-    self:position(self:position() + size)
-
-    if (self:limit() == self:position()) then
-        self:position(1)
-        self:limit(1)
-    end
-
-    return size
+    return self.buffer:skip(size)
 end
 
 function Buffer:slice(startPos, endPos)
     -- TODO: 
 end
 
-function Buffer:toString(i, j)
-    local offset    = i and i or 1
-    local position  = self:position() + offset - 1
-    local size      = j and (j - i + 1) or (self:limit() - position)
-    return self.buffer:get_bytes(position, size)
+function Buffer:toString(offset, endPos)
+    offset = tonumber(offset) or 1
+    if (offset < 1) then 
+        offset = 1
+    end
+
+    endPos = tonumber(endPos) or 0
+    if (endPos < 1) then 
+        endPos = self:size()
+    end
+
+    local size = endPos - offset + 1
+    --console.log(offset, endPos, size)
+    return self.buffer:get_bytes(offset, size)
 end
 
 function Buffer:write(data, offset, length, sourceStart)
-    local position = self:position()
-    if (offset) then
-        position = position + offset - 1
-    end
-
     if (not sourceStart) then
         sourceStart = 1
     end
@@ -341,11 +338,121 @@ function Buffer:write(data, offset, length, sourceStart)
         length = #data
     end
 
-    local ret = self.buffer:put_bytes(position, data, sourceStart, length)
-    if (ret == length) then
-        self:limit(self:limit() + length)
+    return self.buffer:put_bytes(offset, data, sourceStart, length)
+end
+
+function Buffer:writeInt8(value, offset)
+    return self.buffer:put_byte(offset, value)
+end
+
+function Buffer:writeUInt8(value, offset)
+    return self.buffer:put_byte(offset, value)
+end
+
+function Buffer:writeInt16BE(value, offset)
+    self.buffer:put_byte(offset,     value >> 8)
+    self.buffer:put_byte(offset + 1, value)
+end
+
+function Buffer:writeInt16LE(value, offset)
+    self.buffer:put_byte(offset + 1, value >> 8)
+    self.buffer:put_byte(offset,     value)    
+end
+
+function Buffer:writeUInt16BE(value, offset)
+    self.buffer:put_byte(offset,     value >> 8)
+    self.buffer:put_byte(offset + 1, value)    
+end
+
+function Buffer:writeUInt16LE(value, offset)
+    self.buffer:put_byte(offset + 1, value >> 8)
+    self.buffer:put_byte(offset,     value)    
+end
+
+function Buffer:writeInt32BE(value, offset)
+    self.buffer:put_byte(offset,     value >> 24)
+    self.buffer:put_byte(offset + 1, value >> 16)
+    self.buffer:put_byte(offset + 2, value >> 8)
+    self.buffer:put_byte(offset + 3, value)
+end
+
+function Buffer:writeInt32LE(value, offset)
+    self.buffer:put_byte(offset + 3, value >> 24)
+    self.buffer:put_byte(offset + 2, value >> 16)
+    self.buffer:put_byte(offset + 1, value >> 8)
+    self.buffer:put_byte(offset,     value)
+end
+
+function Buffer:writeUInt32BE(value, offset)
+    self.buffer:put_byte(offset,     value >> 24)
+    self.buffer:put_byte(offset + 1, value >> 16)    
+    self.buffer:put_byte(offset + 2, value >> 8)  
+    self.buffer:put_byte(offset + 3, value)  
+end
+
+function Buffer:writeUInt32LE(value, offset)
+    self.buffer:put_byte(offset + 3, value >> 24)
+    self.buffer:put_byte(offset + 2, value >> 16)
+    self.buffer:put_byte(offset + 1, value >> 8)
+    self.buffer:put_byte(offset,     value)    
+end
+
+---------------------------------------------------------------
+
+-- Allocates a new Buffer of size bytes. If fill is undefined, the Buffer will be zero-filled.
+-- size <integer> The desired length of the new Buffer.
+-- fill <string> | <Buffer> | <integer> A value to pre-fill the new Buffer with. Default: 0
+function Buffer.alloc(size, fill)
+    local buffer = Buffer:new(tonumber(size))
+    buffer:limit(size + 1)
+    buffer:fill(fill, 1, size)
+    return buffer
+end
+
+-- Allocates a new Buffer using an array of octets.
+function Buffer.from(array)
+    local buffer = nil
+    local arrayType = type(array)
+    if (arrayType == 'string') then
+        local size = #array
+
+        buffer = Buffer:new(tonumber(size))
+        buffer:limit(size + 1)
+
+        for i = 1, size do
+            buffer[i] = array:byte(i)
+        end
+
+    elseif (arrayType == 'table') then
+        local size = Buffer.isBuffer(array) and array:size() or #array
+
+        buffer = Buffer:new(tonumber(size))
+        buffer:limit(size + 1)
+
+        for i = 1, size do
+            buffer[i] = array[i]
+        end
     end
-    return ret
+    
+    return buffer
+end
+
+function Buffer.concat(list, totalLength)
+    local total = 0
+    for i, item in ipairs(list) do
+        total = total + item:size()
+    end
+
+    local newBuffer = Buffer:new(total)
+    for i, item in ipairs(list) do
+        newBuffer:putBytes(item:toString())
+    end
+    
+    return newBuffer
+end
+
+function Buffer.isBuffer(obj)
+    return core.instanceof(obj, exports.Buffer)
 end
 
 return exports

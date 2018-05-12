@@ -97,7 +97,7 @@ require('ext/tap')(function(test)
         local target = url.resolve('/one/two/three', 'four')
         assert('/one/two/four' == target, "target: " .. (target or ''))
 
-         local target = url.resolve('http://example.com/', '/one')
+        local target = url.resolve('http://example.com/', '/one')
         assert('http://example.com/one' == target, "target: " .. (target or ''))
 
         local target = url.resolve('http://example.com/one', '/two')
