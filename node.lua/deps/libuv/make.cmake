@@ -110,6 +110,7 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
   set(SOURCES ${SOURCES}
     ${LIBUVDIR}/src/unix/kqueue.c
     ${LIBUVDIR}/src/unix/freebsd.c
+    ${LIBUVDIR}/src/unix/bsd-ifaddrs.c
   )
 endif()
 
@@ -153,6 +154,7 @@ if(APPLE)
     ${LIBUVDIR}/src/unix/darwin-proctitle.c
     ${LIBUVDIR}/src/unix/kqueue.c
     ${LIBUVDIR}/src/unix/pthread-barrier.c
+    ${LIBUVDIR}/src/unix/bsd-ifaddrs.c
   )
 endif()
 
