@@ -16,7 +16,7 @@ local ssdpServer = nil
 local exports = {}
 
 local function getRootPath()
-    return conf.rootPath
+    return app.rootPath
 end
 
 -------------------------------------------------------------------------------

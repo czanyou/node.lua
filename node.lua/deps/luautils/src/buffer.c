@@ -37,6 +37,7 @@ static const char *memfind (const char *s1, size_t l1, const char *s2, size_t l2
   }
 }
 
+/*
 static void *memrchr(const void *s, int c, size_t n)
 {
 	const char* begin = (const char*) s;
@@ -52,6 +53,7 @@ static void *memrchr(const void *s, int c, size_t n)
 
 	return NULL;
 }
+*/
 
 static const char *memrfind (const char *s1, size_t l1, const char *s2, size_t l2) {
   if (l2 == 0) return s1;  /* empty strings are everywhere */

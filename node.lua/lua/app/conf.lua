@@ -32,8 +32,6 @@ if (process.rootPath) then
 	exports.rootPath = process.rootPath
 end
 
-exports.search_path = exports.rootPath .. "/conf"
-
 local osType = os.platform()
 if (osType == 'win32') then
 	local pathname = path.dirname(process.execPath)

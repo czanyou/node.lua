@@ -8,7 +8,6 @@ local interval 	= 100
 
 function http_loop()
 	local cwd = process.cwd()
-	--conf.search_path = cwd
 
 	local root = path.join(cwd, "../lua/www")
 	--print('root', root)

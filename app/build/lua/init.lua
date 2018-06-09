@@ -36,7 +36,7 @@ local conf   = require('app/conf')
 local exports = {}
 
 local function getRootPath()
-	return conf.rootPath
+	return app.rootPath
 end
 
 local function getRootURL()

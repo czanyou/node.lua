@@ -29,10 +29,7 @@ define sdk_install
 	sudo rm -rf ${NODE_ROOTPATH}/lua
 
 	sudo mkdir -p ${NODE_ROOTPATH}/bin
-	sudo mkdir -p ${NODE_ROOTPATH}/conf
 	sudo mkdir -p ${NODE_ROOTPATH}/lib
-
-	@sudo chmod 777 ${NODE_ROOTPATH}/conf
 
 	@echo "make link: ${NODE_ROOTPATH}/lua"
 	@sudo ln -s ${PWD}/node.lua/lua ${NODE_ROOTPATH}/lua
@@ -68,13 +65,13 @@ define sdk_remove
 	sudo rm -rf ${NODE_ROOTPATH}/bin
 	sudo rm -rf ${NODE_ROOTPATH}/lib
 	sudo rm -rf ${NODE_ROOTPATH}/lua
+	sudo rm -rf ${NODE_ROOTPATH}/conf
 
 	sudo rm -rf ${LOCAL_BIN_PATH}/lnode
 	sudo rm -rf ${LOCAL_BIN_PATH}/lpm
 
 	@echo "Remove finish!"
 	@echo ""
-
 
 endef
 

@@ -39,7 +39,22 @@ local exports = { meta = meta }
 local getSystemInformation
 
 local function getRootPath()
-	return conf.rootPath
+    if (exports.rootPath) then
+        return exports.rootPath
+    end
+
+    exports.rootPath = "/usr/local/lnode"
+    if (process.rootPath) then
+        exports.rootPath = process.rootPath
+    end
+
+    local osType = os.platform()
+    if (osType == 'win32') then
+        local pathname = path.dirname(process.execPath)
+        exports.rootPath = path.dirname(pathname)
+    end
+
+	return exports.rootPath
 end
 
 local function getAppPath()
@@ -149,7 +164,7 @@ exports.table 			= ext.table
 -------------------------------------------------------------------------------
 -- profile
 
-local loadProfile = function()
+local function loadProfile()
     if (exports._profile) then
         return exports._profile
     end

@@ -65,14 +65,8 @@ end
 function exports.getSystemTarget()
 	local platform = os.platform()
 	local arch = os.arch()
-
-    local conf = require('app/conf')
-    local fs   = require('fs')
-    local json = require('json')
-
-    local filename = conf.rootPath .. '/package.json'
-    local packageInfo = json.parse(fs.readFileSync(filename)) or {}
-    local target = packageInfo.target or (arch .. "-" .. platform)
+	
+    local target = (arch .. "-" .. platform)
     target = target:trim()
     return target
 end

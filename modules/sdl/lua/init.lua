@@ -1,4 +1,5 @@
 local conf      = require('app/conf')
+local ext       = require('app/utils')
 local json      = require('json')
 local fs        = require('fs')
 local utils     = require('util')
@@ -20,16 +21,6 @@ function exports.getSystemInfo()
     exports.systemInfo = packageInfo
 
     return packageInfo
-end
-
-function exports.getSystemTarget()
-    local platform = os.platform()
-    local arch = os.arch()
-
-    local packageInfo = exports.getSystemInfo() or {}
-    local target = packageInfo.target or (arch .. '-' .. platform)
-    target = target:trim()
-    return target
 end
 
 function exports.getMacAddress()
@@ -97,7 +88,7 @@ function exports.getDeviceInfo()
     end
 
     deviceInfo = {}
-    local target = exports.getSystemTarget()
+    local target = ext.getSystemTarget()
 
     local profile = exports.getSystemInfo()
     deviceInfo.model        = profile.deviceModel or target
