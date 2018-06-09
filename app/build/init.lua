@@ -120,17 +120,8 @@ function sdk.build_common_sdk(target, packageInfo)
 		end
 	end
 
-	-- copy app files
-	mkdir(join(nodePath, "app"))
-	local applications = packageInfo.applications or {}
-	for _, key in ipairs(applications) do
-		local file =  key
-		xcopy(join(cwd, "app", file),  join(nodePath , "app", file))
-	end
-
 	if (packageInfo.type ~= 'patch') then
 		mkdir(join(nodePath, "bin"))
-		mkdir(join(nodePath, "conf"))
 		mkdir(join(nodePath, "lua"))
 
 		copy(buildPath .. "/lnode", join(nodePath, "bin/lnode"))
