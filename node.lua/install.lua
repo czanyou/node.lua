@@ -39,7 +39,7 @@ local function updatePathEnvironment(isAdd)
 	if (file) then
 		local result = file:read("*all")
 		if (result) then
-			 tokens = result:split('\n') or {}
+			tokens = result:split('\n') or {}
 		end
 	end
 

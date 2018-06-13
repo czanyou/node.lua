@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,13 +16,13 @@ limitations under the License.
 
 --]]
 
-local core   	= require('core')
-local fs     	= require('fs')
-local json   	= require('json')
-local path   	= require('path')
-local utils  	= require('util')
-local conf    	= require('app/conf')
-local app 		= require('app')
+local core		= require('core')
+local fs		= require('fs')
+local json		= require('json')
+local path		= require('path')
+local utils		= require('util')
+local conf		= require('app/conf')
+local app		= require('app')
 
 -------------------------------------------------------------------------------
 -- meta
@@ -39,22 +39,11 @@ meta.tags        = { "lpm", "package", "command-line" }
 local exports = { meta = meta }
 
 exports.rootPath = app.rootPath
-exports.rootURL  = app.rootURL
 
 -------------------------------------------------------------------------------
 -- config
 
 local config = {}
-
--- split "name:key" string
-local function parseConfigKey(name) 
-	local pos = name:find(':')
-	if (pos) then
-		return name:sub(1, pos - 1), name:sub(pos + 1)
-	else
-		return 'user', name
-	end
-end
 
 -- 打印指定名称的配置参数项的值
 function config.get(key)
@@ -64,10 +53,8 @@ function config.get(key)
 		return
 	end
 
-	local filename, keyname = parseConfigKey(key)
-
-	local profile = conf(filename or 'user')
-	console.log(profile:get(keyname))
+	local profile = conf('lpm')
+	console.log(profile:get(key))
 end
 
 function config.help()
@@ -84,11 +71,6 @@ Usage:
   lpm get <key>                - Get value for <key>.
   lpm set <key> <value>        - Sets the specified config <key> <value>.
 
-<key>:     "[filename:][keyname]"
-<keyname>: "[root.][name]"
-
-example:   "network:lan.mode"
-
 Aliases: c, conf
 
 ]]
@@ -96,15 +78,8 @@ Aliases: c, conf
 	print(console.colorful(text))
 end
 
-function config.list()
-	local confPath = path.join(app.rootPath, 'conf')
-	local files = fs.readdirSync(confPath)
-	print(confPath .. ':')
-	print(table.unpack(files))
-end
-
-function config.show(name)
-	local profile = conf(name or 'user')
+function config.list(name)
+	local profile = conf('lpm')
 
 	print(profile.filename .. ': ')
 	console.log(profile.settings)
@@ -118,16 +93,14 @@ function config.set(key, value)
 		return
 	end
 
-	local filename, keyname = parseConfigKey(key)
-
-	local profile = conf(filename or 'user')
-	local oldValue = profile:get(keyname)
+	local profile = conf('lpm')
+	local oldValue = profile:get(key)
 	if (not oldValue) or (value ~= oldValue) then
-		profile:set(keyname, value)
+		profile:set(key, value)
 		profile:commit()
 	end
 
-	print('set `' .. tostring(keyname) .. '` = `' .. tostring(value) .. '`')
+	print('set `' .. tostring(key) .. '` = `' .. tostring(value) .. '`')
 end
 
 -- 删除指定名称的配置参数项的值
@@ -138,15 +111,13 @@ function config.unset(key)
 		return
 	end
 
-	local filename, keyname = parseConfigKey(key)
-
-	local profile = conf(filename or 'user')
-	if (profile:get(keyname)) then
-		profile:set(keyname, nil)
+	local profile = conf('lpm')
+	if (profile:get(key)) then
+		profile:set(key, nil)
 		profile:commit()
 	end
 
-	print('clears `' .. tostring(keyname) .. '`')
+	print('clears `' .. tostring(key) .. '`')
 end
 
 function exports.config(action, ...)
@@ -264,64 +235,64 @@ function exports.scan(...)
 		return
 	end
 
-    local list = {}
+	local list = {}
 
-    local grid = app.table({20, 24, 24})
+	local grid = app.table({20, 24, 24})
 
-    print("Start scaning...")
+	print("Start scaning...")
 
-    grid.line()
-    grid.cell("IP", "UID", "Model")
-    grid.line('=')
+	grid.line()
+	grid.cell("IP", "UID", "Model")
+	grid.line('=')
 
-    local ssdpClient = client({}, function(response, rinfo)
-        if (list[rinfo.ip]) then
-            return
-        end
+	local ssdpClient = client({}, function(response, rinfo)
+		if (list[rinfo.ip]) then
+			return
+		end
 
-        local headers   = response.headers
-        local item      = {}
-        item.remote     = rinfo
-        item.usn        = headers["usn"] or ''
+		local headers   = response.headers
+		local item      = {}
+		item.remote     = rinfo
+		item.usn        = headers["usn"] or ''
 
-        list[rinfo.ip] = item
+		list[rinfo.ip] = item
 
-        --console.log(headers)
+		--console.log(headers)
 
-        local model = headers['X-DeviceModel']
-        local name = rinfo.ip .. ' ' .. item.usn
-        if (model) then
-            name = name .. ' ' .. model
-        end
+		local model = headers['X-DeviceModel']
+		local name = rinfo.ip .. ' ' .. item.usn
+		if (model) then
+			name = name .. ' ' .. model
+		end
 
-        console.write('\r')  -- clear current line
-        grid.cell(rinfo.ip, item.usn, model)
-    end)
+		console.write('\r')  -- clear current line
+		grid.cell(rinfo.ip, item.usn, model)
+	end)
 
-    -- search for a service type 
-    serviceType = serviceType or 'urn:schemas-upnp-org:service:cmpp-iot'
-    ssdpClient:search(serviceType)
+	-- search for a service type 
+	serviceType = serviceType or 'urn:schemas-upnp-org:service:cmpp-iot'
+	ssdpClient:search(serviceType)
 
-    local scanCount = 0
-    local scanTimer = nil
-    local scanMaxCount = timeout or 10
+	local scanCount = 0
+	local scanTimer = nil
+	local scanMaxCount = timeout or 10
 
-    scanTimer = setInterval(500, function()
-        ssdpClient:search(serviceType)
-        console.write("\r " .. string.rep('.', scanCount))
+	scanTimer = setInterval(500, function()
+		ssdpClient:search(serviceType)
+		console.write("\r " .. string.rep('.', scanCount))
 
-        scanCount = scanCount + 1
-        if (scanCount >= scanMaxCount) then
-            clearInterval(scanTimer)
-            scanTimer = nil
-            
-            ssdpClient:stop()
+		scanCount = scanCount + 1
+		if (scanCount >= scanMaxCount) then
+			clearInterval(scanTimer)
+			scanTimer = nil
+			
+			ssdpClient:stop()
 
-            console.write('\r') -- clear current line
-            grid.line()
-            print("End scaning...")
-        end
-    end)
+			console.write('\r') -- clear current line
+			grid.line()
+			print("End scaning...")
+		end
+	end)
 end
 
 function exports.info(...)
@@ -339,7 +310,6 @@ function exports.info(...)
 		print(list[i])
 	end	
 
-	print(console.colorful('${string}app.rootURL:  ${normal}') .. (app.rootURL or '-'))
 	print(console.colorful('${string}app.rootPath: ${normal}') .. (app.rootPath or '-'))
 	print(console.colorful('${string}app.target:   ${normal}') .. (app.target() or '-'))
 	print(console.colorful('${string}os.arch:      ${normal}') .. os.arch())
@@ -417,17 +387,17 @@ This is the CLI for Node.lua.
 Usage: ${highlight}lpm <command> [args]${normal}
 ${braces}
 where <command> is one of:
-    c, config, get, set, unset
-    delete, l, list, ps, restart, start, stop, 
-    update, upgrade
-    help, info, root, scan, version ${normal}
+	c, config, get, set, unset
+	delete, l, list, ps, restart, start, stop, 
+	update, upgrade
+	help, info, root, scan, version ${normal}
 
 
    or: ${highlight}lpm <name> <command> [args]${normal}
 ${braces}
 where <name> is the name of the application, located in 
-    ']] .. appPath .. [[', the supported values of <command>
-    depend on the invoked application.${normal}
+	']] .. appPath .. [[', the supported values of <command>
+	depend on the invoked application.${normal}
 
 
    or: ${highlight}lpm help - ${braces}involved overview${normal}

@@ -13,7 +13,6 @@ return require('ext/tap')(function (test)
 
 		console.log('rootPath', app.rootPath)
 		console.log('appName', app.appName())
-		console.log('rootURL', app.rootURL)
 		console.log('getStartFilename', app.getStartFilename())
 		console.log('getStartNames', app.getStartNames())
 

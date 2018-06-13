@@ -78,15 +78,6 @@ app(exports)
 比如在 linux 下默认为 '/usr/local/lnode'.
 
 
-## 属性 app.rootURL
-
-{String} Node.lua 的云服务访问地址, 云服务主要提供热更新等功能.
-
-可以添加一个名为 ${exports.rootPath}/conf/root.url 的文件来替换默认的 rootURL.
-
-比如默认为 'http://node.sae-sz.com'.
-
-
 ## app.get
 
     app.get(key)

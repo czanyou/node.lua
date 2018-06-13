@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -29,29 +29,29 @@ _G.p            = console.log
 
 -- _print
 local function _print(...)
-    local n = select('#', ...)
-    local arguments = {...}
-    for i = 1, n do
-        arguments[i] = tostring(arguments[i])
-    end
+	local n = select('#', ...)
+	local arguments = {...}
+	for i = 1, n do
+		arguments[i] = tostring(arguments[i])
+	end
 
-    local text = table.concat(arguments, "\t")
-    text = "  " .. string.gsub(text, "\n", "\n  ")
-    --print(text)
+	local text = table.concat(arguments, "\t")
+	text = "  " .. string.gsub(text, "\n", "\n  ")
+	--print(text)
 
-    return ...
+	return ...
 end
 
 local function _pprint(...)
-    local n = select('#', ...)
-    local arguments = { ... }
+	local n = select('#', ...)
+	local arguments = { ... }
 
-    for i = 1, n do
-        arguments[i] = console.dump(arguments[i])
-    end
+	for i = 1, n do
+		arguments[i] = console.dump(arguments[i])
+	end
 
-    print(table.concat(arguments, "\t"))
-    return ...
+	print(table.concat(arguments, "\t"))
+	return ...
 end
 
 -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
@@ -59,86 +59,86 @@ end
 local tests = {};
 
 local function _run_tests()
-    local passed = 0
+	local passed = 0
 
-    if #tests < 1 then
-        error("!!! No tests specified!")
-        return
-    end
+	if #tests < 1 then
+		error("!!! No tests specified!")
+		return
+	end
 
-    print(colorize("success", "<<<< Test Suite with " .. #tests .. " Tests >>>>"))
+	print(colorize("success", "<<<< Test Suite with " .. #tests .. " Tests >>>>"))
 
-    for i = 1, #tests do
-        local test = tests[i]
+	for i = 1, #tests do
+		local test = tests[i]
 
-        print(colorize("highlight", "#### Runing Test " .. i .. "/" .. #tests .. " '" .. test.name .. "' #### "))
+		print(colorize("highlight", "#### Runing Test " .. i .. "/" .. #tests .. " '" .. test.name .. "' #### "))
 
-        local cwd = uv.cwd()
-        local pass, err = xpcall(function ()
-            local expected = 0
-            local function _expect(fn, count)
-                expected = expected + (count or 1)
-                return function (...)
-                    expected = expected - 1
-                    local ret = fn(...)
-                    collectgarbage()
-                    return ret
-                end
-            end
+		local cwd = uv.cwd()
+		local pass, err = xpcall(function ()
+			local expected = 0
+			local function _expect(fn, count)
+				expected = expected + (count or 1)
+				return function (...)
+					expected = expected - 1
+					local ret = fn(...)
+					collectgarbage()
+					return ret
+				end
+			end
 
-            test.func(_print, _pprint, _expect, uv)
+			test.func(_print, _pprint, _expect, uv)
 
-            collectgarbage()
-            uv.run()
-            collectgarbage()
+			collectgarbage()
+			uv.run()
+			collectgarbage()
 
-            if expected > 0 then
-                error("Missing " .. expected .. " expected call" .. (expected == 1 and "" or "s"))
+			if expected > 0 then
+				error("Missing " .. expected .. " expected call" .. (expected == 1 and "" or "s"))
 
-            elseif expected < 0 then
-                error("Found " .. -expected .. " unexpected call" .. (expected == -1 and "" or "s"))
-            end
+			elseif expected < 0 then
+				error("Found " .. -expected .. " unexpected call" .. (expected == -1 and "" or "s"))
+			end
 
-            collectgarbage()
+			collectgarbage()
 
-            if uv.cwd() ~= cwd then
-                error("Test moved cwd from " .. cwd .. " to " .. uv.cwd())
-            end
+			if uv.cwd() ~= cwd then
+				error("Test moved cwd from " .. cwd .. " to " .. uv.cwd())
+			end
 
-            collectgarbage()
-        end, debug.traceback)
+			collectgarbage()
+		end, debug.traceback)
 
-        -- Flush out any more opened handles
-        uv.stop()
-        uv.walk(function (handle)
-            if handle == stdout then return end
-            --if not uv.is_closing(handle) then uv.close(handle) end
-        end)
-        uv.run()
-        uv.chdir(cwd)
+		-- Flush out any more opened handles
+		uv.stop()
+		uv.walk(function (handle)
+			if handle == stdout then return end
+			--if not uv.is_closing(handle) then uv.close(handle) end
+		end)
+		uv.run()
+		uv.chdir(cwd)
 
-        if pass then
-            print("---- Finish '" .. test.name .. "'. ----\n")
-            passed = passed + 1
+		if pass then
+			print("---- Finish '" .. test.name .. "'. ----\n")
+			passed = passed + 1
 
-        else
-            print(err)
-            print("!!!! Failed '" .. test.name .. "'. !!!!\n")
-        end
-    end -- end for i = 1, #tests do
+		else
+			print(err)
+			print("!!!! Failed '" .. test.name .. "'. !!!!\n")
+		end
+	end -- end for i = 1, #tests do
 
-    -- failed count
-    local failed = #tests - passed
-    if failed == 0 then
-        print(colorize("success", "### All tests passed ###"))
-    else
-        print(colorize("err", "### " .. failed .. " failed test" .. (failed == 1 and "" or "s") .. " ###"))
-    end
+	-- failed count
+	local failed = #tests - passed
+	if failed == 0 then
+		print(colorize("success", "### All tests passed ###"))
+	else
+		print(colorize("err", "### " .. failed .. " failed test" .. (failed == 1 and "" or "s") .. " ###"))
+	end
 
-    -- Close all then handles, including stdout
-    --uv.walk(uv.close)
-    uv.run()
-    os.exit(-failed)
+	-- Close all then handles, including stdout
+	--uv.walk(uv.close)
+	uv.run()
+	os.exit(-failed)
 end
 
 -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
@@ -148,32 +148,32 @@ local prefix = nil
 
 local function tap(suite)
 
-    if (type(suite) == "function") then
-        -- Pass in suite directly for single mode
-        local test = function (name, func) -- test function
-            if prefix then
-                name = prefix .. ' - ' .. name
-            end
+	if (type(suite) == "function") then
+		-- Pass in suite directly for single mode
+		local test = function (name, func) -- test function
+			if prefix then
+				name = prefix .. ' - ' .. name
+			end
 
-            tests[#tests + 1] = { name = name, func = func }
-        end
+			tests[#tests + 1] = { name = name, func = func }
+		end
 
-        suite(test)
-        prefix = nil
+		suite(test)
+		prefix = nil
 
-    elseif (type(suite) == "string") then
-        prefix = suite
-        single = false
+	elseif (type(suite) == "string") then
+		prefix = suite
+		single = false
 
-    else
-        -- Or pass in false to collect several runs of tests
-        -- And then pass in true in a later call to flush tests queue.
-        single = suite
-    end
+	else
+		-- Or pass in false to collect several runs of tests
+		-- And then pass in true in a later call to flush tests queue.
+		single = suite
+	end
 
-    if single then 
-        _run_tests() 
-    end
+	if single then 
+		_run_tests() 
+	end
 end
 
 --[[
@@ -182,19 +182,19 @@ end
 local passed, failed, total = tap(function (test)
 
   test("add 1 to 2", function(print)
-    print("Adding 1 to 2")
-    assert(1 + 2 == 3)
+	print("Adding 1 to 2")
+	assert(1 + 2 == 3)
   end)
 
   test("close handle", function (print, p, expect, uv)
-    local handle = uv.new_timer()
-    uv.close(handle, expect(function (self)
-      assert(self == handle)
-    end))
+	local handle = uv.new_timer()
+	uv.close(handle, expect(function (self)
+	  assert(self == handle)
+	end))
   end)
 
   test("simulate failure", function ()
-    error("Oopsie!")
+	error("Oopsie!")
   end)
 
 end)
@@ -226,9 +226,9 @@ function exports.testAll(dirname)
 end
 
 setmetatable(exports, {
-    __call = function(self, ...)
-        return tap(...)
-    end    
+	__call = function(self, ...)
+		return tap(...)
+	end    
 })
 
 return exports
