@@ -50,8 +50,8 @@ local getn = table.getn or function(t) return #t end
 
 local unpack = unpack or table.unpack
 
-local db_class = { }
-local stmt_class = { }
+local Database = { }
+local Statement = { }
 
 
 local function check_db(db)
@@ -153,8 +153,8 @@ function sqlite3.open(filename)
     
     local db = object()
     
-    db.__gc	    = db_class.close
-    db.__index	= db_class
+    db.__gc	    = Database.close
+    db.__index	= Database
     db.filename	= filename
     db.handle 	= handle
     db.stmts	  = db_create_registry()
@@ -190,7 +190,7 @@ end
 --------------------
 
 -- To close a database
-function db_class.close(db)
+function Database.close(db)
   check_db(db)
   
   for _, obj in ipairs(db.stmts) do
@@ -213,7 +213,7 @@ function db_class.close(db)
 end
 
 
-function db_class.interrupt(db)
+function Database.interrupt(db)
   check_db(db)
   
   local status = api.interrupt(db.handle)
@@ -226,25 +226,25 @@ function db_class.interrupt(db)
 end
 
 
-function db_class.last_insert_rowid(db)
+function Database.last_insert_rowid(db)
   check_db(db)
   return api.last_insert_rowid(db.handle)
 end
 
 
-function db_class.changes(db)
+function Database.changes(db)
   check_db(db)
   return api.changes(db.handle)
 end
 
 
-function db_class.total_changes(db)
+function Database.total_changes(db)
   check_db(db)
   return api.total_changes(db.handle)
 end
 
 -- Executing simple SQL Statements
-function db_class.exec(db, sql)
+function Database.exec(db, sql)
   check_db(db)
   check_string(sql)
   
@@ -258,43 +258,43 @@ function db_class.exec(db, sql)
 end
 
 -- Returns a row as an integer indexed array
-function db_class.irows(db, sql, tab)
+function Database.irows(db, sql, tab)
   check_db(db)
   return db:prepare(sql):irows(tab, true)
 end
 
 -- Returns a row as an table, indexed by column names
-function db_class.rows(db, sql, tab)
+function Database.rows(db, sql, tab)
   check_db(db)
   return db:prepare(sql):rows(tab, true)
 end
 
 -- Returns each column directly
-function db_class.cols(db, sql)
+function Database.cols(db, sql)
   check_db(db)
   return db:prepare(sql):cols(true)
 end
 
 -- Fetching a Single Row as an integer indexed array
-function db_class.first_irow(db, sql, tab)
+function Database.first_irow(db, sql, tab)
   check_db(db)
   return db:prepare(sql):first_irow(tab, true)
 end
 
 -- Fetching a Single Row, indexed by column names
-function db_class.first_row(db, sql, tab)
+function Database.first_row(db, sql, tab)
   check_db(db)
   return db:prepare(sql):first_row(tab, true)
 end
 
 -- Fetching a Single Row as each column directly
-function db_class.first_cols(db, sql)
+function Database.first_cols(db, sql)
   check_db(db)
   return db:prepare(sql):first_cols(true)
 end
 
 -- Simple Prepared Statements
-function db_class.prepare(db, paranames, sql)
+function Database.prepare(db, paranames, sql)
   check_db(db)
   
   if sql == nil then
@@ -415,8 +415,8 @@ function db_class.prepare(db, paranames, sql)
   
   local create_stmt = function(db, handles, parameter_count)
     local stmt = object()
-    stmt.__gc		= stmt_class.close
-    stmt.__index	= stmt_class
+    stmt.__gc		= Statement.close
+    stmt.__index	= Statement
     stmt.handles	= handles
     stmt.db		= db
     stmt.reg_id		= db_register(db.stmts, stmt)
@@ -487,7 +487,7 @@ function db_class.prepare(db, paranames, sql)
 end
 
 -- Defining User Functions
-function db_class.set_function(db, name, num_args, func)
+function Database.set_function(db, name, num_args, func)
   check_db(db)
   
   local xfunc = function(context, num_values, values)
@@ -504,7 +504,7 @@ function db_class.set_function(db, name, num_args, func)
 end
 
 -- Defining User Aggregates
-function db_class.set_aggregate(db, name, num_args, create_funcs)
+function Database.set_aggregate(db, name, num_args, create_funcs)
   check_db(db)
   
   local step, final
@@ -535,7 +535,7 @@ function db_class.set_aggregate(db, name, num_args, create_funcs)
 end
 
 
-function db_class.set_trace_handler(db, func)
+function Database.set_trace_handler(db, func)
   check_db(db)
   local status = api.trace(db.handle, func)
   if is_error(status) then
@@ -545,7 +545,7 @@ function db_class.set_trace_handler(db, func)
 end
 
 
-function db_class.set_busy_timeout(db, ms)
+function Database.set_busy_timeout(db, ms)
   check_db(db)
   local status = api.busy_timeout(db.handle, ms)
   if is_error(status) then
@@ -555,7 +555,7 @@ function db_class.set_busy_timeout(db, ms)
 end
 
 
-function db_class.set_busy_handler(db, func)
+function Database.set_busy_handler(db, func)
   check_db(db)
   local status = api.busy_handler(db.handle, func)
   if is_error(status) then
@@ -662,7 +662,7 @@ local function _stmt_column_info(stmt, info_func)
     return info
 end
 
-function stmt_class:bind(...)
+function Statement:bind(...)
     local arg = {...}  arg.n = select("#", ...)
 
     local _bind_with_mapping = function(parameters)
@@ -734,7 +734,7 @@ function stmt_class:bind(...)
 end
 
 
-function stmt_class:reset()
+function Statement:reset()
     _stmt_check(self)
     for _, handle in ipairs(self.handles) do
         api.reset(handle)
@@ -743,7 +743,7 @@ function stmt_class:reset()
 end
 
 
-function stmt_class:close()
+function Statement:close()
     _stmt_check(self)
     
     for _, handle in ipairs(self.handles) do
@@ -760,20 +760,20 @@ function stmt_class:close()
     return self
 end
 
-function stmt_class:column_count()
+function Statement:column_count()
     local handle = _stmt_check_single(self)
     return api.column_count(handle)
 end
 
-function stmt_class:column_decltypes()
+function Statement:column_decltypes()
     return _stmt_column_info(self, api.column_decltype)
 end
 
-function stmt_class:column_names()
+function Statement:column_names()
     return _stmt_column_info(self, api.column_name)
 end
 
-function stmt_class:exec()
+function Statement:exec()
     _stmt_check(self)
     self:reset()
     for _, handle in ipairs(self.handles) do
@@ -795,7 +795,7 @@ function stmt_class:exec()
     return self
 end
 
-function stmt_class:parameter_names()
+function Statement:parameter_names()
     _stmt_check(self)
     if not self.paranames then
         return {}
@@ -804,19 +804,19 @@ function stmt_class:parameter_names()
     end
 end
 
-function stmt_class:cols(autoclose)
+function Statement:cols(autoclose)
     return _stmt_rows(self, api.drow, nil, autoclose)
 end
 
-function stmt_class:irows(tab, autoclose)
+function Statement:irows(tab, autoclose)
     return _stmt_rows(self, api.irow, tab, autoclose)
 end
 
-function stmt_class:rows(tab, autoclose)
+function Statement:rows(tab, autoclose)
     return _stmt_rows(self, api.arow, tab, autoclose)
 end
 
-function stmt_class:first_cols(autoclose)
+function Statement:first_cols(autoclose)
     local count = api.column_count(self.handles[1])
     local row, errmsg = _stmt_first_row(self, api.irow, nil, autoclose)
     if errmsg then
@@ -827,11 +827,11 @@ function stmt_class:first_cols(autoclose)
     end
 end
 
-function stmt_class:first_irow(tab, autoclose)
+function Statement:first_irow(tab, autoclose)
     return _stmt_first_row(self, api.irow, tab, autoclose)
 end
 
-function stmt_class:first_row(tab, autoclose)
+function Statement:first_row(tab, autoclose)
     return _stmt_first_row(self, api.arow, tab, autoclose)
 end
 
