@@ -5,9 +5,13 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>  
   <link rel="shortcut icon" href="/favicon.ico?v=100003" type="image/x-icon">
-  <link rel="stylesheet" href="style.css?v=100003"/>
-  <script src="jquery.js?v=100003"></script>
-  <script src="common.js?v=100003"></script>
+  <link rel="stylesheet" href="css/bootstrap.min.css?v=100003" />
+  <link rel="stylesheet" href="css/font-awesome.min.css?v=100003" />
+  <link rel="stylesheet" href="css/style.css?v=100003"/>
+  <script src="js/jquery.js?v=100003"></script>
+  <script src="js/popper.min.js?v=100003"></script>
+  <script src="js/bootstrap.min.js?v=100003"></script>
+  <script src="js/common.js?v=100003"></script>
   <script>
 
 	function OnUserLogin(username, password, callback) {
@@ -15,7 +19,7 @@
 		url += encodeURIComponent(username);
 		url += "&password=";
 		url += encodeURIComponent(password);
-
+ 
 		$.get(url, function(result) {
 			if (result.ret == 0) {
 				callback()
@@ -101,17 +105,26 @@
 		#login_tip { padding: 5px 8px; line-height: 20px; color: #c85305; }
 	}
 
+	.header-right .btn-group { margin-top: 10px; margin-right: 10px; }
+
 	</style>
 </head>
 <body class="login-body" style="display:none;">
 
 <header id="header" class="header-wrapper"><div class="header-inner">
   <div class="header-right">
-	  <a href="javascript:$.lang.select('en')">${en}</a> |
-	  <a href="javascript:$.lang.select('zh-cn')">${zh_cn}</a>
+	<div class="btn-group">
+		<button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			Language
+		</button>
+		<div class="dropdown-menu dropdown-menu-right">
+			<button class="dropdown-item" type="button" onclick="$.lang.select('en')">${en}</button>
+			<button class="dropdown-item" type="button" onclick="$.lang.select('zh-cn')">${zh_cn}</button>
+		</div>
+	</div>
   </div>
 
-  <a class="logo" href="index.html"><h1>${DeviceTitle}</h1></a>
+  <a class="logo" href="/"><h1>${DeviceTitle}</h1></a>
 </div></header>
 
 <div class="login-wrapper">
@@ -122,14 +135,14 @@
       <dt class="noborder"><h2>${UserLogin}</h2></dt>
 	  <dt class="password-text"><label>${UserLoginTip}</label></dt>
 	  <dt class="noborder" style="min-height: 1px;"></dt>
-	  <dt><input class="text" id="login_password" name="password" type="password" placeholder="${UserPasswordTip}" size="32" maxlength="32"/></dt>
+	  <dt class="form-group"><input class="form-control" id="login_password" name="password" type="password" placeholder="${UserPasswordTip}" size="32" maxlength="32"/></dt>
 
 	  <dt><a id="forgot-text" href="javascript:">${UserForgot}</a></dt>
 	  <dt><label id="forgot-desc" style="display:none;">${UserForgotDesc}</label></dt>
 
 	  <dt class="buttons">
 	  	<input type="hidden" name="login_name" value="admin"/>
-	    <input type="submit" name="login_button" class="button submit" value="${UserLogin}"/></dt>
+	    <input type="submit" name="login_button" class="btn btn-primary" value="${UserLogin}"/></dt>
 
 	  <dt class="password-text" id="login_tip" style="display:none;"></dt>
     </dl></fieldset>

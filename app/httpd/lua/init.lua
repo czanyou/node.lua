@@ -66,7 +66,7 @@ function exports.call(methods, request, response, flags)
 
    	-- check login
     if (not noauth) and (not exports.isLogin(request)) then
-        response:sendStatus(401, "Unauthorized")
+        response:json({code = 200, erro = "Unauthorized"})
         return
     end
 

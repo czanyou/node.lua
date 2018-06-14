@@ -123,7 +123,7 @@ methods['/logout']              = on_logout
 methods['/applications']        = on_applications
 methods['/application/info']    = on_application_info
 
-methods['@noauth'] = { ['/login'] = true }
+methods['@noauth'] = { ['/login'] = true, ['/'] = true }
 
 httpd.call(methods, request, response)
 

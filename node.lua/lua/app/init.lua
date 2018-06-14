@@ -99,7 +99,7 @@ local function getApplicationName(cmdline)
 		return
 	end
 
-    local _, _, appName = cmdline:find('/([%w]+)/init.lua')
+    local _, _, appName = cmdline:find('/([%w]+)/lua/app.lua')
 
     if (not appName) then
         _, _, appName = cmdline:find('/lpm%S([%w]+)%Sstart')
@@ -123,9 +123,9 @@ function getSystemInformation()
 end
 
 local function executeApplication(basePath, ...)
-	local filename = path.join(basePath, "init.lua")
+	local filename = path.join(basePath, "lua", "app.lua")
 	if (not fs.existsSync(filename)) then
-		return -3, '"' .. basePath .. '/init.lua" not exists!'
+		return -3, '"' .. basePath .. '/lua/app.lua" not exists!'
 	end
 
     --console.log(package.path)
@@ -336,7 +336,7 @@ function exports.daemon(name)
 		return -1
 	end
 
-	local filename = path.join(getAppPath(), name, 'init.lua')
+	local filename = path.join(getAppPath(), name, 'lua', 'app.lua')
 	if (not fs.existsSync(filename)) then
 		print('"' .. filename .. '" not exists!')
 		return -3
@@ -474,7 +474,7 @@ end
 
 -- 通过 cmdline 解析出相关的应用的名称
 function exports.parseName(cmdline)
-    local _, _, appName = cmdline:find('lnode.+/([%w]+)/init.lua')
+    local _, _, appName = cmdline:find('lnode.+/([%w]+)/lua/app.lua')
 
     if (not appName) then
         _, _, appName = cmdline:find('lnode.+/lpm%s([%w]+)%sstart')

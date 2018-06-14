@@ -5,12 +5,12 @@ local json  = require('json')
 local fs    = require('fs')
 local httpd = require('httpd')
 
-local data  = require('./../lua/data')
+local data  = require('../lua/data')
 
 local thread = require('thread')
 local querystring = require('querystring')
 
-data.dirname = path.dirname(utils.dirname())
+-- data.dirname = path.dirname(utils.dirname())
 
 local function asyncReadSensor(callback)
     local function _work_func()
@@ -24,8 +24,15 @@ end
 local function on_sensor_status(request, response)
     asyncReadSensor(function(temperature, humidity)
         local status = {}
-        status.temperature  = temperature or '-'
-        status.humidity     = humidity    or '-'
+
+        if (temperature) then
+            status.temperature  = temperature or '-'
+            status.humidity     = humidity    or '-'
+        else
+            status.code = 10034;
+            status.error = "Read Error";
+        end
+        
         response:json(status)
     end)
 end

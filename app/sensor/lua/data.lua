@@ -59,8 +59,8 @@ local function data_stream_open(name)
 
 	local filename = name
 	if (name ~= ':memory:') then
-		local dirname  = exports.dirname or utils.dirname()
-		filename = path.join(dirname, name)
+		local dirname  = path.dirname(exports.dirname or utils.dirname())
+		filename = path.join(dirname, 'data', name)
 	end
 
 	local db = sqlite.open(filename)

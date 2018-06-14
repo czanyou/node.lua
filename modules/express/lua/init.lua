@@ -200,11 +200,15 @@ function ServerResponse:send(text, contentType)
 end
 
 function ServerResponse:sendFile(filename)
-    fs.stat(filename, function (err, statInfo)
+    fs.stat(filename, function (err, statInfo, ...)
         if err then
             if err.code == "ENOENT" then
                 self:sendStatus(404, err.message)
                 return
+
+            elseif type(err) == 'string' and err:startsWith("ENOENT") then
+                self:sendStatus(404, err.message)
+                return                
             end
 
             self:sendStatus(500, (err.message or tostring(err)))
