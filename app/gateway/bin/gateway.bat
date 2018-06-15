@@ -8,6 +8,6 @@ IF NOT EXIST "%LNODE_EXE%" (
   SET "LNODE_EXE=lnode"
 )
 
-SET "LPM_CLI_LUA=%~dp0\lpm"
+SET "LPM_CLI_LUA=%~dp0\gateway"
 
 "%LNODE_EXE%" "%LPM_CLI_LUA%" %*

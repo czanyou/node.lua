@@ -75,16 +75,16 @@ local:
 ## SDK
 
 sdk:
-	lpm build sdk
+	lbuild sdk
 
 patch:
-	lpm build patch
+	lbuild patch
 
 deb:
-	lpm build deb
+	lbuild deb
 
 tar:
-	lpm build tar
+	lbuild tar
 
 install:
 	$(call sdk_install)

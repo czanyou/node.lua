@@ -34,6 +34,9 @@ copy %CD%\build\win32\Release\lua53.dll %CD%\node.lua\bin
 copy %CD%\build\win32\Release\lmbedtls.dll %CD%\node.lua\bin
 copy %CD%\build\win32\Release\lsqlite.dll %CD%\node.lua\bin
 
+copy %CD%\app\lpm\bin\* %CD%\node.lua\bin
+copy %CD%\app\build\bin\* %CD%\node.lua\bin
+
 goto exit
 
 rem -------------------------------------------

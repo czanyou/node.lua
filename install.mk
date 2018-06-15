@@ -36,7 +36,11 @@ define sdk_install
 
 	$(call make_link,${PWD}/app,${NODE_ROOTPATH}/app)
 	$(call make_link,${PWD}/build/local/lnode,${LOCAL_BIN_PATH}/lnode)
-	$(call make_link,${PWD}/node.lua/bin/lpm,${LOCAL_BIN_PATH}/lpm)
+
+	$(call make_link,${PWD}/app/lpm/bin/lpm,${LOCAL_BIN_PATH}/lpm)
+	$(call make_link,${PWD}/app/build/bin/lbuild,${LOCAL_BIN_PATH}/lbuild)
+	$(call make_link,${PWD}/app/lhost/bin/lhost,${LOCAL_BIN_PATH}/lhost)
+	$(call make_link,${PWD}/app/httpd/bin/lhttpd,${LOCAL_BIN_PATH}/lhttpd)
 
 	$(call make_lib_link,bluetooth)
 	$(call make_lib_link,express)
@@ -54,6 +58,8 @@ define sdk_install
 
 	@sudo chmod 777 ${LOCAL_BIN_PATH}/lnode
 	@sudo chmod 777 ${LOCAL_BIN_PATH}/lpm
+	@sudo chmod 777 ${LOCAL_BIN_PATH}/lhttpd
+	@sudo chmod 777 ${LOCAL_BIN_PATH}/lbuild
 
 	@echo "Install finish!"
 	@echo ""
@@ -69,6 +75,8 @@ define sdk_remove
 
 	sudo rm -rf ${LOCAL_BIN_PATH}/lnode
 	sudo rm -rf ${LOCAL_BIN_PATH}/lpm
+	sudo rm -rf ${LOCAL_BIN_PATH}/lbuild
+	sudo rm -rf ${LOCAL_BIN_PATH}/lhttpd
 
 	@echo "Remove finish!"
 	@echo ""
