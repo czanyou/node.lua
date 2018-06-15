@@ -2,7 +2,6 @@
 	"depends": ["httpd"],
 	"description": "Sensor manager",
 	"title": "Sensor",
-	"title_zh_cn": "传感器",
 	"name": "sensor",
 	"tags": ["sensor", "runtime"],
 	"version": "2.0.0"

@@ -2,7 +2,6 @@
 	"depends": ["httpd"],
 	"description": "Node.lua application deamon manager",
 	"title": "Services",
-	"title_zh_cn": "应用",
 	"name": "lhost",
 	"tags": ["lhost", "runtime"],
 	"version": "1.0.3"

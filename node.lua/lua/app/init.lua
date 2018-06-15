@@ -177,85 +177,6 @@ function exports.appName()
 	return exports.name or 'user'
 end
 
--- 启用/禁用指定的应用后台进程
-function exports.enable(newNames, enable)
-    local names, count, oldData = exports.getStartNames()
-
-    for _, name in ipairs(newNames) do
-        if (enable) then
-            local filename = path.join(exports.rootPath, 'app', name)
-            if (fs.existsSync(filename)) then
-                names[name] = name
-            end
-
-        else
-            names[name] = nil
-        end
-    end
-    
-    -- save to file
-    local list = {}
-    for _, item in pairs(names) do
-        list[#list + 1] = item
-    end
-
-    table.sort(list, function(a, b)
-        return tostring(a) < tostring(b)
-    end)
-
-    list[#list + 1] = ''
-    local fileData = table.concat(list, "\n")   
-    if (oldData == fileData) then
-        return fileData
-    end
-
-    print("Updating process list...")
-    print("  " .. table.concat(list, " ") .. "\n")
-
-    local filename = exports.getStartFilename()
-
-    local tempname = filename .. ".tmp"
-    local ret, err = fs.writeFileSync(tempname, fileData)
-    if (err) then 
-    	console.log(err)
-    	return
-    end
-
-    os.remove(filename)
-    os.rename(tempname, filename)
-
-    return fileData
-end
-
--- 配置文件名
-function exports.getStartFilename()
-	return path.join(exports.rootPath, 'conf', 'start.conf')
-end
-
--- 返回所有需要后台运行的应用
-function exports.getStartNames()
-    local filedata = fs.readFileSync(exports.getStartFilename())
-    local names = {}
-    local count = 0
-
-    if (not filedata) then
-        return names, count, filedata
-    end
-
-    local list = filedata:split("\n")
-    for _, item in ipairs(list) do
-        if (#item > 0) then
-            local filename = path.join(exports.rootPath, 'app', item)
-            if fs.existsSync(filename) then
-                names[item] = item
-                count = count + 1
-            end
-        end
-    end
-    
-    return names, count, filedata
-end
-
 -- 删除指定名称的配置参数项的值
 -- @param key {String}
 function exports.unset(key)
@@ -346,11 +267,6 @@ function exports.daemon(name)
     --local cmdline  = "lpm " .. name .. " start &"
 	print('start and daemonize: ' .. name)
 	os.execute(cmdline)
-end
-
--- 关闭指定的进程, 并从进程列表中删除
-function exports.delete(name)
-    return exports.stop(name)
 end
 
 -- 
@@ -615,15 +531,8 @@ function exports.start(name, ...)
     if (not name) then
         print('missing required argument `name`!\n')
 
-    elseif (name == 'all') then
-        local names = exports.getStartNames()
-        for _, name in pairs(names) do
-            exports.daemon(name)
-        end
-
     else
         local list = table.pack(name, ...)
-        exports.enable(list, true)
 
         for _, name in ipairs(list) do
             exports.daemon(name)
@@ -641,7 +550,6 @@ function exports.stop(name, ...)
     
     else
         local list = table.pack(name, ...)
-        exports.enable(list, false)
 
         for _, app in ipairs(list) do
             exports.kill(app)   

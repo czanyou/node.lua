@@ -3,7 +3,8 @@ local utils     = require('util')
 local path      = require('path')
 local fs        = require('fs')
 local rpc       = require('app/rpc')
- 
+local lhost     = require('lhost')
+
 -------------------------------------------------------------------------------
 -- exports
 
@@ -13,7 +14,7 @@ app.name = 'lhost'
 
 -- 检查应用进程，自动重启意外退出的应用程序
 function exports.check()
-    local names = app.getStartNames()
+    local names = lhost.getStartNames()
     local procs = app.processes()
 
     for _, proc in ipairs(procs) do
@@ -49,7 +50,7 @@ function exports.disable(...)
         return
     end
 
-    app.enable(names, false)
+    lhost.enable(names, false)
 end
 
 -- 允许指定名称的应用在后台一直运行
@@ -60,7 +61,7 @@ function exports.enable(...)
         return
     end
 
-    app.enable(names, true)
+    lhost.enable(names, true)
 end
 
 function exports.help()

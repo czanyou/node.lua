@@ -1,0 +1,3 @@
+#!/usr/bin/env lnode
+
+local app = require('sensor/app')

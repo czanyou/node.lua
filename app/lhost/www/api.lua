@@ -9,11 +9,13 @@ local httpd     = require('httpd')
 local app       = require('app')
 
 local querystring = require('querystring')
+local lhost     = require('lhost')
+
 
 local function on_list()
     local list = app.list()
     local result = { applications = list }
-    result.settings = app.getStartNames()
+    result.settings = lhost.getStartNames()
     
     local status = {}
     local list = app.processes() or {}
