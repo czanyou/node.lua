@@ -9,7 +9,7 @@ local uv 	 = require('uv')
 local assert = require('assert')
 
 return require('ext/tap')(function (test)
-	test("test all", function (print, p, expect, uv)
+	test("test all", function ()
 		console.log('isDevelopmentPath', upgrade.isDevelopmentPath())
 
 		console.log('nodePath', upgrade.nodePath)
@@ -17,7 +17,7 @@ return require('ext/tap')(function (test)
 
 	end)
 
-	test("test parseVersion", function (print, p, expect, uv)
+	test("test parseVersion", function ()
 		assert.equal(upgrade.parseVersion(nil), 0)
 		assert.equal(upgrade.parseVersion('1.2.3'), 100020003)
 		assert.equal(upgrade.parseVersion('1.0.3'), 100000003)
@@ -25,7 +25,7 @@ return require('ext/tap')(function (test)
 		assert.equal(upgrade.parseVersion('0.2.3'), 20003)
 	end)
 
-	test("test updater", function (print, p, expect, uv)
+	test("test updater", function ()
 		local filename = util.dirname() .. '/data/update.zip'
 		local rootPath = os.tmpdir .. '/update'
 

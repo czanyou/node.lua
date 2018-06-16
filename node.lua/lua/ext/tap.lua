@@ -146,7 +146,15 @@ end
 local single = true
 local prefix = nil
 
-local function tap(suite)
+local test = function (name, func) -- test function
+	if prefix then
+		name = prefix .. ' - ' .. name
+	end
+
+	tests[#tests + 1] = { name = name, func = func }
+end
+
+local function tap(suite, func)
 
 	if (type(suite) == "function") then
 		-- Pass in suite directly for single mode
@@ -223,6 +231,14 @@ function exports.testAll(dirname)
 				require(path)
 		end
 	until not name
+end
+
+exports.test = test
+
+exports.run = function()
+	if single then 
+		_run_tests() 
+	end
 end
 
 setmetatable(exports, {

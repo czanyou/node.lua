@@ -1,6 +1,7 @@
 local fs 	= require('fs')
 local path 	= require('path')
 local rpc   = require('app/rpc')
+local tap    = require('ext/tap')
 
 local handler = {
 	test = function( self, arg1, arg2 )
@@ -14,29 +15,31 @@ local handler = {
 	
 }
 
-return require('ext/tap')(function (test)
+local test = tap.test
 
-	test("Lua Remote Call", function (print, p, expect, uv)
-		os.remove('test-rpc')
-		
-		local server = rpc.server('test-rpc', handler, function(err, result)
-			--console.log(err, result)
-		end)
+test("Lua Remote Call", function ()
+	os.remove('test-rpc')
+	
+	local server = rpc.server('test-rpc', handler, function(err, result)
+		--console.log(err, result)
+	end)
 
-		setTimeout(100, function()
-			rpc.call('test-rpc', 'test', {'a', 100}, function(err, result)
-				server:close()
+	setTimeout(100, function()
+		rpc.call('test-rpc', 'test', {'a', 100}, function(err, result)
+			server:close()
 
-				if (err) then
-					console.log('error: ', err) 
-					return
-				end
+			if (err) then
+				console.log('error: ', err) 
+				return
+			end
 
-				--console.log('result: ', result)
-				assert(result == 3.14)
-			end)
-
+			--console.log('result: ', result)
+			assert(result == 3.14)
 		end)
 
 	end)
+
 end)
+
+tap.run()
+
