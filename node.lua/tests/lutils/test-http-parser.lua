@@ -1,4 +1,3 @@
-local utils = require('util')
 local lhttp_parser = require('lhttp_parser')
 local assert = require('assert')
 
@@ -52,7 +51,6 @@ function decoder()
 end
 
 return require('ext/tap')(function (test)
-
 
 	--console.log(lhttp_parser)
 	test("parse_url", function()
@@ -125,10 +123,10 @@ return require('ext/tap')(function (test)
 
 		local message =  "HTTP/1.1 200 OK\r\nA:B\r\n"
 		local ret = parser:execute(message, 0, #message)
-		
+
 		local message = "Content-Type:4\r\n\r\n1234"
 		local ret = parser:execute(message, 0, #message)
-		
+
 		message = "66668888"
 		parser:execute(message, 0, #message)
 
@@ -169,7 +167,7 @@ return require('ext/tap')(function (test)
 
 		local message =  "HTTP/1.1 200 OK\r\nA:B\r\n"
 		local ret = parser:execute(message, 0, #message)
-		
+
 		local message = "Transfer-Encoding: chunked\r\n"
 		local ret = parser:execute(message, 0, #message)
 
@@ -178,7 +176,7 @@ return require('ext/tap')(function (test)
 
 		message = "Type:  chunked\r\n\r\n"
 		parser:execute(message, 0, #message)
-		
+
 		message = "4\r\n1234\r\n"
 		parser:execute(message, 0, #message)
 
@@ -200,7 +198,7 @@ return require('ext/tap')(function (test)
 
 		message =  "HTTP/1.1 200 OK\r\nA:B\r\n"
 		parser:execute(message, 0, #message)
-		
+
 		message = "Transfer-Encoding: chunked\r\n"
 		parser:execute(message, 0, #message)
 

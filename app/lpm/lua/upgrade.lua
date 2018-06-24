@@ -69,7 +69,7 @@ end
 
 local function isDevelopmentPath(rootPath)
 	local filename1 = path.join(rootPath, 'lua/lnode')
-	local filename2 = path.join(rootPath, 'app/build')
+	local filename2 = path.join(rootPath, 'app/lbuild')
 	local filename3 = path.join(rootPath, 'src')
 	if (fs.existsSync(filename1) or fs.existsSync(filename2) or fs.existsSync(filename3)) then
 		print('The "' .. rootPath .. '" is a development path.')

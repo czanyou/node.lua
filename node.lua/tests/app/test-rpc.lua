@@ -1,5 +1,3 @@
-local fs 	= require('fs')
-local path 	= require('path')
 local rpc   = require('app/rpc')
 local tap    = require('ext/tap')
 
@@ -12,14 +10,13 @@ local handler = {
 
 		return 3.14
 	end
-	
 }
 
 local test = tap.test
 
 test("Lua Remote Call", function ()
 	os.remove('test-rpc')
-	
+
 	local server = rpc.server('test-rpc', handler, function(err, result)
 		--console.log(err, result)
 	end)
@@ -29,7 +26,7 @@ test("Lua Remote Call", function ()
 			server:close()
 
 			if (err) then
-				console.log('error: ', err) 
+				console.log('error: ', err)
 				return
 			end
 

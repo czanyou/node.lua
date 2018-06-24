@@ -1,4 +1,3 @@
-local utils   = require('util')
 local lutils  = require('lutils')
 local assert  = require('assert')
 local tap     = require('ext/tap')
@@ -25,42 +24,42 @@ tap(function(test)
 	end)
 
 
-  	test('lutils.md5', function()
-  		local data = "888888"
+	test('lutils.md5', function()
+		local data = "888888"
 		local hash = lutils.md5(data)
 
 		local hex_hash = lutils.hex_encode(hash)
 		assert.equal(hex_hash, '21218cca77804d2ba1922c33e0151105')
 
 		--utils.printBuffer(hash)
-  	end)
+	end)
 
-  	test('lutils.base64_encode', function()
+	test('lutils.base64_encode', function()
 		assert.equal(lutils.base64_encode(''), nil)
 		assert.equal(lutils.base64_encode('A'), 'QQ==')
 		assert.equal(lutils.base64_encode('AB'), 'QUI=')
 		assert.equal(lutils.base64_encode('ABC'), 'QUJD')
 		assert.equal(lutils.base64_encode('888888'), 'ODg4ODg4')
 
-  	end)
+	end)
 
-  	test('lutils.base64_decode', function()
+	test('lutils.base64_decode', function()
 		assert.equal(lutils.base64_decode(''), nil)
 		assert.equal(lutils.base64_decode('QQ=='), 'A')
 		assert.equal(lutils.base64_decode('QUI='), 'AB')
 		assert.equal(lutils.base64_decode('QUJD'), 'ABC')
 		assert.equal(lutils.base64_decode('ODg4ODg4'), '888888')
 
-  	end)
+	end)
 
-  	test('lutils.base64_decode', function()  	
-  		console.log('os_arch', lutils.os_arch())
-  		console.log('os_platform', lutils.os_platform())
-  		console.log('os_statfs', lutils.os_statfs('/'))
-  		console.log('os_arch', lutils.os_arch())
+	test('lutils.base64_decode', function()  	
+		console.log('os_arch', lutils.os_arch())
+		console.log('os_platform', lutils.os_platform())
+		console.log('os_statfs', lutils.os_statfs('/'))
+		console.log('os_arch', lutils.os_arch())
 
 
-  	end)
+	end)
 
 
 	test('lutils.os_file_lock', function()

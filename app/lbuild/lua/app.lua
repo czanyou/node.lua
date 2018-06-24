@@ -1,5 +1,5 @@
 local app 		= require('app')
-local utils 	= require('util')
+local util 		= require('util')
 local path  	= require('path')
 local fs  		= require('fs')
 local zlib  	= require('zlib')
@@ -112,7 +112,7 @@ function sdk.build_common_sdk(target, packageInfo)
 		for i = 1, #files do
 			local name = files[i]
 			local luaPath = join(visionPath, name, "lua")
-			console.log(luaPath)
+			--console.log(luaPath)
 
 			if (fs.existsSync(luaPath)) then
 				xcopy(luaPath, join(nodePath, "lib", name))
@@ -132,7 +132,7 @@ function sdk.build_common_sdk(target, packageInfo)
 		xcopy(nodeluaPath .. "/lua", 	       nodePath .. "/lua")
 
 		-- copy target files
-		local dirname = utils.dirname()
+		local dirname = util.dirname()
 		local targetPath = join(dirname, "targets/linux/local")
 		xcopy(join(targetPath, "usr"),  join(sdkPath , "usr"))
 
@@ -162,7 +162,7 @@ function sdk.build_win_sdk(target, packageInfo)
 	mkdir(join(sdkPath, "lnode/app"))
 	mkdir(join(sdkPath, "lnode/bin"))
 	mkdir(join(sdkPath, "lnode/conf"))
-	mkdir(join(sdkPath, "lnode/lua"))	
+	mkdir(join(sdkPath, "lnode/lua"))
 
 	-- copy node lua files
 	copy(nodePath .. "/install.lua", 		sdkPath .. "/lnode/install.lua")
@@ -205,13 +205,13 @@ end
 function sdk.build_sdk(target, type)
 	local board = get_make_board()
 
-	--console.log(utils.dirname())
-	local dirname = utils.dirname()
+	--console.log(util.dirname())
+	local dirname = util.dirname()
 
 	-- build sdk filesystem
 	local filename = path.join(cwd, 'package.json')
 	if (not fs.existsSync(filename)) then
-		filename = path.join(dirname, 'targets', platform, board, 'package.json')
+		filename = path.join(dirname, '..', 'targets', platform, board, 'package.json')
 	end
 
 	print('package.json: ' .. filename)
@@ -232,7 +232,6 @@ function sdk.build_sdk(target, type)
 	else
 		sdk.build_common_sdk(target, packageInfo)
 	end
-
 
 	return packageInfo
 end
@@ -286,7 +285,7 @@ function sdk.build_deb_package()
 	os.execute('cp -rf ' .. sdk_path .. '/usr/local/lnode/* ' .. deb_path .. '/usr/local/lnode/')
 
 	-- deb meta files
-	local dirname = utils.dirname()
+	local dirname = util.dirname()
 	local src = path.join(dirname, 'targets/linux/deb')
 	os.execute('cp -rf ' .. src .. '/* ' .. deb_path .. '/')
 	os.execute('chmod -R 755 ' .. deb_path .. '/DEBIAN')
@@ -308,9 +307,6 @@ end
 @param target {String} 构建目标，如 win,linux,pi 等等.
 --]]
 function sdk.build_sdk_package_info(target, packageInfo)
-	local utils 	= require('util')
-	local json 		= require('json')
-
 	local name 		= "nodelua-" .. target .. "-" .. (packageInfo.type or "sdk")
 
 	local buildPath = path.join(cwd, "/build/")
@@ -326,7 +322,7 @@ function sdk.build_sdk_package_info(target, packageInfo)
 	end
 
 	local fileSize = fileData and #fileData
-	local fileHash = utils.bin2hex(utils.md5(fileData))
+	local fileHash = util.bin2hex(util.md5(fileData))
 
 	local package = packageInfo or {}
 	local version = get_make_version()
@@ -338,11 +334,11 @@ function sdk.build_sdk_package_info(target, packageInfo)
 
 	local username = registry.username or 'cz'
 	local password = registry.password or '888888'
-	local passhash = utils.bin2hex(utils.md5(username .. ":" .. password))
+	local passhash = util.bin2hex(util.md5(username .. ":" .. password))
 	registry.username 	= username
 
 	local value = username .. ":" .. passhash .. ":" .. fileHash
-	registry.sign 		= utils.bin2hex(utils.md5(value))
+	registry.sign 		= util.bin2hex(util.md5(value))
 
 	package['target'] 	= target
 	package['arch'] 	= os.arch()
@@ -556,7 +552,7 @@ function exports.help()
 
 Node.lua SDK and application build tools
 
-usage: lpm build <command> [args]
+usage: lbuild <command> [args]
 
 - help    Display help information
 - sdk	  Build Node.lua SDK package (Must `make <target>` firist)

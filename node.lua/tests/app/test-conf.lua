@@ -1,8 +1,4 @@
-local fs 	 = require('fs')
-local path 	 = require('path')
-local utils  = require('util')
 local tap    = require('ext/tap')
-
 local conf 	 = require('app/conf')
 local uv 	 = require('uv')
 local assert = require('assert')
@@ -102,7 +98,7 @@ test("test profile:set name type", function ()
 	local func  	= function() end
 	local thread 	= coroutine.create(function() end)
 	local userdata 	= uv.new_thread(function() end)
-	
+
 	-- 测试不同类型的参数名类型
 	profile:set(nil, 'v')
 	profile:set('test', 'v')

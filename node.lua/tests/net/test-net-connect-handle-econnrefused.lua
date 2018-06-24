@@ -16,23 +16,25 @@ limitations under the License.
 
 --]]
 
-local Tcp = require('uv').Tcp
-local net = require('net')
+local net = require("net")
+local PORT = 10088
 
-local PORT = process.env.PORT or 10088
+local tap = require("ext/tap")
+local test = tap.test
 
-require('ext/tap')(function(test)
-  test('net-connect-handle-econnerefuesed', function(expected)
-    local c, err = net.createConnection(PORT)
-    c:on('connect', function ()
-      print("error: connnected, please shutdown whatever is running on " .. PORT)
-      assert(false)
-    end)
+test("net-connect-handle-econnerefuesed", function(expected)
+	local client, err = net.createConnection(PORT)
+	client:on("connect", function()
+		print("error: connnected, please shutdown whatever is running on " .. PORT)
+		assert(false)
+	end)
 
-    c:on('error', function (err)
-      assert('ECONNREFUSED' == err or 'EADDRNOTAVAIL' == err)
-      expected = {gotError = true}
-      c:destroy()
-    end)
-  end)
+	client:on("error", function(err)
+		console.log(err)
+		assert("ECONNREFUSED" == err or "EADDRNOTAVAIL" == err)
+		expected = {gotError = true}
+		client:destroy()
+	end)
 end)
+
+tap.run()

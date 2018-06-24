@@ -1,15 +1,17 @@
-local utils    = require('util')
-local zlib     = require('zlib')
-local assert  = require('assert')
+local utils = require("util")
+local zlib = require("zlib")
+local assert = require("assert")
 
-local Object = require('core').Object
+local Object = require("core").Object
 
-local tap = require('ext/tap')
+local tap = require("ext/tap")
+local tap = require("ext/tap")
+local test = tap.test
 
-tap(function(test)
-  	test('zlib', function(expect)
+test(
+	"zlib",
+	function(expect)
+	end
+)
 
-
-
-  	end)
-end)
+tap.run()

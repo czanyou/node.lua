@@ -15,18 +15,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
+local tap = require("ext/tap")
+local test = tap.test
 
-require('ext/tap')(function(test)
-
-    test('fs windows long path', function()
-        local init = require('init')
+test(
+    "fs windows long path",
+    function()
+        local init = require("init")
         local __dirname = module.dir
 
         if os.platform() ~= "win32" then
             return
         end
 
-        local Path = require('path')
+        local Path = require("path")
         -- test the win32 long path logic
 
         p("-- simple case")
@@ -47,7 +49,7 @@ require('ext/tap')(function(test)
 
         p("-- derelativize with a trailing ..")
         local dirtmp = Path.join(__dirname, "tmp\\..")
-        local long_expected = "\\\\?\\" .. __dirname:gsub('/','\\')
+        local long_expected = "\\\\?\\" .. __dirname:gsub("/", "\\")
         p("dirtmp=" .. dirtmp)
         p("makeLong=" .. Path._makeLong(dirtmp))
         p("expected=" .. long_expected)
@@ -132,6 +134,7 @@ require('ext/tap')(function(test)
         p("makeLong=" .. Path._makeLong(dirtmp))
         p("expected=" .. long_expected)
         assert(long_expected == Path._makeLong(dirtmp))
-    
-    end)
-end)
+    end
+)
+
+tap.run()

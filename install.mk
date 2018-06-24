@@ -38,7 +38,7 @@ define sdk_install
 	$(call make_link,${PWD}/build/local/lnode,${LOCAL_BIN_PATH}/lnode)
 
 	$(call make_link,${PWD}/app/lpm/bin/lpm,${LOCAL_BIN_PATH}/lpm)
-	$(call make_link,${PWD}/app/build/bin/lbuild,${LOCAL_BIN_PATH}/lbuild)
+	$(call make_link,${PWD}/app/lbuild/bin/lbuild,${LOCAL_BIN_PATH}/lbuild)
 	$(call make_link,${PWD}/app/lhost/bin/lhost,${LOCAL_BIN_PATH}/lhost)
 	$(call make_link,${PWD}/app/httpd/bin/lhttpd,${LOCAL_BIN_PATH}/lhttpd)
 

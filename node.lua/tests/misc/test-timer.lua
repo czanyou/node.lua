@@ -15,48 +15,91 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
+local timer = require("timer")
 
-local timer = require('timer')
+local tap = require("ext/tap")
+local test = tap.test
 
-require('ext/tap')(function (test)
-  test("simple timeout", function (expect)
-    timer.setTimeout(20, expect(function (arg1)
-      assert(arg1 == 'test1')
-    end), "test1")
-  end)
+test(
+	"simple timeout",
+	function(expect)
+		timer.setTimeout(
+			20,
+			expect(
+				function(arg1)
+					assert(arg1 == "test1")
+				end
+			),
+			"test1"
+		)
+	end
+)
 
-  test("simple interval", function (expect)
-    local count = 0
-    local interval
-    interval = timer.setInterval(20, expect(function (arg1)
-      count = count + 1
-      assert(arg1 == 'test2')
-      if count == 2 then
-        timer.clearInterval(interval)
-      end
-    end, 2), 'test2')
-  end)
+test(
+	"simple interval",
+	function(expect)
+		local count = 0
+		local interval
+		interval =
+			timer.setInterval(
+			20,
+			expect(
+				function(arg1)
+					count = count + 1
+					assert(arg1 == "test2")
+					if count == 2 then
+						timer.clearInterval(interval)
+					end
+				end,
+				2
+			),
+			"test2"
+		)
+	end
+)
 
-  test("Canceled timer", function ()
-    local timeout = timer.setTimeout(200, function ()
-      assert(nil, "Should not get here!")
-    end)
-    timer.clearTimeout(timeout)
-  end)
+test(
+	"Canceled timer",
+	function()
+		local timeout =
+			timer.setTimeout(
+			200,
+			function()
+				assert(nil, "Should not get here!")
+			end
+		)
+		timer.clearTimeout(timeout)
+	end
+)
 
-  test("setImmediate", function (expect)
-    timer.setImmediate(expect(function (arg1)
-      print('setImmediate', arg1)
-      assert(arg1 == 'test3')
-    end), 'test3')
-  end)
+test(
+	"setImmediate",
+	function(expect)
+		timer.setImmediate(
+			expect(
+				function(arg1)
+					print("setImmediate", arg1)
+					assert(arg1 == "test3")
+				end
+			),
+			"test3"
+		)
+	end
+)
 
-  test('double close', function ()
-    local t1 = timer.setTimeout(200, function()
-      assert(nil, "Should not get here!")
-    end)
-    timer.clearTimeout(t1)
-    timer.clearTimeout(t1)
-  end)
-end)
+test(
+	"double close",
+	function()
+		local t1 =
+			timer.setTimeout(
+			200,
+			function()
+				assert(nil, "Should not get here!")
+			end
+		)
+		timer.clearTimeout(t1)
+		timer.clearTimeout(t1)
+	end
+)
 
+tap.run()

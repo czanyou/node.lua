@@ -1,12 +1,5 @@
-local fs 	 = require('fs')
-local path 	 = require('path')
-local util   = require('util')
-local app    = require('app')
 local utils  = require('app/utils')
 local tap    = require('ext/tap')
-
-local conf 	 = require('app/conf')
-local uv 	 = require('uv')
 local assert = require('assert')
 
 local test = tap.test
@@ -49,7 +42,7 @@ test("test table", function ()
 	print(table.cell(1, 2, 3))
 	print(table.cell())
 	print(table.line())
-	
-end)	
+
+end)
 
 tap.run()

@@ -15,7 +15,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-
 local core = require("core")
 local buffer = require("buffer")
 
@@ -23,33 +22,45 @@ local Object = core.Object
 local Emitter = core.Emitter
 local instanceof = core.instanceof
 
-require('ext/tap')(function (test)
-  test("test instanceof", function()
-    local o = Object:new()
-    local e = Emitter:new()
-    local b = buffer.Buffer:new(1)
+local tap = require("ext/tap")
+local test = tap.test
 
-    --console.log(b.meta)
-    --console.log(buffer.Buffer)
-    --console.log(buffer.Buffer.meta)
+test(
+	"test instanceof",
+	function()
+		local o = Object:new()
+		local e = Emitter:new()
+		local b = buffer.Buffer:new(1)
 
-    assert(instanceof(b, Object)) 
-    assert(instanceof(b, buffer.Buffer)) 
-    assert(not instanceof(b, Emitter)) 
+		--console.log(b.meta)
+		--console.log(buffer.Buffer)
+		--console.log(buffer.Buffer.meta)
 
-    assert(instanceof(o, Object))
-    assert(not instanceof(o, Emitter))
+		assert(instanceof(b, Object))
+		assert(instanceof(b, buffer.Buffer))
+		assert(not instanceof(b, Emitter))
 
-    assert(instanceof(e, Emitter))
-    assert(instanceof(e, Object))
+		assert(instanceof(o, Object))
+		assert(not instanceof(o, Emitter))
 
-    assert(not instanceof({}, Object))
-    assert(not instanceof(2, Object))
-    assert(not instanceof('a', Object))
-    assert(not instanceof(function() end, Object))
+		assert(instanceof(e, Emitter))
+		assert(instanceof(e, Object))
 
-    -- Caveats: We would like to these to be false, but we could not.
-    assert(instanceof(Object, Object))
-    assert(instanceof(Emitter, Object))
-  end)
-end)
+		assert(not instanceof({}, Object))
+		assert(not instanceof(2, Object))
+		assert(not instanceof("a", Object))
+		assert(
+			not instanceof(
+				function()
+				end,
+				Object
+			)
+		)
+
+		-- Caveats: We would like to these to be false, but we could not.
+		assert(instanceof(Object, Object))
+		assert(instanceof(Emitter, Object))
+	end
+)
+
+tap.run()

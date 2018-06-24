@@ -15,45 +15,46 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
+local tap = require("ext/tap")
+local test = tap.test
 
-require("ext/tap")(function (test)
+local core = require("core")
 
-local core = require('core')
+test(
+	"Foo:new returns new instances",
+	function()
+		local Foo = core.Object:extend()
+		function Foo:initialize(bar)
+			self.bar = bar
+		end
 
-test("Foo:new returns new instances", function ()
+		function Foo.meta.__tostring(table)
+			return tostring(table.bar)
+		end
 
-    local Foo = core.Object:extend()
-    function Foo:initialize(bar)
-      self.bar = bar
-    end
+		local Baz = Foo:extend()
 
-    function Foo.meta.__tostring(table)
-      return tostring(table.bar)
-    end
+		local foo1 = Foo:new(1)
+		local foo2 = Foo:new(1)
+		assert(foo1 ~= foo2)
 
-    local Baz = Foo:extend()
+		assert(tostring(foo1) == tostring(foo2))
+		assert(foo1.bar == foo2.bar)
 
-    local foo1 = Foo:new(1)
-    local foo2 = Foo:new(1)
-    assert(foo1 ~= foo2)
+		local msg = "asd"
+		local baz1 = Baz:new(msg)
+		assert(tostring(baz1) == msg)
 
-    assert(tostring(foo1) == tostring(foo2))
-    assert(foo1.bar == foo2.bar)
+		console.log(baz1)
+		console.log(core.instanceof(baz1, Baz))
+		console.log(core.instanceof(baz1, Foo))
+		console.log(core.instanceof(baz1, core.Object))
 
-    local msg = 'asd'
-    local baz1 = Baz:new(msg)
-    assert(tostring(baz1) == msg)
+		console.log(foo1)
+		console.log(core.instanceof(foo1, Baz))
+		console.log(core.instanceof(foo1, Foo))
+		console.log(core.instanceof(foo1, core.Object))
+	end
+)
 
-    console.log(baz1)
-    console.log(core.instanceof(baz1, Baz))
-    console.log(core.instanceof(baz1, Foo))
-    console.log(core.instanceof(baz1, core.Object))
-
-    console.log(foo1)
-    console.log(core.instanceof(foo1, Baz))
-    console.log(core.instanceof(foo1, Foo))
-    console.log(core.instanceof(foo1, core.Object)) 
-end)
-
-end)
-
+tap.run()
