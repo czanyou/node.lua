@@ -32,19 +32,11 @@ local fileData2 = '南越国是前203年至前111年存在于岭南地区的一�
 local tap = require('ext/tap')
 local test = tap.test
 
-
-local cwd = require('uv').cwd()
-console.log('cwd', cwd)
-
-local exepath = require('uv').exepath()
-console.log('exepath', exepath)
-
-
-local tmpdir = require('util').dirname()
-console.log('tmpdir', tmpdir)
+local dirname = require('util').dirname()
+console.log('dirname', dirname)
 
 test('test empty file creation', function(expect)
-	local filename1 = join(tmpdir, 'fixtures', 'append1.txt')
+	local filename1 = join(dirname, 'fixtures', 'append1.txt')
 	local function onReadFile(error, buffer)
 		assert(not error)
 		console.log('file read')
@@ -63,7 +55,7 @@ test('test empty file creation', function(expect)
 end)
 
 test('test append to non empty file', function(expect)
-	local filename2 = join('fixtures', 'append2.txt')
+	local filename2 = join(dirname, 'fixtures', 'append2.txt')
 	local function onReadFile(error, buffer)
 		console.log('file2 read')
 		assert(not error)
@@ -73,7 +65,7 @@ test('test append to non empty file', function(expect)
 
 	local function onAppendFile(error)
 		console.log('appended to file2')
-		assert(not error)
+		assert(not error, error)
 		fs.readFile(filename2, onReadFile)
 	end
 
@@ -83,7 +75,7 @@ test('test append to non empty file', function(expect)
 end)
 
 test('test append file accepting buffers', function(expect)
-	local filename3 = join('fixtures', 'append3.txt')
+	local filename3 = join(dirname, 'fixtures', 'append3.txt')
 	local buf = Buffer:new(fileData2)
 
 	console.log('appending to ' .. filename3)
@@ -106,10 +98,10 @@ test('test append file accepting buffers', function(expect)
 end)
 
 test('test append file sync create file', function(expect)
-	local filename = join('fixtures', 'append-sync1.txt')
+	local filename = join(dirname, 'fixtures', 'append-sync1.txt')
 	fs.unlinkSync(filename)
+	fs.appendFileSync(filename, fileData2)
 
-	assert(not fs.appendFileSync(filename, fileData2))
 	local fileData = fs.readFileSync(filename)
 	assert(fileData2 == fileData)
 
@@ -117,13 +109,13 @@ test('test append file sync create file', function(expect)
 end)
 
 test('test append file sync non empty file', function(expect)
-	local filename = join('fixtures', 'append-sync2.txt')
-	console.log(filename)
+	local filename = join(dirname, 'fixtures', 'append-sync2.txt')
+	console.log('filename', filename)
 
 	fs.unlinkSync(filename)
 	fs.writeFileSync(filename, fileData1)
+	fs.appendFileSync(filename, fileData2)
 
-	assert(not fs.appendFileSync(filename, fileData2))
 	local fileData = fs.readFileSync(filename)
 	assert(fileData1 .. fileData2 == fileData)
 
