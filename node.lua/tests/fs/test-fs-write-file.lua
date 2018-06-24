@@ -20,9 +20,11 @@ local test = tap.test
 
 local fs = require('fs')
 local path = require('path')
+local dirname = require('util').dirname()
+
 
 test('writeFile', function()
-	local filename = path.join(module.dir, 'fixtures', 'test.txt')
+	local filename = path.join(dirname, 'fixtures', 'test.txt')
 	console.log('writing to ' .. filename)
 	local n = 220
 	local s = '南越国是前203年至前111年存在于岭南地区的一个国家，国都位于番禺，疆域包括今天中国的广东、' ..
