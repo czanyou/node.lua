@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License")
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,15 +16,17 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
-  local FS = require('fs')
-  local Path = require('path')
+local tap = require('ext/tap')
+local test = tap.test
 
-  test('fs.readFile nonexistant path', function(expect)
-    local filepath = '/skldfjslfjslf'
-    print(filepath)
-    local fd = FS.readFile(filepath, expect(function(err)
-      assert(err)
-    end))
-  end)
+local fs = require('fs')
+
+test('fs.readFile nonexistant path', function(expect)
+	local filepath = '/skldfjslfjslf'
+	print(filepath)
+	local fd = fs.readFile(filepath, expect(function(err)
+		assert(err)
+	end))
 end)
+
+tap.run()

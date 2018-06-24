@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License")
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,16 +16,22 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
-  local FS = require('fs')
-  local Path = require('path')
-  local string = require('string')
+local tap = require('ext/tap')
+local test = tap.test
 
-  test('fs.readFile sync', function()
-    local fn = Path.join(module.dir, 'fixtures', 'elipses.txt')
+local fs = require('fs')
+local path = require('path')
+local string = require('string')
 
-    local s = FS.readFileSync(fn)
-    assert(s == string.rep(string.char(0xe2,0x80,0xA6), 10000))
-    assert(#s == 10000 * 3)
-  end)
+local dirname = require('util').dirname()
+
+test('fs.readFile sync', function()
+	local filename = path.join(dirname, 'fixtures', 'elipses.txt')
+	local fileData = fs.readFileSync(filename)
+	
+	assert(fileData == string.rep(string.char(0xE2, 0x80, 0xA6), 10000))
+	assert(#fileData == 10000 * 3)
 end)
+
+tap.run()
+

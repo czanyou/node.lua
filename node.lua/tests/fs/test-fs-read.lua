@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License")
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,28 +16,34 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
-  local math = require('math')
-  local string = require('string')
-  local FS = require('fs')
-  local Path = require('path')
+local tap = require('ext/tap')
+local test = tap.test
 
-  test('fs.read and fs.readSync', function()
-    local filepath = Path.join(module.dir, 'fixtures', 'x.txt')
-    print(filepath)
-    local fd = FS.openSync(filepath, 'r')
-    local expected = 'xyz\n'
-    local readCalled = 0
+local math = require('math')
+local string = require('string')
+local fs = require('fs')
+local path = require('path')
+local dirname = require('util').dirname()
 
-    FS.read(fd, #expected, 0, function(err, str, bytesRead)
-      readCalled = readCalled + 1
-      assert(not err)
-      assert(str == expected)
-      assert(#str == #expected)
-    end)
+test('fs.read and fs.readSync', function()
+	local filepath = path.join(dirname, 'fixtures', 'x.txt')
+	print(filepath)
 
-    local r,e = FS.readSync(fd, #expected, 0)
-    assert(r == expected)
-    assert(#r == #expected)
-  end)
+	local fd = fs.openSync(filepath, 'r')
+	local expected = 'xyz\n'
+	local readCalled = 0
+
+	fs.read(fd, #expected, 0, function(err, fileData, bytesRead)
+		readCalled = readCalled + 1
+		assert(not err)
+		assert(fileData == expected)
+		assert(#fileData == #expected)
+	end)
+
+	local fileData, e = fs.readSync(fd, #expected, 0)
+	assert(fileData == expected)
+	assert(#fileData == #expected)
 end)
+
+tap.run()
+

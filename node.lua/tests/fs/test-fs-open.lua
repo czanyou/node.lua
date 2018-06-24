@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License")
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,22 +16,26 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
-  local FS = require('fs')
+local tap = require('ext/tap')
+local test = tap.test
 
-  test('fs.openSync', function()
-    local path = '/path/to/file/that/does/not/exist'
-    local ok, err = FS.openSync(path, 'r')
-    assert(not ok)
-    assert(err:gmatch'^ENOENT')
+local fs = require('fs')
+local dirname = require('util').dirname()
 
-    path = process.cwd()
-    FS.open(path, 'r', function(err, fd)
-      assert(not err)
-      assert(fd)
-      FS.close(fd)
-    end)
+test('fs.openSync', function()
+	local path1 = '/path/to/file/that/does/not/exist'
+	local ok, err = fs.openSync(path1, 'r')
+	assert(not ok)
+	assert(err:gmatch'^ENOENT')
 
-  end)
+	local path2 = dirname
+	fs.open(path2, 'r', function(err, fd)
+		assert(not err)
+		assert(fd)
+		fs.close(fd)
+	end)
 
 end)
+
+tap.run()
+

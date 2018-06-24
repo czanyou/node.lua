@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,35 +16,38 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
-  local path = require('path')
-  local fs   = require('fs')
+local tap = require('ext/tap')
+local test = tap.test
 
-  local temp = path.dirname(os.tmpname())
+local path = require('path')
+local fs   = require('fs')
 
-  test('fs.readdir', function(expect)
-    local dir, _, err, files, onReadDir
-    dir = path.join(temp, 'tmp', 'readdir')
-    _, err = fs.statSync(dir)
-    if err then fs.mkdirpSync(dir, "0755") end
+local temp = os.tmpdir
 
-    fs.writeFileSync(path.join(dir, "1"), "")
-    fs.writeFileSync(path.join(dir, "2"), "")
-    fs.writeFileSync(path.join(dir, "3"), "")
+test('fs.readdir', function(expect)
+	local dir, _, err, files, onReadDir
+	dir = path.join(temp, 'tmp', 'readdir')
+	_, err = fs.statSync(dir)
+	if err then fs.mkdirpSync(dir, "0755") end
 
-    files = fs.readdirSync(dir)
-    assert(#files == 3)
+	fs.writeFileSync(path.join(dir, "1"), "")
+	fs.writeFileSync(path.join(dir, "2"), "")
+	fs.writeFileSync(path.join(dir, "3"), "")
 
-    function onReadDir(err, files)
-      assert(err == nil)
-      assert(#files == 3)
-      fs.unlink(path.join(dir, "1"), function() end)
-      fs.unlink(path.join(dir, "2"), function() end)
-      fs.unlink(path.join(dir, "3"), function() end)
-    end
+	files = fs.readdirSync(dir)
+	assert(#files == 3)
 
-    fs.readdir(dir, expect(onReadDir))
-  end)
+	function onReadDir(err, files)
+		assert(err == nil)
+		assert(#files == 3)
+		fs.unlink(path.join(dir, "1"), function() end)
+		fs.unlink(path.join(dir, "2"), function() end)
+		fs.unlink(path.join(dir, "3"), function() end)
+	end
 
+	fs.readdir(dir, expect(onReadDir))
 end)
+
+tap.run()
+
 

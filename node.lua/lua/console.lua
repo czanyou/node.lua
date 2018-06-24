@@ -447,7 +447,7 @@ function exports.log(message, ...)
     local file, line = utils.filename(3)
     local path = require('path')
     file = path.basename(file) or ''
-    print(colorize("success", '- ' .. file .. ':' .. (line or 0)))
+    print(colorize("sep", '- ' .. file .. ':' .. (line or 0)))
 
     exports.pprint(message, ...)
 end

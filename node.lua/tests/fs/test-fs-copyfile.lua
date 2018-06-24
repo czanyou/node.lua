@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License")
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,32 +16,46 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
-    local fs = require('fs')
-    local uv = require('uv')
-    local path = require('path')
-    local utils = require('util')
+local tap = require('ext/tap')
+local test = tap.test
 
-    local f =  uv.cwd() --module.path
-    local dirname = utils.dirname()
-    local tmp = os.tmpdir
+local fs = require('fs')
+local uv = require('uv')
+local path = require('path')
+local util = require('util')
 
-    test('fs.copyfile', function()
-      
-      local src = path.join(dirname, 'run.lua')
-      local dest = path.join(tmp, 'run1.test')
+local f =  uv.cwd() --module.path
+local dirname = util.dirname()
+local tmp = os.tmpdir
 
-      console.log(src, dest);
+test('fs.copyfile', function(expect)
+	local src = path.join(dirname, 'run.lua')
+	local dest1 = path.join(tmp, 'run1.test')
 
-      fs.copyfile(src, dest, function(err, y)
-          console.log(err, y)
-          os.remove(dest)
-      --  assert(y)
-      end)
+	console.log(src, dest1);
 
-      local dest2 = path.join(tmp, 'run2.test')
-      assert(fs.copyfileSync(src, dest2))
+	-- async
+	fs.copyfile(src, dest1, expect(function(err, y)
+		assert(not err)
+		assert(y)
 
-      os.remove(dest2)
-    end)
+		local fileData = fs.readFileSync(dest1, 'a')
+		--console.log(#fileData)
+		assert(#fileData > 1)
+
+		os.remove(dest1)
+		--  assert(y)
+	end))
+
+	-- sync
+	local dest2 = path.join(tmp, 'run2.test')
+	assert(fs.copyfileSync(src, dest2))
+
+	local fileData = fs.readFileSync(dest2, 'a')
+	--console.log(#fileData)
+	assert(#fileData > 1)
+
+	os.remove(dest2)
 end)
+
+tap.run()

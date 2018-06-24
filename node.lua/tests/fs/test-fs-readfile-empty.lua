@@ -16,14 +16,18 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
-  local FS = require('fs')
-  local Path = require('path')
+local tap = require('ext/tap')
+local test = tap.test
 
-  test('fs.readFile empty', function()
-    local fn = Path.join(module.dir, 'fixtures', 'empty.txt')
-    FS.readFile(fn, function(err, data) assert(data == '') end)
-    assert(FS.readFileSync(fn) == '')
-  end)
+local fs = require('fs')
+local path = require('path')
+local dirname = require('util').dirname()
+
+test('fs.readFile empty', function()
+    local fn = path.join(dirname, 'fixtures', 'empty.txt')
+    fs.readFile(fn, function(err, data) assert(data == '') end)
+    assert(fs.readFileSync(fn) == '')
 end)
+
+tap.run()
 

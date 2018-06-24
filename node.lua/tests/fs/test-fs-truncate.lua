@@ -16,79 +16,80 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
+local tap = require('ext/tap')
+local test = tap.test
 
-  local FS = require('fs')
-  local Path = require('path')
-  local string = require('string')
+local fs = require('fs')
+local path = require('path')
+local string = require('string')
 
-  local tmp = Path.dirname(os.tmpname())
+local tmp = os.tmpdir
 
-  local dir = Path.join(tmp, 'tmp')
-  local filename = Path.join(dir, 'truncate-file.txt')
-  local data = string.rep('x', 1024 * 16)
+local dir = path.join(tmp, 'tmp')
+local filename = path.join(dir, 'truncate-file.txt')
+local data = string.rep('x', 1024 * 16)
 
-  test('fs truncate', function()
+test('fs truncate', function()
     local stat
-    _, err = FS.statSync(dir)
-    if err then FS.mkdirpSync(dir, "0755") end
+    _, err = fs.statSync(dir)
+    if err then fs.mkdirpSync(dir, "0755") end
 
     -- truncateSync
-    FS.writeFileSync(filename, data)
-    stat = FS.statSync(filename)
+    fs.writeFileSync(filename, data)
+    stat = fs.statSync(filename)
     assert(stat.size == 1024 * 16)
 
-    FS.truncateSync(filename, 1024)
-    stat = FS.statSync(filename)
+    fs.truncateSync(filename, 1024)
+    stat = fs.statSync(filename)
     assert(stat.size == 1024)
 
-    FS.truncateSync(filename)
-    stat = FS.statSync(filename)
+    fs.truncateSync(filename)
+    stat = fs.statSync(filename)
     assert(stat.size == 0)
 
     -- ftruncateSync
-    FS.writeFileSync(filename, data)
-    local fd = FS.openSync(filename, 'r+')
+    fs.writeFileSync(filename, data)
+    local fd = fs.openSync(filename, 'r+')
 
-    stat = FS.statSync(filename)
+    stat = fs.statSync(filename)
     assert(stat.size == 1024 * 16)
 
-    FS.ftruncateSync(fd, 1024)
-    stat = FS.statSync(filename)
+    fs.ftruncateSync(fd, 1024)
+    stat = fs.statSync(filename)
     assert(stat.size == 1024)
 
-    FS.ftruncateSync(fd)
-    stat = FS.statSync(filename)
+    fs.ftruncateSync(fd)
+    stat = fs.statSync(filename)
     assert(stat.size == 0)
 
-    FS.closeSync(fd)
+    fs.closeSync(fd)
 
     function testTruncate(cb)
-      FS.writeFile(filename, data, function(er)
+      fs.writeFile(filename, data, function(er)
         if er then
           return cb(er)
         end
-        FS.stat(filename, function(er, stat)
+        fs.stat(filename, function(er, stat)
           if er then
             return cb(er)
           end
           assert(stat.size == 1024 * 16)
 
-          FS.truncate(filename, 1024, function(er)
+          fs.truncate(filename, 1024, function(er)
             if er then
               return cb(er)
             end
-            FS.stat(filename, function(er, stat)
+            fs.stat(filename, function(er, stat)
               if er then
                 return cb(er)
               end
               assert(stat.size == 1024)
 
-              FS.truncate(filename, function(er)
+              fs.truncate(filename, function(er)
                 if er then
                   return cb(er)
                 end
-                FS.stat(filename, function(er, stat)
+                fs.stat(filename, function(er, stat)
                   if er then
                     return cb(er)
                   end
@@ -104,41 +105,41 @@ require('ext/tap')(function(test)
 
 
     function testFtruncate(cb)
-      FS.writeFile(filename, data, function(er)
+      fs.writeFile(filename, data, function(er)
         if er then
           return cb(er)
         end
-        FS.stat(filename, function(er, stat)
+        fs.stat(filename, function(er, stat)
           if er then
             return cb(er)
           end
           assert(stat.size == 1024 * 16)
 
-          FS.open(filename, 'w', function(er, fd)
+          fs.open(filename, 'w', function(er, fd)
             if er then
               return cb(er)
             end
-            FS.ftruncate(fd, 1024, function(er)
+            fs.ftruncate(fd, 1024, function(er)
               if er then
                 return cb(er)
               end
-              FS.stat(filename, function(er, stat)
+              fs.stat(filename, function(er, stat)
                 if er then
                   return cb(er)
                 end
                 assert(stat.size == 1024)
 
-                FS.ftruncate(fd, function(er)
+                fs.ftruncate(fd, function(er)
                   if er then
                     return cb(er)
                   end
-                  FS.stat(filename, function(er, stat)
+                  fs.stat(filename, function(er, stat)
                     if er then
                       return cb(er)
                     end
                     assert(stat.size == 0)
-                    FS.close(fd, cb)
-                    FS.unlinkSync(filename)
+                    fs.close(fd, cb)
+                    fs.unlinkSync(filename)
                   end)
                 end)
               end)
@@ -168,5 +169,6 @@ require('ext/tap')(function(test)
       p('ok')
     end)
 --]]
-  end)
 end)
+
+tap.run()

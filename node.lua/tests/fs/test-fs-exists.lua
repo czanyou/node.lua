@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License")
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,25 +16,26 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
-    local FS = require('fs')
-    local uv = require('uv')
-    local Path = require('path')
+local tap = require('ext/tap')
+local test = tap.test
 
-    local f =  uv.cwd() --module.path
+local fs = require('fs')
 
-    test('fs.exists', function()
-      -- TODO: Is it OK that this callback signature is different from node.js,
-      --       which is function(exists)?
-      FS.exists(f, function(err, y)
-        assert(y)
-      end)
+local dirname = require('util').dirname()
 
-      FS.exists(f .. '-NO', function(err, y)
-        assert(not y)
-      end)
+test('fs.exists', function(expect)
+	-- TODO: Is it OK that this callback signature is different from node.js,
+	--       which is function(exists)?
+	fs.exists(dirname, function(err, y)
+		assert(y)
+	end)
 
-      assert(FS.existsSync(f))
-      assert(not FS.existsSync(f .. '-NO'))
-    end)
+	fs.exists(dirname .. '-NO', function(err, y)
+		assert(not y)
+	end)
+
+	assert(fs.existsSync(dirname))
+	assert(not fs.existsSync(dirname .. '-NO'))
 end)
+
+tap.run()

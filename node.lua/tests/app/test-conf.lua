@@ -9,7 +9,7 @@ local assert = require('assert')
 
 local test = tap.test
 
-test("test profile:load", function (print, p, expect, uv)
+test("test profile:load", function ()
 	local text = [[
 	{
 		"test" : {
@@ -47,7 +47,7 @@ test("test profile:load", function (print, p, expect, uv)
 	assert.equal(video.none, nil)
 end)
 
-test("test profile:set", function (print, p, expect, uv)
+test("test profile:set", function ()
 	local text = '{}'
 
 	local func  	= function() end
@@ -93,7 +93,7 @@ test("test profile:set", function (print, p, expect, uv)
 	end)
 end)
 
-test("test profile:set name type", function (print, p, expect, uv)
+test("test profile:set name type", function ()
 	local filename = "test.conf"
 	local profile = conf.Profile:new(filename)
 	profile:load("{}")

@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License")
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,35 +16,39 @@ limitations under the License.
 
 --]]
 
-require('ext/tap')(function(test)
-  local FS = require('fs')
-  local Path = require('path')
+local tap = require('ext/tap')
+local test = tap.test
 
-  test('fs sync operation', function()
-    local file = Path.join(module.dir, 'fixtures', 'a.lua')
+local fs = require('fs')
+local path = require('path')
+local dirname = require('util').dirname()
 
-    p('open ' .. file)
+test('fs sync operation', function(expect)
+	local file = path.join(dirname, 'fixtures', 'a.lua')
 
-    FS.open(file, 'a', '0777', function(err, fd)
-      print(err, fd)
-      p('fd ' .. fd)
-      assert(not err)
+	console.log('open ' .. file)
 
-      FS.fdatasyncSync(fd)
-      p('fdatasync SYNC: ok')
+	fs.open(file, 'a', '0777', function(err, fd)
+		--print(err, fd)
+		console.log('fd ' .. fd)
+		assert(not err)
 
-      FS.fsyncSync(fd)
-      p('fsync SYNC: ok')
+		assert(fs.fdatasyncSync(fd))
+		--console.log('fdatasync SYNC: ok')
 
-      FS.fdatasync(fd, function(err)
-        assert(not err)
-        p('fdatasync ASYNC: ok')
-        FS.fsync(fd, function(err)
-          assert(not err)
-          p('fsync ASYNC: ok')
-        end)
-      end)
-    end)
+		assert(fs.fsyncSync(fd))
+		--console.log('fsync SYNC: ok')
 
-  end)
+		fs.fdatasync(fd, function(err)
+			assert(not err)
+			--console.log('fdatasync ASYNC: ok')
+			fs.fsync(fd, function(err)
+				assert(not err)
+				--console.log('fsync ASYNC: ok')
+			end)
+		end)
+	end)
+
 end)
+
+tap.run()

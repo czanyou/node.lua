@@ -6,7 +6,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -15,28 +15,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
+local tap = require('ext/tap')
+local test = tap.test
+
 local fs = require('fs')
 local path = require('path')
-require('ext/tap')(function (test)
-  test("writefile stream", function(expect)
-    local stream, filePath, data, onFinish
-
-    function onFinish()
-      local fileData = fs.readFileSync(filePath)
-      pcall(fs.unlinkSync, filePath)
-      assert(stream.bytesWritten == 12)
-      assert(fileData == data)
-    end
+local dirname = require('util').dirname()
 
 
-    data = 'hello world\n'
-    filePath = path.join(module.dir, 'testFileYYY.txt')
-    pcall(fs.unlinkSync, filePath)
-    stream = fs.createWriteStream(filePath)
-    stream:write(data)
-    stream:_end()
-    stream:on('finish', expect(onFinish))
-  end)
+test("writefile stream", function(expect)
+	local stream, filePath, data, onFinish
+
+	function onFinish()
+		local fileData = fs.readFileSync(filePath)
+		pcall(fs.unlinkSync, filePath)
+		assert(stream.bytesWritten == 12)
+		assert(fileData == data)
+	end
+
+	data = 'hello world\n'
+	filePath = path.join(dirname, 'fixtures', 'testFileYYY.txt')
+	pcall(fs.unlinkSync, filePath)
+
+	stream = fs.createWriteStream(filePath)
+	stream:write(data)
+	stream:finish()
+	stream:on('finish', expect(onFinish))
+end)
 
   -- enable test with stderr pipe is added
   --test("writefile stream fd", function(expect)
@@ -50,4 +55,6 @@ require('ext/tap')(function (test)
   --  stream:_end()
   --  stream:on('finish', expect(onFinish))
   --end)
-end)
+
+tap.run()
+
