@@ -17,6 +17,8 @@ local lastdata = ''
 console.log('ssl', ssl)
 
 local function callback(data, len)
+	console.log('callback', data, len);
+
 	if (len) then
 		console.log('recv1', len, #lastdata)
 

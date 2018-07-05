@@ -44,9 +44,10 @@ rem -------------------------------------------
 
 echo sdk
 
-lpm build sdk
+lbuild sdk
 
 goto exit
+
 
 rem -------------------------------------------
 :install

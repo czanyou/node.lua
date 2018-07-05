@@ -248,13 +248,12 @@ function sdk.build_sdk_package(type)
 	console.log(target)
 
 	-- build zip file
-	local name = "nodelua-" .. target .. "-" .. (type or "sdk")
-	local pathname  = path.join(cwd, "/build/", name)
+	local pathname  = path.join(cwd, "/build/", (type or "sdk"), target)
     local builder = zlib.ZipBuilder:new()
     builder:build(pathname)
 
 	-- build package info
-    print('Builded: "build/' .. name .. '.zip".')
+    print('Builded: "build/sdk/' .. target .. '.zip".')
     sdk.build_sdk_package_info(target, packageInfo)
 end
 
@@ -362,7 +361,7 @@ end
 @param target {String} 构建目标，如 win,linux,pi 等等.
 --]]
 function sdk.get_sdk_build_path(target, type)
-	return join(process.cwd(), "build", "nodelua-" .. target .. "-" .. (type or 'sdk'))
+	return join(process.cwd(), "build", (type or 'sdk') .. "/" .. target)
 end
 
 -------------------------------------------------------------------------------

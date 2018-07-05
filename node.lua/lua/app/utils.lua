@@ -95,7 +95,7 @@ function exports.table(cols)
 		end
 
 		local line = ' ' .. string.padRight(title, total - 3) .. ' '
-		print(line)		
+		print(line)
 	end
 
 	object.cell = function(...)
@@ -109,7 +109,7 @@ function exports.table(cols)
 			line[#line + 1] = string.padRight(value, colWidth, colWidth)
 		end
 
-		print(table.concat(line))		
+		print(table.concat(line))
 	end	
 
 	return object

@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(BUILD_BLUE_TOOTH      OFF)
-set(BUILD_MBED_TLS        ON)
+set(BUILD_MBED_TLS        OFF)
 set(BUILD_SDL             OFF)
-set(BUILD_SQLITE          ON)
+set(BUILD_SQLITE          OFF)
 
 # Lua module build type (Shared|Static)
 if (WIN32)

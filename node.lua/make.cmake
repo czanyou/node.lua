@@ -18,5 +18,4 @@ include(node.lua/deps/luazip/make.cmake)
 
 if (BUILD_LNODE_EXE)
     include(node.lua/deps/main/make.cmake)
-    include(node.lua/deps/update/make.cmake)
 endif ()
