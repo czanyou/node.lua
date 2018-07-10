@@ -7,8 +7,8 @@ local json      = require('json')
 local bluetooth = require('bluetooth')
 local rpc       = require('app/rpc')
 
-local beacon   = require('./lua/init')
-local monitor   = require('./lua/monitor')
+local beacon    = require('./clound')
+local monitor   = require('./monitor')
 local device    = require('sdl')
 
 local SCAN_RESPONSE = 0x04
@@ -57,46 +57,12 @@ end
 -------------------------------------------------------------------------------
 -- 
 
-function getInterfaces()
-    local faces = os.networkInterfaces()
-    if (faces == nil) then
-        return
-    end
-
-    local list = {}
-    for k, v in pairs(faces) do
-        if (k == 'lo') then
-            goto continue
-        end
-
-        for _, item in ipairs(v) do
-            if (item.family == 'inet') then
-                if (item.mac) then
-                    item.mac = utils.bin2hex(item.mac)
-                end
-
-                item.name = k
-
-                list[#list + 1] = item
-            end
-        end
-
-        ::continue::
-    end
-
-    if (#list <= 0) then
-        return
-    end
-
-    return list
-end
-
 function getMacAddress()
     local data = fs.readFileSync('/sys/class/net/eth0/address')
     local mac = string.gsub(data, ':', '')
     -- mac = string.upper(string.sub(mac, 1, -2))
     mac = string.sub(mac, 1, -2)
-    console.log(mac)
+    console.log('MAC', mac)
     return mac
 end
 
@@ -121,24 +87,40 @@ function exports.info()
 
     beacon.settings.id = mac
 
-    print("Settings:\n====== ======")
-    for k, v in pairs(beacon.settings) do
-        if (v == '') then v = '-' end
-        print(" " .. string.padRight(k, 10), v or '-')
-    end
+    print("Settings:\n======")
+    console.log(beacon.settings)
 
-    print('------ ------\n')
+    print('\n')
+    monitor.init()
 
-    beacon.register(mac, function(err, result)
-        if (err) then console.log(err, result); return; end
+    local deviceInfo = monitor.getProperties()
+    deviceInfo.mac = mac
 
-        print("Result:\n====== ======")
-        for k, v in pairs(result) do
-            if (v == '') then v = '-' end
-            print(" " .. string.padRight(k, 10), v or '-')
+    console.log('device.info', deviceInfo)
+    beacon.register(deviceInfo, function(err, result)
+        if (err) then 
+            console.log(err, result)
+            return
         end
 
-        print('------ ------')
+        print("Response:\n======")
+        console.log(result)
+
+        beacon.settings.collector = '10.10.38.205:8951'
+        
+        local deviceStatus = monitor.getStatus()
+        console.log('device.status', deviceStatus)
+        beacon.onHeartbeat(deviceStatus, function(err, result)
+            if (err) then 
+                console.log(err, result)
+                return
+            end
+
+            print("Heartbeat:\n======")
+            console.log(result)
+
+            beacon.postData()
+        end)
     end)
 end
 
@@ -150,6 +132,7 @@ function exports.start(mac, timeout)
     end
 
     exports.updateSettings()
+    console.log('Settings', beacon.settings)
 
     local updated = os.uptime()
 
@@ -163,78 +146,62 @@ function exports.start(mac, timeout)
         onData(err, data)
     end
 
-    local onPost = function()
+    local onPublishData = function()
         beacon.postData()
     end
 
     local ret = bluetooth.scan(callback)
 
-    local rssi_interval_timeout = 1000
-    local sensor_interval_timeout = 1000
-    local monitor_interval_timeout = 5000
-    local heartbeat_interval_timeout = 5000
-    local register_interval_timeout = 3600000
-    local CHECK_INTERVAL  = 2000 -- in 1/1000 second
-    local CHECK_TIMEOUT   = 5    -- in second
-    local register_state  = false
+    local publishTimeout = 1000
+    local heartbeatTimeout = 5000
+    local registerTimeout = 3600 * 1000
+
+    local registerTimer = nil;
+    local registerState  = false
 
     local id = getMacAddress()
 
-    -- setInterval(CHECK_INTERVAL, function() 
-    --     beacon.clearInvalidBeacons()
-
-    --     local now = os.uptime()
-    --     local span = now - updated
-
-    --     --console.log(bluetooth.lbluetooth, span)
-    --     if (span > CHECK_TIMEOUT) then
-    --         bluetooth.stop()
-    --     end
-
-    --     if (not bluetooth.ibluetooth) then
-    --         bluetooth.scan(callback)
-    --     end
-    -- end)
     rpcServer = rpc.server(RPC_PORT, rpcMethods)
-    monitor.monitor_init()
+    monitor.init()
     
     utils.async(function()
+        console.log('loop');
+
         while true do
             -- Register
-            while not register_state do
-                local result = utils.await(beacon.register, id)--register request
+            while not registerState do
+                --console.log('registerState', registerState);
+
+                local deviceInfo = monitor.getProperties()
+                deviceInfo.mac = id
+
+                local error, result = utils.await(beacon.register, deviceInfo)--register request
                 -- console.log(result.error)
-                if result.error == nil then
-                    register_state = true
-                    local res_body = json.parse(result.data)
-                    register_interval_timeout = res_body.config.register_interval * 1000
-                    rssi_interval_timeout = res_body.config.datapush_interval * 1000
-                    sensor_interval_timeout = res_body.config.datapush_interval * 1000
-                    monitor_interval_timeout = res_body.config.datapush_interval * 1000
-                    heartbeat_interval_timeout = res_body.config.heartbeat_interval * 1000
+                if not error then
+                    registerState = true
+                    local config = result.config or {}
+                    --registerTimeout = config.register_interval * 1000
+                    --publishTimeout = config.datapush_interval * 1000
+                    --heartbeatTimeout = config.datapush_interval * 1000
+                    
                     console.log('register success')
-                    -- console.log(result)
-                    console.log('register_interval: ' .. register_interval_timeout)
-                    console.log('datapush_interval: ' .. rssi_interval_timeout)
-                    console.log('heartbeat_interval: ' .. heartbeat_interval_timeout)
-                else
+
+                 else
                     console.log('register fail:' .. result.error)
-                    local delay = utils.await(setTimeout, 5000)--register fail delay
+                    utils.await(setTimeout, 5000) --register fail delay
                 end
             end
 
             -- Create Interval
-            local rssi_interval_id = setInterval(rssi_interval_timeout, onPost)
-            local monitor_interval_id = setInterval(monitor_interval_timeout, monitor.monitor_post)
-            local heartbeat_interval_id = setInterval(heartbeat_interval_timeout, monitor.heartbeat_post)
-            
-            local delay = utils.await(setTimeout, register_interval_timeout)
+            local publishTimer   = setInterval(publishTimeout, onPublishData)
+            local heartbeatTimer = setInterval(heartbeatTimeout, monitor.onHeartbeat)
+ 
+            utils.await(setTimeout, registerTimeout)
 
             -- Cancel Interval
-            register_state = false
-            clearInterval(rssi_interval_id)
-            clearInterval(monitor_interval_id)
-            clearInterval(heartbeat_interval_id)
+            registerState = false
+            clearInterval(publishTimer)
+            clearInterval(heartbeatTimer)
         end        
     end)
 end

@@ -8,20 +8,18 @@ local config    = require('app/conf')
 local rpc       = require('app/rpc')
 local miniz     = require('miniz')
 local URL       = 'http://nms.beaconice.cn:3000'
--- local URL       = 'http://192.168.2.15:3000'
+
+
 -------------------------------------------------------------------------------
 -- exports
 
 local cpu_info = {}
 local configure = {}
-local network_traffic_info = {}
+local networkInfo = {}
 local config_timestamp = 1
-local res_lost_count = 0
+
 local mac = ""
-local target = ""
 local version = ""
-local memtotal = ""
-local restart_beacon_program_state = false
 
 local function getNodePath()
 	return config.rootPath
@@ -80,21 +78,6 @@ function getEth0Mac()
     return mac
 end
 
-function getTarget()
-    local str = io.popen('uname -a', "r")
-    str = str:read("*a")
-    local uname_info_list = {}
-    local i = 1;
-    for w in string.gmatch(str,"%a+") do
-        uname_info_list[i] = w
-        i = i + 1
-    end
-    -- local system = uname_info_list[1];
-    -- local system_type = uname_info_list[2];
-    -- local system_version = uname_info_list[3];
-    return uname_info_list[2];
-end
-
 function getCpuUsage()
     data = fs.readFileSync('/proc/stat')
     list = string.split(data, '\n')
@@ -120,29 +103,6 @@ function getCpuUsage()
 
     cpuUserPercent = math.floor(delta_cpu_used_time / delta_cpu_total_time * 100)
     return cpuUserPercent
-end
-
-function getMemTotal()
-    local data = fs.readFileSync('/proc/meminfo')
-    local list = string.split(data, 'kB\n')
-    local MemTotal
-    for w in string.gmatch(list[1],"%d+") do
-        MemTotal = w
-    end
-    MemTotal = math.floor(MemTotal)
-    return MemTotal
-end
-
-function getMemUsage()
-    local data = fs.readFileSync('/proc/meminfo')
-    local list = string.split(data, 'kB\n')
-    local MemFree
-    for w in string.gmatch(list[2],"%d+") do
-        MemFree = w
-    end
-    local MemUsed = (memtotal-MemFree)
-    MemUsed = math.floor(MemUsed)
-    return MemUsed
 end
 
 function getRSSI()
@@ -179,10 +139,10 @@ function getNetworkTraffic(interface)
             break
         end
     end
-    tx = tx_new - network_traffic_info.tx;
-    rx = rx_new - network_traffic_info.rx;
-    network_traffic_info.tx = tx_new;
-    network_traffic_info.rx = rx_new;
+    tx = tx_new - networkInfo.tx;
+    rx = rx_new - networkInfo.rx;
+    networkInfo.tx = tx_new;
+    networkInfo.rx = rx_new;
     tx = tx / 500;
     rx = rx / 500;
     tx = math.floor(tx)
@@ -192,15 +152,8 @@ function getNetworkTraffic(interface)
     return tx,rx
 end
 
-function getInfo()
-    -- body
-    --memony
-    MemUsed = getMemUsage()
+function getNetworkInfo()
 
-    --cpu
-    CpuUsage = getCpuUsage()
-    -- console.log(cpuUsage)
-    
     --net type and ip address and Traffic
     local net_type
     local ip
@@ -209,27 +162,30 @@ function getInfo()
     local network_info = os.networkInterfaces()
     -- console.log(network_info)
     if network_info.eth0 then
-        net_type = '101';
+        net_type = 'eth';
         for k, v in ipairs(network_info.eth0) do
             if v.family == 'inet' then 
                 ip = v.ip;
             end
         end
         net_tx, net_rx = getNetworkTraffic('eth0')
+
     elseif network_info.wlan0 then
-        net_type = '50';
-        -- net_type = getRSSI()
+        net_type = 'wifi';
+        
         for k, v in ipairs(network_info.wlan0) do
             if v.family == 'inet' then 
                 ip = v.ip;
             end
         end
         net_tx, net_rx = getNetworkTraffic('wlan0')
+
     else
         net_type = 'unknown';
     end
+
     -- console.log(net_tx,net_rx)
-    return MemUsed,CpuUsage,math.floor(os.uptime()),ip,net_type,net_tx,net_rx
+    return ip, net_type, net_tx, net_rx
 end
 
 function restart_network()
@@ -432,187 +388,42 @@ function upgrade_firmware()
     -- os.execute('. /usr/local/lnode/bin/autorestart')
 end
 
-function monitor_post()
-    -- body
-    local mu, cu, uptime, ip, net_type, net_tx, net_rx = getInfo()
-    -- console.log(net_tx,net_rx)
-    local data = { mac = mac, target = target, ip = ip, version = version, mem_total = memtotal, mem_used = mu, cpu_usage = cu, uptime = uptime, net_type = net_type, net_tx = net_tx, net_rx = net_rx, config_timestamp = config_timestamp}
-    if restart_beacon_program_state then
-        data.restart = 1
-        restart_beacon_program_state = false
-    end
-    -- console.log(config_timestamp)
-    local options = {}
-    options.data = json.stringify(data)
-    options.contentType = 'application/json'
-    -- console.log(options)
-    request.post(URL .. '/monitor/push', options, function(err, response, body)
-        if response then
-            res_lost_count = 0
-            -- console.log(response.statusCode, body)
-            if body then
-                body = json.parse(body)
-                if(body.config) then
-                    config_timestamp = body.config.config_timestamp;
-                    update_config(body.config)
-                end
-                if body.message then
-                    if body.message.name == 'reboot' then
-                        os.execute('reboot')
-                    elseif body.message.name == 'upgrade' then
-                        console.log("message upgrade")
-                        update_program()
-                        -- if os.execute('wget -P /var/cache/apt/archives http://nms.beaconice.cn/node-lua_i386.deb') then
-                        --     console.log('download success')
-                        -- else
-                        --     console.log('download fail')
-                        -- end  
-                    else
-
-                    end
-                end
-            else
-
-            end
-        else 
-            res_lost_count = res_lost_count + 1
-            console.log('no response,res_lost_count = ' .. tostring(res_lost_count))
-        end
-        
-
-        if res_lost_count >= 5 then
-            res_lost_count = 0
-            restart_network()
-        end
-    end)
-end
-
-function rpc_monitor()
-    local RPC_PORT = 38888
-    local method = 'alive'
-    local params    = {}
-    rpc.call(RPC_PORT, method, params, function(err, result)
-        if (result) then
-            -- console.log(result)
-        else
-            os.execute('lpm restart beacon')
-            restart_beacon_program_state = true;
-        end
-    end)
-end
-
 local exports = {}
 
-function exports.help()
-    app.usage(utils.dirname())
-end
-
-function exports.monitor_init()
-    print('start')
-    -- local options = { form = { status = 'on' }}
-    print('post')
+function exports.init()
     cpu_info.used_time = 0;
     cpu_info.total_time = 0;
-    network_traffic_info.tx = 0;
-    network_traffic_info.rx = 0;
+    networkInfo.tx = 0;
+    networkInfo.rx = 0;
     mac = getEth0Mac()
-    -- target = getTarget()
-    target = 'Intel'
+
     version = process.version
-    memtotal = getMemTotal()
 end
 
-function exports.monitor_post()
-     -- body
-    local mu, cu, uptime, ip, net_type, net_tx, net_rx = getInfo()
-    -- console.log(net_tx,net_rx)
-    local data = { mac = mac, target = target, ip = ip, version = version, mem_total = memtotal, mem_used = mu, cpu_usage = cu, uptime = uptime, net_type = net_type, net_tx = net_tx, net_rx = net_rx, config_timestamp = config_timestamp}
-    if restart_beacon_program_state then
-        data.restart = 1
-        restart_beacon_program_state = false
-    end
-    -- console.log(config_timestamp)
-    local options = {}
-    options.data = json.stringify(data)
-    options.contentType = 'application/json'
-    -- console.log(options)
-    request.post(URL .. '/monitor/push', options, function(err, response, body)
-        
-    end)
+function exports.getProperties()
+    return {
+        memoryTotal = os.totalmem(),
+        version = version
+    }
 end
 
-function exports.heartbeat_post()
-    local data = { if_modified_since = config_timestamp }
-    local options = {}
-    options.data = json.stringify(data)
-    options.contentType = 'application/json'
-    request.post(URL .. '/heartbeat', options, function(err, response, body)
-        if response then
-            res_lost_count = 0
-            -- console.log(response.statusCode, body)
-            if body then
-                body = json.parse(body)
-                if(body.config) then
-                    config_timestamp = body.config.last_modified;
-                    update_config(body.config)
-                end
-                if body.actions then
-                    if body.actions.name == 'reboot' then
-                        os.execute('reboot')
-                    elseif body.actions.name == 'restart' then
-                        console.log("action restart")
-                        os.execute('. /usr/local/lnode/app/gateway/sh/autorestart')
-                    elseif body.actions.name == 'update' then
-                        console.log("action update")
-                        upgrade_firmware()
-                    -- elseif body.actions.name == 'patch' then
-                    --     console.log("action patch")
-                    --     update_patch()
-                    else
+function exports.getStatus()
+    local ip, net_type, net_tx, net_rx = getNetworkInfo()
 
-                    end
-                end
-            else
+    local data = { 
+        version = version, 
+        memoryTotal = os.totalmem(), 
+        memoryFree = os.freemem(), 
+        cpuUsage = getCpuUsage(), 
+        uptime = math.floor(os.uptime()), 
+        networkType = net_type, 
+        networkTx = net_tx, 
+        networkRx = net_rx, 
+        configUpdated = config_timestamp
+    }
 
-            end
-        else 
-            res_lost_count = res_lost_count + 1
-            console.log('no response,res_lost_count = ' .. tostring(res_lost_count))
-        end
-        
-
-        if res_lost_count >= 5 then
-            res_lost_count = 0
-            restart_network()
-        end
-    end)
+    return data;
 end
 
-function exports.patch_update()
-
-end
-
-function exports.start()
-    print('start')
-    local options = { form = { status = 'on' }}
-    print('post')
-    cpu_info.used_time = 0;
-    cpu_info.total_time = 0;
-    network_traffic_info.tx = 0;
-    network_traffic_info.rx = 0;
-    mac = getEth0Mac()
-    -- target = getTarget()
-    target = 'Intel'
-    version = process.version
-    memtotal = getMemTotal()
-    -- setInterval(5000, monitor)
-    -- setInterval(3600000, rpc_monitor)--beacon program monitor and restart
-end
-
-function exports.stop()
-    os.execute('lpm kill monitor')
-end
 
 return exports
-
--- app(exports)
