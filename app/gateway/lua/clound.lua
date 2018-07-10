@@ -24,6 +24,8 @@ exports.REST_URL 	= ''
 
 exports.settings   	= {}
 
+exports.server = 'http://10.10.38.212:8981'
+
 function table.deepcopy(object)
     local lookup_table = {}
 	local function _copy(object)
@@ -74,10 +76,6 @@ function exports.postData()
     local device_id  = exports.settings.device_id  or ''
 	local pkey = exports.settings.pkey or ''
 
-	-- device_id = '123456'
-	-- device_key = 'test'
-	-- exports.settings.collector = '192.168.2.15:3000'
-
 	if (not device_id) or (device_id == '') then
 		print('device_id is empty')
 		return
@@ -119,25 +117,19 @@ function exports.postData()
 	local sign 	= utils.bin2hex(utils.md5(value))
 	local mac 	= ''
 
-	local form = {
-		id 			= device_id,
-		pkey		= pkey,
+	local message = {
+		did 		= device_id,
 		at 			= timestamp,
-		nonce		= nonce,
-		sign 		= sign,
+		type		= "message",
 	  	data 		= list
 	}
 
-	-- console.log(form)
-
+	console.log('message', message)
 	local server = exports.settings.collector or '127.0.0.1'
-	-- local server = '192.168.1.2:8901'
 
-	-- post
-	local data = json.stringify(form)
-	-- console.log(data)
+	local data = json.stringify(message)
 	local options = { data = data, contentType = 'application/json' }
-	local urlString = server .. '/beacon/pushRaw'
+	local urlString = server .. '/message'
 	if (not urlString:startsWith('http:')) then
 		urlString = 'http://' .. urlString
 	end
@@ -156,41 +148,108 @@ function exports.postData()
 end
 
 -- 设备注册, 获取自己的 ID 和 Key, 以及采集服务器的地址
-function exports.register(id, callback)
+function exports.register(deviceInfo, callback)
 	local settings = exports.settings
 	local server = 'nms.beaconice.cn:3000'
 
-	local urlString = server .. '/register'
+	local urlString = exports.server .. '/register'
 	if (not urlString:startsWith('http:')) then
 		urlString = 'http://' .. urlString
 	end
 
-	local form = { mac = id ,model = "Intel", version = process.version, target = "Intel"}
-	local data = json.stringify(form)
+	local message = { 
+		mac = deviceInfo.mac,
+		model = "GW1002", 
+		version = process.version
+	}
+
+	local data = json.stringify(message)
 	local options = { data = data, contentType = 'application/json' }
 
-	-- console.log(urlString, options)
+	--console.log('register', urlString, options)
 
 	request.post(urlString, options, function(error, response, body)
+		--console.log(error, response, body)
+
 		if (error) then
-			console.log(error)
-			callback({error = error})
+			console.log('register', error)
+			callback(error)
 			return
 		end
 
 		local result = json.parse(body) or {}
-		-- console.log(body)
-		if result.result == 0 then
-			settings.collector  = result.config.http_url or '127.0.0.1'
-			if (result.key) then
-				settings.device_id  = id
-				settings.device_key = result.key
-			end
-			callback({error = nil, data = body})
-		else
-			callback({error = (result.error or 'error'), data = nil})
+		--console.log('result', result)
+
+		if (not result) then
+			callback('bad response')
+			return
+
+		elseif (result.error) then
+			callback(result.error)
+			return
 		end
+
+		settings.device_id  = result.id
+		settings.mac = result.mac
+		settings.name = result.name
+		settings.config = result.config
+		settings.description = result.description
+		settings.product = result.product or {}
+
+		callback(nil, result)
 	end)
+end
+
+
+function exports.onHeartbeat(deviceStatus, callback)
+	local settings = exports.settings
+
+    local data = { 
+		deviceId = settings.device_id,
+		status = deviceStatus
+    }
+    local options = {}
+    options.data = json.stringify(data)
+    options.contentType = 'application/json'
+
+    local urlString = exports.server .. '/heartbeat'
+    if (not urlString:startsWith('http:')) then
+		urlString = 'http://' .. urlString
+    end
+    
+    -- console.log('onHeartbeat', urlString, options)
+
+    request.post(urlString, options, function(err, response, body)
+        --console.log(err, response, body)
+        if (err) then
+            callback(err)
+            return 
+        end
+
+        local result = json.parse(body) or {}
+        console.log(result);
+
+        if (result.config) then
+            config_timestamp = result.config.last_modified;
+            update_config(result.config)
+        end
+
+        if result.actions then
+            if result.actions.name == 'reboot' then
+                os.execute('reboot')
+
+            elseif result.actions.name == 'restart' then
+                console.log("action restart")
+                os.execute('. /usr/local/lnode/app/gateway/sh/autorestart')
+
+            elseif result.actions.name == 'update' then
+                console.log("action update")
+                upgrade_firmware()
+            end
+        end
+
+        callback(nil, result)
+    end)
 end
 
 function exports.getList()
