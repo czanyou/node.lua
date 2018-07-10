@@ -92,12 +92,11 @@ static void tls_callback_call(lmbedtls_tls_t* ltls, int nargs, int rets)
 		lua_insert(L, -1 - nargs);
 	}
 
-	if (lua_pcall(L, nargs, rets, -2 - nargs)) {
+	if (lua_pcall(L, nargs, rets, 0)) {
 		printf("Uncaught error in ltls callback: %s\n", lua_tostring(L, -1));
 		return;
 	}
 }
-
 
 static void tls_debug( void *ctx, int level, const char *file, int line, const char *str )
 {
@@ -119,9 +118,21 @@ static int tls_free(lmbedtls_tls_t *tls)
 	return 0;
 }
 
+int tls_net_send2( void *ctx, const unsigned char *buf, size_t len )
+{
+	printf("tls_net_send2: len=%d\n", (int)len);
+	return mbedtls_net_send(ctx, buf, len);
+}
+
+int tls_net_recv2( void *ctx, unsigned char *buf, size_t len)
+{
+	printf("tls_net_recv2: len=%d\n", (int)len);
+	return mbedtls_net_recv(ctx, buf, len);
+}
+
 int tls_net_send( void *ctx, const unsigned char *buf, size_t len )
 {
-	printf("send: %d 0x%08x\n", (int)len, (uint32_t)(void*)buf);
+	printf("tls_net_send: len=%d\n", (int)len);
 	lmbedtls_tls_t *tls = (lmbedtls_tls_t*)ctx;
 	lua_State *L = tls->fState;
 
@@ -129,13 +140,13 @@ int tls_net_send( void *ctx, const unsigned char *buf, size_t len )
 	tls_callback_call(tls, 1, 1);
 
 	int ret = lauxh_optinteger(L, -1, -1);
-	printf("tls_net_send: %d\r\n", ret);
+	printf("tls_net_send: ret=%d\r\n", ret);
 	return ret;
 }
 
-int tls_net_recv( void *ctx, unsigned char *buf, size_t len, uint32_t timeout )
+int tls_net_recv( void *ctx, unsigned char *buf, size_t len)
 {
-	printf("recv: %d 0x%08x\n", (int)len, (uint32_t)(void*)buf);
+	printf("tls_net_recv: len=%d\n", (int)len);
 
 	lmbedtls_tls_t *tls = (lmbedtls_tls_t*)ctx;
 	lua_State *L = tls->fState;
@@ -144,19 +155,28 @@ int tls_net_recv( void *ctx, unsigned char *buf, size_t len, uint32_t timeout )
 	lua_pushnumber(L, len);
 	tls_callback_call(tls, 2, 2);
 
-	int ret = lauxh_optinteger(L, -2, -1);
-	printf("tls_net_recv1: %d\r\n", ret);
-
+	int ret = -1;
 	size_t retlen = 0;
-	const char *data = lauxh_optlstring( L, -1, "", &retlen);
+	const char *data = NULL;
 
-	printf("tls_net_recv2: %d\r\n", retlen);
+	if (lua_isnumber(L, -2)) {
+		ret = lua_tonumber(L, -2);
+		printf("tls_net_recv: ret=%d\r\n", ret);
+
+		if (lua_isstring(L, -1)) {
+			data = lauxh_optlstring(L, -1, "", &retlen);
+			memcpy(buf, data, retlen);
+		}
+	}
+
+	lua_pop(L, 1);
+	//lua_pop(L, 1);
+
+	printf("tls_net_recv: retLen=%d\r\n", (int)retlen);
 
 	if (ret <= 0) {
 		return ret;
 	}
-
-	memcpy(buf, data, retlen);
 
 	return retlen;
 }
@@ -235,10 +255,9 @@ static int tls_config(lua_State *L)
 	printf("flags: %d\r\n", flags);
 
 	if (flags) {
-		mbedtls_ssl_set_bio( &tls->ssl_context, &tls->net_context, mbedtls_net_send, mbedtls_net_recv, NULL );
-
+		mbedtls_ssl_set_bio(&tls->ssl_context, &tls->net_context, tls_net_send2, tls_net_recv2, NULL);
 	} else {
-		mbedtls_ssl_set_bio(&tls->ssl_context, tls, tls_net_send, NULL, tls_net_recv);
+		mbedtls_ssl_set_bio(&tls->ssl_context, tls, tls_net_send, tls_net_recv, NULL);
 	}
 
 	lua_pushnumber( L, ret );
@@ -404,4 +423,3 @@ LUALIB_API int luaopen_lmbedtls_tls( lua_State *L )
 
 	return 1;
 }
-

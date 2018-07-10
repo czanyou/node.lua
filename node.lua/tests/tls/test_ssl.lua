@@ -24,7 +24,7 @@ local index = 1
 local function callback(data, len)
 
 	if (len) then
-		console.log('recv', len, #lastdata)
+		console.log('callback recv', len, #lastdata)
 
 		return MBEDTLS_ERR_SSL_WANT_READ, "test"
 
@@ -42,7 +42,7 @@ local function callback(data, len)
 end
 
 console.log('connect', ssl:connect("cn.bing.com", "443"))
-console.log('config', ssl:config("cn.bing.com", 0, callback))
+console.log('config', ssl:config("cn.bing.com", 1, callback))
 
 
 local function onConnect()
