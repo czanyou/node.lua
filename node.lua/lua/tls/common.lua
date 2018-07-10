@@ -25,6 +25,7 @@ local path    = require('path')
 local timer   = require('timer')
 local utils   = require('util')
 local uv      = require('uv')
+local tls     = require('lmbedtls.tls')
 
 local _, openssl = pcall(require, 'ssl')
 
@@ -70,15 +71,15 @@ function Credential:initialize(secureProtocol, defaultCiphers, flags, rejectUnau
         self.context = context
 
     else
-        self.context = openssl.ssl.ctx_new(secureProtocol or 'TLSv1',
-          defaultCiphers or DEFAULT_CIPHERS)
-        self.context:mode(true, 'release_buffers')
-        self.context:options(getSecureOptions(secureProtocol, flags))
+        --self.context = openssl.ssl.ctx_new(secureProtocol or 'TLSv1',
+        --  defaultCiphers or DEFAULT_CIPHERS)
+        --self.context:mode(true, 'release_buffers')
+        --self.context:options(getSecureOptions(secureProtocol, flags))
     end
 end
 
 function Credential:addRootCerts()
-    self.context:cert_store(exports.DEFAULT_CA_STORE)
+    --self.context:cert_store(exports.DEFAULT_CA_STORE)
 end
 
 --[[
@@ -86,24 +87,24 @@ end
 ]]
 function Credential:setCA(certs)
     if not self.store then
-        self.store = openssl.x509.store:new()
-        self.context:cert_store(self.store)
+        --self.store = openssl.x509.store:new()
+        --self.context:cert_store(self.store)
     end
 
     if type(certs) == 'table' then
         for _, v in pairs(certs) do
-            local cert = assert(openssl.x509.read(v))
-            assert(self.store:add(cert))
+            --local cert = assert(openssl.x509.read(v))
+            --assert(self.store:add(cert))
         end
     else
-        local cert = assert(openssl.x509.read(certs))
-        assert(self.store:add(cert))
+        --local cert = assert(openssl.x509.read(certs))
+        --assert(self.store:add(cert))
     end
 end
 
 function Credential:setKeyCert(key, cert)
-    key = assert(openssl.pkey.read(key, true))
-    cert = assert(openssl.x509.read(cert))
+    --key = assert(openssl.pkey.read(key, true))
+    --cert = assert(openssl.x509.read(cert))
     self.context:use(key, cert)
 end
 
@@ -113,7 +114,7 @@ exports.Credential = Credential
 -- TLSSocket
 
 -- @event secureConnect
--- @event OCSPResponse 
+-- @event OCSPResponse
 
 local TLSSocket = net.Socket:extend()
 
@@ -167,10 +168,12 @@ function TLSSocket:_init()
     self.ctx = self.options.secureContext or
                self.options.credentials or
                exports.createCredentials(self.options)
-    self.inp = openssl.bio.mem(8192)
-    self.out = openssl.bio.mem(8192)
-    self.ssl = self.ctx.context:ssl(self.inp, self.out, self.server)
+    --self.inp = openssl.bio.mem(8192)
+    --self.out = openssl.bio.mem(8192)
+    --self.ssl = self.ctx.context:ssl(self.inp, self.out, self.server)
+    self.ssl = tls.new()
 
+    --[[
     if (not self.server) then
         if self.options.servername then
             self.ssl:set('hostname',self.options.servername)
@@ -179,11 +182,12 @@ function TLSSocket:_init()
             self.ssl:session(self.ctx.session)
         end
     end
+    --]]
 end
 
 -- Returns an object representing the peer's certificate. 
 function TLSSocket:getPeerCertificate()
-    return self.ssl:peer()
+    --return self.ssl:peer()
 end
 
 function TLSSocket:_verifyClient()
@@ -366,27 +370,6 @@ function TLSSocket:_read(n)
     local handshake = function()
         if not self._connected then
           local ret, err = self.ssl:handshake()
-          if ret == nil then
-              return net.Socket.destroy(self, err)
-          else
-              local i = self.out:pending()
-              if i > 0 then
-                net.Socket._write(self, self.out:read(), function(err)
-                  if err then return self:shutdown(err) end
-                  handshake()
-                end)
-              end
-            end
-
-            if ret == false then return end
-
-            self._connected = true
-            self._handshake_complete = true
-
-            if not uv.is_active(self._handle) then return end
-            uv.read_stop(self._handle)
-            uv.read_start(self._handle, onData)
-            self:emit('secure')
         end
     end
 
@@ -459,7 +442,7 @@ function exports.createCredentials(options, context)
             ctx.context:verify_mode(VERIFY_NONE, returnOne)
         end
     else
-        ctx.context:verify_mode(VERIFY_NONE, returnOne)
+        --ctx.context:verify_mode(VERIFY_NONE, returnOne)
     end
 
     return ctx

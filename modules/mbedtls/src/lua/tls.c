@@ -120,33 +120,39 @@ static int tls_free(lmbedtls_tls_t *tls)
 
 int tls_net_send2( void *ctx, const unsigned char *buf, size_t len )
 {
-	printf("tls_net_send2: len=%d\n", (int)len);
+	//printf("tls_net_send2: len=%d\n", (int)len);
 	return mbedtls_net_send(ctx, buf, len);
 }
 
 int tls_net_recv2( void *ctx, unsigned char *buf, size_t len)
 {
-	printf("tls_net_recv2: len=%d\n", (int)len);
+	//printf("tls_net_recv2: len=%d\n", (int)len);
 	return mbedtls_net_recv(ctx, buf, len);
 }
 
 int tls_net_send( void *ctx, const unsigned char *buf, size_t len )
 {
-	printf("tls_net_send: len=%d\n", (int)len);
+	//printf("tls_net_send: len=%d\n", (int)len);
 	lmbedtls_tls_t *tls = (lmbedtls_tls_t*)ctx;
 	lua_State *L = tls->fState;
 
 	lua_pushlstring(L, buf, len);
 	tls_callback_call(tls, 1, 1);
 
-	int ret = lauxh_optinteger(L, -1, -1);
-	printf("tls_net_send: ret=%d\r\n", ret);
+	int ret = 0;
+
+	if (lua_isnumber(L, -1)) {
+		ret = lauxh_optinteger(L, -1, -1);
+	}
+
+	//printf("tls_net_send: ret=%d\r\n", ret);
+	lua_pop(L, 1);
 	return ret;
 }
 
 int tls_net_recv( void *ctx, unsigned char *buf, size_t len)
 {
-	printf("tls_net_recv: len=%d\n", (int)len);
+	//printf("tls_net_recv: len=%d\n", (int)len);
 
 	lmbedtls_tls_t *tls = (lmbedtls_tls_t*)ctx;
 	lua_State *L = tls->fState;
@@ -156,29 +162,30 @@ int tls_net_recv( void *ctx, unsigned char *buf, size_t len)
 	tls_callback_call(tls, 2, 2);
 
 	int ret = -1;
-	size_t retlen = 0;
+	size_t bufLen = 0;
 	const char *data = NULL;
 
 	if (lua_isnumber(L, -2)) {
 		ret = lua_tonumber(L, -2);
-		printf("tls_net_recv: ret=%d\r\n", ret);
+		//printf("tls_net_recv: ret=%d\r\n", ret);
 
 		if (lua_isstring(L, -1)) {
-			data = lauxh_optlstring(L, -1, "", &retlen);
-			memcpy(buf, data, retlen);
+			data = lauxh_optlstring(L, -1, "", &bufLen);
+			if (bufLen > 0) {
+				memcpy(buf, data, bufLen);
+			}
 		}
 	}
 
-	lua_pop(L, 1);
-	//lua_pop(L, 1);
+	lua_pop(L, 2);
 
-	printf("tls_net_recv: retLen=%d\r\n", (int)retlen);
+	//printf("tls_net_recv: retLen=%d\r\n", (int)retlen);
 
 	if (ret <= 0) {
 		return ret;
 	}
 
-	return retlen;
+	return bufLen;
 }
 
 static int tls_tostring( lua_State *L )
@@ -252,7 +259,7 @@ static int tls_config(lua_State *L)
 		ret = mbedtls_ssl_set_hostname(&tls->ssl_context, serverName);
 	}
 
-	printf("flags: %d\r\n", flags);
+	// printf("flags: %d\r\n", flags);
 
 	if (flags) {
 		mbedtls_ssl_set_bio(&tls->ssl_context, &tls->net_context, tls_net_send2, tls_net_recv2, NULL);

@@ -24,9 +24,6 @@ exports.license     = "Apache 2"
 exports.description = "A node-style tls module for lnode."
 exports.tags        = {"lnode", "tls"}
 
-local loaded = pcall(require, 'ssl')
-if not loaded then return end
-
 local _common_tls = require('tls/common')
 local net = require('net')
 
