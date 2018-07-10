@@ -7,8 +7,8 @@ local json      = require('json')
 local bluetooth = require('bluetooth')
 local rpc       = require('app/rpc')
 
-local beacon   = require('./lua/init')
-local monitor   = require('./lua/monitor')
+local beacon    = require('./init')
+local monitor   = require('./monitor')
 local device    = require('sdl')
 
 local SCAN_RESPONSE = 0x04
