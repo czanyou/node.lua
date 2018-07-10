@@ -7,6 +7,9 @@ local uv 		= require('uv')
 
 local data = ""
 
+local MBEDTLS_ERR_SSL_WANT_READ   = -0x6900 -- 26800 /**< Connection requires a read call. */
+local MBEDTLS_ERR_SSL_WANT_WRITE  = -0x6880 -- 26752
+
 
 console.log('tls', tls)
 
@@ -16,28 +19,30 @@ local lastdata = ''
 
 console.log('ssl', ssl)
 
+local index = 1
+
 local function callback(data, len)
-	console.log('callback', data, len);
 
 	if (len) then
-		console.log('recv1', len, #lastdata)
+		console.log('recv', len, #lastdata)
 
-		local ret = lastdata:sub(1, len)
-		lastdata = lastdata:sub(len + 1)
-
-		console.log('recv2', len, #ret, #lastdata)
-
-		return ret
+		return MBEDTLS_ERR_SSL_WANT_READ, "test"
 
 	else
-		--console.log('send', #data)
+		console.log('send', #data, index)
+		index = index + 1
+
+		console.log(data)
 		console.printBuffer(data)
+
+		local len = #data
+
+		return len
 	end
 end
 
 console.log('connect', ssl:connect("cn.bing.com", "443"))
-
-console.log('config', ssl:config("cn.bing.com", callback))
+console.log('config', ssl:config("cn.bing.com", 0, callback))
 
 
 local function onConnect()
@@ -50,15 +55,20 @@ local PORT = 443
 
 
 local ret = ssl:handshake()
-console.log('handshake', string.format("%d", ret))
+console.log('handshake', string.format("%d", ret)) -- 0x7200
 
 
-local message = "GET / HTTP/1.0\r\nHost: cn.bing.com\r\n\r\n"
-console.log('write', ssl:write(message))
+function sendRequest(ssl)
+	local message = "GET / HTTP/1.0\r\nHost: cn.bing.com\r\n\r\n"
+	console.log('write', ssl:write(message))
 
---console.log(ssl:read())
+	console.log(ssl:read())
+	console.log(ssl:read())
+end
 
-console.log('read')
+sendRequest(ssl)
+
+--console.log('read')
 
 setTimeout(5000, function() end)
 

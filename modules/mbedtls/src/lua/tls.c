@@ -121,39 +121,43 @@ static int tls_free(lmbedtls_tls_t *tls)
 
 int tls_net_send( void *ctx, const unsigned char *buf, size_t len )
 {
-	//printf("send: %d 0x%08x\n", (int)len, (uint32_t)(void*)buf);
+	printf("send: %d 0x%08x\n", (int)len, (uint32_t)(void*)buf);
 	lmbedtls_tls_t *tls = (lmbedtls_tls_t*)ctx;
 	lua_State *L = tls->fState;
 
 	lua_pushlstring(L, buf, len);
-	tls_callback_call(tls, 1, 0);
+	tls_callback_call(tls, 1, 1);
 
-	return 0;
+	int ret = lauxh_optinteger(L, -1, -1);
+	printf("tls_net_send: %d\r\n", ret);
+	return ret;
 }
 
 int tls_net_recv( void *ctx, unsigned char *buf, size_t len, uint32_t timeout )
 {
-	//printf("recv: %d 0x%08x\n", (int)len, (uint32_t)(void*)buf);
+	printf("recv: %d 0x%08x\n", (int)len, (uint32_t)(void*)buf);
+
 	lmbedtls_tls_t *tls = (lmbedtls_tls_t*)ctx;
 	lua_State *L = tls->fState;
 
 	lua_pushnil(L);
 	lua_pushnumber(L, len);
-	tls_callback_call(tls, 2, 1);
+	tls_callback_call(tls, 2, 2);
 
-	int top = lua_gettop(L);
-	int type1 = lua_type(L, -1);
-	int type2 = lua_type(L, -2);
+	int ret = lauxh_optinteger(L, -2, -1);
+	printf("tls_net_recv1: %d\r\n", ret);
 
 	size_t retlen = 0;
-	const char *ret = lauxh_optlstring( L, -1, "", &retlen);
+	const char *data = lauxh_optlstring( L, -1, "", &retlen);
 
-	if (retlen <= 0) {
-		return MBEDTLS_ERR_SSL_WANT_READ;
+	printf("tls_net_recv2: %d\r\n", retlen);
+
+	if (ret <= 0) {
+		return ret;
 	}
 
-	memcpy(buf, ret, retlen);
- 
+	memcpy(buf, data, retlen);
+
 	return retlen;
 }
 
@@ -178,13 +182,13 @@ static int tls_init(lmbedtls_tls_t *tls)
 	const uint8_t* pers = (const uint8_t*)seed;
 	size_t pers_len = strlen(seed);
 
+	mbedtls_net_init(&tls->net_context);
+
 	mbedtls_ssl_init        (&tls->ssl_context);
 	mbedtls_ssl_config_init (&tls->ssl_conf);
 	mbedtls_x509_crt_init   (&tls->cacert);
 	mbedtls_ctr_drbg_init   (&tls->drbg);
 	mbedtls_entropy_init    (&tls->entropy);
-
-	mbedtls_net_init( &tls->net_context );
 
 	mbedtls_ctr_drbg_seed(&tls->drbg, mbedtls_entropy_func, &tls->entropy, pers, pers_len);
 
@@ -204,11 +208,14 @@ static int tls_config(lua_State *L)
 {
 	lmbedtls_tls_t *tls = lauxh_checkudata( L, 1, LMBEDTLS_TLS_MT );
 	const char* serverName = lauxh_optstring( L, 2, "");
+	int flags = lauxh_optinteger(L, 3, 0);
 
-	tls_callback_check(tls, 3);
+	tls_callback_check(tls, 4);
 
-	int ret = mbedtls_ssl_config_defaults( &tls->ssl_conf, MBEDTLS_SSL_IS_CLIENT,
-					MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
+	int ret = mbedtls_ssl_config_defaults( &tls->ssl_conf, 
+					MBEDTLS_SSL_IS_CLIENT,
+					MBEDTLS_SSL_TRANSPORT_STREAM, 
+					MBEDTLS_SSL_PRESET_DEFAULT);
 
 	if (ret == 0) {
 		/* OPTIONAL is not optimal for security,
@@ -225,9 +232,14 @@ static int tls_config(lua_State *L)
 		ret = mbedtls_ssl_set_hostname(&tls->ssl_context, serverName);
 	}
 
-	mbedtls_ssl_set_bio(&tls->ssl_context, tls, tls_net_send, tls_net_recv, NULL);
+	printf("flags: %d\r\n", flags);
 
-	//mbedtls_ssl_set_bio( &tls->ssl_context, &tls->net_context, mbedtls_net_send, mbedtls_net_recv, NULL );
+	if (flags) {
+		mbedtls_ssl_set_bio( &tls->ssl_context, &tls->net_context, mbedtls_net_send, mbedtls_net_recv, NULL );
+
+	} else {
+		mbedtls_ssl_set_bio(&tls->ssl_context, tls, tls_net_send, NULL, tls_net_recv);
+	}
 
 	lua_pushnumber( L, ret );
 
@@ -242,8 +254,7 @@ static int tls_handshake(lua_State *L)
 		return 1;
 	}
 
-	int ret = -1;
-	ret = mbedtls_ssl_handshake(&tls->ssl_context);
+	int ret = mbedtls_ssl_handshake(&tls->ssl_context);
   
 	lua_pushnumber( L, ret );
 	return 1;
@@ -276,15 +287,7 @@ static int tls_write( lua_State *L )
 	size_t len = 0;
 	const char* buf = lauxh_optlstring( L, 2, "", &len);
 
-	int ret = 0;
-	while ( ( ret = mbedtls_ssl_write( &tls->ssl_context, buf, len ) ) <= 0 )
-	{
-		if( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE )
-		{
-			printf( " failed\n  ! mbedtls_ssl_write returned %d\n\n", ret );
-			break;
-		}
-	}
+	int ret = mbedtls_ssl_write( &tls->ssl_context, buf, len );
 
 	lua_pushnumber( L, ret );
 	return 1;
@@ -300,7 +303,12 @@ static int tls_read( lua_State *L )
 
 	int ret = mbedtls_ssl_read( &tls->ssl_context, buf, len );
 
-	lua_pushlstring( L, buf, len );
+	lua_pushnumber(L, ret);
+	if (ret > 0) {
+		lua_pushlstring(L, buf, ret);
+		return 2;
+	}
+
 	return 1;
 }
 
@@ -316,9 +324,6 @@ static int tls_connect( lua_State *L )
 	printf( "  . Connecting to tcp/%s/%s...", serverName, serverPort );
 	fflush( stdout );
 	int ret = mbedtls_net_connect( &tls->net_context, serverName, serverPort, MBEDTLS_NET_PROTO_TCP );
-	if (ret != 0 ) {
-		printf( " failed\n  ! mbedtls_net_connect returned %d\n\n", ret );
-	}
 
 	lua_pushnumber( L, ret );
 	return 1;

@@ -7,6 +7,7 @@ set(BUILD_SQLITE          OFF)
 
 # Lua module build type (Shared|Static)
 if (WIN32)
+  set(BUILD_MBED_TLS        ON)
 
 elseif (APPLE)
   set(CMAKE_MACOSX_RPATH 0)
@@ -18,6 +19,7 @@ elseif (APPLE)
 elseif (LINUX)
   set(BUILD_SDL 		  ON)
   set(BUILD_BLUE_TOOTH    ON)
+  set(BUILD_MBED_TLS        ON)
 
 endif ()
 
