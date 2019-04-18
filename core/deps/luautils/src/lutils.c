@@ -15,9 +15,9 @@
  *
  */
 #include "lutils.h"
+#include "md5.h"
  
 #include "buffer_lua.c"
-#include "md5.h"
 #include "os.c"
 
 //#include "message.c"
@@ -172,6 +172,7 @@ static const luaL_Reg lutils_functions[] = {
   { "os_fork",          luv_os_fork },
   { "os_platform",      luv_os_platform },
   { "os_statfs",        luv_os_statfs },
+  { "os_uart_set",      luv_os_uart_set },
 
   // misc
   { "md5",              luv_md5 },
