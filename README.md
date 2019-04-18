@@ -1,7 +1,7 @@
 # Node.lua
 
 > - Author：ChengZhen (anyou@qq.com)
-> - Version：3.3
+> - Version：4.1
 
 Platform for Internet of Things with Lua.
 Modern IoT device embedded software development platform.
@@ -66,8 +66,9 @@ $ make install
 ## Documentation
 
 - [Getting Started](docs/cn/docs/README.md)
-- [Core API Reference](docs/cn/api/README.md)
-- [Extended API Reference](docs/cn/vision/README.md)
+- [Core API Reference](docs/cn/core/README.md)
+- [Modules API Reference](docs/cn/modules/README.md)
+- [Media Reference](docs/cn/media/README.md)
 
 ## License
 
