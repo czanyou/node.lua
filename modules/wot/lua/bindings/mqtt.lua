@@ -8,12 +8,8 @@ function exports.connect(urlString, clientId)
     -- console.log(urlString, clientId)
 
     local client = mqtt.connect(urlString)
-    local topic = 'actions/' .. clientId
-
     client:on('connect', function()
         -- print(TAG, 'event', 'connect')
-
-        client:subscribe(topic)
         -- print(TAG, 'subscribe', topic)
     end)
 

@@ -366,9 +366,7 @@ function ThingClient:initialize(options)
     -- console.log('ThingClient', options);
 
     self.options = options or {}
-    self.thing = self.options.thing
-
-    -- console.log('ThingClient', self.thing );
+    self.things = {}
 end
 
 function ThingClient:start()
@@ -383,8 +381,13 @@ function ThingClient:start()
     mqttClient:on('connect', function ()
         console.log('connect')
 
-        local data = self.thing:getDescription()
-        self:sendRegister(data)
+        for did, thing in pairs(self.things) do
+            local topic = 'actions/' .. did
+            mqttClient:subscribe(topic)
+
+            local description = thing:getDescription()
+            self:sendRegister(did, description)
+        end
     end)
 
     mqttClient:on('message', function (topic, data)
@@ -405,7 +408,9 @@ function ThingClient:invokeAction(name, input, message)
         return
     end
 
-    local thing = self.thing
+    -- console.log('invokeAction', name, input, message, self.things)
+    local did = message.did;
+    local thing = self.things[did]
     if (not thing) then
         console.log('empty thing')
         return
@@ -449,6 +454,17 @@ function ThingClient:processMessage(message, topic)
     elseif (messageType == 'register') then
         self:emit('register', message)
 
+        local data = message.data
+        local thing = self.things[message.did]
+        if (data and thing) then
+            thing.token = data.token
+            thing.deviceId = data.id
+            thing.expires = data.expires
+            thing.lastRegisterTime = process.now()
+
+            -- console.log('thing', thing);
+        end
+
     elseif (messageType == 'read') then
         self:processReadMessage(message)
         
@@ -485,29 +501,28 @@ function ThingClient:sendMessage(message)
         return
     end
 
-    local clientId = self.options.id
-    local topic = 'messages/' .. clientId
+    local topic = 'messages/' .. message.did
 
     local data = json.stringify(message)
-    --console.log(topic, data)
+    -- console.log(topic, data)
     client:publish(topic, data)
 end
 
-function ThingClient:sendRegister(thing)
-    local clientId = self.options.id
+function ThingClient:sendRegister(did, description)
     local message = {
-        did = clientId,
+        did = did,
         type = 'register',
-        data = thing
+        data = description
     }
 
+    -- console.log('register', did, message)
     self:sendMessage(message)
 end
 
-function ThingClient:sendEvent(events)
-    local clientId = self.options.id
+function ThingClient:sendEvent(events, options)
+    local did = options.did or self.options.id
     local message = {
-        did = clientId,
+        did = did,
         type = 'event',
         data = events
     }
@@ -625,12 +640,19 @@ function exports.register(directory, thing)
     local options = {}
     options.url = directory
     options.id = thing.id
-    options.thing = thing
 
-    local client = ThingClient:new(options)
+    local client = exports.client
+    if (not client) then
+        client = ThingClient:new(options)
+        exports.client = client
 
-    client:start()
-    
+        client.things[thing.id] = thing;
+        client:start()
+
+    else
+        client.things[thing.id] = thing;
+    end
+
     return client
 end
 
@@ -640,6 +662,11 @@ end
 -- Promise<void>
 function exports.unregister(directory, thing)
     local promise = Promise.new()
+
+    local client = exports.client
+    if (client) then
+        client.things[thing.id] = nil;
+    end
 
     return promise
 end
