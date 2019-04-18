@@ -2,7 +2,7 @@
 	"description": "macos PC",
 	"name": "macos",
 	"tags": ["macos", "core"],
-    "applications": ["httpd", "ssdp", "lhost", "sdcp", "mqtt"],
+    "applications": ["lhttpd", "lhost"],
 	"files": ["install.sh"],
 	"version": "0.0.1"
 }

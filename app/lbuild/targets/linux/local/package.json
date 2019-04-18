@@ -1,9 +1,14 @@
 {
-	"description": "Linux Gateway",
-	"name": "linux",
+	"description": "Things Gateway",
+	"name": "gateway",
+	"device": { 
+		"model": "GW1003", 
+		"type": "gateway", 
+		"manufacturer": "CMPP",
+		"id": "115200"
+	},
 	"tags": ["linux", "core"],
-    "applications": ["httpd", "lhost", "gateway"],
-	"start": ["httpd", "lhost", "gateway"],
+    "applications": ["lpm", "lhost", "lhttpd", "gateway"],
     "libs": ["lsdl.so", "lsqlite.so", "lbluetooth.so"],
 	"version": "0.0.1"
 }

@@ -1,7 +1,0 @@
-#!/bin/sh
-sudo killall lnode
-sudo dpkg -P node-lua-i386
-sudo dpkg -i /usr/local/download/firmware.deb
-sudo lpm start lhost
-sudo lpm start httpd
-sudo lpm start gateway

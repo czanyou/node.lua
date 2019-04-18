@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Gateway</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="shortcut icon" href="/favicon.ico?v=100003" type="image/x-icon" />
+	<link rel="stylesheet" href="css/bootstrap.min.css?v=100003" />
+	<link rel="stylesheet" href="css/font-awesome.min.css?v=100003" />
+	<link rel="stylesheet" href="css/style.css?v=100003" />
+    <script src="js/polyfill.js?v=100003"></script>
+	<script src="js/jquery.min.js?v=100003"></script>
+	<script src="js/bootstrap.min.js?v=100003"></script>
+	<script src="js/vue.min.js?v=100003"></script>
+	<script src="js/common.js?v=100003"></script>
+	<style>
+	html,
+	body {
+		height: 100%;
+	}
+
+	#app { height: 100%; }
+
+	.home-body {
+		background: #fff;
+	}
+
+	#sidebar-header i { display: none; }
+
+	#sidebar {
+		width: 300px;
+		height: 100%;
+		overflow: auto;
+		position: fixed;
+		left: 0;
+		top: 0;
+		overflow-x: hidden;
+		border-right: 1px solid #eee;
+		box-shadow: 0 3px 3px rgba(0,0,0,0.05);
+		background-color: #fcfcfc;
+	}
+
+	#sidebar-header .header-inner {
+		height: 64px; border-bottom: 1px solid #eee;
+	}
+
+	#sidebar-header .logo {
+		line-height: 64px; font-size: 18px; color: #777; display: inline-block;
+		
+	}
+
+	#sidebar-header .logo label {
+		margin: 0; padding: 0 20px; cursor: pointer;
+	}
+
+	#sidebar-header .header-right {
+		float: right; line-height: 64px; font-size: 100%; color: #777; padding: 0 16px;
+	} 
+
+	#right-body {
+		width: 100%;
+		height: 100%;
+		padding-left: 300px;
+	}
+
+	#right-body iframe {
+		width: 100%;
+		height: 100%;
+	}
+
+	#right-body>form {
+		padding: 16px 16px;
+	}
+
+	#right-body>form input, #right-body>form select {
+		max-width: 400px;
+	}
+
+	#leftmenu { padding: 0; margin: 0; }
+	#leftmenu li { list-style-type: none; }
+	#leftmenu ul { padding: 0; margin: 0; }
+
+	#leftmenu a { display: block; line-height: 48px; font-size: 16px; color: #555; }
+	#leftmenu a:hover { text-decoration: none; background: #eee; }
+
+	#leftmenu a i { display: inline-block; line-height: 48px; width: 24px; 
+		margin: 0 20px; color: #777; text-align: center; }
+
+	#leftmenu a label {
+		display: inline-block; margin: 0; font-size: 15px;
+	}
+	
+
+	@media screen and (max-width: 1024px) {
+		#sidebar {
+			width: 240px;
+		}
+
+		#right-body { 
+			padding-left: 240px;
+		}
+	}
+
+	@media screen and (max-width: 768px) {
+		#sidebar { width: 64px; }
+		#sidebar-header .header-right { display: none; }
+		
+		#right-body { padding-left: 64px; }
+		
+		#leftmenu a label { display: none; }
+		#sidebar-header .logo { display: inline-block; line-height: 64px; }
+		#sidebar-header .logo i { display: inline-block; width: 64px; text-align: center; font-size: 20px; }
+		#sidebar-header .logo label { display: none; }
+
+		#sidebar.expand { width: 240px; }
+		#sidebar.expand #leftmenu a label { display: inline-block; }
+		#sidebar.expand #sidebar-header .logo label { display: inline-block; padding: 0; }
+		#sidebar.expand #sidebar-header .header-right { display: inline-block; }
+	}
+
+	@media screen and (max-width: 480px) {
+		
+
+	}
+
+	@media screen and (min-width: 480px) {}
+	</style>
+</head>
+
+<body class="home-body">
+<div id="app">
+	<div id="sidebar">
+		<header id="sidebar-header" class="sidebar-header">
+			<div class="header-inner">
+				<div class="header-right">
+					<a id="logout_item" href="#logout" style="display: none;">Logout</a>
+					<a id="login_item" href="login.html">Login</a>
+				</div>
+
+				<a class="logo" id="logo" href="#">
+					<i class="fa fa-bars"></i><label>Gateway</label>
+				</a>
+			</div>
+		</header>
+
+		<nav class="leftmenu-wrapper">
+			<ul id="leftmenu" class="leftmenu"></ul>
+		</nav>
+
+		<footer id="footer"></footer>
+	</div>
+	<div id="right-body"></div>
+</div>	
+<script>
+
+var app = new Vue({
+	el: '#app',
+	data: {
+	}
+})
+
+function GetAppIconHTML(app) {
+	var name = app.name
+	if (!name) {
+		return ''
+	}
+
+	var title = app.title || name
+	var path = app.path || name
+	var icon = app.icon || 'file'
+	var versoin = app.version || VISION_VERSION
+
+	var date = new Date()
+	var time = date.getMonth() + '' + date.getDate() + "."
+
+	var html = "";
+	html += '<li><a href="#'
+	html += name
+	html += '">'
+	html += '<i class="fa fa-'
+	html += icon
+	html += '"/>'
+	html += '<label>'
+	html += title
+	html += '</label></a></li>'
+	return html
+}
+
+function GetAppSettingsItemHTML(app, config, item) {
+	var name = config.name + "." + (item.name || '');
+	var label = item.label || item.name;
+
+	var html = ''
+
+	if (item.readonly) {
+		html += '<div class="form-group form-control-sm">';
+		html += '<label for="' + name + '">' + label + '</label>';
+		html += '<input class="form-control" name="' + name + '" placeholder="' + label + '"';
+
+		if (item.value) {
+			html += ' value="' + item.value + '"';
+		}
+
+		html += ' readonly/>';
+		html += '</div>';
+
+	} else if (item.action) {
+		html += '<div class="form-group form-control-sm">';
+		html += '<label for="' + name + '">' + label + '</label>';
+		html += '<div><button type="button" class="btn btn-success" name="' + name + '">';
+		html += label;
+		html += '</button></div>';
+		html += '</div>';
+
+	} else if (item.type == 'boolean') {
+		html += '<div class="form-group form-control-sm">';
+		html += '<label for="' + name + '">' + label + '</label>';
+		html += '<select class="form-control" name="' + name + '"';
+		html += '>';
+
+		var options = [ 'no', 'yes' ];
+
+		for (var i = 0; i < options.length; i++) {
+			var value = options[i]
+			var title = value;
+			if (item.value && item.value == value) {
+				value += '" selected="selected';
+			}
+
+			html += '<option value="' + value + '">' + title + '</option>';
+		}
+
+		html += '</select>';
+		if (item.description) {
+			html += '<small class="form-text text-muted">' + (item.description) + '</small>';
+		}
+		html += '</div>';
+
+
+	} else if (item.enum) {
+		html += '<div class="form-group form-control-sm">';
+		html += '<label for="' + name + '">' + label + '</label>';
+		html += '<select class="form-control" name="' + name + '"';
+
+		html += '>';
+
+		for (var i = 0; i < item.enum.length; i++) {
+			var value = item.enum[i]
+			var title = value;
+			if (item.value && item.value == value) {
+				value += '" selected="selected';
+			}
+
+			html += '<option value="' + value + '">' + title + '</option>';
+		}
+
+		html += '</select>';
+		if (item.description) {
+			html += '<small class="form-text text-muted">' + (item.description) + '</small>';
+		}
+		html += '</div>';
+
+	} else {
+		html += '<div class="form-group form-control-sm">';
+		html += '<label for="' + name + '">' + label + '</label>';
+
+		html += '<input class="form-control" name="' + name + '" ';
+		if (item.type == 'number' || item.type == 'integer') {
+			html += ' type="number"';
+			if (item.minimum) {
+				html += ' min="' + item.minimum + '"';
+			}
+
+			if (item.maximum) {
+				html += ' max="' + item.maximum + '"';
+			}
+		}
+
+		if (item.value) {
+			html += ' value="' + item.value + '"';
+		}
+
+		html += '/>';
+		if (item.description) {
+			html += '<small class="form-text text-muted">' + (item.description) + '</small>';
+		}
+		html += '</div>';
+	}
+	
+
+	return html;
+	return JSON.stringify(item);
+}
+
+function GetAppSettingsHTML(app) {
+	var name = app.name
+	if (!name) {
+		return ''
+	}
+
+	//console.log(app.config);
+
+	var configs = app.config || [];
+
+	var html = '';
+	html += '<a id="' + name + '"></a>';
+	html += '<h2>' + app.title + '</h2>';
+	html += '<hr/>';
+
+	app.name = name;
+
+	for (var i = 0; i < configs.length; i++) {
+		var config = configs[i];
+
+		html += '<a id="' + config.name + '"></a>';
+		html += '<h3>' + config.label + '</h3>';
+
+		var items = config.items || [];
+		for (var n = 0; n < items.length; n++) {
+			html += GetAppSettingsItemHTML(app, config, items[n])
+		}
+	}
+
+	return html
+}
+
+function GetSettingsMenuHTML(apps) {
+	if (!apps) {
+		return ''
+	}
+
+	var html = '';
+	for (var i = 0; i < apps.length; i++) {
+		html += GetAppIconHTML(apps[i] || {})
+	}
+	
+	return html
+}
+
+function GetSettingsHTML(apps) {
+	if (!apps) {
+		return ''
+	}
+
+	var html = '<form id="settings-form">';
+	for (var i = 0; i < apps.length; i++) {
+		html += GetAppSettingsHTML(apps[i] || {})
+	}
+
+	html += '<div class="form-group">';
+	html += '<hr/>';
+	html += '<button type="button" id="button-submit" class="btn btn-primary">Save</button>'
+	html += '</div>'
+	html += '</form>'
+	return html
+}
+
+function LoadAppIcons() {
+	var url = "/api.lua?api=/applications"
+	var wrapper = $("#leftmenu")
+	wrapper.html('<p style="margin: 16px 32px;">Loadding...</p>')
+	$.get(url, function (apps) {
+		var html = GetSettingsMenuHTML(apps);
+		if (html) {
+			$('#login_item').hide();
+			$('#logout_item').show();
+
+		} else {
+			html = '<p style="margin: 16px 32px;">...</p>';
+		}
+
+		wrapper.hide().html(html).fadeIn()
+
+		var html = GetSettingsHTML(apps);
+		$("#right-body").html(html);
+
+		$("#button-submit").click(function(event) {
+			event.preventDefault();
+			var data = $("#settings-form").serialize();
+			console.log(data);
+
+			var url = "/api.lua?api=/settings";
+			$.post(url, data, function(ret) {
+				console.log(ret)
+			})
+
+			return false;
+		})
+	})
+}
+
+$(document).ready(function () {
+	$('#logout_item').click(OnLogout);
+	$('#logo').click(function() {
+		$("#sidebar").toggleClass('expand')
+	})
+
+	LoadAppIcons()
+});
+
+
+</script>
+
+</body>
+</html>

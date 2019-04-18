@@ -1,0 +1,1 @@
+mipsel-openwrt-linux-g++  -fPIC    -shared -Wl,-soname,libmosquittopp.so.1 -o libmosquittopp.so.1.5.0 CMakeFiles/mosquittopp.dir/mosquittopp.cpp.o  -L/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/lib ../libmosquitto.so.1.5.0 -lpthread -lrt -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/lib: 

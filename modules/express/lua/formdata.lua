@@ -16,7 +16,6 @@ limitations under the License.
 
 --]]
 local core 		= require('core')
-local utils 	= require('util')
 local buffer 	= require('buffer')
 
 local exports = { }

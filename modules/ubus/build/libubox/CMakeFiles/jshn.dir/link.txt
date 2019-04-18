@@ -1,0 +1,1 @@
+/usr/bin/cc      CMakeFiles/jshn.dir/jshn.c.o  -o jshn -rdynamic libblobmsg_json.so /usr/local/lib/libjson-c.a libubox.so -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/build/libubox: 

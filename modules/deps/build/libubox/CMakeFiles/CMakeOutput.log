@@ -1,0 +1,135 @@
+The system is: Linux - 4.4.0-17134-Microsoft - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc 
+Build flags: 
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+The C compiler identification is GNU, found in "/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/2.8.12.2/CompilerIdC/a.out"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1258985863/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1258985863.dir/build.make CMakeFiles/cmTryCompileExec1258985863.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1258985863.dir/testCCompiler.c.o
+/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc    -o CMakeFiles/cmTryCompileExec1258985863.dir/testCCompiler.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTryCompileExec1258985863
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1258985863.dir/link.txt --verbose=1
+/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc       CMakeFiles/cmTryCompileExec1258985863.dir/testCCompiler.c.o  -o cmTryCompileExec1258985863 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2738244328/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2738244328.dir/build.make CMakeFiles/cmTryCompileExec2738244328.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2738244328.dir/CMakeCCompilerABI.c.o
+/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc    -o CMakeFiles/cmTryCompileExec2738244328.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-2.8/Modules/CMakeCCompilerABI.c
+Linking C executable cmTryCompileExec2738244328
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2738244328.dir/link.txt --verbose=1
+/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc     -v CMakeFiles/cmTryCompileExec2738244328.dir/CMakeCCompilerABI.c.o  -o cmTryCompileExec2738244328 -rdynamic  
+Reading specs from /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/specs
+COLLECT_GCC=/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc
+COLLECT_LTO_WRAPPER=/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../libexec/gcc/mipsel-openwrt-linux-uclibc/4.8.3/lto-wrapper
+Target: mipsel-openwrt-linux-uclibc
+Configured with: /home/buildbot/slave-local/ramips_mt7688/build/build_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/gcc-linaro-4.8-2014.04/configure --with-bugurl=https://dev.openwrt.org/ --with-pkgversion='OpenWrt/Linaro GCC 4.8-2014.04 r47269' --prefix=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2 --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=mipsel-openwrt-linux-uclibc --with-gnu-ld --enable-target-optspace --disable-libgomp --disable-libmudflap --disable-multilib --disable-nls --with-host-libstdcxx=-lstdc++ --with-float=soft --with-gmp=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/host --with-mpfr=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/host --with-mpc=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/host --disable-decimal-float --with-mips-plt --disable-libssp --disable-__cxa_atexit --with-headers=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/include --disable-libsanitizer --enable-languages=c,c++ --enable-shared --enable-threads --with-slibdir=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/lib
+Thread model: posix
+gcc version 4.8.3 (OpenWrt/Linaro GCC 4.8-2014.04 r47269) 
+COMPILER_PATH=/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../libexec/gcc/mipsel-openwrt-linux-uclibc/4.8.3/:/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../libexec/gcc/:/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/bin/
+LIBRARY_PATH=/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/:/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/:/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTryCompileExec2738244328' '-rdynamic' '-msoft-float' '-mllsc' '-mplt' '-mno-shared'
+ /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../libexec/gcc/mipsel-openwrt-linux-uclibc/4.8.3/collect2 --eh-frame-hdr -EL -export-dynamic -dynamic-linker /lib/ld-uClibc.so.0 -o cmTryCompileExec2738244328 /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/crt1.o /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/crti.o /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/crtbegin.o -L /opt/mt7688/staging_dir//usr/lib -rpath-link /opt/mt7688/staging_dir//usr/lib -L/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3 -L/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc -L/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib CMakeFiles/cmTryCompileExec2738244328.dir/CMakeCCompilerABI.c.o -lgcc_s -lc -lgcc_s /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/crtend.o /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/crtn.o
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+
+
+Parsed C implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:/usr/bin/make "cmTryCompileExec2738244328/fast"]
+  ignore line: [make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp']
+  ignore line: [/usr/bin/make -f CMakeFiles/cmTryCompileExec2738244328.dir/build.make CMakeFiles/cmTryCompileExec2738244328.dir/build]
+  ignore line: [make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp']
+  ignore line: [/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp/CMakeFiles 1]
+  ignore line: [Building C object CMakeFiles/cmTryCompileExec2738244328.dir/CMakeCCompilerABI.c.o]
+  ignore line: [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc    -o CMakeFiles/cmTryCompileExec2738244328.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-2.8/Modules/CMakeCCompilerABI.c]
+  ignore line: [Linking C executable cmTryCompileExec2738244328]
+  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2738244328.dir/link.txt --verbose=1]
+  ignore line: [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc     -v CMakeFiles/cmTryCompileExec2738244328.dir/CMakeCCompilerABI.c.o  -o cmTryCompileExec2738244328 -rdynamic  ]
+  ignore line: [Reading specs from /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/specs]
+  ignore line: [COLLECT_GCC=/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc]
+  ignore line: [COLLECT_LTO_WRAPPER=/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../libexec/gcc/mipsel-openwrt-linux-uclibc/4.8.3/lto-wrapper]
+  ignore line: [Target: mipsel-openwrt-linux-uclibc]
+  ignore line: [Configured with: /home/buildbot/slave-local/ramips_mt7688/build/build_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/gcc-linaro-4.8-2014.04/configure --with-bugurl=https://dev.openwrt.org/ --with-pkgversion='OpenWrt/Linaro GCC 4.8-2014.04 r47269' --prefix=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2 --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=mipsel-openwrt-linux-uclibc --with-gnu-ld --enable-target-optspace --disable-libgomp --disable-libmudflap --disable-multilib --disable-nls --with-host-libstdcxx=-lstdc++ --with-float=soft --with-gmp=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/host --with-mpfr=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/host --with-mpc=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/host --disable-decimal-float --with-mips-plt --disable-libssp --disable-__cxa_atexit --with-headers=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/include --disable-libsanitizer --enable-languages=c,c++ --enable-shared --enable-threads --with-slibdir=/home/buildbot/slave-local/ramips_mt7688/build/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/lib]
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 4.8.3 (OpenWrt/Linaro GCC 4.8-2014.04 r47269) ]
+  ignore line: [COMPILER_PATH=/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../libexec/gcc/mipsel-openwrt-linux-uclibc/4.8.3/:/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../libexec/gcc/:/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/bin/]
+  ignore line: [LIBRARY_PATH=/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/:/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/:/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTryCompileExec2738244328' '-rdynamic' '-msoft-float' '-mllsc' '-mplt' '-mno-shared']
+  link line: [ /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../libexec/gcc/mipsel-openwrt-linux-uclibc/4.8.3/collect2 --eh-frame-hdr -EL -export-dynamic -dynamic-linker /lib/ld-uClibc.so.0 -o cmTryCompileExec2738244328 /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/crt1.o /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/crti.o /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/crtbegin.o -L /opt/mt7688/staging_dir//usr/lib -rpath-link /opt/mt7688/staging_dir//usr/lib -L/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3 -L/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc -L/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib CMakeFiles/cmTryCompileExec2738244328.dir/CMakeCCompilerABI.c.o -lgcc_s -lc -lgcc_s /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/crtend.o /opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/crtn.o]
+    arg [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../libexec/gcc/mipsel-openwrt-linux-uclibc/4.8.3/collect2] ==> ignore
+    arg [--eh-frame-hdr] ==> ignore
+    arg [-EL] ==> ignore
+    arg [-export-dynamic] ==> ignore
+    arg [-dynamic-linker] ==> ignore
+    arg [/lib/ld-uClibc.so.0] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTryCompileExec2738244328] ==> ignore
+    arg [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/crt1.o] ==> ignore
+    arg [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/crti.o] ==> ignore
+    arg [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/crtbegin.o] ==> ignore
+    arg [-L/opt/mt7688/staging_dir//usr/lib] ==> dir [/opt/mt7688/staging_dir//usr/lib]
+    arg [-rpath-link] ==> ignore
+    arg [/opt/mt7688/staging_dir//usr/lib] ==> ignore
+    arg [-L/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3] ==> dir [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3]
+    arg [-L/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc] ==> dir [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc]
+    arg [-L/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib] ==> dir [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib]
+    arg [CMakeFiles/cmTryCompileExec2738244328.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [-lc] ==> lib [c]
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/crtend.o] ==> ignore
+    arg [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib/crtn.o] ==> ignore
+  remove lib [gcc_s]
+  remove lib [gcc_s]
+  collapse library dir [/opt/mt7688/staging_dir//usr/lib] ==> [/opt/mt7688/staging_dir/usr/lib]
+  collapse library dir [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3] ==> [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3]
+  collapse library dir [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc] ==> [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc]
+  collapse library dir [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/../lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3/../../../../mipsel-openwrt-linux-uclibc/lib] ==> [/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/mipsel-openwrt-linux-uclibc/lib]
+  implicit libs: [c]
+  implicit dirs: [/opt/mt7688/staging_dir/usr/lib;/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/mipsel-openwrt-linux-uclibc/4.8.3;/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc;/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/mipsel-openwrt-linux-uclibc/lib]
+  implicit fwks: []
+
+
+Determining if the function clock_gettime exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1136213598/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1136213598.dir/build.make CMakeFiles/cmTryCompileExec1136213598.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1136213598.dir/CheckFunctionExists.c.o
+/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc   -DCHECK_FUNCTION_EXISTS=clock_gettime   -o CMakeFiles/cmTryCompileExec1136213598.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-2.8/Modules/CheckFunctionExists.c
+Linking C executable cmTryCompileExec1136213598
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1136213598.dir/link.txt --verbose=1
+/opt/mt7688/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin/mipsel-openwrt-linux-gcc   -DCHECK_FUNCTION_EXISTS=clock_gettime    CMakeFiles/cmTryCompileExec1136213598.dir/CheckFunctionExists.c.o  -o cmTryCompileExec1136213598 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/CMakeTmp'
+
+

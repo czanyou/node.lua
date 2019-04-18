@@ -1,0 +1,1 @@
+/usr/bin/cc      CMakeFiles/server.dir/server.c.o CMakeFiles/server.dir/count.c.o  -o server  ../libubus.so ../../libubox/libubox.so ../../libubox/libblobmsg_json.so /usr/local/lib/libjson-c.a -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/build/ubus:/mnt/c/work/node.lua.tour/modules/ubus/build/libubox 

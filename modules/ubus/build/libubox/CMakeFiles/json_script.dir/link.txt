@@ -1,0 +1,1 @@
+/usr/bin/cc  -fPIC    -shared -Wl,-soname,libjson_script.so -o libjson_script.so CMakeFiles/json_script.dir/json_script.c.o libubox.so -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/build/libubox: 

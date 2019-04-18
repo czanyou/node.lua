@@ -1,0 +1,3 @@
+/mnt/c/work/node.lua.tour/modules/deps/build/uci/CMakeFiles/uci.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/uci/CMakeFiles/uci-static.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/uci/CMakeFiles/ucli.dir

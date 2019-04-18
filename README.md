@@ -1,7 +1,7 @@
 # Node.lua
 
 > - Author：ChengZhen (anyou@qq.com)
-> - Version：3.2
+> - Version：3.3
 
 Platform for Internet of Things with Lua.
 Modern IoT device embedded software development platform.
@@ -10,7 +10,7 @@ Modern IoT device embedded software development platform.
 
 Using dynamic languages to develop embedded applications, you can focus on application logic, quickly respond to rapidly changing requirements, and implement faster functional iterations.
 
-## 特色 - Features
+## Features
 
 - Use pure C language, easy to transplant, superior performance, flexible and compact
 - Use mature frameworks like libuv
@@ -19,29 +19,30 @@ Using dynamic languages to develop embedded applications, you can focus on appli
 - provide a common extension of the library, and easy to expand on their own
 - Specifically for embedded optimization, fast running, less space
 
-### 支持的平台 - Supported Platforms
+### Supported Platforms
 
 Current supported platforms are Linux.
 
 macOS & Windows as development host.
 
-#### 开发板 - H/W boards
+#### H/W boards
 
 - Raspberry Pi
 - Nano Pi
 - MT7688
 - Hi3516
 
-### 目录结构 - Directory Structure
+### Directory Structure
 
 | Path       | Description
 | ---        | ---
 | app        | Applications
+| config     | Cross compile and development board configuration files
+| core       | Core modules
 | docs       | Development documents
 | modules    | Lua extension modules
-| node.lua   | Core modules
 
-## 构建 - How to Build
+## How to Build
 
 Node.lua was designed to build seamlessly with minimal dependencies on most platforms:
 
@@ -51,6 +52,9 @@ Node.lua was designed to build seamlessly with minimal dependencies on most plat
 - Linux: Make, GCC
 
 ```sh
+# Install CMake
+$ sudo apt install cmake
+
 # Build source code
 $ make build
 
@@ -59,12 +63,12 @@ $ make install
 
 ```
 
-## 文档 - Documentation
+## Documentation
 
-- [开始指南 - Getting Started](docs/README.md)
-- [基本 API - Basic API Reference](docs/api/README.md)
-- [扩展 API - Extended API Reference](docs/vision/README.md)
+- [Getting Started](docs/cn/docs/README.md)
+- [Core API Reference](docs/cn/api/README.md)
+- [Extended API Reference](docs/cn/vision/README.md)
 
-## 许可 - License
+## License
 
 Node.lua is Open Source software under the Apache 2.0 license. Complete license and copyright information can be found within the code.

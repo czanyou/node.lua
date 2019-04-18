@@ -1,0 +1,1 @@
+/usr/bin/cc  -fPIC    -shared -Wl,-soname,libubus.so -o libubus.so CMakeFiles/ubus.dir/libubus.c.o CMakeFiles/ubus.dir/libubus-io.c.o CMakeFiles/ubus.dir/libubus-obj.c.o CMakeFiles/ubus.dir/libubus-sub.c.o CMakeFiles/ubus.dir/libubus-req.c.o CMakeFiles/ubus.dir/libubus-acl.c.o ../libubox/libubox.so -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/build/libubox: 

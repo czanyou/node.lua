@@ -1,0 +1,2 @@
+/usr/bin/ar cr libblobmsg_json.a  CMakeFiles/blobmsg_json-static.dir/blobmsg_json.c.o
+/usr/bin/ranlib libblobmsg_json.a

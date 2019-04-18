@@ -18,68 +18,86 @@ limitations under the License.
 local lbluetooth = require('lbluetooth')
 local fs  		 = require('fs')
 local uv 	     = require('uv')
+local core 	     = require('core')
 
 local exports = {}
 
-local ble_poll = nil
+local BluetoothDevice = core.Emitter:extend()
 
-local function start_le_scan(options)
-     local callback = exports.callback
+function BluetoothDevice:initialize(options)
+    -- If advertisments were activated using BluetoothDevice.watchAdvertisements().
+    self.watchingAdvertisements = false
 
     -- open ble device
 	local device = lbluetooth.open()
     if (not device) then
-        if (callback) then
-            callback('Could not open device')
-        end
+        self:emit('error', 'Can`t open the bluetooth device')
         return nil
+    end
+
+    local info = device:get_info() or {}
+    --console.log(device:get_info())
+
+    self.id = info.deviceId
+    self.name = info.name
+    self.address = info.address
+
+    self.device = device
+end
+
+-- Starts watching for advertisments.
+function BluetoothDevice:watchAdvertisements()
+    local device = self.device
+    if (not device) then
+        return
+    end
+
+    if (self.watchingAdvertisements) then
+        return
     end
 
     -- start scan
     local ret = device:scan(function(data)
-        if (callback) then
-            callback(nil, data)
-        end
+        self:emit('data', data)
     end)
 
     if (ret ~= 0) then
-        if (callback) then
-            callback('Could not start scan')
-        end
-
-        device:close()
-        return nil, ret
+        self:emit('error', 'Can`t open bluetooth scan')
+        return nil
     end
 
-    return device
+    self.watchingAdvertisements = true
 end
 
--- Start the scan
-function exports.scan(options, callback)
-    -- function(callback)
+-- Stops watching for advertisments.
+function BluetoothDevice:unwatchAdvertisements()
+    if (self.device) then
+        self.device:stop()
+        self.device = nil
+    end
+
+    self.watchingAdvertisements = false
+end
+
+function BluetoothDevice:close()
+    if (self.device) then
+        self.device:close()
+        self.device = nil
+    end
+
+    self.watchingAdvertisements = false
+end
+
+-- request a BluetoothDevice object with the specified options.
+function exports.requestDevice(options, callback)
     if (type(options) == 'function') then
-        callback = options; 
+        callback = options
         options = nil
     end
 
-    options = options or {}
-    exports.callback = callback
-
-    if (exports.lbluetooth) then
-        return 0
-    end
-
-    local device, ret = start_le_scan(options)
-    exports.lbluetooth = device
-
-    return ret
-end
-
--- Stop scanning and turn off the associated Bluetooth device
-function exports.stop()
-    if (exports.lbluetooth) then
-        exports.lbluetooth:close()
-        exports.lbluetooth = nil
+    local device = BluetoothDevice:new(options)
+    if (callback) then
+        callback(nil, device)
     end
 end
 

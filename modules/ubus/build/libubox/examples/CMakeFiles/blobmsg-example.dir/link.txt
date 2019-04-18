@@ -1,0 +1,1 @@
+/usr/bin/cc      CMakeFiles/blobmsg-example.dir/blobmsg-example.c.o  -o blobmsg-example  -L/mnt/c/work/node.lua.tour/modules/ubus/libubox/examples/.. -rdynamic ../libubox.so ../libblobmsg_json.so /usr/local/lib/libjson-c.a ../libubox.so -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/libubox/examples/..:/mnt/c/work/node.lua.tour/modules/ubus/build/libubox 

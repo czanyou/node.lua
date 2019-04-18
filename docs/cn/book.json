@@ -1,0 +1,15 @@
+{
+    "title": "Node.lua",
+    "version": "1.0.0",
+    "description": "Node.lua Documents",
+    "chapters": [
+        ["docs", 	"开发指南"],
+        ["native", 	"Native 开发"],
+        ["core", 	"核心 API"],
+        ["modules", "扩展模块"],
+        ["vision", 	"试验模块"],
+        ["reference", "参考"],
+        ["media", 	"多媒体"]
+    ]
+}
+

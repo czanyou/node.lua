@@ -1,0 +1,10 @@
+{
+	"depends": [],
+	"description": "AQI manager",
+	"title": "AQI",
+	"name": "aqi",
+	"icon": "thermometer",
+	"tags": ["sensor", "runtime"],
+	"thing": {},
+	"version": "1.0.0"
+}

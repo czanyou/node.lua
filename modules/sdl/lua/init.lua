@@ -91,10 +91,13 @@ function exports.getDeviceInfo()
     local target = ext.getSystemTarget()
 
     local profile = exports.getSystemInfo()
-    deviceInfo.model        = profile.deviceModel or target
-    deviceInfo.type         = profile.deviceType or target
-    deviceInfo.serialNumber = profile.deviceId
-    deviceInfo.manufacturer = profile.manufacturer or 'CMPP'
+    local device = profile.device or {}
+    deviceInfo.name         = profile.name
+    deviceInfo.description  = profile.description
+    deviceInfo.model        = device.model
+    deviceInfo.type         = device.type
+    deviceInfo.serialNumber = device.id
+    deviceInfo.manufacturer = device.manufacturer
 
     if (not deviceInfo.serialNumber) or (deviceInfo.serialNumber == '') then
     	deviceInfo.serialNumber = exports.getMacAddress() or ''

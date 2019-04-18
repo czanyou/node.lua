@@ -102,6 +102,8 @@ typedef struct lbluetooth_s
 	int  fScanType;
 	int  fReference;
 
+	struct hci_dev_info fDeviceInfo;
+
 	queue_t fQueue;
 
 	lua_State*  fState;

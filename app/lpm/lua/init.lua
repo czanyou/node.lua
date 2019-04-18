@@ -20,7 +20,7 @@ local core		= require('core')
 local fs		= require('fs')
 local json		= require('json')
 local path		= require('path')
-local utils		= require('util')
+local util		= require('util')
 local conf		= require('app/conf')
 local app		= require('app')
 
@@ -29,7 +29,7 @@ local app		= require('app')
 
 local meta = { }
 meta.name        = "lpm"
-meta.version     = "3.0.1"
+meta.version     = "3.0.2"
 meta.description = "Lua package manager (Node.lua command-line tool)."
 meta.tags        = { "lpm", "package", "command-line" }
 
@@ -53,8 +53,8 @@ function config.get(key)
 		return
 	end
 
-	local profile = conf('lpm')
-	console.log(profile:get(key))
+	local profile = conf('user')
+	console.printr(profile:get(key))
 end
 
 function config.help()
@@ -66,7 +66,6 @@ Usage:
   lpm config get <key>         - Get value for <key>.
   lpm config list              - List all config files
   lpm config set <key> <value> - Sets the specified config <key> <value>.
-  lpm config show <file>       - Show all values for <file>.
   lpm config unset <key>       - Clears the specified config <key>.
   lpm get <key>                - Get value for <key>.
   lpm set <key> <value>        - Sets the specified config <key> <value>.
@@ -79,7 +78,7 @@ Aliases: c, conf
 end
 
 function config.list(name)
-	local profile = conf('lpm')
+	local profile = conf('user')
 
 	print(profile.filename .. ': ')
 	console.log(profile.settings)
@@ -93,7 +92,7 @@ function config.set(key, value)
 		return
 	end
 
-	local profile = conf('lpm')
+	local profile = conf('user')
 	local oldValue = profile:get(key)
 	if (not oldValue) or (value ~= oldValue) then
 		profile:set(key, value)
@@ -111,7 +110,7 @@ function config.unset(key)
 		return
 	end
 
-	local profile = conf('lpm')
+	local profile = conf('user')
 	if (profile:get(key)) then
 		profile:set(key, nil)
 		profile:commit()
@@ -147,7 +146,7 @@ local _executeApplication = function (name, action, ...)
 		return
 	end
 
-	local ret, err = app.execute(name, action, ...)	
+	local ret, err = app.execute(name, action, ...)
 	if (not ret) or (ret < 0) then
 		print("Error: unknown command or application: '" .. tostring(name) .. "', see 'lpm help'")
 		print("")
@@ -285,7 +284,7 @@ function exports.scan(...)
 		if (scanCount >= scanMaxCount) then
 			clearInterval(scanTimer)
 			scanTimer = nil
-			
+
 			ssdpClient:stop()
 
 			console.write('\r') -- clear current line
@@ -336,31 +335,33 @@ function exports.version()
 		printVersion("cjson", info.VERSION)
 	end
 
-	local ret, info = pcall(require, 'lmbedtls.md')
+	local ret = nil
+
+	ret, info = pcall(require, 'lmbedtls.md')
 	if (info and info._VERSION) then	
 		printVersion("mbedtls", info.VERSION)
 	end
 
-	local ret, info = pcall(require, 'lsqlite')
+	ret, info = pcall(require, 'lsqlite')
 	if (info and info.VERSION) then	
 		printVersion("sqlite", info.VERSION)
 	end
 
-	local ret, info = pcall(require, 'miniz')
+	ret, info = pcall(require, 'miniz')
 	if (info and info.VERSION) then	
 		printVersion("miniz", info.VERSION)
 	end
 
-	local ret, info = pcall(require, 'lmedia')
+	ret, info = pcall(require, 'lmedia')
 	if (info and info.version) then	
 		printVersion("lmedia", info.version())
-	end	
+	end
 
-	local ret, info = pcall(require, 'lhttp_parser')
+	ret, info = pcall(require, 'lhttp_parser')
 	if (info and info.VERSION_MAJOR) then
 		local version = math.floor(info.VERSION_MAJOR) .. "." .. info.VERSION_MINOR
 		printVersion("http_parser", version)
-	end	
+	end
 
 	local filename = path.join(exports.rootPath, 'package.json')
 	local packageInfo = json.parse(fs.readFileSync(filename))
@@ -484,7 +485,7 @@ function exports.call(args)
 end
 
 setmetatable(exports, {
-	__call = function(self, ...) 
+	__call = function(self, ...)
 		self.call(...)
 	end
 })

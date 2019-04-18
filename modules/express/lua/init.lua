@@ -22,7 +22,6 @@ local http 	= require('http')
 local url 	= require('url')
 local fs 	= require('fs')
 local path 	= require('path')
-local timer = require('timer')
 local json  = require('json')
 local mime 	= require('express/mime')
 
@@ -109,6 +108,13 @@ function IncomingMessage:readBody(callback)
     end
 
     local contentType = self:get('Content-Type')
+    if (contentType) then
+        local tokens = contentType:split(';')
+        contentType = tokens[1]
+    end
+
+    -- console.log(contentType)
+
     local sb = StringBuffer:new()
 
     self:on('data', function(data)
@@ -126,9 +132,9 @@ function IncomingMessage:readBody(callback)
             self.body = querystring.parse(content)
 
         elseif (contentType == 'application/json') then
-            self.body = json.parse(content)  
+            self.body = json.parse(content)
 
-        else 
+        else
             self.body = content
         end
 
@@ -165,7 +171,7 @@ end
 function ServerResponse:json(data)
     local text = json.stringify(data)
     if (not text) then
-        self:sendStatus(400)
+        self:sendStatus(500)
         return
     end
 
@@ -185,7 +191,7 @@ function ServerResponse:redirect(status, path)
     self:set("Location", path)
     self:sendStatus(status or 300)
 end
-    
+
 function ServerResponse:send(text, contentType)
     if (not text) then
         self:sendStatus(500)
@@ -196,7 +202,7 @@ function ServerResponse:send(text, contentType)
     self:set("Content-Length", #text)
 
     self:checkSessionId()
-  	self:write(text)
+      self:write(text)
 end
 
 function ServerResponse:sendFile(filename)
@@ -208,7 +214,7 @@ function ServerResponse:sendFile(filename)
 
             elseif type(err) == 'string' and err:startsWith("ENOENT") then
                 self:sendStatus(404, err.message)
-                return                
+                return
             end
 
             self:sendStatus(500, (err.message or tostring(err)))
@@ -354,7 +360,7 @@ function ServerResponse:sendStream(stream, contentType, contentLength)
 end
 
 function ServerResponse:set(field, value)
-    if (not field) then 
+    if (not field) then
         return
     end
 
@@ -391,14 +397,13 @@ local Express = core.Emitter:extend()
 exports.Express = Express
 
 function Express:initialize(options)
-	if (not options) then
-		options = {}
-	end
+    if (not options) then
+        options = {}
+    end
 
-    self.list 		   = {}
-    self.root 		   = options.root
-	self._getMethods   = {}
-	self._postMethods  = {}
+    self.list 		= {}
+    self.root 		= options.root
+    self.routes     = {}
 end
 
 function Express:close()
@@ -408,8 +413,52 @@ function Express:close()
     end
 end
 
+function Express:all(method, pathname, handler)
+    if (not method) or (not pathname) or (not handler) then
+        return
+    end
+
+    local route = self.routes[method]
+    if (not route) then
+        route = {}
+        self.routes[method] = route
+    end
+    
+    local tokens = pathname:split('/')
+    --console.log(tokens)
+
+    for index, item in ipairs(tokens) do
+        --console.log(index, item)
+
+        if (item and item ~= '') then
+            local name = nil
+            if (item:startsWith(':')) then
+                name = item:sub(2)
+                item = '@'
+            end
+
+            -- console.log(index, item)
+
+            local subRoute = route[item]
+            if (not subRoute) then
+                subRoute = {}
+                route[item] = subRoute
+            end
+
+            if (name) then
+                subRoute['@name'] = name
+            end
+
+            route = subRoute
+        end
+    end
+    
+    route['@handler'] = handler
+    -- console.log(self.routes)
+end
+
 function Express:get(pathname, handler)
-	self._getMethods[pathname] = handler
+    self:all('GET', pathname, handler)
 end
 
 function Express:getFileName(pathname)
@@ -422,20 +471,50 @@ end
 
 function Express:getHandler(request)
     local method = request.method
-    local pathname = request.path
+    local pathname = request.path or ''
     local handler = nil
-    if (method == 'POST') then
-        handler = self._postMethods[pathname]
 
-    else
-		handler = self._getMethods[pathname]
+    local route = self.routes[method] or {}
+
+    local tokens = pathname:split('/')
+    
+    for index, item in ipairs(tokens) do
+        if (item and item ~= '') then
+            --console.log(index, item)
+
+            local subRoute = route[item]
+            if (not subRoute) then
+                subRoute = route['@']
+            end
+
+            route = subRoute
+            if (not route) then
+                break
+            end
+
+            --console.log(route, value)
+            local name = route['@name']
+            if (name) then
+                if (not request.params) then
+                    request.params = {}
+                end
+
+                request.params[name] = item
+            end
+        end
+    end
+    
+
+    if (route) then
+        handler = route['@handler']
     end
 
+    -- console.log(request.params, pathname, handler)
     return handler
 end
 
 function Express:post(pathname, handler)
-	self._postMethods[pathname] = handler
+    self:all('POST', pathname, handler)
 end
 
 function Express:onRequest(request, response)
@@ -446,7 +525,7 @@ end
 function Express:handleRequest(request, response)
     response.request = request
 
-	local uri           = url.parse(request.url)
+    local uri           = url.parse(request.url)
 
     request.uri         = uri
     request.path        = uri.pathname
@@ -471,7 +550,7 @@ function Express:handleRequest(request, response)
     end
 
     -- file
-	local filename = self:getFileName(request.path)
+    local filename = self:getFileName(request.path)
     if (filename) then
         response:sendFile(filename)
     else
@@ -484,8 +563,8 @@ function Express:listen(port, callback)
         return
     end
 
-    local server = http.createServer(function(request, response) 
-    	self:handleRequest(request, response)
+    local server = http.createServer(function(request, response)
+        self:handleRequest(request, response)
     end)
 
     server:on('error', function(err, name)
@@ -493,7 +572,7 @@ function Express:listen(port, callback)
     end)
 
     server:on('close', function()
-    	self:emit('close')
+        self:emit('close')
     end)
 
     server:on('listening', function()
@@ -506,20 +585,20 @@ function Express:listen(port, callback)
     self.server = server
     server:listen(port)
 
-	if (callback) then
-		callback(self)
-	end
+    if (callback) then
+        callback(self)
+    end
 end
 
 -------------------------------------------------------------------------------
 -- exports
 
 function exports.app(options)
-	return Express:new(options)
+    return Express:new(options)
 end
 
 setmetatable( exports, {
-    __call = function(self, options) 
+    __call = function(self, options)
         return Express:new(options)
     end
 })

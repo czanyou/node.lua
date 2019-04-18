@@ -1,0 +1,6 @@
+/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/CMakeFiles/Tests.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/lib/CMakeFiles/libmosquitto.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/src/CMakeFiles/mosquitto.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/client/CMakeFiles/mosquitto_pub.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/client/CMakeFiles/mosquitto_sub.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/lib/cpp/CMakeFiles/mosquittopp.dir

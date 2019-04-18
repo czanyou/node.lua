@@ -1,0 +1,13 @@
+Makefile
+CMakeCache.txt
+CMakeFiles
+*.cmake
+*.o
+*.a
+*.so
+*.dylib
+install_manifest.txt
+
+uci
+uci_config.h
+test/save

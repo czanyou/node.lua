@@ -1,8 +1,0 @@
-#!/bin/sh
-sudo killall lnode
-sudo unzip -o /usr/local/download/patch.zip -d /usr/local/download
-sudo cp -rf /usr/local/download/usr/local/lnode/app /usr/local/lnode
-sudo cp -rf /usr/local/download/usr/local/lnode/lib /usr/local/lnode
-sudo lpm start lhost
-sudo lpm start httpd
-sudo lpm start gateway

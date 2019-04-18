@@ -3,7 +3,6 @@ local utils     = require('util')
 local path      = require('path')
 local fs        = require('fs')
 local rpc       = require('app/rpc')
-local lhost     = require('lhost')
 
 -------------------------------------------------------------------------------
 -- exports
@@ -12,9 +11,35 @@ local exports = {}
 
 app.name = 'lhost'
 
+-- 返回所有需要后台运行的应用
+function exports.getStartNames()
+    local configPath = path.join(app.rootPath, 'conf/process.conf')
+    local filedata = fs.readFileSync(configPath)
+    local names = {}
+    local count = 0
+
+    if (not filedata) then
+        return names, count, filedata
+    end
+
+    -- check application name
+    local list = filedata:split(",")
+    for _, item in ipairs(list) do
+        if (#item > 0) then
+            local filename = path.join(exports.rootPath, 'app', item)
+            if fs.existsSync(filename) then
+                names[item] = item
+                count = count + 1
+            end
+        end
+    end
+    
+    return names, count, filedata
+end
+
 -- 检查应用进程，自动重启意外退出的应用程序
 function exports.check()
-    local names = lhost.getStartNames()
+    local names = exports.getStartNames()
     local procs = app.processes()
 
     for _, proc in ipairs(procs) do
@@ -27,58 +52,26 @@ function exports.check()
     end
 end
 
--- 检查应用rpc是否还有反应(暂时只有gateway程序)
-function exports.rpc()
-    local RPC_PORT = 38888
-    local method = 'alive'
-    local params    = {}
-    rpc.call(RPC_PORT, method, params, function(err, result)
-        if (result) then
-            -- console.log(result)
-        else
-            print('App gateway is down,restart now')
-            os.execute('lpm restart gateway')
-        end
-    end)
-end
+function exports.list()
+    local names = exports.getStartNames()
+    console.log(names)
 
--- 不允许指定名称的应用在后台一直运行
-function exports.disable(...)
-    local names = table.pack(...)
-    if (#names < 1) then
-        exports.help()
-        return
-    end
-
-    lhost.enable(names, false)
-end
-
--- 允许指定名称的应用在后台一直运行
-function exports.enable(...)
-    local names = table.pack(...)
-    if (#names < 1) then
-        exports.help()
-        return
-    end
-
-    lhost.enable(names, true)
+    local processes = app.processes()
+    console.log(processes)    
 end
 
 function exports.help()
     print([[
         
-usage: lpm lhost <command> [args]
+usage: lhost <command> [args]
 
 Node.lua application daemon manager
     
 Available command:
 
 - check              Check all application daemon status
-- disable [name...]  Disable application daemon
-- enable [name...]   Enable application daemon
 - help               Display help information
 - start [interval]   Start lhost
-- status             Show status
 
 ]])
 end
@@ -94,19 +87,10 @@ function exports.start(interval, ...)
         return
     end
 
-    -- Check start list
-    local list = app.get('start')
-    if (list) then
-        list = list:split(',')
-        console.log('start', list)
-        app.enable(list, true)
-    end
-
     -- Start check timer
     interval = tonumber(interval) or 3
     setInterval(interval * 1000, function()
         exports.check()
-        exports.rpc()
     end)
 end
 

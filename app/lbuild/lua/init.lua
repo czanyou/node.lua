@@ -53,24 +53,6 @@ options.ROOT_PATH 		= getRootPath()
 options.SOURCE_URL		= getRootURL() .. "/download/packages.json"
 exports.options 		= options
 
-function lpm_load_settings()
-	options.CACHE_PATH = path.join(options.ROOT_PATH, 'cache')
-
-	local profile, err = conf("user")
-	if type(profile) ~= 'table' then
-		return
-	end
-
-	options.conffile 	= profile.filename
-	options.BOARD 		= profile:get("lpm.board")  or options.BOARD
-	options.SOURCE_URL 	= profile:get("lpm.source") or options.SOURCE_URL
-
-	--console.log(options)
-end
-
-lpm_load_settings()
---console.log(exports)
-
 local function request(url, callback)
 	callback = callback or function() end
 
@@ -487,7 +469,7 @@ function PackageManager:checkPackage(packageInfo, filename)
 		return true
 	end
 
-	-- pprint(statInfo.size)
+	-- printr(statInfo.size)
 
 	return true
 end
@@ -495,14 +477,14 @@ end
 -- 检查是否可以更新
 function PackageManager:checkUpdate(packageInfo)
 	local name = packageInfo.name
-	--pprint(packageInfo)	
+	--printr(packageInfo)	
 
 	--print('- Check ' .. name .. ".")
 	local oldInfo = self:loadPackageInfo(name)
 	if (not oldInfo) then
 		return false
 	end
-	--pprint(oldInfo)
+	--printr(oldInfo)
 
 	local oldVersion = getVersionCode(oldInfo.version)
 	local newVersion = getVersionCode(packageInfo.version)
@@ -573,7 +555,7 @@ function PackageManager:downloadPackage(packageInfo)
 				return
 			end
 
-			--pprint("ondata", {chunk=chunk})
+			--printr("ondata", {chunk=chunk})
 			table.insert(data, chunk)
 			downloadLength = downloadLength + #chunk
 
@@ -593,7 +575,7 @@ function PackageManager:downloadPackage(packageInfo)
 		response:on('end', function()
 			local content = table.concat(data)
 			print("  Download done: ", response.statusCode, #content)
-			--pprint("end", response.statusCode)
+			--printr("end", response.statusCode)
 
 			self:savePackage(packageInfo, content)
 			self:installPackage(packageInfo)

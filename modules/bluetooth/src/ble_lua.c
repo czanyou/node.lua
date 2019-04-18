@@ -66,18 +66,26 @@ static int bt_device_open(int deviceId)
 	return fd;
 }
 
-static int bt_device_scan(lbluetooth_t* lbluetooth)
+static int bt_device_stop_scan(lbluetooth_t* lbluetooth)
 {
 	int handler = lbluetooth->fHandler;
 
 	uint8_t enable 		= 0x00;
 	uint8_t filter_dup 	= 0x01;
-	hci_le_set_scan_enable(handler, enable, filter_dup, 10000);
+	return hci_le_set_scan_enable(handler, enable, filter_dup, 10000);
+}
 
-	//uint8_t scan_type 	= 0x00; // Passive mode
-	//scan_type 			= 0x01; // Active mode
+static int bt_device_scan(lbluetooth_t* lbluetooth)
+{
+	int handler = lbluetooth->fHandler;
 
-	uint8_t scan_type 	= lbluetooth->fScanType;
+	uint8_t enable 		= 0x01;
+	uint8_t filter_dup 	= 0x00;
+
+	//uint8_t scanType 	= 0x00; // Passive mode
+	//scanType 			= 0x01; // Active mode
+
+	uint8_t scanType 	= lbluetooth->fScanType;
 
 	uint16_t interval	= htobs(0x0010); // 指示两次扫描之间的间隔
 	uint16_t window 	= htobs(0x0010); // 指示一次扫描的时间（即 RX 打开的时间）
@@ -85,15 +93,13 @@ static int bt_device_scan(lbluetooth_t* lbluetooth)
 	uint8_t filter_policy = 0x00; // 0x01: Whitelist
 
 	// 2. scan parameters
-	int err = hci_le_set_scan_parameters(handler, scan_type, interval, window, own_type, filter_policy, 10000);
+	int err = hci_le_set_scan_parameters(handler, scanType, interval, window, own_type, filter_policy, 10000);
 	if (err < 0) {
 		perror("Set scan parameters failed");
 		return err;
 	}
 
 	// 3. enable scan
-	enable     = 0x01;
-	filter_dup = 0x00;
 	err = hci_le_set_scan_enable(handler, enable, filter_dup, 10000);
 	if (err < 0) {
 		perror("Enable scan failed");
@@ -273,6 +279,11 @@ static int lbluetooth_open(lua_State* L)
 	ble->fReference 	= LUA_NOREF;
 	ble->fState 		= L;
 
+	ble->fDeviceInfo.dev_id = deviceId;
+	if (ioctl(handler, HCIGETDEVINFO, (void *) &ble->fDeviceInfo)) {
+		return 0;
+	}
+
 	// 保存 lbluetooth 对象的引用
 	lua_pushvalue(L, -1);
 	ble->fReference     = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -337,6 +348,50 @@ DONE:
 	return 1;
 }
 
+#define lua_set_number(L, name, f) \
+    lua_pushnumber(L, f); \
+    lua_setfield(L, -2, name);
+
+#define lua_set_string(L, name, f) \
+    lua_pushstring(L, f); \
+    lua_setfield(L, -2, name);
+
+static int lbluetooth_get_info(lua_State* L)
+{
+	int ret = -1;
+	lbluetooth_t* ble = lbluetooth_check(L, 1);
+
+	lua_newtable(L);
+
+	char address[18];
+	ba2str(&ble->fDeviceInfo.bdaddr, address);
+
+	lua_set_number(L, "deviceId", 	ble->fDeviceId);
+	lua_set_number(L, "handler", 	ble->fHandler);
+
+	lua_set_string(L, "name", 		ble->fDeviceInfo.name);
+	lua_set_string(L, "address", 	address);
+
+	return 1;
+}
+
+static int lbluetooth_stop(lua_State* L)
+{
+	int ret = -1;
+	lbluetooth_t* ble = lbluetooth_check(L, 1);
+
+	int handler = ble->fHandler;
+	if (handler < 0) {
+		lua_pushinteger(L, ret);
+		return 1;
+	}
+
+	ret = bt_device_stop_scan(ble);
+
+	lua_pushinteger(L, ret);
+	return 1;
+}
+
 static int lbluetooth_scan(lua_State* L)
 {
 	int ret = -1;
@@ -350,6 +405,8 @@ static int lbluetooth_scan(lua_State* L)
 	}
 
 	lbluetooth_callback_check(ble, 2);
+
+	bt_device_stop_scan(ble);
 
 	// 2. start scan
 	ret = bt_device_scan(ble);
@@ -379,7 +436,6 @@ static void lbluetooth_thread(void* arg)
 	}
 
 	lbluetooth_t* ble = (lbluetooth_t*)arg;
-
 
 	if (ble->fThreadState != LBLUETOOTH_STATE_STARTING) {
 		goto EXIT;
@@ -494,6 +550,8 @@ static int lbluetooth_wait_ready(int fd, double timeout)
 static const luaL_Reg lbluetooth_methods[] = {
 	{"close", 		lbluetooth_close 	},
 	{"scan",  		lbluetooth_scan  	},
+	{"stop",  		lbluetooth_stop  	},
+	{"get_info",    lbluetooth_get_info },
 	{"__tostring",  lbluetooth_tostring },
 
 	{NULL, NULL}

@@ -1,0 +1,1 @@
+/usr/bin/cc  -fPIC    -shared -Wl,-soname,libblobmsg_json.so -o libblobmsg_json.so CMakeFiles/blobmsg_json.dir/blobmsg_json.c.o libubox.so /usr/local/lib/libjson-c.a -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/build/libubox: 

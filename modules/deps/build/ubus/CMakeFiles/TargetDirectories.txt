@@ -1,0 +1,3 @@
+/mnt/c/work/node.lua.tour/modules/deps/build/ubus/CMakeFiles/cli.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/ubus/CMakeFiles/ubus.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/ubus/CMakeFiles/ubusd.dir

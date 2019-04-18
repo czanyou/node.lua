@@ -11,6 +11,8 @@ local TAG = "mqtt"
 -- 这个测试需要用到 MQTT 服务器
 
 local url = 'mqtt://127.0.0.1:1883'
+local url = 'mqtt://iot.beaconice.cn:1883'
+
 local client = mqtt.connect(url)
 
 local TOPIC = '/test-topic'

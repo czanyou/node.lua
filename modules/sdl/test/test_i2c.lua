@@ -1,9 +1,9 @@
-local lmedia = require('lmedia')
-local li2c   = require('lmedia.i2c')
+local lsdl   = require('lsdl')
+local li2c   = require('lsdl.i2c')
 local utils  = require('util')
 
---console.log(lmedia)
-local delay = lmedia.delay
+--console.log(lsdl)
+local delay = lsdl.delay
 
 local I2C_SLAVE   		= 1795
 local I2C_ADDRESS 		= 0x40 -- SHT21 Address

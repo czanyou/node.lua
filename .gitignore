@@ -1,6 +1,7 @@
 /.svn/
 /.vscode/
 /build/
-/node.lua/bin/*.dll
-/node.lua/bin/*.exe
+/bin/
+/core/bin/*.dll
+/core/bin/*.exe
 

@@ -1,0 +1,3 @@
+/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/blobmsg_json.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/json_script.dir
+/mnt/c/work/node.lua.tour/modules/deps/build/libubox/CMakeFiles/ubox.dir

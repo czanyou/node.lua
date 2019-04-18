@@ -1,8 +1,9 @@
   {
-	"depends": ["httpd"],
+	"depends": [],
 	"description": "Node.lua application deamon manager",
 	"title": "Services",
 	"name": "lhost",
+	"icon": "server",
 	"tags": ["lhost", "runtime"],
 	"version": "1.0.3"
   }

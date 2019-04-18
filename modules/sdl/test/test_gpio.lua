@@ -1,12 +1,12 @@
-local utils = require('util')
+local util  = require('util')
 local gpio  = require('sdl/gpio')
 
-local await = utils.await
+local await = util.await
 
 local pin = arg[1] or 40
 local out = arg[2] or 0
 
-local ret, err = utils.async(function()
+local ret, err = util.async(function()
 
 	local gpio0 = gpio(pin)
 	console.log(gpio0)

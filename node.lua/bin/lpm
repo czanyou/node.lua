@@ -1,5 +1,0 @@
-#!/usr/bin/env lnode
-
-local lpm = require('lpm')
-
-lpm(arg)

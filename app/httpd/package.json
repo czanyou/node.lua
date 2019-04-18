@@ -1,8 +1,0 @@
-  {
-	"depends": [],
-	"description": "Onboard WEB server",
-	"name": "httpd",
-	"tags": ["httpd", "runtime"],
-	"title": "WEB server",
-	"version": "1.0.12"
-  }

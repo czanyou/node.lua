@@ -624,6 +624,9 @@ function MQTTSocket:_sendConnect()
     message.will        = options.will
     message.clientId    = options.clientId
     message.keepalive   = options.keepalive
+    message.username    = options.username
+    message.password    = options.password
+
 
     return self:_sendMQTTPacket(message)
 end
@@ -702,13 +705,6 @@ function MQTTSocket:_sendMQTTPacket(message, callback, ...)
     --console.log('_sendMQTTPacket', messageData)
     self.state.lastActivityOut = process.now()
     return messageData
-end
-
--------------------------------------------------------------------------------
--- exports
-
-function exports.connect(...)
-    return require('mqtt').connect(...)
 end
 
 return exports

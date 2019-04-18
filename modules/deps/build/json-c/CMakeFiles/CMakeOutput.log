@@ -1,0 +1,985 @@
+The system is: Linux - 4.4.0-17134-Microsoft - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /usr/bin/cc 
+Build flags: 
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+The C compiler identification is GNU, found in "/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/2.8.12.2/CompilerIdC/a.out"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3349824741/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3349824741.dir/build.make CMakeFiles/cmTryCompileExec3349824741.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3349824741.dir/testCCompiler.c.o
+/usr/bin/cc    -o CMakeFiles/cmTryCompileExec3349824741.dir/testCCompiler.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTryCompileExec3349824741
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3349824741.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3349824741.dir/testCCompiler.c.o  -o cmTryCompileExec3349824741 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2602032459/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2602032459.dir/build.make CMakeFiles/cmTryCompileExec2602032459.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2602032459.dir/CMakeCCompilerABI.c.o
+/usr/bin/cc    -o CMakeFiles/cmTryCompileExec2602032459.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-2.8/Modules/CMakeCCompilerABI.c
+Linking C executable cmTryCompileExec2602032459
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2602032459.dir/link.txt --verbose=1
+/usr/bin/cc     -v CMakeFiles/cmTryCompileExec2602032459.dir/CMakeCCompilerABI.c.o  -o cmTryCompileExec2602032459 -rdynamic  
+Using built-in specs.
+COLLECT_GCC=/usr/bin/cc
+COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/4.8/lto-wrapper
+Target: x86_64-linux-gnu
+Configured with: ../src/configure -v --with-pkgversion='Ubuntu 4.8.4-2ubuntu1~14.04.3' --with-bugurl=file:///usr/share/doc/gcc-4.8/README.Bugs --enable-languages=c,c++,java,go,d,fortran,objc,obj-c++ --prefix=/usr --program-suffix=-4.8 --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --with-gxx-include-dir=/usr/include/c++/4.8 --libdir=/usr/lib --enable-nls --with-sysroot=/ --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object --disable-libmudflap --enable-plugin --with-system-zlib --disable-browser-plugin --enable-java-awt=gtk --enable-gtk-cairo --with-java-home=/usr/lib/jvm/java-1.5.0-gcj-4.8-amd64/jre --enable-java-home --with-jvm-root-dir=/usr/lib/jvm/java-1.5.0-gcj-4.8-amd64 --with-jvm-jar-dir=/usr/lib/jvm-exports/java-1.5.0-gcj-4.8-amd64 --with-arch-directory=amd64 --with-ecj-jar=/usr/share/java/eclipse-ecj.jar --enable-objc-gc --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu
+Thread model: posix
+gcc version 4.8.4 (Ubuntu 4.8.4-2ubuntu1~14.04.3) 
+COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/4.8/:/usr/lib/gcc/x86_64-linux-gnu/4.8/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/4.8/:/usr/lib/gcc/x86_64-linux-gnu/
+LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/4.8/:/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../:/lib/:/usr/lib/
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTryCompileExec2602032459' '-rdynamic' '-mtune=generic' '-march=x86-64'
+ /usr/lib/gcc/x86_64-linux-gnu/4.8/collect2 --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTryCompileExec2602032459 /usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/4.8/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/4.8 -L/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/4.8/../../.. CMakeFiles/cmTryCompileExec2602032459.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/4.8/crtend.o /usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/crtn.o
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Parsed C implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:/usr/bin/make "cmTryCompileExec2602032459/fast"]
+  ignore line: [make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp']
+  ignore line: [/usr/bin/make -f CMakeFiles/cmTryCompileExec2602032459.dir/build.make CMakeFiles/cmTryCompileExec2602032459.dir/build]
+  ignore line: [make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp']
+  ignore line: [/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1]
+  ignore line: [Building C object CMakeFiles/cmTryCompileExec2602032459.dir/CMakeCCompilerABI.c.o]
+  ignore line: [/usr/bin/cc    -o CMakeFiles/cmTryCompileExec2602032459.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-2.8/Modules/CMakeCCompilerABI.c]
+  ignore line: [Linking C executable cmTryCompileExec2602032459]
+  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2602032459.dir/link.txt --verbose=1]
+  ignore line: [/usr/bin/cc     -v CMakeFiles/cmTryCompileExec2602032459.dir/CMakeCCompilerABI.c.o  -o cmTryCompileExec2602032459 -rdynamic  ]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/usr/bin/cc]
+  ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/x86_64-linux-gnu/4.8/lto-wrapper]
+  ignore line: [Target: x86_64-linux-gnu]
+  ignore line: [Configured with: ../src/configure -v --with-pkgversion='Ubuntu 4.8.4-2ubuntu1~14.04.3' --with-bugurl=file:///usr/share/doc/gcc-4.8/README.Bugs --enable-languages=c,c++,java,go,d,fortran,objc,obj-c++ --prefix=/usr --program-suffix=-4.8 --enable-shared --enable-linker-build-id --libexecdir=/usr/lib --without-included-gettext --enable-threads=posix --with-gxx-include-dir=/usr/include/c++/4.8 --libdir=/usr/lib --enable-nls --with-sysroot=/ --enable-clocale=gnu --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-gnu-unique-object --disable-libmudflap --enable-plugin --with-system-zlib --disable-browser-plugin --enable-java-awt=gtk --enable-gtk-cairo --with-java-home=/usr/lib/jvm/java-1.5.0-gcj-4.8-amd64/jre --enable-java-home --with-jvm-root-dir=/usr/lib/jvm/java-1.5.0-gcj-4.8-amd64 --with-jvm-jar-dir=/usr/lib/jvm-exports/java-1.5.0-gcj-4.8-amd64 --with-arch-directory=amd64 --with-ecj-jar=/usr/share/java/eclipse-ecj.jar --enable-objc-gc --enable-multiarch --disable-werror --with-arch-32=i686 --with-abi=m64 --with-multilib-list=m32,m64,mx32 --with-tune=generic --enable-checking=release --build=x86_64-linux-gnu --host=x86_64-linux-gnu --target=x86_64-linux-gnu]
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 4.8.4 (Ubuntu 4.8.4-2ubuntu1~14.04.3) ]
+  ignore line: [COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/4.8/:/usr/lib/gcc/x86_64-linux-gnu/4.8/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/4.8/:/usr/lib/gcc/x86_64-linux-gnu/]
+  ignore line: [LIBRARY_PATH=/usr/lib/gcc/x86_64-linux-gnu/4.8/:/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../:/lib/:/usr/lib/]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTryCompileExec2602032459' '-rdynamic' '-mtune=generic' '-march=x86-64']
+  link line: [ /usr/lib/gcc/x86_64-linux-gnu/4.8/collect2 --sysroot=/ --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z relro -o cmTryCompileExec2602032459 /usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/crt1.o /usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/4.8/crtbegin.o -L/usr/lib/gcc/x86_64-linux-gnu/4.8 -L/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu -L/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../../lib -L/lib/x86_64-linux-gnu -L/lib/../lib -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/4.8/../../.. CMakeFiles/cmTryCompileExec2602032459.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/4.8/crtend.o /usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/crtn.o]
+    arg [/usr/lib/gcc/x86_64-linux-gnu/4.8/collect2] ==> ignore
+    arg [--sysroot=/] ==> ignore
+    arg [--build-id] ==> ignore
+    arg [--eh-frame-hdr] ==> ignore
+    arg [-m] ==> ignore
+    arg [elf_x86_64] ==> ignore
+    arg [--hash-style=gnu] ==> ignore
+    arg [--as-needed] ==> ignore
+    arg [-export-dynamic] ==> ignore
+    arg [-dynamic-linker] ==> ignore
+    arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+    arg [-zrelro] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTryCompileExec2602032459] ==> ignore
+    arg [/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/crt1.o] ==> ignore
+    arg [/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/crti.o] ==> ignore
+    arg [/usr/lib/gcc/x86_64-linux-gnu/4.8/crtbegin.o] ==> ignore
+    arg [-L/usr/lib/gcc/x86_64-linux-gnu/4.8] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/4.8]
+    arg [-L/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu]
+    arg [-L/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../../lib] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../../lib]
+    arg [-L/lib/x86_64-linux-gnu] ==> dir [/lib/x86_64-linux-gnu]
+    arg [-L/lib/../lib] ==> dir [/lib/../lib]
+    arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
+    arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
+    arg [-L/usr/lib/gcc/x86_64-linux-gnu/4.8/../../..] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/4.8/../../..]
+    arg [CMakeFiles/cmTryCompileExec2602032459.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [-lgcc] ==> lib [gcc]
+    arg [--as-needed] ==> ignore
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [--no-as-needed] ==> ignore
+    arg [-lc] ==> lib [c]
+    arg [-lgcc] ==> lib [gcc]
+    arg [--as-needed] ==> ignore
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [--no-as-needed] ==> ignore
+    arg [/usr/lib/gcc/x86_64-linux-gnu/4.8/crtend.o] ==> ignore
+    arg [/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/crtn.o] ==> ignore
+  remove lib [gcc]
+  remove lib [gcc_s]
+  remove lib [gcc]
+  remove lib [gcc_s]
+  collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/4.8] ==> [/usr/lib/gcc/x86_64-linux-gnu/4.8]
+  collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+  collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../../lib] ==> [/usr/lib]
+  collapse library dir [/lib/x86_64-linux-gnu] ==> [/lib/x86_64-linux-gnu]
+  collapse library dir [/lib/../lib] ==> [/lib]
+  collapse library dir [/usr/lib/x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+  collapse library dir [/usr/lib/../lib] ==> [/usr/lib]
+  collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/4.8/../../..] ==> [/usr/lib]
+  implicit libs: [c]
+  implicit dirs: [/usr/lib/gcc/x86_64-linux-gnu/4.8;/usr/lib/x86_64-linux-gnu;/usr/lib;/lib/x86_64-linux-gnu;/lib]
+  implicit fwks: []
+
+
+Determining if the include file fcntl.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3131946084/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3131946084.dir/build.make CMakeFiles/cmTryCompileExec3131946084.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3131946084.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec3131946084.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec3131946084
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3131946084.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3131946084.dir/CheckIncludeFile.c.o  -o cmTryCompileExec3131946084 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file inttypes.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec813380366/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec813380366.dir/build.make CMakeFiles/cmTryCompileExec813380366.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec813380366.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec813380366.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec813380366
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec813380366.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec813380366.dir/CheckIncludeFile.c.o  -o cmTryCompileExec813380366 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file stdarg.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3817558575/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3817558575.dir/build.make CMakeFiles/cmTryCompileExec3817558575.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3817558575.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec3817558575.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec3817558575
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3817558575.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3817558575.dir/CheckIncludeFile.c.o  -o cmTryCompileExec3817558575 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file strings.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec273879516/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec273879516.dir/build.make CMakeFiles/cmTryCompileExec273879516.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec273879516.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec273879516.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec273879516
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec273879516.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec273879516.dir/CheckIncludeFile.c.o  -o cmTryCompileExec273879516 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file string.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3108995133/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3108995133.dir/build.make CMakeFiles/cmTryCompileExec3108995133.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3108995133.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec3108995133.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec3108995133
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3108995133.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3108995133.dir/CheckIncludeFile.c.o  -o cmTryCompileExec3108995133 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file syslog.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec4040233539/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec4040233539.dir/build.make CMakeFiles/cmTryCompileExec4040233539.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec4040233539.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec4040233539.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec4040233539
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec4040233539.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec4040233539.dir/CheckIncludeFile.c.o  -o cmTryCompileExec4040233539 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if files stdlib.h;stdarg.h;string.h;float.h exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2863278937/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2863278937.dir/build.make CMakeFiles/cmTryCompileExec2863278937.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2863278937.dir/CheckIncludeFiles.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec2863278937.dir/CheckIncludeFiles.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFiles.c
+Linking C executable cmTryCompileExec2863278937
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2863278937.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec2863278937.dir/CheckIncludeFiles.c.o  -o cmTryCompileExec2863278937 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file unistd.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3650023471/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3650023471.dir/build.make CMakeFiles/cmTryCompileExec3650023471.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3650023471.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec3650023471.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec3650023471
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3650023471.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3650023471.dir/CheckIncludeFile.c.o  -o cmTryCompileExec3650023471 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file sys/types.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec484718791/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec484718791.dir/build.make CMakeFiles/cmTryCompileExec484718791.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec484718791.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec484718791.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec484718791
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec484718791.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec484718791.dir/CheckIncludeFile.c.o  -o cmTryCompileExec484718791 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file dlfcn.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec698815222/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec698815222.dir/build.make CMakeFiles/cmTryCompileExec698815222.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec698815222.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec698815222.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec698815222
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec698815222.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec698815222.dir/CheckIncludeFile.c.o  -o cmTryCompileExec698815222 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file endian.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2968705384/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2968705384.dir/build.make CMakeFiles/cmTryCompileExec2968705384.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2968705384.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec2968705384.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec2968705384
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2968705384.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec2968705384.dir/CheckIncludeFile.c.o  -o cmTryCompileExec2968705384 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file limits.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1390932724/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1390932724.dir/build.make CMakeFiles/cmTryCompileExec1390932724.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1390932724.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1390932724.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec1390932724
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1390932724.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1390932724.dir/CheckIncludeFile.c.o  -o cmTryCompileExec1390932724 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file memory.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec314345968/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec314345968.dir/build.make CMakeFiles/cmTryCompileExec314345968.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec314345968.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec314345968.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec314345968
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec314345968.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec314345968.dir/CheckIncludeFile.c.o  -o cmTryCompileExec314345968 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file stdint.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3434515020/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3434515020.dir/build.make CMakeFiles/cmTryCompileExec3434515020.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3434515020.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec3434515020.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec3434515020
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3434515020.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3434515020.dir/CheckIncludeFile.c.o  -o cmTryCompileExec3434515020 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file stdlib.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1266216386/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1266216386.dir/build.make CMakeFiles/cmTryCompileExec1266216386.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1266216386.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1266216386.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec1266216386
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1266216386.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1266216386.dir/CheckIncludeFile.c.o  -o cmTryCompileExec1266216386 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file sys/cdefs.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3012999609/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3012999609.dir/build.make CMakeFiles/cmTryCompileExec3012999609.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3012999609.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec3012999609.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec3012999609
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3012999609.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3012999609.dir/CheckIncludeFile.c.o  -o cmTryCompileExec3012999609 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file sys/param.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2232076824/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2232076824.dir/build.make CMakeFiles/cmTryCompileExec2232076824.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2232076824.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec2232076824.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec2232076824
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2232076824.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec2232076824.dir/CheckIncludeFile.c.o  -o cmTryCompileExec2232076824 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the include file sys/stat.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1751732347/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1751732347.dir/build.make CMakeFiles/cmTryCompileExec1751732347.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1751732347.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1751732347.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec1751732347
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1751732347.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1751732347.dir/CheckIncludeFile.c.o  -o cmTryCompileExec1751732347 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining if the INFINITY exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2672896705/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2672896705.dir/build.make CMakeFiles/cmTryCompileExec2672896705.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2672896705.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec2672896705.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec2672896705
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2672896705.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec2672896705.dir/CheckSymbolExists.c.o  -o cmTryCompileExec2672896705 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <math.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef INFINITY
+  return ((int*)(&INFINITY))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the nan exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1097994394/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1097994394.dir/build.make CMakeFiles/cmTryCompileExec1097994394.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1097994394.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1097994394.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec1097994394
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1097994394.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1097994394.dir/CheckSymbolExists.c.o  -o cmTryCompileExec1097994394 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <math.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef nan
+  return ((int*)(&nan))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the snprintf exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1248490424/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1248490424.dir/build.make CMakeFiles/cmTryCompileExec1248490424.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1248490424.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1248490424.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec1248490424
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1248490424.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1248490424.dir/CheckSymbolExists.c.o  -o cmTryCompileExec1248490424 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <stdio.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef snprintf
+  return ((int*)(&snprintf))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the vasprintf exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1716409140/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1716409140.dir/build.make CMakeFiles/cmTryCompileExec1716409140.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1716409140.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1716409140.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec1716409140
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1716409140.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1716409140.dir/CheckSymbolExists.c.o  -o cmTryCompileExec1716409140 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <stdio.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef vasprintf
+  return ((int*)(&vasprintf))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the vsnprintf exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1070203590/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1070203590.dir/build.make CMakeFiles/cmTryCompileExec1070203590.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1070203590.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1070203590.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec1070203590
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1070203590.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1070203590.dir/CheckSymbolExists.c.o  -o cmTryCompileExec1070203590 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <stdio.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef vsnprintf
+  return ((int*)(&vsnprintf))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the vprintf exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1075492085/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1075492085.dir/build.make CMakeFiles/cmTryCompileExec1075492085.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1075492085.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1075492085.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec1075492085
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1075492085.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1075492085.dir/CheckSymbolExists.c.o  -o cmTryCompileExec1075492085 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <stdio.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef vprintf
+  return ((int*)(&vprintf))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the open exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3126742644/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3126742644.dir/build.make CMakeFiles/cmTryCompileExec3126742644.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3126742644.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec3126742644.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec3126742644
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3126742644.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3126742644.dir/CheckSymbolExists.c.o  -o cmTryCompileExec3126742644 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <fcntl.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef open
+  return ((int*)(&open))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the realloc exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1107846776/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1107846776.dir/build.make CMakeFiles/cmTryCompileExec1107846776.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1107846776.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1107846776.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec1107846776
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1107846776.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1107846776.dir/CheckSymbolExists.c.o  -o cmTryCompileExec1107846776 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <stdlib.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef realloc
+  return ((int*)(&realloc))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the strcasecmp exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3214787431/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3214787431.dir/build.make CMakeFiles/cmTryCompileExec3214787431.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3214787431.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec3214787431.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec3214787431
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3214787431.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3214787431.dir/CheckSymbolExists.c.o  -o cmTryCompileExec3214787431 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <strings.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef strcasecmp
+  return ((int*)(&strcasecmp))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the strncasecmp exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec774776048/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec774776048.dir/build.make CMakeFiles/cmTryCompileExec774776048.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec774776048.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec774776048.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec774776048
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec774776048.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec774776048.dir/CheckSymbolExists.c.o  -o cmTryCompileExec774776048 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <strings.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef strncasecmp
+  return ((int*)(&strncasecmp))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the strdup exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1242028467/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1242028467.dir/build.make CMakeFiles/cmTryCompileExec1242028467.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1242028467.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1242028467.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec1242028467
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1242028467.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1242028467.dir/CheckSymbolExists.c.o  -o cmTryCompileExec1242028467 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <string.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef strdup
+  return ((int*)(&strdup))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the strerror exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2472555118/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2472555118.dir/build.make CMakeFiles/cmTryCompileExec2472555118.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2472555118.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec2472555118.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec2472555118
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2472555118.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec2472555118.dir/CheckSymbolExists.c.o  -o cmTryCompileExec2472555118 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <string.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef strerror
+  return ((int*)(&strerror))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the vsyslog exist passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec60970447/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec60970447.dir/build.make CMakeFiles/cmTryCompileExec60970447.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec60970447.dir/CheckSymbolExists.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec60970447.dir/CheckSymbolExists.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec60970447
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec60970447.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec60970447.dir/CheckSymbolExists.c.o  -o cmTryCompileExec60970447 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+File /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <syslog.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef vsyslog
+  return ((int*)(&vsyslog))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the include file stddef.h exists passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2817421270/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2817421270.dir/build.make CMakeFiles/cmTryCompileExec2817421270.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2817421270.dir/CheckIncludeFile.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec2817421270.dir/CheckIncludeFile.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTryCompileExec2817421270
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2817421270.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec2817421270.dir/CheckIncludeFile.c.o  -o cmTryCompileExec2817421270 -rdynamic 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining size of int passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2548360703/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2548360703.dir/build.make CMakeFiles/cmTryCompileExec2548360703.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2548360703.dir/SIZEOF_INT.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec2548360703.dir/SIZEOF_INT.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CheckTypeSize/SIZEOF_INT.c
+Linking C executable cmTryCompileExec2548360703
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2548360703.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec2548360703.dir/SIZEOF_INT.c.o  -o cmTryCompileExec2548360703 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining size of int64_t passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1692506913/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1692506913.dir/build.make CMakeFiles/cmTryCompileExec1692506913.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1692506913.dir/SIZEOF_INT64_T.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1692506913.dir/SIZEOF_INT64_T.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CheckTypeSize/SIZEOF_INT64_T.c
+Linking C executable cmTryCompileExec1692506913
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1692506913.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1692506913.dir/SIZEOF_INT64_T.c.o  -o cmTryCompileExec1692506913 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining size of long passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1792992291/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1792992291.dir/build.make CMakeFiles/cmTryCompileExec1792992291.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1792992291.dir/SIZEOF_LONG.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1792992291.dir/SIZEOF_LONG.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CheckTypeSize/SIZEOF_LONG.c
+Linking C executable cmTryCompileExec1792992291
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1792992291.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1792992291.dir/SIZEOF_LONG.c.o  -o cmTryCompileExec1792992291 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining size of long long passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1166722873/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1166722873.dir/build.make CMakeFiles/cmTryCompileExec1166722873.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1166722873.dir/SIZEOF_LONG_LONG.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec1166722873.dir/SIZEOF_LONG_LONG.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CheckTypeSize/SIZEOF_LONG_LONG.c
+Linking C executable cmTryCompileExec1166722873
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1166722873.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1166722873.dir/SIZEOF_LONG_LONG.c.o  -o cmTryCompileExec1166722873 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Determining size of size_t passed with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3364284444/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3364284444.dir/build.make CMakeFiles/cmTryCompileExec3364284444.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3364284444.dir/SIZEOF_SIZE_T.c.o
+/usr/bin/cc  -D_GNU_SOURCE  -o CMakeFiles/cmTryCompileExec3364284444.dir/SIZEOF_SIZE_T.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CheckTypeSize/SIZEOF_SIZE_T.c
+Linking C executable cmTryCompileExec3364284444
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3364284444.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec3364284444.dir/SIZEOF_SIZE_T.c.o  -o cmTryCompileExec3364284444 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+
+Performing C SOURCE FILE Test HAVE_ATOMIC_BUILTINS succeded with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1902963083/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1902963083.dir/build.make CMakeFiles/cmTryCompileExec1902963083.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1902963083.dir/src.c.o
+/usr/bin/cc  -D_GNU_SOURCE -DHAVE_ATOMIC_BUILTINS   -o CMakeFiles/cmTryCompileExec1902963083.dir/src.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTryCompileExec1902963083
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1902963083.dir/link.txt --verbose=1
+/usr/bin/cc   -DHAVE_ATOMIC_BUILTINS    CMakeFiles/cmTryCompileExec1902963083.dir/src.c.o  -o cmTryCompileExec1902963083 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+Source file was:
+int main() { int i, x = 0; i = __sync_add_and_fetch(&x,1); return x; }
+Performing C SOURCE FILE Test HAVE___THREAD succeded with the following output:
+Change Dir: /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec165083991/fast"
+make[1]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec165083991.dir/build.make CMakeFiles/cmTryCompileExec165083991.dir/build
+make[2]: Entering directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec165083991.dir/src.c.o
+/usr/bin/cc  -D_GNU_SOURCE -DHAVE___THREAD   -o CMakeFiles/cmTryCompileExec165083991.dir/src.c.o   -c /mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTryCompileExec165083991
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec165083991.dir/link.txt --verbose=1
+/usr/bin/cc   -DHAVE___THREAD    CMakeFiles/cmTryCompileExec165083991.dir/src.c.o  -o cmTryCompileExec165083991 -rdynamic -lm 
+make[2]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory `/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/CMakeTmp'
+
+Source file was:
+__thread int x = 0; int main() { return 0; }

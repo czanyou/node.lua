@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/c/work/node.lua.tour/modules/ubus/uci/cli.c
+strings.h
+-
+string.h
+-
+stdlib.h
+-
+stdarg.h
+-
+errno.h
+-
+unistd.h
+-
+uci.h
+/mnt/c/work/node.lua.tour/modules/ubus/uci/uci.h
+
+/mnt/c/work/node.lua.tour/modules/ubus/uci/uci.h
+uci_config.h
+/mnt/c/work/node.lua.tour/modules/ubus/uci/uci_config.h
+stdbool.h
+-
+setjmp.h
+-
+stdio.h
+-
+stdint.h
+-
+
+/mnt/c/work/node.lua.tour/modules/ubus/uci/uci_config.h
+

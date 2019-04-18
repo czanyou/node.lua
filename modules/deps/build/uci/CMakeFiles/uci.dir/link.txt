@@ -1,0 +1,1 @@
+mipsel-openwrt-linux-gcc  -fPIC    -shared -Wl,-soname,libuci.so -o libuci.so CMakeFiles/uci.dir/libuci.c.o CMakeFiles/uci.dir/file.c.o CMakeFiles/uci.dir/util.c.o CMakeFiles/uci.dir/delta.c.o CMakeFiles/uci.dir/parse.c.o CMakeFiles/uci.dir/blob.c.o  -L/mnt/c/work/node.lua.tour/modules/deps/uci/../build/libubox  -L/mnt/c/work/node.lua.tour/modules/deps/uci/../build/json-c 

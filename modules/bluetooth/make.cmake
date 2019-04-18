@@ -4,12 +4,12 @@ set(MODULE_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 include_directories(
   ${MODULE_DIR}
-  ${MODULE_DIR}/../../node.lua/deps/luautils/src/
+  ${MODULE_DIR}/../../core/deps/luautils/src/
 )
 
 set(SOURCES
   ${MODULE_DIR}/src/ble_lua.c
-  ${CMAKE_CURRENT_LIST_DIR}/../../node.lua/deps/luautils/src/buffer_queue.c
+  ${CMAKE_CURRENT_LIST_DIR}/../../core/deps/luautils/src/buffer_queue.c
 )
 
 # You need to install libbluetooth-dev package for compiling your code
@@ -17,17 +17,15 @@ set(SOURCES
 # That should install the bluetooth header files.
 
 # find libbluetooth
-if (BUILD_BLUE_TOOTH)
+if (BUILD_BLUETOOTH)
   FIND_FILE(PATH_BLUETOOTH "bluetooth.h" "/usr/include/bluetooth")
   if (PATH_BLUETOOTH STREQUAL "PATH_BLUETOOTH-NOTFOUND")
-      set(BUILD_BLUE_TOOTH OFF)
+      set(BUILD_BLUETOOTH OFF)
       MESSAGE(STATUS "Build: bluetooth dev not found")
   endif ()
-endif (BUILD_BLUE_TOOTH)
+endif (BUILD_BLUETOOTH)
 
-MESSAGE(STATUS "Build: BUILD_BLUE_TOOTH=${BUILD_BLUE_TOOTH}")
-
-if (BUILD_BLUE_TOOTH)
+if (BUILD_BLUETOOTH)
   add_library(lbluetooth SHARED ${SOURCES})
 
   target_link_libraries(lbluetooth bluetooth)
@@ -41,4 +39,4 @@ if (BUILD_BLUE_TOOTH)
     set_target_properties(lbluetooth PROPERTIES SUFFIX ".so")
 
   endif ()
-endif (BUILD_BLUE_TOOTH)
+endif (BUILD_BLUETOOTH)

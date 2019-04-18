@@ -2,8 +2,7 @@
 	"description": "MT7688",
 	"name": "mt7688",
 	"tags": ["mt7688", "core"],
-    "applications": ["httpd", "ssdp", "lhost", "mqtt", "camera"],
-    "files": ["install.sh", "bin/init.sh"],
-    "libs": ["lsdl.so", "lts.so", "lmedia.so", "lsqlite.so"],
+    "applications": ["lgateway", "lhost", "lpm"],
+    "libs": ["lsdl.so", "lsqlite.so"],
 	"version": "0.0.1"
 }

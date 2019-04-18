@@ -1,0 +1,376 @@
+{
+	"depends": [
+		"gateway"
+	],
+	"description": "WoT Gateway",
+	"title": "Gateway",
+	"name": "lgateway",
+	"icon": "podcast",
+	"tags": [
+		"gateway",
+		"runtime"
+	],
+	"thing": {},
+	"settings": [
+		{
+			"name": "status",
+			"title": "Status",
+			"icon": "server",
+			"config": [
+				{
+					"name": "status",
+					"label": "Status",
+					"items": [
+						{
+							"name": "mac",
+							"label": "MAC",
+							"readonly": true,
+							"value": "AA:BB:CC:11:22:33"
+						},
+						{
+							"name": "mode",
+							"label": "Network Mode",
+							"readonly": true,
+							"value": "router",
+							"enum": [
+								"router"
+							]
+						},
+						{
+							"name": "lan_address",
+							"label": "LAN Address",
+							"readonly": true,
+							"value": "192.168.1.1"
+						},
+						{
+							"name": "wlan_address",
+							"label": "WLAN Address",
+							"readonly": true,
+							"value": "192.168.0.1"
+						}
+					]
+				},
+				{
+					"name": "ap",
+					"label": "AP",
+					"items": [
+						{
+							"name": "ssid",
+							"label": "SSID",
+							"type": "string"
+						},
+						{
+							"name": "address",
+							"label": "Address",
+							"type": "string"
+						},
+						{
+							"name": "password",
+							"label": "Password",
+							"type": "string"
+						}
+					]
+				},
+				{
+					"name": "admin",
+					"label": "Admin",
+					"items": [
+						{
+							"name": "new_password",
+							"label": "New Password",
+							"type": "string"
+						},
+						{
+							"name": "confirm_password",
+							"label": "Confirm Password",
+							"type": "string"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "network",
+			"title": "Network",
+			"icon": "wifi",
+			"config": [
+				{
+					"name": "network",
+					"label": "Network",
+					"items": [
+						{
+							"name": "mode",
+							"label": "Network Mode",
+							"value": "dhcp",
+							"enum": [
+								"dhcp",
+								"static"
+							]
+						},
+						{
+							"name": "ip",
+							"label": "IP",
+							"type": "string"
+						},
+						{
+							"name": "netmask",
+							"label": "Netmask",
+							"type": "string"
+						},
+						{
+							"name": "gateway",
+							"label": "Gateway",
+							"type": "string"
+						},
+						{
+							"name": "dns1",
+							"label": "DNS Address 1",
+							"type": "string"
+						},
+						{
+							"name": "dns2",
+							"label": "DNS Address 2",
+							"type": "string"
+						}
+					]
+				},
+				{
+					"name": "repeater",
+					"label": "Repeater",
+					"items": [
+						{
+							"name": "enable",
+							"label": "Enable Repeater Mode",
+							"type": "boolean"
+						},
+						{
+							"name": "mode",
+							"label": "Repeater Mode",
+							"value": "ssid",
+							"enum": [
+								"ssid",
+								"mac"
+							]
+						},
+						{
+							"name": "ssid",
+							"label": "SSID",
+							"type": "string"
+						},
+						{
+							"name": "password",
+							"label": "Password",
+							"type": "string"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "service",
+			"title": "Service",
+			"icon": "flask",
+			"config": [
+				{
+					"name": "service",
+					"label": "Service",
+					"items": [
+						{
+							"name": "protocol",
+							"label": "Protocol",
+							"value": "mqtt",
+							"enum": [
+								"mqtt",
+								"http"
+							]
+						},
+						{
+							"name": "interval",
+							"label": "Upload Interval",
+							"type": "string"
+						},
+						{
+							"name": "url",
+							"label": "Upload URL",
+							"type": "string"
+						},
+						{
+							"name": "client_id",
+							"label": "Client ID",
+							"type": "string"
+						},
+						{
+							"name": "qos",
+							"label": "QoS",
+							"type": "integer",
+							"enum": [
+								0,
+								1,
+								2
+							]
+						},
+						{
+							"name": "username",
+							"label": "Username",
+							"type": "string"
+						},
+						{
+							"name": "password",
+							"label": "Password",
+							"type": "string"
+						},
+						{
+							"name": "publish_topic",
+							"label": "Publish Topic",
+							"type": "string"
+						},
+						{
+							"name": "action_topic",
+							"label": "Action Topic",
+							"type": "string"
+						},
+						{
+							"name": "ack_topic",
+							"label": "Action Response Topic",
+							"type": "string"
+						},
+						{
+							"name": "format",
+							"label": "Data Format",
+							"type": "string",
+							"enum": [
+								"json",
+								"bin"
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "other",
+			"title": "Other",
+			"icon": "wrench",
+			"config": [
+				{
+					"name": "led",
+					"label": "LED",
+					"items": [
+						{
+							"name": "enable",
+							"label": "Enable LEDs",
+							"type": "boolean"
+						}
+					]
+				},
+				{
+					"name": "time",
+					"label": "Time",
+					"items": [
+						{
+							"name": "timezone",
+							"label": "Timezone",
+							"type": "string",
+							"enum": [
+								""
+							]
+						},
+						{
+							"name": "ntp_server1",
+							"label": "NTP Server 1",
+							"type": "string"
+						},
+						{
+							"name": "ntp_server2",
+							"label": "NTP Server 2",
+							"type": "string"
+						}
+					]
+				},
+				{
+					"name": "managment",
+					"label": "Auto Management",
+					"items": [
+						{
+							"name": "auto_reboot",
+							"label": "Automatic Reboot",
+							"type": "boolean"
+						},
+						{
+							"name": "watchdog_timeout",
+							"label": "Watch Dog Timeout",
+							"type": "string"
+						},
+						{
+							"name": "timing_reboot",
+							"label": "Timing Reboot",
+							"type": "boolean"
+						},
+						{
+							"name": "days_of_week",
+							"label": "Days of Week",
+							"type": "integer"
+						},
+						{
+							"name": "time",
+							"label": "Time",
+							"type": "string"
+						}
+					]
+				},
+				{
+					"name": "firmware",
+					"label": "Firmware Upgrade",
+					"items": [
+						{
+							"name": "type",
+							"label": "Upgrade Type",
+							"type": "string",
+							"enum": [
+								"usb",
+								"ota",
+								"lan"
+							]
+						},
+						{
+							"name": "current_version",
+							"label": "Current Version",
+							"type": "string",
+							"readonly": true
+						},
+						{
+							"name": "lastest_version",
+							"label": "Lastest Version",
+							"type": "string"
+						}
+					]
+				},
+				{
+					"name": "other",
+					"label": "Other",
+					"items": [
+						{
+							"name": "reboot",
+							"label": "Reboot",
+							"type": "string",
+							"action": true
+						},
+						{
+							"name": "reset",
+							"label": "Reset",
+							"type": "string",
+							"action": true
+						},
+						{
+							"name": "toggle",
+							"label": "Toggle",
+							"type": "string",
+							"action": true
+						}
+					]
+				}
+			]
+		}
+	],
+	"version": "1.0.0"
+}
