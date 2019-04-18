@@ -1,2 +1,0 @@
-/usr/bin/ar cr libuci.a  CMakeFiles/uci-static.dir/libuci.c.o CMakeFiles/uci-static.dir/file.c.o CMakeFiles/uci-static.dir/util.c.o CMakeFiles/uci-static.dir/delta.c.o CMakeFiles/uci-static.dir/parse.c.o CMakeFiles/uci-static.dir/blob.c.o
-/usr/bin/ranlib libuci.a

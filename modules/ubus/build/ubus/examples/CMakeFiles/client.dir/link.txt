@@ -1,1 +1,0 @@
-/usr/bin/cc      CMakeFiles/client.dir/client.c.o CMakeFiles/client.dir/count.c.o  -o client  ../libubus.so ../../libubox/libubox.so -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/build/ubus:/mnt/c/work/node.lua.tour/modules/ubus/build/libubox 

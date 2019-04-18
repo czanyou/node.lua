@@ -1,1 +1,0 @@
-/usr/bin/cc      CMakeFiles/ucli.dir/cli.c.o  -o uci  libuci.so ../libubox/libubox.so -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/build/uci:/mnt/c/work/node.lua.tour/modules/ubus/build/libubox: 

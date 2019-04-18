@@ -1,1 +1,0 @@
-/usr/bin/cc      CMakeFiles/runqueue-example.dir/runqueue-example.c.o  -o runqueue-example  -L/mnt/c/work/node.lua.tour/modules/ubus/libubox/examples/.. -rdynamic ../libubox.so -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/libubox/examples/..:/mnt/c/work/node.lua.tour/modules/ubus/build/libubox 

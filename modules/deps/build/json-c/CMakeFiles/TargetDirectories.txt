@@ -1,1 +1,0 @@
-/mnt/c/work/node.lua.tour/modules/deps/build/json-c/CMakeFiles/json-c.dir

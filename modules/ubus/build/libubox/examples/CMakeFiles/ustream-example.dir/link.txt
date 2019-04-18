@@ -1,1 +1,0 @@
-/usr/bin/cc      CMakeFiles/ustream-example.dir/ustream-example.c.o  -o ustream-example  -L/mnt/c/work/node.lua.tour/modules/ubus/libubox/examples/.. -rdynamic ../libubox.so -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/ubus/libubox/examples/..:/mnt/c/work/node.lua.tour/modules/ubus/build/libubox 

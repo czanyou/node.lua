@@ -1,1 +1,0 @@
-mipsel-openwrt-linux-gcc      CMakeFiles/mosquitto_sub.dir/sub_client.c.o CMakeFiles/mosquitto_sub.dir/sub_client_output.c.o CMakeFiles/mosquitto_sub.dir/client_shared.c.o  -o mosquitto_sub  -L/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/lib -rdynamic ../lib/libmosquitto.so.1.5.0 -lpthread -lrt -Wl,-rpath,/mnt/c/work/node.lua.tour/modules/deps/build/mosquitto/lib: 

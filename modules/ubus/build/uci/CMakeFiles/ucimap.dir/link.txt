@@ -1,2 +1,0 @@
-/usr/bin/ar cr libucimap.a  CMakeFiles/ucimap.dir/ucimap.c.o
-/usr/bin/ranlib libucimap.a
