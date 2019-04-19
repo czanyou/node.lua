@@ -563,7 +563,7 @@ function ThingClient:sendProperty(properties, thing)
 end
 
 function ThingClient:sendActionResult(name, output, message)
-    --console.log('sendActionResult', name, output, message)
+    -- console.log('sendActionResult', name, output, message)
 
     local response = {
         did = message.did,
@@ -574,7 +574,7 @@ function ThingClient:sendActionResult(name, output, message)
         }
     }
 
-    --console.log('response', response, self.sendMessage)
+    -- console.log('response', response)
     self:sendMessage(response)
 end
 

@@ -337,8 +337,11 @@ function createMediaGatewayThing()
 
     -- register
     local wotClient = wot.register(mqttUrl, webThing)
-    wotClient:on('register', function(result)
-        console.log('register', result)
+    wotClient:on('register', function(response)
+        local result = response and response.result
+        if (result and result.code and result.error) then
+            console.log('register', response)
+        end
     end)
 
     return webThing
