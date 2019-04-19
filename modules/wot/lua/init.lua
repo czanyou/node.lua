@@ -385,8 +385,7 @@ function ThingClient:start()
             local topic = 'actions/' .. did
             mqttClient:subscribe(topic)
 
-            local description = thing:getDescription()
-            self:sendRegister(did, description)
+            self:sendRegister(did, thing)
         end
     end)
 
@@ -458,10 +457,12 @@ function ThingClient:processMessage(message, topic)
         local thing = self.things[message.did]
         if (data and thing) then
             thing.token = data.token
-            thing.deviceId = data.id
-            thing.expires = data.expires
-            thing.lastRegisterTime = process.now()
 
+            thing.register = {}
+            thing.register.id = data.id
+            thing.register.token = data.token
+            thing.register.expires = data.expires
+            thing.register.updated = process.now()
             -- console.log('thing', thing);
         end
 
@@ -508,21 +509,28 @@ function ThingClient:sendMessage(message)
     client:publish(topic, data)
 end
 
-function ThingClient:sendRegister(did, description)
+function ThingClient:sendRegister(did, thing)
+    local description = thing:getDescription()
+
     local message = {
         did = did,
         type = 'register',
         data = description
     }
 
+    if (thing.secret) then
+        local signData = did .. ':' .. thing.secret
+        message.sign = util.md5string(signData) .. ':md5';
+    end
+
     -- console.log('register', did, message)
     self:sendMessage(message)
 end
 
-function ThingClient:sendEvent(events, options)
-    local did = options.did or self.options.id
+function ThingClient:sendEvent(events, thing)
     local message = {
-        did = did,
+        did = thing.id,
+        token = thing.token,
         type = 'event',
         data = events
     }
@@ -530,14 +538,10 @@ function ThingClient:sendEvent(events, options)
     self:sendMessage(message)
 end
 
-function ThingClient:sendStream(streams, options)
-    if (not options) then
-        options = {}
-    end
-
-    local did = options.did or self.options.id
+function ThingClient:sendStream(streams, thing)
     local message = {
-        did = did,
+        did = thing.id,
+        token = thing.token,
         type = 'stream',
         data = streams
     }
@@ -546,14 +550,10 @@ function ThingClient:sendStream(streams, options)
     self:sendMessage(message)
 end
 
-function ThingClient:sendProperty(properties, options)
-    if (not options) then
-        options = {}
-    end
-
-    local did = options.did or self.options.id
+function ThingClient:sendProperty(properties, thing)
     local message = {
-        did = did,
+        did = thing.id,
+        token = thing.token,
         type = 'property',
         data = properties
     }

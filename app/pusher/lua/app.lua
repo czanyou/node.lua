@@ -23,7 +23,7 @@ local exports = {}
 local cpuInfo = {}
 
 local function getWotClient()
-    return exports.wotClient
+    return app.wotClient
 end
 
 -- Get the MAC address of localhost 
@@ -100,7 +100,7 @@ local function sendGatewayEventNotify(name, data)
 
     local wotClient = getWotClient();
     if (wotClient) then
-        wotClient:sendEvent(event)
+        wotClient:sendEvent(event, app.gateway)
     end
 end
 
@@ -114,7 +114,7 @@ local function sendGatewayDeviceInformation()
 
     local wotClient = getWotClient();
     if (wotClient) then
-        wotClient:sendProperty({ device = device })
+        wotClient:sendProperty({ device = device }, app.gateway)
     end
 end
 
@@ -126,7 +126,7 @@ local function sendGatewayStatus()
 
     local wotClient = getWotClient();
     if (wotClient) then
-        wotClient:sendStream(result)
+        wotClient:sendStream(result, app.gateway)
     end
 end
 
@@ -134,7 +134,7 @@ end
 -- Web Server
 
 function getThingStatus()
-    local wotClient = exports.wotClient
+    local wotClient = wot.client
     local things = wotClient and wotClient.things
     local list = {}
     if (things) then
@@ -244,11 +244,14 @@ function exports.config()
     return app.config
 end
 
-function createCameraThing(did)
+function createCameraThing(did, options)
     local config = exports.config()
 
     local camera = { id = did, name = 'camera' }
     local webThing = wot.produce(camera)
+
+    local mqttUrl = config.mqtt
+    webThing.secret = options and options.secret
 
     -- play action
     local play = { input = { type = 'object' } }
@@ -318,11 +321,9 @@ function createCameraThing(did)
 
     -- register
     -- console.log('webThing', webThing)
+    wot.register(mqttUrl, webThing)
 
-    local url = config.mqtt
-    local wotClient = wot.register(url, webThing)
-
-    exports.wotClient = wotClient
+    return webThing
 end
 
 function createMediaGatewayThing()
@@ -330,16 +331,17 @@ function createMediaGatewayThing()
     local gateway = { id = config.did, name = 'gateway' }
     -- console.log('config', config);
 
+    local mqttUrl = config.mqtt
     local webThing = wot.produce(gateway)
+    webThing.secret = config.secret
 
     -- register
-    local url = config.mqtt
-    local wotClient = wot.register(url, webThing)
+    local wotClient = wot.register(mqttUrl, webThing)
     wotClient:on('register', function(result)
         console.log('register', result)
     end)
 
-    exports.wotClient = wotClient
+    return webThing
 end
 
 -- 注册 WoT 客户端
@@ -347,10 +349,14 @@ function exports.register()
     local config = exports.config()
     local cameras = config.cameras or {}
 
-    createMediaGatewayThing()
+    app.gateway = createMediaGatewayThing()
+
+    local things = {}
     for did, camera in pairs(cameras) do
-        createCameraThing(did)
+        local thing = createCameraThing(did, camera)
+        things[did] = thing
     end
+    app.cameras = things
 
     -- report stream
     exports.notify()

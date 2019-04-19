@@ -1,7 +1,9 @@
 {
     "mqtt": "mqtt://iot.beaconice.cn/",
+    "secret": "5c25b29e8ca1712897c805c0",
     "cameras": {
         "112233445567": {
+            "secret": "5c25b29e8ca1712897c805c0",
             "url": "rtsp://192.168.1.64/live.mp4",
             "username": "admin",
             "password": "admin123456"

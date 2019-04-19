@@ -241,5 +241,8 @@ exports.bin2hex         = lutils.hex_encode
 exports.hex2bin         = lutils.hex_decode
 exports.md5             = lutils.md5
 
+exports.md5string = function(data)
+    return lutils.hex_encode(lutils.md5(data))
+end
 
 return exports
