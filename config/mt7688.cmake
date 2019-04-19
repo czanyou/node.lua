@@ -4,9 +4,9 @@ set(BUILD_BLUETOOTH      OFF)
 set(BUILD_MBEDTLS        OFF)
 set(BUILD_SDL            ON)
 set(BUILD_SQLITE         OFF)
-set(BUILD_UCI            OFF)
 set(BUILD_UBOX           OFF)
 set(BUILD_UBUS           OFF)
+set(BUILD_UCI            OFF)
 
 message(STATUS, $ENV{STAGING_DIR})
 

@@ -24,6 +24,7 @@ message(STATUS "CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
+
 ###############################################################################
 # Build Options
 
@@ -41,6 +42,11 @@ elseif (LINUX)
 
 endif ()
 
+
+###############################################################################
+# Cross compiler options
+# determine the parameters of the compiler tool chain through BOARD_TYPE
+
 # Development board type
 if (NOT BOARD_TYPE)
   set(BOARD_TYPE local)
@@ -48,14 +54,9 @@ endif ()
 
 include(config/${BOARD_TYPE}.cmake)
 
-###############################################################################
-# Cross compiler options
-# determine the parameters of the compiler tool chain through BOARD_TYPE
-
-###############################################################################
-
 message(STATUS "Build: BOARD_TYPE: ${BOARD_TYPE}")
 message(STATUS "Build: CC: ${CMAKE_C_COMPILER}")
+
 
 ###############################################################################
 # OS build options
@@ -90,8 +91,11 @@ elseif (LINUX)
 
 endif ()
 
+
 ###############################################################################
 # build sub directory
 
 include(modules/make.cmake)
 include(core/make.cmake)
+
+###############################################################################
