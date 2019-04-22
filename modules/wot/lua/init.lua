@@ -283,7 +283,7 @@ function ExposedThing:setPropertyReadHandler(name, handler)
         return
     end
 
-    self.handlers['@read.' .. name] = handler
+    self.handlers['@read:' .. name] = handler
 
     return self
 end
@@ -293,7 +293,7 @@ function ExposedThing:setPropertyWriteHandler(name, handler)
         return
     end
     
-    self.handlers['@write.' .. name] = handler
+    self.handlers['@write:' .. name] = handler
 
     return self
 end
@@ -305,7 +305,7 @@ function ExposedThing:addAction(name, action, handler)
     
     self.actions[name] = action
 
-    self.handlers['@action.' .. name] = handler
+    self.handlers['@action:' .. name] = handler
 
     -- console.log(name, action, handler, self.actions, self.handlers)
 
@@ -375,8 +375,12 @@ function ThingClient:start()
         console.log('empty MQTT url string.')
     end
 
-    local clientId = self.options.id
-    local mqttClient = mqtt.connect(urlString, clientId)
+    local clientId = 'camera-' .. (self.options.id or '')
+    local options = {
+        clientId = clientId
+    }
+
+    local mqttClient = mqtt.connect(urlString, options)
 
     mqttClient:on('connect', function ()
         console.log('connect')
@@ -415,7 +419,8 @@ function ThingClient:invokeAction(name, input, message)
         return
     end
 
-    local handler = thing.handlers['@action.' .. name]
+    local actionName = '@action:' .. name;
+    local handler = thing.handlers[actionName]
     if (not handler) then
         console.log('Action handler not found: ', name)
         -- console.log(thing.handlers)
@@ -476,11 +481,89 @@ function ThingClient:processMessage(message, topic)
 end
 
 function ThingClient:processReadMessage(message, topic)
+    local data = message.data
+    if (not data) then
+        return
+    end
 
+    -- console.log('invokeAction', name, input, message, self.things)
+    local did = message.did;
+    local thing = self.things[did]
+    if (not thing) then
+        console.log('empty thing')
+        return
+    end
+
+    for name, value in pairs(data) do
+        local actionName = '@read:' .. name;
+        local handler = thing.handlers[actionName]
+        if (not handler) then
+            console.log('read handler not found: ', name)
+            -- console.log(thing.handlers)
+            return
+        end
+
+        local ret = handler(value)
+        if (not ret) then
+            console.log('Read result is empty')
+            return
+    
+        elseif (not ret.next) then
+            return self:sendProperty(name, ret, message)
+        end
+    
+        local thingClient = self
+    
+        ret:next(function(data)
+            thingClient:sendProperty(name, data, message)
+    
+        end):catch(function(err)
+            thingClient:sendProperty(name, err, message)
+        end)
+    end
 end
 
 function ThingClient:processWriteMessage(message, topic)
+    local data = message.data
+    if (not data) then
+        return
+    end
 
+    -- console.log('invokeAction', name, input, message, self.things)
+    local did = message.did;
+    local thing = self.things[did]
+    if (not thing) then
+        console.log('empty thing')
+        return
+    end
+
+    for name, value in pairs(data) do
+        local actionName = '@write:' .. name;
+        local handler = thing.handlers[actionName]
+        if (not handler) then
+            console.log('Write handler not found: ', name)
+            -- console.log(thing.handlers)
+            return
+        end
+
+        local ret = handler(value)
+        if (not ret) then
+            console.log('Write result is empty')
+            return
+    
+        elseif (not ret.next) then
+            return self:sendProperty(name, ret, message)
+        end
+    
+        local thingClient = self
+    
+        ret:next(function(data)
+            thingClient:sendProperty(name, data, message)
+    
+        end):catch(function(err)
+            thingClient:sendProperty(name, err, message)
+        end)
+    end
 end
 
 function ThingClient:processActionMessage(message, topic)
@@ -550,10 +633,16 @@ function ThingClient:sendStream(streams, thing)
     self:sendMessage(message)
 end
 
-function ThingClient:sendProperty(properties, thing)
+function ThingClient:sendProperty(name, properties, request)
+    if (name) then
+        properties = {
+            [name] = properties
+        }
+    end
+
     local message = {
-        did = thing.id,
-        token = thing.token,
+        did = request.did,
+        mid = request.mid,
         type = 'property',
         data = properties
     }
@@ -562,12 +651,12 @@ function ThingClient:sendProperty(properties, thing)
     self:sendMessage(message)
 end
 
-function ThingClient:sendActionResult(name, output, message)
+function ThingClient:sendActionResult(name, output, request)
     -- console.log('sendActionResult', name, output, message)
 
     local response = {
-        did = message.did,
-        mid = message.mid,
+        did = request.did,
+        mid = request.mid,
         type = 'action',
         result = {
             [name] = output

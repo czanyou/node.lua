@@ -304,13 +304,50 @@ function createCameraThing(did, options)
     end)
 
     -- preset action
-    local ptz = { input = { type = 'object'} }
-    webThing:addAction('preset', ptz, function(input)
+    local preset = { input = { type = 'object'} }
+    webThing:addAction('preset', preset, function(input)
         console.log('preset', input);
         local did = webThing.id;
 
         return { code = 0 }
-    end)    
+    end)
+
+    -- device:reboot action
+    local action = { input = { type = 'object'} }
+    webThing:addAction('device', action, function(input)
+        console.log('device', input);
+        local did = webThing.id;
+
+        return { code = 0 }
+    end)
+
+    -- firmware:update action
+    local action = { input = { type = 'object'} }
+    webThing:addAction('firmware', action, function(input)
+        console.log('firmware', input);
+        local did = webThing.id;
+
+        return { code = 0 }
+    end)
+
+    -- properties
+    webThing:addProperty('device', { type = 'service' })
+    webThing:addProperty('firmware', { type = 'service' })
+    webThing:addProperty('location', { type = 'service' })
+
+    webThing:setPropertyReadHandler('device', function(input)
+        console.log('read device', input);
+        local did = webThing.id;
+
+        return { firmwareVersion = "1.0" }
+    end)
+
+    webThing:setPropertyWriteHandler('device', function(input)
+        console.log('write device', input);
+        local did = webThing.id;
+
+        return { firmwareVersion = "1.0" }
+    end)   
 
     -- play event
     local event = { type = 'object' }
@@ -340,7 +377,10 @@ function createMediaGatewayThing()
     wotClient:on('register', function(response)
         local result = response and response.result
         if (result and result.code and result.error) then
-            console.log('register', response)
+            console.log('register', 'error', response.did, result)
+
+        elseif (result.token) then
+            console.log('register', response.did, result.token)
         end
     end)
 

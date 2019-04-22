@@ -4,10 +4,10 @@ local TAG = 'mqtt'
 
 local exports = {}
 
-function exports.connect(urlString, clientId)
+function exports.connect(urlString, options)
     -- console.log(urlString, clientId)
 
-    local client = mqtt.connect(urlString)
+    local client = mqtt.connect(urlString, options)
     client:on('connect', function()
         -- print(TAG, 'event', 'connect')
         -- print(TAG, 'subscribe', topic)
@@ -18,7 +18,7 @@ function exports.connect(urlString, clientId)
     end)
 
     exports.client = client
-    exports.clientId = clientId
+    exports.clientId = options and options.clientId
     return client
 end
 
