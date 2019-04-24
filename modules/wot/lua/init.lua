@@ -405,44 +405,50 @@ function ThingClient:start()
     self.mqtt = mqttClient;
 end
 
-function ThingClient:invokeAction(name, input, message)
-    -- console.log('invokeAction', name, input, message)
+function ThingClient:invokeAction(name, input, request)
+    -- console.log('invokeAction', name, input, request)
+    -- check name
     if (not name) then
-        return
+        local err = { code = 400, error = 'Invalid action name' }
+        return thingClient:sendActionResult(nil, err, request)
     end
 
-    -- console.log('invokeAction', name, input, message, self.things)
-    local did = message.did;
+    -- console.log('invokeAction', name, input, request, self.things)
+    -- check did
+    local did = request.did;
     local thing = self.things[did]
     if (not thing) then
-        console.log('empty thing')
-        return
+        console.log('Invalid thing id')
+        local err = { code = 404, error = 'Invalid thing id' }
+        return self:sendActionResult(name, err, request)
     end
 
+    -- check handler
     local actionName = '@action:' .. name;
     local handler = thing.handlers[actionName]
     if (not handler) then
         console.log('Action handler not found: ', name)
-        -- console.log(thing.handlers)
-        return
+        local err = { code = 404, error = 'Unsupported action' }
+        return self:sendActionResult(name, err, request)
     end
 
+    -- handler
     local ret = handler(input)
     if (not ret) then
         console.log('Action invoke result is empty')
-        return
+        return self:sendActionResult(name, { code = 0 }, request)
 
     elseif (not ret.next) then
-        return self:sendActionResult(name, ret, message)
+        return self:sendActionResult(name, ret, request)
     end
 
+    -- next
     local thingClient = self
-
     ret:next(function(data)
-        thingClient:sendActionResult(name, data, message)
+        thingClient:sendActionResult(name, data, request)
 
     end):catch(function(err)
-        thingClient:sendActionResult(name, err, message)
+        thingClient:sendActionResult(name, err, request)
     end)
 end
 
@@ -470,100 +476,95 @@ function ThingClient:processMessage(message, topic)
             thing.register.updated = process.now()
             -- console.log('thing', thing);
         end
-
-    elseif (messageType == 'read') then
-        self:processReadMessage(message)
-        
-    elseif (messageType == 'write') then
-        self:processWriteMessage(message)
-
     end
 end
 
-function ThingClient:processReadMessage(message, topic)
-    local data = message.data
-    if (not data) then
-        return
-    end
+function ThingClient:readProperties(thing, names)
+    local properties = {}
+    for index, name in ipairs(names) do
+        local property = thing.properties[name]
 
-    -- console.log('invokeAction', name, input, message, self.things)
-    local did = message.did;
-    local thing = self.things[did]
-    if (not thing) then
-        console.log('empty thing')
-        return
-    end
-
-    for name, value in pairs(data) do
-        local actionName = '@read:' .. name;
-        local handler = thing.handlers[actionName]
-        if (not handler) then
-            console.log('read handler not found: ', name)
-            -- console.log(thing.handlers)
-            return
+        if (property) then
+            local handlerName = '@read:' .. name
+            local handler = thing.handlers[handlerName]
+            if (handler) then
+                properties[name] = handler()
+            else
+                properties[name] = property.value
+            end
         end
-
-        local ret = handler(value)
-        if (not ret) then
-            console.log('Read result is empty')
-            return
-    
-        elseif (not ret.next) then
-            return self:sendProperty(name, ret, message)
-        end
-    
-        local thingClient = self
-    
-        ret:next(function(data)
-            thingClient:sendProperty(name, data, message)
-    
-        end):catch(function(err)
-            thingClient:sendProperty(name, err, message)
-        end)
     end
+
+    return properties
 end
 
-function ThingClient:processWriteMessage(message, topic)
-    local data = message.data
-    if (not data) then
-        return
+function ThingClient:writeProperties(thing, properties)
+    local count = 0
+    for name, value in pairs(properties) do
+        local property = thing.properties[name]
+        if (property) then
+            local actionName = '@write:' .. name;
+            local handler = thing.handlers[actionName]
+            if (handler) then
+                handler(value)
+            else
+                property.value = value
+            end
+
+            count = count + 1
+        end
     end
 
-    -- console.log('invokeAction', name, input, message, self.things)
-    local did = message.did;
+    return count
+end
+
+function ThingClient:processReadMessage(request, topic)
+    local did = request and request.did;
     local thing = self.things[did]
     if (not thing) then
-        console.log('empty thing')
+        console.log('Invalid thing id')
         return
     end
 
-    for name, value in pairs(data) do
-        local actionName = '@write:' .. name;
-        local handler = thing.handlers[actionName]
-        if (not handler) then
-            console.log('Write handler not found: ', name)
-            -- console.log(thing.handlers)
-            return
-        end
+    local names = request.data and request.data.read;
+    local properties = self:readProperties(thing, names)
+    local response = {
+        did = request.did,
+        mid = request.mid,
+        type = 'action',
+        result = {
+            read = properties
+        }
+    }
 
-        local ret = handler(value)
-        if (not ret) then
-            console.log('Write result is empty')
-            return
-    
-        elseif (not ret.next) then
-            return self:sendProperty(name, ret, message)
-        end
-    
-        local thingClient = self
-    
-        ret:next(function(data)
-            thingClient:sendProperty(name, data, message)
-    
-        end):catch(function(err)
-            thingClient:sendProperty(name, err, message)
-        end)
+    --console.log('response', response, self.sendMessage)
+    self:sendMessage(response)
+end
+
+function ThingClient:processWriteMessage(request, topic)
+    local did = request and request.did;
+    local thing = self.things[did]
+    if (not thing) then
+        console.log('Invalid thing id')
+        return
     end
+
+    local properties = request.data and request.data.write;
+    local ret = self:writeProperties(thing, properties)
+    local response = {
+        did = request.did,
+        mid = request.mid,
+        type = 'action',
+        result = {
+            write = {
+                code = 0,
+                count = count
+            }
+        }
+    }
+
+    --console.log('response', response, self.sendMessage)
+    self:sendMessage(response)
 end
 
 function ThingClient:processActionMessage(message, topic)
@@ -572,8 +573,16 @@ function ThingClient:processActionMessage(message, topic)
         return
     end
 
-    for key, value in pairs(data) do
-        self:invokeAction(key, value, message)
+    for name, input in pairs(data) do
+        if (name == 'read') then
+            self:processReadMessage(message, topic)
+
+        elseif (name == 'write') then
+            self:processWriteMessage(message, topic)
+
+        else 
+            self:invokeAction(name, input, message)
+        end
     end
 end
 
@@ -652,18 +661,25 @@ function ThingClient:sendProperty(name, properties, request)
 end
 
 function ThingClient:sendActionResult(name, output, request)
-    -- console.log('sendActionResult', name, output, message)
+    console.log('sendActionResult', name, output, request)
+
+    if (not output) then
+        output = { code = 0 }
+    end
 
     local response = {
         did = request.did,
         mid = request.mid,
-        type = 'action',
-        result = {
-            [name] = output
-        }
+        type = 'action'
     }
 
-    -- console.log('response', response)
+    if (name) then
+        response.result = { [name] = output }
+    else
+        response.result = output
+    end
+
+    console.log('response', response, output)
     self:sendMessage(response)
 end
 
