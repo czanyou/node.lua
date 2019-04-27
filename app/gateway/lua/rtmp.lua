@@ -13,22 +13,28 @@ local request = require('http/request')
 local client  = require('rtmp/client')
 local Promise = require('wot/promise')
 
-local TAG = 'PUSHER'
+local TAG = 'media.rtmp'
 
 local RTMPClient = client.RTMPClient
 
 local flv = rtmp.flv
 
 local exports = {}
-exports.rtspSessions = {}
+
 exports.rtmpSessions = {}
 
-local RtmpSession = {}
+local function getRtmpSession(did, create)
+    create = true
 
-local NALU_TYPE_I   	= 5
-local NALU_TYPE_SPS 	= 7
-local NALU_TYPE_PPS 	= 8
-local NALU_TYPE_P   	= 1
+    local rtmpSession = exports.rtmpSessions[did]
+    if (not rtmpSession) and (create) then
+        rtmpSession = {}
+        exports.rtmpSessions[did] = rtmpSession
+    end
+
+    return rtmpSession;
+end
+
 
 -- ////////////////////////////////////////////////////////////////////////////
 -- Snapshot
@@ -174,9 +180,11 @@ local function sendVideoMessage(did, frameBuffer, timestamp, isSyncPoint)
 
     rtmpClient.videoConfiguration = rtmpSession.videoConfiguration
     rtmpClient:sendVideo(frameBuffer, timestamp, isSyncPoint)
+
+    -- console.log('sendVideoMessage', did, isSyncPoint)
 end
 
-function stopRtmpClient(did, error)
+local function stopRtmpClient(did, error)
     local rtmpSession = getRtmpSession(did)
     if (rtmpSession.rtmpClient) then
         local rtmpClient = rtmpSession.rtmpClient
@@ -186,7 +194,7 @@ function stopRtmpClient(did, error)
     end
 end
 
-function closeRtmpClient(did, error)
+local function closeRtmpClient(did, error)
     local rtmpSession = getRtmpSession(did)
     if (rtmpSession.rtmpClient) then
         local rtmpClient = rtmpSession.rtmpClient
@@ -195,14 +203,14 @@ function closeRtmpClient(did, error)
     end
 end
 
-function createRtmpClient(did, urlString)
+local function createRtmpClient(did, urlString, options)
     local rtmpSession = getRtmpSession(did)
     if (rtmpSession.rtmpClient) then
         return
     end
 
     local rtmpClient = RTMPClient:new()
-    if (rtmpSession.rtmpIsPlay) then
+    if (options and options.rtmpIsPlay) then
         -- 拉流模式 (播放模式)
         rtmpClient.isPublish = false
     end
@@ -351,7 +359,7 @@ function onRtmpSessionTimer(did)
     end
 end
 
-function getRtmpStatus()
+local function getRtmpStatus()
     local sessions = {}
     for did, rtmpSession in pairs(exports.rtmpSessions) do
         sessions[did] = getRtmpSessionStatus(did, rtmpSession);
@@ -359,14 +367,13 @@ function getRtmpStatus()
     return sessions
 end
 
-function startRtmpClient()
+local function startRtmpClient()
     local onRtmpTimer = function() 
         for did, rtmpSession in pairs(exports.rtmpSessions) do
             onRtmpSessionTimer(did, rtmpSession);
         end
     end
     
-
     exports.rtmpTimer = setInterval(1000 * 5, onRtmpTimer)
     onRtmpTimer()
 
@@ -377,278 +384,40 @@ function startRtmpClient()
     end)
 end
 
-function setRtmpMediaInfo(did, mediaInfo)
+local function setRtmpMediaInfo(did, mediaInfo)
     local rtmpSession = getRtmpSession(did)
+    console.log('setRtmpMediaInfo', did, mediaInfo)
     rtmpSession.rtmpMediaInfo = mediaInfo
-    console.log('mediaInfo', mediaInfo)
 end
 
-function getRtmpSession(did, create)
-    create = true
-
-    local rtmpSession = exports.rtmpSessions[did]
-    if (not rtmpSession) and (create) then
-        rtmpSession = {}
-        exports.rtmpSessions[did] = rtmpSession
+local function setVideoConfiguration(did, videoConfiguration)
+    local rtmpSession = getRtmpSession(did)
+    if (not rtmpSession.videoConfiguration) then
+        console.log('setVideoConfiguration', did, videoConfiguration)
     end
-
-    return rtmpSession;
+    rtmpSession.videoConfiguration = videoConfiguration
 end
 
--- ////////////////////////////////////////////////////////////////////////////
--- RTSP
+local function publishRtmpUrl(did, rtmpUrl)
+    local now = process.now()
 
-function getRtspSession(did)
-    return exports.rtspSessions and exports.rtspSessions[did]
+    local rtmpSession = getRtmpSession(did)
+    rtmpSession.rtmpUrl = rtmpUrl;
+    rtmpSession.lastNotifyTime = now;
+
+    onRtmpSessionTimer(did);
+
+    console.log('publishRtmpUrl', did, rtmpUrl)
 end
 
-local function getRtspSessionStatus(rtspSession)
-    local status = {}
+exports.getRtmpSession = getRtmpSession
+exports.getRtmpStatus = getRtmpStatus
+exports.open = createRtmpClient
+exports.publishRtmpUrl = publishRtmpUrl
+exports.sendVideoMessage = sendVideoMessage
+exports.setRtmpMediaInfo = setRtmpMediaInfo
+exports.setVideoConfiguration = setVideoConfiguration
+exports.startRtmpClient = startRtmpClient
+exports.stopRtmpClient = stopRtmpClient
 
-    status.url = rtspSession.rtspUrl
-    local rtspClient = rtspSession.rtspClient
-    if (not rtspClient) then
-        return status
-    end
-
-    status.lastActiveTime = rtspClient.lastActiveTime
-    status.urlObject = rtspClient.urlObject
-    status.rtspState = rtspClient.rtspState
-    status.sentRequests = rtspClient.sentRequests
-    --status.mediaTracks = rtspClient.mediaTracks
-
-    status.lastCSeq = rtspClient.lastCSeq
-    status.lastConnectTime = rtspClient.lastConnectTime
-    status.id = rtspClient.id
-
-    status.audioSamples = rtspClient.audioSamples
-    status.audioTrack = rtspClient.audioTrack
-    status.audioTrackId = rtspClient.audioTrackId
-    status.videoSamples = rtspClient.videoSamples
-    status.videoTrack = rtspClient.videoTrack
-    status.videoTrackId = rtspClient.videoTrackId
-
-    local sps, pps, error = rtspClient:getParameterSets()
-    if (sps) then
-        status.sps = util.bin2hex(sps)
-        status.pps = util.bin2hex(pps)
-    else
-        status.sps = error
-    end
-
-    return status
-end
-
-function getRtspStatus()
-    if (not exports.rtspSessions) then
-        return
-    end
-
-    local rtspSessions = {}
-    for did, rtspSession in pairs(exports.rtspSessions) do
-        rtspSessions[did] = getRtspSessionStatus(rtspSession)
-    end
-    return rtspSessions
-end
-
-function closeRtspClient(did)
-    local rtspSession = getRtspSession(did)
-    local rtspClient = rtspSession and rtspSession.rtspClient
-    if (rtspClient) then
-        rtspClient:close()
-    end
-end
-
-function createRtspClient(rtspSession)
-    -- console.log(rtspSession)
-
-    local lastState = 0
-    local lastSample = nil
-    local rtspUrl = rtspSession.rtspUrl
-    local options = rtspSession.options
-    local did = rtspSession.did
-
-    local rtspClient = rtsp.openURL(rtspUrl)
-    rtspClient.username = options.username or 'admin';
-    rtspClient.password = options.password or 'admin123456';
-
-	rtspClient:on('close', function(err)
-        console.log(TAG, 'close', err, rtspClient.id)
-
-        rtspClient.spsSent = false
-	end)
-
-	rtspClient:on('error', function(err)
-        console.log(TAG, 'error', err, rtspClient.id)
-    end)
-
-    rtspClient:on('state', function(state)
-        local stateString = rtspClient:getRtspStateString(state)
-        console.log(TAG, 'rtsp state', stateString)
-
-		if (state == rtsp.client.STATE_READY) then
-            local mediaInfo = {}
-            local width, height = rtspClient:getVideoSize()
-            mediaInfo.width  = width or 1280
-            mediaInfo.height = height or 720
-            setRtmpMediaInfo(did, mediaInfo)
-		end
-
-		lastState = state
-    end)
-
-    rtspClient:on('sample', function(sample)
-        if (not sample.isVideo) then
-            return
-        end
-
-        local now = process.hrtime() / 1000000 -- in ms
-        rtspSession.rtspLastActiveTime = now;
-
-        if (not lastSample) then
-            lastSample = {}
-        end
-
-        local buffer = sample.data[1]
-        if (not buffer) then
-            return
-        end
-
-        -- console.log('sample', buffer)
-
-        -- NALU
-        if (sample.isFragment) then
-            for _, item in ipairs(sample.data) do
-                table.insert(lastSample, item)
-            end
-
-            if (not sample.isEnd) then
-                return
-            end
-        else
-            for _, item in ipairs(sample.data) do
-                table.insert(lastSample, item)
-            end
-        end
-
-        if (rtspClient.startSampleTime == nil) then
-            rtspClient.startSampleTime = now
-        end
-
-        local timestamp = now
-        timestamp = math.floor(timestamp - rtspClient.startSampleTime)
-
-        local naluData = table.concat(lastSample)
-        local naluType = naluData:byte(1) & 0x1f
-
-        --console.log('naluData', #naluData)
-        lastSample = nil
-
-        -- print('naluType', naluType)
-        if (naluType == NALU_TYPE_SPS) then
-            --console.log('naluType', naluType, #naluData)
-            rtspClient.sps = naluData
-            --console.printBuffer(naluData)
-
-        elseif (naluType == NALU_TYPE_PPS) then
-            --console.log('naluType', naluType, #naluData)
-            rtspClient.pps = naluData
-            --console.printBuffer(naluData)
-
-        elseif (naluType == NALU_TYPE_I) then
-            -- console.log('naluType', naluType, #naluData, timestamp)
-
-            if (rtspClient.sps and rtspClient.pps) then
-                local sps = rtspClient.sps
-                local pps = rtspClient.pps
-                local tagData = flv.encodeVideoConfiguration(sps, pps)
-   
-                local rtmpSession = getRtmpSession(did)
-                rtmpSession.videoConfiguration = tagData
-            end
-
-            -- video tag (Key frame)
-            if (naluData) then
-                local videoHeader = flv.encodeAvcHeader(naluType, naluData, timestamp)
-                sendVideoMessage(did, videoHeader .. naluData, timestamp, true)
-            end
-
-        elseif (naluType == NALU_TYPE_P) then
-            -- console.log('naluType', naluType, #naluData, timestamp)
-
-            -- video tag
-            local videoHeader = flv.encodeAvcHeader(naluType, naluData, timestamp)
-            sendVideoMessage(did, videoHeader .. naluData, timestamp, false)
-        end
-    end)
-
-    return rtspClient
-end
-
-function onRtspSessionTimer(rtspSession)
-    local rtspClient = rtspSession.rtspClient
-    local urlString = rtspSession.rtspUrl
-    local now = process.hrtime() / 1000000; -- in ms
-    if (not urlString) then
-        return
-    end
-
-    if (not rtspClient) then
-        rtspSession.rtspClient = createRtspClient(rtspSession)
-        rtspSession.rtspLastActiveTime = now
-        return
-    end
-
-    -- check stopped
-    local rtspState = rtspClient.rtspState
-    -- console.log('rtsp state', rtspState)
-
-    if (rtspState == rtsp.client.STATE_STOPPED) then
-        console.log('RTSP timeout', rtspClient.id)
-        rtspClient:close()
-
-        rtspSession.rtspClient = createRtspClient(rtspSession)
-        rtspSession.rtspLastActiveTime = now
-        return
-    end
-
-    -- check timeout
-    local span = now - rtspSession.rtspLastActiveTime
-
-    if (span >= 1000 * 10) then
-        console.log('RTSP stream timeout', rtspClient.id)
-        rtspClient:close()
-
-        rtspSession.rtspClient = createRtspClient(rtspSession)
-        rtspSession.rtspLastActiveTime = now
-        return
-    end
-end
-
-function startRtspClient(did, options)
-    if (not exports.rtspSessions) then
-        exports.rtspSessions = {}
-    end
-
-    local onRtspTimer = function()
-        for did, rtspSession in pairs(exports.rtspSessions) do
-            onRtspSessionTimer(rtspSession)
-        end
-    end
-
-    local rtspSession = {}
-    rtspSession.did = did
-    rtspSession.rtspUrl = options.url
-    rtspSession.options = options
-    rtspSession.rtspLastActiveTime = process.hrtime() / 1000000 -- in ms
-
-    exports.rtspTimer = setInterval(1000 * 3, onRtspTimer)
-    onRtspTimer()
-
-    exports.timeoutTimer = setInterval(1000 * 3600, function()
-        closeRtspClient(did, 'rtsp reset')
-    end)
-
-    exports.rtspSessions[did] = rtspSession
-    return rtspSession
-end
+return exports

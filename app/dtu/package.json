@@ -1,8 +1,0 @@
-{
-	"depends": [],
-	"description": "DTU manager",
-	"title": "DTU",
-	"name": "dtu",
-	"tags": ["sensor", "runtime"],
-	"version": "1.0.0"
-}

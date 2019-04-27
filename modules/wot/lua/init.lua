@@ -661,8 +661,6 @@ function ThingClient:sendProperty(name, properties, request)
 end
 
 function ThingClient:sendActionResult(name, output, request)
-    console.log('sendActionResult', name, output, request)
-
     if (not output) then
         output = { code = 0 }
     end
@@ -679,7 +677,7 @@ function ThingClient:sendActionResult(name, output, request)
         response.result = output
     end
 
-    console.log('response', response, output)
+    console.log('response', response)
     self:sendMessage(response)
 end
 
@@ -742,6 +740,16 @@ end
 -- @param thing ExposedThing 
 -- Promise<void>
 function exports.register(directory, thing)
+    if (not directory) then
+        return nil, 'empty directory url'
+
+    elseif (not thing) then
+        return nil, 'empty thing'
+
+    elseif (not thing.id) then
+        return nil, 'empty thing.id'
+    end
+
     local options = {}
     options.url = directory
     options.id = thing.id
@@ -751,13 +759,18 @@ function exports.register(directory, thing)
         client = ThingClient:new(options)
         exports.client = client
 
-        client.things[thing.id] = thing;
-        client:start()
+        client:on('register', function(result)
+            local did = result.did
+            local webThing = client.things[did]
+            if (webThing) then
+                webThing:emit('register', result)
+            end
+        end)
 
-    else
-        client.things[thing.id] = thing;
+        client:start()
     end
 
+    client.things[thing.id] = thing;
     return client
 end
 
