@@ -4,6 +4,7 @@ message(STATUS "Build: BUILD_BLUETOOTH:     ${BUILD_BLUETOOTH}")
 message(STATUS "Build: BUILD_CAMERA:        ${BUILD_CAMERA}")
 message(STATUS "Build: BUILD_MBEDTLS:       ${BUILD_MBEDTLS}")
 message(STATUS "Build: BUILD_MESSAGE:       ${BUILD_MESSAGE}")
+message(STATUS "Build: BUILD_MODBUS:        ${BUILD_MODBUS}")
 
 message(STATUS "Build: BUILD_RTMP:          ${BUILD_RTMP}")
 message(STATUS "Build: BUILD_SDL:           ${BUILD_SDL}")
@@ -28,6 +29,10 @@ endif ()
 # Thread message
 if (BUILD_MESSAGE)
     include(modules/message/make.cmake)
+endif ()
+
+if (BUILD_MODBUS)
+    include(modules/modbus/make.cmake)
 endif ()
 
 # RTMP

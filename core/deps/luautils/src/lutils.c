@@ -172,7 +172,10 @@ static const luaL_Reg lutils_functions[] = {
   { "os_fork",          luv_os_fork },
   { "os_platform",      luv_os_platform },
   { "os_statfs",        luv_os_statfs },
+  
+#ifndef _WIN32
   { "os_uart_set",      luv_os_uart_set },
+#endif
 
   // misc
   { "md5",              luv_md5 },

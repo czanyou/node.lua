@@ -1,5 +1,8 @@
 #include <errno.h>
 #include <fcntl.h>
+
+#ifndef _WIN32
+
 #include <termios.h>
 #include <unistd.h>
 
@@ -78,3 +81,5 @@ int lnode_uart_set(int fd, int baudRate, int dataBits)
 
     return 0;
 }
+
+#endif
