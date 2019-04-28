@@ -116,6 +116,22 @@ function string.padLeft(text, min, max)
     return text
 end
 
+function string.padLeft(text, min, max, fill)
+    if (type(text) ~= 'string') then
+        text = tostring(text)
+    end
+
+    local len = #text
+    if (max and len > max) then
+        return text:sub(1, max)
+    end
+
+    if (len < min) then
+        return string.rep(fill or ' ', min - len) .. text
+    end
+
+    return text
+end
 
 -------------------------------------------------------------------------------
 
@@ -508,7 +524,6 @@ os.hostname           = uv.os_gethostname or noop -- hostname of the operating s
 os.loadavg            = uv.loadavg              -- Returns an array containing the 1, 5, and 15 minute load averages.
 os.networkInterfaces  = uv.interface_addresses  -- Get a list of network interfaces:
 os.platform           = lutils.os_platform      -- operating system platform. Possible values are 'darwin', 'freebsd', 'linux', 'sunos' or 'win32'. value of process.platform.
-os.release            = nil                     -- operating system release.
 os.tmpdir             = uv.os_tmpdir()          -- operating system's default directory for temporary files.
 os.totalmem           = uv.get_total_memory     -- total amount of system memory in bytes.
 os.type               = lutils.os_platform      -- operating system name.
@@ -522,8 +537,13 @@ os.ifid               = uv.if_indextoiid
 os.setenv             = uv.os_setenv
 os.unsetenv           = uv.os_unsetenv
 
-os.all_handles        = uv.print_all_handles
-os.active_handles     = uv.print_active_handles
+os.getpriority        = uv.os_getpriority
+os.setpriority        = uv.os_setpriority
+os.uname              = uv.os_uname -- machine, release, sysname, version
+os.gettimeofday       = uv.gettimeofday
+
+os.printAllHandles        = uv.print_all_handles
+os.printActiveHandles     = uv.print_active_handles
 
 if (not uv.os_setenv) then
     local env = require('env')

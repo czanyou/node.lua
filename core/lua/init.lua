@@ -292,6 +292,119 @@ if (not _G.console) then
 end
 
 -------------------------------------------------------------------------------
+-- Date
+
+local Date = {}
+
+Date.now = function() 
+    local sec, usec = uv.gettimeofday()
+    return sec * 1000 + math.floor(usec / 1000)
+end
+
+function Date:new(time)
+    local date = {}
+    
+    function date:setTime(time)
+        self.time = time or Date.now()
+        self.value = os.date("*t", math.floor(self.time / 1000))
+    end
+
+    function date:setDate(day)
+        self.value.day = day
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setMonth(month)
+        self.value.month = month
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setYear(year)
+        self.value.year = year
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setHours(hour)
+        self.value.hour = hour
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setMinutes(min)
+        self.value.min = min
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setSeconds(sec)
+        self.value.sec = sec
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setMilliseconds(milliSeconds)
+        self.time = math.floor(self.time / 1000) * 1000 + milliSeconds
+    end
+
+    function date:getTime()
+        return self.time
+    end
+
+    function date:toString()
+        return os.date("%c", math.floor(self.time / 1000))
+    end
+
+    function date:toDateString()
+        return os.date("%F", math.floor(self.time / 1000))
+    end
+
+    function date:toTimeString()
+        return os.date("%T", math.floor(self.time / 1000))
+    end
+
+    function date:toISOString()
+        local msec = self:getMilliseconds() .. 'Z'
+        return os.date("!%FT%T", math.floor(self.time / 1000)) .. "." .. msec:padLeft(4, 4, '0');
+    end
+
+    function date:getDay()
+        return self.value.wday - 1
+    end
+
+    function date:getDate()
+        return self.value.day
+    end
+
+    function date:getMonth()
+        return self.value.month
+    end
+
+    function date:getYear()
+        return self.value.year
+    end
+
+    function date:getHours()
+        return self.value.hour
+    end
+
+    function date:getMinutes()
+        return self.value.min
+    end
+
+    function date:getSeconds()
+        return self.value.sec
+    end
+
+    function date:getMilliseconds()
+        return self.time % 1000
+    end
+    
+    date:setTime(time)
+    return date
+end
+
+if (not _G.Date) then
+    _G.Date = Date
+end
+
+-------------------------------------------------------------------------------
 -- searcher
 
 --[[

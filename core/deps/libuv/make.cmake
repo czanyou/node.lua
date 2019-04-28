@@ -43,25 +43,25 @@ if(WIN32)
     ${LIBUVDIR}/src/win/detect-wakeup.c
     ${LIBUVDIR}/src/win/dl.c
     ${LIBUVDIR}/src/win/error.c
-    ${LIBUVDIR}/src/win/fs.c
     ${LIBUVDIR}/src/win/fs-event.c
+    ${LIBUVDIR}/src/win/fs.c
     ${LIBUVDIR}/src/win/getaddrinfo.c
     ${LIBUVDIR}/src/win/getnameinfo.c
-    ${LIBUVDIR}/src/win/handle.c
     ${LIBUVDIR}/src/win/handle-inl.h
+    ${LIBUVDIR}/src/win/handle.c
     ${LIBUVDIR}/src/win/internal.h
     ${LIBUVDIR}/src/win/loop-watcher.c
     ${LIBUVDIR}/src/win/pipe.c
-    ${LIBUVDIR}/src/win/thread.c
     ${LIBUVDIR}/src/win/poll.c
-    ${LIBUVDIR}/src/win/process.c
     ${LIBUVDIR}/src/win/process-stdio.c
-    ${LIBUVDIR}/src/win/req.c
+    ${LIBUVDIR}/src/win/process.c
     ${LIBUVDIR}/src/win/req-inl.h
     ${LIBUVDIR}/src/win/signal.c
-    ${LIBUVDIR}/src/win/stream.c
+    ${LIBUVDIR}/src/win/snprintf.c
     ${LIBUVDIR}/src/win/stream-inl.h
+    ${LIBUVDIR}/src/win/stream.c
     ${LIBUVDIR}/src/win/tcp.c
+    ${LIBUVDIR}/src/win/thread.c
     ${LIBUVDIR}/src/win/tty.c
     ${LIBUVDIR}/src/win/udp.c
     ${LIBUVDIR}/src/win/util.c
