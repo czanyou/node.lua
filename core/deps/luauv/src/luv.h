@@ -50,22 +50,10 @@
 #define MAX_TITLE_LENGTH (8192)
 #endif
 
-#if LUA_VERSION_NUM < 502
-# define lua_rawlen lua_objlen
-/* lua_...uservalue: Something very different, but it should get the job done */
-# define lua_getuservalue lua_getfenv
-# define lua_setuservalue lua_setfenv
-#ifndef luaL_newlib
-# define luaL_newlib(L,l) (lua_newtable(L), luaL_register(L,NULL,l))
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
 #endif
-# define luaL_setfuncs(L,l,n) (assert(n==0), luaL_register(L,NULL,l))
-# define lua_resume(L,F,n) lua_resume(L,n)
-# define lua_pushglobaltable(L) lua_pushvalue(L, LUA_GLOBALSINDEX)
-# define lua_absindex(L, i)                              \
-    ((i) > 0 || (i) <= LUA_REGISTRYINDEX ?              \
-     (i) : lua_gettop(L) + (i) + 1)
-#endif
-
 /* There is a 1-1 relation between a lua_State and a uv_loop_t
    These helpers will give you one if you have the other
    These are exposed for extensions built with luv
@@ -111,4 +99,7 @@ typedef lua_State* (*luv_acquire_vm)();
 typedef void (*luv_release_vm)(lua_State* L);
 LUALIB_API void luv_set_thread_cb(luv_acquire_vm acquire, luv_release_vm release);
 
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 #endif

@@ -15,6 +15,9 @@
  *
  */
 
+#if (LUA_VERSION_NUM != 503)
+// #include "c-api/compat-5.3.h"
+#endif
 #include "luv.h"
 #include "util.c"
 #include "lhandle.c"
@@ -161,6 +164,8 @@ static const luaL_Reg luv_functions[] = {
 
   // udp.c
   {"new_udp", luv_new_udp},
+  {"udp_get_send_queue_size", luv_udp_get_send_queue_size},
+  {"udp_get_send_queue_count", luv_udp_get_send_queue_count},
   {"udp_open", luv_udp_open},
   {"udp_bind", luv_udp_bind},
   {"udp_getsockname", luv_udp_getsockname},
@@ -174,6 +179,10 @@ static const luaL_Reg luv_functions[] = {
   {"udp_try_send", luv_udp_try_send},
   {"udp_recv_start", luv_udp_recv_start},
   {"udp_recv_stop", luv_udp_recv_stop},
+#if LUV_UV_VERSION_GEQ(1, 27, 0)
+  {"udp_connect", luv_udp_connect},
+  {"udp_getpeername", luv_udp_getpeername},
+#endif
 
   // fs_event.c
   {"new_fs_event", luv_new_fs_event},
@@ -219,6 +228,11 @@ static const luaL_Reg luv_functions[] = {
   {"fs_fchown", luv_fs_fchown},
 #if LUV_UV_VERSION_GEQ(1, 14, 0)
   {"fs_copyfile", luv_fs_copyfile },
+#endif
+#if LUV_UV_VERSION_GEQ(1, 28, 0)
+  {"fs_opendir", luv_fs_opendir},
+  {"fs_readdir", luv_fs_readdir},
+  {"fs_closedir", luv_fs_closedir},
 #endif
 
   // dns.c
@@ -266,10 +280,20 @@ static const luaL_Reg luv_functions[] = {
 #if LUV_UV_VERSION_GEQ(1, 16, 0)
   {"if_indextoname", luv_if_indextoname},
   {"if_indextoiid", luv_if_indextoiid},
-  {"os_getppid", luv_os_getppid }, 
+  {"os_getppid", luv_os_getppid },
 #endif
 #if LUV_UV_VERSION_GEQ(1, 18, 0)
-  {"os_getpid", luv_os_getpid },
+  {"os_getpid", luv_os_getpid},
+#endif
+#if LUV_UV_VERSION_GEQ(1, 23, 0)
+  {"os_getpriority", luv_os_getpriority},
+  {"os_setpriority", luv_os_setpriority},
+#endif
+#if LUV_UV_VERSION_GEQ(1, 25, 0)
+  {"os_uname", luv_os_uname},
+#endif
+#if LUV_UV_VERSION_GEQ(1, 28, 0)
+  {"gettimeofday", luv_gettimeofday},
 #endif
 
   // thread.c
@@ -409,9 +433,11 @@ static const luaL_Reg luv_tty_methods[] = {
 };
 
 static const luaL_Reg luv_udp_methods[] = {
+  {"get_send_queue_size", luv_udp_get_send_queue_size},
+  {"get_send_queue_count", luv_udp_get_send_queue_count},
   {"open", luv_udp_open},
   {"bind", luv_udp_bind},
-  {"bindgetsockname", luv_udp_getsockname},
+  {"getsockname", luv_udp_getsockname},
   {"set_membership", luv_udp_set_membership},
   {"set_multicast_loop", luv_udp_set_multicast_loop},
   {"set_multicast_ttl", luv_udp_set_multicast_ttl},
@@ -422,6 +448,10 @@ static const luaL_Reg luv_udp_methods[] = {
   {"try_send", luv_udp_try_send},
   {"recv_start", luv_udp_recv_start},
   {"recv_stop", luv_udp_recv_stop},
+#if LUV_UV_VERSION_GEQ(1, 27, 0)
+  {"connect", luv_udp_connect},
+  {"getpeername", luv_udp_getpeername},
+#endif
   {NULL, NULL}
 };
 

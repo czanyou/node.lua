@@ -357,12 +357,6 @@ function exports.version()
 		printVersion("lmedia", info.version())
 	end
 
-	ret, info = pcall(require, 'lhttp_parser')
-	if (info and info.VERSION_MAJOR) then
-		local version = math.floor(info.VERSION_MAJOR) .. "." .. info.VERSION_MINOR
-		printVersion("http_parser", version)
-	end
-
 	local filename = path.join(exports.rootPath, 'package.json')
 	local packageInfo = json.parse(fs.readFileSync(filename))
 	if (not packageInfo) then

@@ -15,7 +15,7 @@ set(SOURCES
 
 add_executable(lnode ${SOURCES})
 
-target_link_libraries(lualib luazip luajson luautils luauv uv http_parser)
+target_link_libraries(lualib luazip luajson luautils luauv uv)
 target_link_libraries(lnode lualib)
 
 if (APPLE)

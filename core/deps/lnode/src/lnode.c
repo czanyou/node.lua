@@ -34,7 +34,6 @@
 
 #define WITH_CJSON        1
 #define WITH_ENV          1
-#define WITH_HTTP_PARSER  1
 #define WITH_LMESSAGE     1
 #define WITH_LUTILS       1
 #define WITH_MINIZ        1
@@ -452,11 +451,6 @@ LUALIB_API int lnode_openlibs(lua_State* L) {
 #ifdef WITH_ENV
   lua_pushcfunction(L, luaopen_env);
   lua_setfield(L, -2, "env");
-#endif
-
-#ifdef WITH_HTTP_PARSER
-  lua_pushcfunction(L, luaopen_lhttp_parser);
-  lua_setfield(L, -2, "lhttp_parser");
 #endif
 
   // Store lnode module definition at preload.lnode

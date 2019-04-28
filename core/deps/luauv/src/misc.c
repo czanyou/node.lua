@@ -400,7 +400,11 @@ static int luv_os_unsetenv(lua_State* L) {
 }
 
 static int luv_os_gethostname(lua_State* L) {
+#if LUV_UV_VERSION_GEQ(1, 26, 0)
+  char hostname[UV_MAXHOSTNAMESIZE];
+#else
   char hostname[PATH_MAX];
+#endif
   size_t size = sizeof(hostname);
   int ret = uv_os_gethostname(hostname, &size);
   if (ret == 0) {
@@ -457,3 +461,79 @@ static int luv_os_getpid(lua_State* L) {
   return 1;
 }
 #endif
+
+#if LUV_UV_VERSION_GEQ(1, 23, 0)
+static int luv_os_getpriority(lua_State* L) {
+  int priority;
+  uv_pid_t pid = luaL_checkinteger(L, 1);
+  int ret = uv_os_getpriority(pid, &priority);
+  if (ret == 0) {
+    lua_pushnumber(L, priority);
+    ret = 1;
+  }
+  else {
+    ret = luv_error(L, ret);
+  }
+  return ret;
+}
+#endif
+
+#if LUV_UV_VERSION_GEQ(1, 23, 0)
+static int luv_os_setpriority(lua_State* L) {
+  uv_pid_t pid = luaL_checkinteger(L, 1);
+  int priority= luaL_checkinteger(L, 2);
+  int ret = uv_os_setpriority(pid, priority);
+  if (ret == 0) {
+    lua_pushboolean(L, 1);
+    ret = 1;
+  }
+  else
+    ret = luv_error(L, ret);
+  return ret;
+}
+#endif
+
+#if LUV_UV_VERSION_GEQ(1, 25, 0)
+static int luv_os_uname(lua_State* L) {
+  uv_utsname_t uname;
+
+  int ret = uv_os_uname(&uname);
+  if (ret == 0) {
+    lua_newtable(L);
+    lua_pushstring(L, uname.sysname);
+    lua_setfield(L, -2, "sysname");
+    lua_pushstring(L, uname.release);
+    lua_setfield(L, -2, "release");
+    lua_pushstring(L, uname.version);
+    lua_setfield(L, -2, "version");
+    lua_pushstring(L, uname.machine);
+    lua_setfield(L, -2, "machine");
+    ret = 1;
+  }
+  else
+    ret = luv_error(L, ret);
+  return ret;
+}
+#endif
+
+#if LUV_UV_VERSION_GEQ(1, 28, 0)
+static int luv_gettimeofday(lua_State* L) {
+  uv_timeval64_t tv = { 0 };
+
+  int ret = uv_gettimeofday(&tv);
+  if (ret == 0)
+  {
+#if defined(__LP64__)
+    lua_pushinteger(L, tv.tv_sec);
+#else
+    lua_pushnumber(L, tv.tv_sec);
+#endif
+    lua_pushinteger(L, tv.tv_usec);
+    return 2;
+  }
+  else
+    ret = luv_error(L, ret);
+  return ret;
+}
+#endif
+

@@ -35,6 +35,5 @@ include(core/deps/luajson/make.cmake)
 include(core/deps/luautils/make.cmake)
 include(core/deps/luauv/make.cmake)
 include(core/deps/luazip/make.cmake)
-include(core/deps/http_parser/make.cmake)
 
 include(core/deps/lnode/make.cmake)

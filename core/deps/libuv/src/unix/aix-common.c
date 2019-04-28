@@ -83,12 +83,12 @@ int uv_exepath(char* buffer, size_t* size) {
   struct procsinfo pi;
 
   if (buffer == NULL || size == NULL || *size == 0)
-    return -EINVAL;
+    return UV_EINVAL;
 
   pi.pi_pid = getpid();
   res = getargs(&pi, sizeof(pi), args, sizeof(args));
   if (res < 0)
-    return -EINVAL;
+    return UV_EINVAL;
 
   /*
    * Possibilities for args:
@@ -101,7 +101,7 @@ int uv_exepath(char* buffer, size_t* size) {
   /* Case i) and ii) absolute or relative paths */
   if (strchr(args, '/') != NULL) {
     if (realpath(args, abspath) != abspath)
-      return -errno;
+      return UV__ERR(errno);
 
     abspath_size = strlen(abspath);
 
@@ -121,11 +121,11 @@ int uv_exepath(char* buffer, size_t* size) {
     char *path = getenv("PATH");
 
     if (path == NULL)
-      return -EINVAL;
+      return UV_EINVAL;
 
     clonedpath = uv__strdup(path);
     if (clonedpath == NULL)
-      return -ENOMEM;
+      return UV_ENOMEM;
 
     token = strtok(clonedpath, ":");
     while (token != NULL) {
@@ -151,7 +151,7 @@ int uv_exepath(char* buffer, size_t* size) {
     uv__free(clonedpath);
 
     /* Out of tokens (path entries), and no match found */
-    return -EINVAL;
+    return UV_EINVAL;
   }
 }
 
@@ -166,8 +166,7 @@ void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count) {
 }
 
 
-int uv_interface_addresses(uv_interface_address_t** addresses,
-  int* count) {
+int uv_interface_addresses(uv_interface_address_t** addresses, int* count) {
   uv_interface_address_t* address;
   int sockfd, inet6, size = 1;
   struct ifconf ifc;
@@ -175,21 +174,22 @@ int uv_interface_addresses(uv_interface_address_t** addresses,
   struct sockaddr_dl* sa_addr;
 
   *count = 0;
+  *addresses = NULL;
 
   if (0 > (sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP))) {
-    return -errno;
+    return UV__ERR(errno);
   }
 
   if (ioctl(sockfd, SIOCGSIZIFCONF, &size) == -1) {
     uv__close(sockfd);
-    return -errno;
+    return UV__ERR(errno);
   }
 
   ifc.ifc_req = (struct ifreq*)uv__malloc(size);
   ifc.ifc_len = size;
   if (ioctl(sockfd, SIOCGIFCONF, &ifc) == -1) {
     uv__close(sockfd);
-    return -errno;
+    return UV__ERR(errno);
   }
 
 #define ADDR_SIZE(p) MAX((p).sa_len, sizeof(p))
@@ -208,7 +208,7 @@ int uv_interface_addresses(uv_interface_address_t** addresses,
     memcpy(flg.ifr_name, p->ifr_name, sizeof(flg.ifr_name));
     if (ioctl(sockfd, SIOCGIFFLAGS, &flg) == -1) {
       uv__close(sockfd);
-      return -errno;
+      return UV__ERR(errno);
     }
 
     if (!(flg.ifr_flags & IFF_UP && flg.ifr_flags & IFF_RUNNING))
@@ -217,11 +217,16 @@ int uv_interface_addresses(uv_interface_address_t** addresses,
     (*count)++;
   }
 
+  if (*count == 0) {
+    uv__close(sockfd);
+    return 0;
+  }
+
   /* Alloc the return interface structs */
   *addresses = uv__malloc(*count * sizeof(uv_interface_address_t));
   if (!(*addresses)) {
     uv__close(sockfd);
-    return -ENOMEM;
+    return UV_ENOMEM;
   }
   address = *addresses;
 
@@ -240,7 +245,7 @@ int uv_interface_addresses(uv_interface_address_t** addresses,
     memcpy(flg.ifr_name, p->ifr_name, sizeof(flg.ifr_name));
     if (ioctl(sockfd, SIOCGIFFLAGS, &flg) == -1) {
       uv__close(sockfd);
-      return -ENOSYS;
+      return UV_ENOSYS;
     }
 
     if (!(flg.ifr_flags & IFF_UP && flg.ifr_flags & IFF_RUNNING))
@@ -260,7 +265,7 @@ int uv_interface_addresses(uv_interface_address_t** addresses,
 
     if (ioctl(sockfd, SIOCGIFNETMASK, p) == -1) {
       uv__close(sockfd);
-      return -ENOSYS;
+      return UV_ENOSYS;
     }
 
     if (inet6)

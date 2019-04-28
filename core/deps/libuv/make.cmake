@@ -11,17 +11,21 @@ include_directories(
 
 set(SOURCES
   ${LIBUVDIR}/include/uv.h
-  ${LIBUVDIR}/include/tree.h
-  ${LIBUVDIR}/include/uv-errno.h
-  ${LIBUVDIR}/include/uv-threadpool.h
-  ${LIBUVDIR}/include/uv-version.h
+  ${LIBUVDIR}/include/uv/tree.h
+  ${LIBUVDIR}/include/uv/errno.h
+  ${LIBUVDIR}/include/uv/threadpool.h
+  ${LIBUVDIR}/include/uv/version.h
   ${LIBUVDIR}/src/fs-poll.c
   ${LIBUVDIR}/src/heap-inl.h
+  ${LIBUVDIR}/src/idna.c
   ${LIBUVDIR}/src/inet.c
   ${LIBUVDIR}/src/queue.h
+  ${LIBUVDIR}/src/strscpy.c
   ${LIBUVDIR}/src/threadpool.c
+  ${LIBUVDIR}/src/timer.c
   ${LIBUVDIR}/src/uv-common.c
   ${LIBUVDIR}/src/uv-common.h
+  ${LIBUVDIR}/src/uv-data-getter-setters.c
   ${LIBUVDIR}/src/version.c
 )
 
@@ -32,7 +36,7 @@ if(WIN32)
     -D_GNU_SOURCE
   )
   set(SOURCES ${SOURCES}
-    ${LIBUVDIR}/include/uv-win.h
+    ${LIBUVDIR}/include/uv/win.h
     ${LIBUVDIR}/src/win/async.c
     ${LIBUVDIR}/src/win/atomicops-inl.h
     ${LIBUVDIR}/src/win/core.c
@@ -59,7 +63,6 @@ if(WIN32)
     ${LIBUVDIR}/src/win/stream-inl.h
     ${LIBUVDIR}/src/win/tcp.c
     ${LIBUVDIR}/src/win/tty.c
-    ${LIBUVDIR}/src/win/timer.c
     ${LIBUVDIR}/src/win/udp.c
     ${LIBUVDIR}/src/win/util.c
     ${LIBUVDIR}/src/win/winapi.c
@@ -70,12 +73,12 @@ if(WIN32)
 else()
   include_directories(${LIBUVDIR}/src/unix)
   set(SOURCES ${SOURCES}
-    ${LIBUVDIR}/include/uv-unix.h
-    ${LIBUVDIR}/include/uv-linux.h
-    ${LIBUVDIR}/include/uv-sunos.h
-    ${LIBUVDIR}/include/uv-darwin.h
-    ${LIBUVDIR}/include/uv-bsd.h
-    ${LIBUVDIR}/include/uv-aix.h
+    ${LIBUVDIR}/include/uv/unix.h
+    ${LIBUVDIR}/include/uv/linux.h
+    ${LIBUVDIR}/include/uv/sunos.h
+    ${LIBUVDIR}/include/uv/darwin.h
+    ${LIBUVDIR}/include/uv/bsd.h
+    ${LIBUVDIR}/include/uv/aix.h
     ${LIBUVDIR}/src/unix/async.c
     ${LIBUVDIR}/src/unix/atomic-ops.h
     ${LIBUVDIR}/src/unix/core.c
@@ -94,7 +97,6 @@ else()
     ${LIBUVDIR}/src/unix/stream.c
     ${LIBUVDIR}/src/unix/tcp.c
     ${LIBUVDIR}/src/unix/thread.c
-    ${LIBUVDIR}/src/unix/timer.c
     ${LIBUVDIR}/src/unix/tty.c
     ${LIBUVDIR}/src/unix/udp.c
   )

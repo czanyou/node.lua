@@ -209,11 +209,7 @@ static const char* luv_thread_dumped(lua_State* L, int idx, size_t* l) {
     luaL_checktype(L, idx, LUA_TFUNCTION);
     lua_pushvalue(L, idx);
     luaL_buffinit(L, &b);
-#if LUA_VERSION_NUM>=503
     test_lua_dump = (lua_dump(L, thread_dump, &b, 1) == 0);
-#else
-    test_lua_dump = (lua_dump(L, thread_dump, &b) == 0);
-#endif
     if (test_lua_dump) {
       luaL_pushresult(&b);
       buff = lua_tolstring(L, -1, l);
@@ -301,20 +297,49 @@ static int luv_new_thread(lua_State* L) {
   size_t len;
   const char* buff;
   luv_thread_t* thread;
+  int cbidx = 1;
+#if LUV_UV_VERSION_GEQ(1, 26, 0)
+  uv_thread_options_t options;
+  options.flags = UV_THREAD_NO_FLAGS;
+#endif
   thread = (luv_thread_t*)lua_newuserdata(L, sizeof(*thread));
   memset(thread, 0, sizeof(*thread));
   luaL_getmetatable(L, "uv_thread");
   lua_setmetatable(L, -2);
 
-  buff = luv_thread_dumped(L, 1, &len);
+#if LUV_UV_VERSION_GEQ(1, 26, 0)
+  if (lua_type(L, 1) == LUA_TTABLE)
+  {
+    cbidx++;
+
+    lua_getfield(L, 1, "stack_size");
+    if (!lua_isnil(L, -1))
+    {
+      options.flags |= UV_THREAD_HAS_STACK_SIZE;
+      if (lua_isnumber(L, -1)) {
+        options.stack_size = lua_tointeger(L, -1);
+      }
+      else {
+        return luaL_argerror(L, 1, "stack_size option must be a number if set");
+      }
+    }
+    lua_pop(L, 1);
+  }
+#endif
+
+  buff = luv_thread_dumped(L, cbidx, &len);
 
   //clear in luv_thread_gc or in child threads
-  thread->argc = luv_thread_arg_set(L, &thread->arg, 2, lua_gettop(L) - 1, LUVF_THREAD_UHANDLE);
+  thread->argc = luv_thread_arg_set(L, &thread->arg, cbidx+1, lua_gettop(L) - 1, LUVF_THREAD_UHANDLE);
   thread->len = len;
   thread->code = (char*)malloc(thread->len);
   memcpy(thread->code, buff, len);
 
+#if LUV_UV_VERSION_GEQ(1, 26, 0)
+  ret = uv_thread_create_ex(&thread->handle, &options, luv_thread_cb, thread);
+#else
   ret = uv_thread_create(&thread->handle, luv_thread_cb, thread);
+#endif
   if (ret < 0) return luv_error(L, ret);
 
   return 1;
