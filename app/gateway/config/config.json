@@ -1,6 +1,6 @@
 {
     "did": "94de80b0cea7",
-    "mqtt": "mqtt://iot.beaconice.cn/",
+    "mqtt": "mqtt://www.wotcloud.cn/",
     "secret": "5c25b29e8ca1712897c805c0",
     "cameras": {
         "112233445599": {
@@ -8,6 +8,28 @@
             "url": "rtsp://192.168.1.64/live.mp4",
             "username": "admin",
             "password": "admin123456"
+        }
+    },
+    "gateway": {
+        "peripherals": {
+            "camera": [{
+                "did": "112233445599",
+                "secret": "5c25b29e8ca1712897c805c0",
+                "url": "rtsp://192.168.1.64/live.mp4",
+                "username": "admin",
+                "password": "admin123456"
+            }],
+            "modbus": [{
+                "did": "ff2233445599"
+            }]
+        }
+    },
+    "peripherals": {
+        "112233445599": {
+
+        },
+        "ff2233445599": {
+            
         }
     }
 }

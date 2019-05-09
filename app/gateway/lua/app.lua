@@ -14,6 +14,8 @@ local gateway = require('./gateway')
 
 local exports = {}
 
+app.name = 'gateway'
+
 -- ////////////////////////////////////////////////////////////////////////////
 -- Web Server
 
@@ -124,6 +126,9 @@ end
 
 function exports.config()
     console.log('config', loadConfig())
+
+    console.log('gateway', app.get('gateway'))
+
 end
 
 function exports.gateway()

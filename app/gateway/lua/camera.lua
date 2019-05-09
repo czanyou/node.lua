@@ -10,8 +10,180 @@ local Promise = require('wot/promise')
 
 local exports = {}
 
+exports.services = {}
+
 local function getWotClient()
     return wot.client
+end
+
+local function getDeviceInformation()
+    local device = {}
+    device.cpuUsage = getCpuUsage()
+    device.currentTime = os.time()
+    device.deviceType = 'gateway'
+    device.errorCode = 0
+    device.firmwareVersion = '1.0'
+    device.hardwareVersion = '1.0'
+    device.manufacturer = 'TDK'
+    device.memoryFree = math.floor(os.freemem() / 1024)
+    device.memoryTotal = math.floor(os.totalmem() / 1024)
+    device.modelNumber = 'DT02'
+    device.powerSources = 0
+    device.powerVoltage = 12000
+    device.serialNumber = getMacAddress()
+
+    return device
+end
+
+local function onRebootDevice()
+
+end
+
+local function getConfigInformation()
+    local config = {}
+
+    return config
+end
+
+local function setConfigInformation(config)
+    local config = {}
+
+    return config
+end
+
+local function processDeviceActions(input)
+    if (input.reboot) then
+        onRebootDevice(input.reboot);
+        return { code = 0 }
+
+    elseif (input.reset) then
+        return { code = 0 }
+
+    elseif (input.read) then
+        return getDeviceInformation()
+
+    elseif (input.write) then   
+        return { code = 0 }
+
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+local function processConfigActions(input, webThing)
+    if (input.read) then
+        return getConfigInformation()
+
+    elseif (input.write) then
+        setConfigInformation(input.write);
+        return { code = 0 }
+
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+local function processPtzActions(input, webThing)
+    if (input.start) then
+        local direction = tonumber(input.start.direction)
+        local speed = input.start.speed or 1
+
+        if direction and (direction >= 0) and (direction <= 9) then
+            return { code = 0 }
+        else 
+            return { code = 400, error = 'Invalid direction' }
+        end
+
+    elseif (input.stop) then
+        return { code = 0 }
+        
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+local function processPresetActions(input, webThing)
+    local did = webThing.id;
+
+    local getIndex = function(input, name)
+        local index = math.floor(tonumber(input[name].index))
+        if index and (index > 0 and index <= 128) then
+            return index
+        end
+    end
+
+    if (input.set) then
+        local index = getIndex(input, 'set')
+        if index then
+            return { code = 0 }
+        else
+            return { code = 400, error = "Invalid preset index" }
+        end
+
+    elseif (input['goto']) then
+        local index = getIndex(input, 'goto')
+        if index then
+            return { code = 0 }
+        else
+            return { code = 400, error = "Invalid preset index" }
+        end
+
+    elseif (input.remove) then
+        local index = getIndex(input, 'remove')
+        if index then
+            return { code = 0 }
+        else
+            return { code = 400, error = "Invalid preset index" }
+        end
+
+    elseif (input.list) then
+        return { code = 0, presets = { { index = 1 }, { index = 2 } } }
+
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+local function processPlayActions(input, webThing)
+    local url = input and input.url
+    local did = webThing.id;
+
+    local promise = Promise.new()
+    if (not url) then
+        setTimeout(0, function()
+            promise:resolve({ code = 400, error = "Invalid RTMP URL" })
+        end)
+        return promise
+    end
+
+    if (rtmp) then
+        rtmp.publishRtmpUrl(did, url);
+    end
+
+    -- promise
+    
+    setTimeout(0, function()
+        promise:resolve({ code = 0 })
+    end)
+
+    return promise
+end
+
+local function processStopActions(input, webThing)
+    console.log('stop', input);
+
+    local did = webThing.id;
+    if (rtmp) then
+        rtmp.stopRtmpClient(did, 'stoped');
+    end
+
+    -- promise
+    local promise = Promise.new()
+    setTimeout(0, function()
+        promise:resolve({ code = 0 })
+    end)
+
+    return promise
 end
 
 local function createCameraThing(options)
@@ -40,255 +212,59 @@ local function createCameraThing(options)
     -- play action
     local play = { input = { type = 'object' } }
     webThing:addAction('play', play, function(input)
-        -- console.log('play', 'input', input)
-
-        local url = input and input.url
-        local did = webThing.id;
-
-        local promise = Promise.new()
-        if (not url) then
-            setTimeout(0, function()
-                promise:resolve({ code = 400, error = "Invalid RTMP URL" })
-            end)
-            return promise
-        end
-
-        if (rtmp) then
-            rtmp.publishRtmpUrl(did, url);
-        end
-
-        -- promise
-        
-        setTimeout(0, function()
-            promise:resolve({ code = 0 })
-        end)
-
-        return promise
+        return processPlayActions(input, webThing)
     end)
 
     -- stop action
     local stop = { input = { type = 'object' } }
     webThing:addAction('stop', stop, function(input)
-        console.log('stop', input);
-
-        local did = webThing.id;
-        if (rtmp) then
-            rtmp.stopRtmpClient(did, 'stoped');
-        end
-
-        -- promise
-        local promise = Promise.new()
-        setTimeout(0, function()
-            promise:resolve({ code = 0 })
-        end)
-
-        return promise
+        return processStopActions(input, webThing)
     end)
 
     -- ptz action
     local ptz = { input = { type = 'object'} }
     webThing:addAction('ptz', ptz, function(input)
-        local did = webThing.id;
-        console.log('ptz', did, input);
-
-        if (input and input.start) then
-            local direction = tonumber(input.start.direction)
-            local speed = input.start.speed or 1
-
-            if direction and (direction >= 0) and (direction <= 9) then
-                return { code = 0 }
-            else 
-                return { code = 400, error = 'Invalid direction' }
-            end
-
-        elseif (input and input.stop) then
-            return { code = 0 }
+        if (input) then
+            return processPtzActions(input, webThing)
             
         else
             return { code = 400, error = 'Unsupported methods' }
         end
-
-        return { code = 0 }
     end)
 
     -- preset action
     local preset = { input = { type = 'object'} }
     webThing:addAction('preset', preset, function(input)
-        console.log('preset', input);
-        local did = webThing.id;
-
-        local getIndex = function(input, name)
-            local index = math.floor(tonumber(input[name].index))
-            if index and (index > 0 and index <= 128) then
-                return index
-            end
-        end
-
-        if (input and input.set) then
-            local index = getIndex(input, 'set')
-            if index then
-                return { code = 0 }
-            else
-                return { code = 400, error = "Invalid preset index" }
-            end
-
-        elseif (input and input['goto']) then
-            local index = getIndex(input, 'goto')
-            if index then
-                return { code = 0 }
-            else
-                return { code = 400, error = "Invalid preset index" }
-            end
-
-        elseif (input and input.remove) then
-            local index = getIndex(input, 'remove')
-            if index then
-                return { code = 0 }
-            else
-                return { code = 400, error = "Invalid preset index" }
-            end
-
-        elseif (input and input.list) then
-            return { code = 0, presets = { { index = 1 }, { index = 2 } } }
-
+        if (input) then
+            return processPresetActions(input, webThing)
+            
         else
             return { code = 400, error = 'Unsupported methods' }
         end
-
-        return { code = 0 }
+  
     end)
 
-    -- device:reboot action
+    -- device actions
     local action = { input = { type = 'object'} }
     webThing:addAction('device', action, function(input)
-        console.log('device', input);
-        local did = webThing.id;
-
-        if (input and input.reboot) then
-            return { code = 0 }
-
-        elseif (input and input.reset) then
-            return { code = 0 }
-
+        if (input) then
+            return processDeviceActions(input, webThing)
+            
         else
             return { code = 400, error = 'Unsupported methods' }
         end
-
-        return { code = 0 }
     end)
 
-    -- firmware:update action
+    -- config actions
     local action = { input = { type = 'object'} }
-    webThing:addAction('firmware', action, function(input)
-        console.log('firmware', input);
-        local did = webThing.id;
-
-        if (input and input.update) then
-            return { code = 0 }
+    webThing:addAction('config', action, function(input)
+        if (input) then
+            return processConfigActions(input, webThing)
+            
         else
             return { code = 400, error = 'Unsupported methods' }
         end
     end)
-
-    -- properties
-    webThing:addProperty('device', { type = 'service' })
-    webThing:addProperty('firmware', { type = 'service' })
-    webThing:addProperty('location', { type = 'service' })
-    webThing:addProperty('statistics', { type = 'service' })
-    webThing:addProperty('connectivity', { type = 'service' })
-
-    webThing:setPropertyReadHandler('device', function(input)
-        console.log('read device', input);
-        local did = webThing.id;
-        return { 
-            manufacturer = "TDK",
-            modelNumber = "DT01",
-            serialNumber = did,
-            hardwareVersion = "1.0",
-            memoryTotal = 1024,
-            memoryFree = 1024,
-            cpuUsage = 0,
-            firmwareVersion = "1.0" 
-        }
-    end)
-
-    webThing:setPropertyReadHandler('firmware', function(input)
-        local did = webThing.id;
-        local firmware = webThing.properties['firmware'];
-        if (firmware and firmware.value) then
-            return firmware.value
-        end
-
-        return {
-            uri = "",
-            state = "",
-            result = 0,
-            name = "",
-            version = "1.0" 
-        }
-    end)
-
-    webThing:setPropertyWriteHandler('firmware', function(input)
-        console.log('write firmware', input);
-        local did = webThing.id;
-        local firmware = webThing.properties['firmware'];
-        if (firmware) then
-            if (not firmware.value) then
-                firmware.value = {}
-            end
-
-            if (input.uri) then
-                firmware.value.uri = uri
-            end
-
-            if (input.name) then
-                firmware.value.name = name
-            end
-
-            if (input.version) then
-                firmware.value.version = version
-            end
-        end
-
-        return 0
-    end)   
-
-    webThing:setPropertyReadHandler('connectivity', function(input)
-        local did = webThing.id;
-        return { 
-            signalStrength = -92,
-            linkQuality = 2,
-            ip = "192.168.0.100",
-            router = "192.168.0.1",
-            utilization = 0,
-            apn = "internet",
-        }
-    end)
-
-    webThing:setPropertyReadHandler('location', function(input)
-        local did = webThing.id;
-        return { 
-            latitude = 0,
-            longitude = 0,
-            atitude = 0,
-            radius = 0,
-            timestamp = 0,
-            speed = 0
-        }
-    end)
-
-    webThing:setPropertyReadHandler('statistics', function(input)
-        local did = webThing.id;
-        return { 
-            txPackets = 0,
-            rxPackets = 0,
-            txBytes = 0,
-            rxBytes = 0,
-            maxMessageSize = 0,
-            avgMessageSize = 0,
-            period = 0
-        }
-    end)    
 
     -- play event
     local event = { type = 'object' }

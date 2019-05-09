@@ -7,6 +7,8 @@ local wot   = require('wot')
 
 local exports = {}
 
+exports.services = {}
+
 local cpuInfo = {}
 
 local function getWotClient()
@@ -91,33 +93,147 @@ local function getMacAddress()
     return util.bin2hex(item.mac)
 end
 
-local function sendGatewayDeviceInformation()
+local function getDeviceInformation()
     local device = {}
-    device.manufacturer = 'TDK'
-    device.modelNumber = 'DT02'
-    device.serialNumber = getMacAddress()
+    device.cpuUsage = getCpuUsage()
+    device.currentTime = os.time()
+    device.deviceType = 'gateway'
+    device.errorCode = 0
     device.firmwareVersion = '1.0'
     device.hardwareVersion = '1.0'
+    device.manufacturer = 'TDK'
+    device.memoryFree = math.floor(os.freemem() / 1024)
+    device.memoryTotal = math.floor(os.totalmem() / 1024)
+    device.modelNumber = 'DT02'
+    device.powerSources = 0
+    device.powerVoltage = 12000
+    device.serialNumber = getMacAddress()
 
-    local wotClient = getWotClient();
-    if (wotClient) then
-        wotClient:sendProperty({ device = device }, exports.gateway)
+    return device
+end
+
+local function onRebootDevice()
+
+end
+
+local function onUpdateFirmware(params)
+    params = params or {}
+    -- uri
+    -- version
+    -- md5sum
+    -- size
+
+    if (not exports.services.firmware) then
+        exports.services.firmware = {}
+    end
+
+    local firmware = exports.services.firmware
+    if (params.uri) then
+        firmware.uri = params.uri
+    end
+
+    if (params.version) then
+        firmware.version = params.version
+    end
+
+    if (params.md5sum) then
+        firmware.md5sum = params.md5sum
+    end
+
+    if (params.size) then
+        firmware.size = params.size
     end
 end
 
-local function sendGatewayStatus()
-    local result = {}
-    result.memoryFree = math.floor(os.freemem() / 1024)
-    result.memoryTotal = math.floor(os.totalmem() / 1024)
-    result.cpuUsage = getCpuUsage()
+local function getFirmwareInformation()
+    local firmware = exports.services.firmware or {}
+    firmware.state = 0
+    firmware.result = 0
+    firmware.protocol = 2
+    firmware.delivery = 0
+    return firmware
+end
 
-    local wotClient = getWotClient();
-    if (wotClient) then
-        wotClient:sendStream(result, exports.gateway)
+local function getConfigInformation()
+    local config = exports.services.config or {}
+
+    return config
+end
+
+local function setConfigInformation(config)
+    if (not exports.services.config) then
+        exports.services.config = {}
+    end
+
+    local localConfig = exports.services.config
+    if (config) then
+        local peripherals = config.peripherals
+        local log = config.log
+        local version = config.v
+
+        if (peripherals) then
+            localConfig.peripherals = peripherals
+        end
+
+        if (version) then
+            localConfig.v = version
+        end
+
+        if (log) then
+            localConfig.log = log
+        end
     end
 end
 
-local function createMediaGatewayThing(options)
+local function processDeviceActions(input)
+    if (input.reboot) then
+        onRebootDevice(input.reboot);
+        return { code = 0 }
+
+    elseif (input.reset) then
+        return { code = 0 }
+
+    elseif (input.read) then
+        return getDeviceInformation()
+
+    elseif (input.write) then   
+        return { code = 0 }
+
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+local function processFirmwareActions(input, webThing)
+    if (input.update) then
+        onUpdateFirmware(input.update);
+        return { code = 0 }
+
+    elseif (input.read) then
+        return getFirmwareInformation()
+
+    elseif (input.write) then   
+        return { code = 0 }
+
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+local function processConfigActions(input, webThing)
+    if (input.read) then
+        return getConfigInformation()
+
+    elseif (input.write) then
+        setConfigInformation(input.write);
+        return { code = 0 }
+
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+local function createMediaGatewayThing(options, webThing)
     if (not options) then
         return nil, 'need options'
 
@@ -134,69 +250,37 @@ local function createMediaGatewayThing(options)
     local webThing = wot.produce(gateway)
     webThing.secret = options.secret
 
-        -- device:reboot action
+    -- device actions
     local action = { input = { type = 'object'} }
     webThing:addAction('device', action, function(input)
-        console.log('device', input);
-        local did = webThing.id;
-
-        if (input and input.reboot) then
-            return { code = 0 }
-
-        elseif (input and input.reset) then
-            return { code = 0 }
-
+        if (input) then
+            return processDeviceActions(input, webThing)
+            
         else
             return { code = 400, error = 'Unsupported methods' }
         end
-
-        return { code = 0 }
     end)
 
-    -- firmware:update action
+    -- firmware actions
     local action = { input = { type = 'object'} }
     webThing:addAction('firmware', action, function(input)
-        console.log('firmware', input);
-        local did = webThing.id;
-
-        if (input and input.update) then
-            return { code = 0 }
+        if (input) then
+            return processFirmwareActions(input, webThing)
+            
         else
             return { code = 400, error = 'Unsupported methods' }
         end
     end)
 
-    -- properties
-    webThing:addProperty('device', { type = 'service' })
-    webThing:addProperty('firmware', { type = 'service' })
-    webThing:addProperty('location', { type = 'service' })
-
-    webThing:setPropertyReadHandler('device', function(input)
-        console.log('read device', input);
-        local did = webThing.id;
-
-        return { firmwareVersion = "1.0" }
-    end)
-
-    webThing:setPropertyWriteHandler('device', function(input)
-        console.log('write device', input);
-        local did = webThing.id;
-
-        return 0
-    end)   
-
-    webThing:setPropertyReadHandler('firmware', function(input)
-        console.log('read device', input);
-        local did = webThing.id;
-
-        return { firmwareVersion = "1.0" }
-    end)
-
-    webThing:setPropertyReadHandler('location', function(input)
-        console.log('read device', input);
-        local did = webThing.id;
-
-        return { firmwareVersion = "1.0" }
+    -- config actions
+    local action = { input = { type = 'object'} }
+    webThing:addAction('config', action, function(input)
+        if (input) then
+            return processConfigActions(input, webThing)
+            
+        else
+            return { code = 400, error = 'Unsupported methods' }
+        end
     end)
 
     -- register

@@ -170,7 +170,10 @@ local function loadProfile()
         return exports._profile
     end
 
-	exports._profile = conf('user')
+    local configPath = path.join(getAppPath(), exports.appName(), 'config/config.json')
+    -- console.log(configPath)
+
+	exports._profile = conf.Profile:new(configPath)
     return exports._profile
 end
 
