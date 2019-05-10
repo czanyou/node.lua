@@ -1,14 +1,13 @@
 {
-	"description": "Things Gateway",
-	"name": "gateway",
+	"description": "Media Things Gateway",
+	"name": "media-gateway",
 	"device": { 
-		"model": "GW1003", 
-		"type": "gateway", 
-		"manufacturer": "CMPP",
-		"id": "115200"
+		"model": "DT02", 
+		"type": "mediaGateway", 
+		"manufacturer": "TDK"
 	},
 	"tags": ["linux", "core"],
-    "applications": ["lpm", "lhost", "lhttpd", "gateway"],
+    "applications": ["lpm", "lhost", "pusher"],
     "libs": ["lsdl.so", "lsqlite.so", "lbluetooth.so"],
-	"version": "0.0.1"
+	"version": "1.0.1"
 }

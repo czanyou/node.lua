@@ -46,9 +46,9 @@ Related dependent library source code download URLs:
 - https://github.com/mpx/lua-cjson
 - https://github.com/luvit/luv
 
-### lua: Lua the lua core library
+### lua: The lua core library
 
-The core library of Node.lua mainly implements the core library similar to node.js
+The core library of Node.lua implements similar to node.js
 
 ### tests: Unit test cases
 

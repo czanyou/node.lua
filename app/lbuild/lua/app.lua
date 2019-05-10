@@ -172,6 +172,8 @@ function sdk.build_common_sdk(target, packageInfo)
 
 			if (fs.existsSync(appPath)) then
 				xcopy(appPath, join(nodePath, "app", name))
+			else
+				console.log('APP', name, 'does not exists!');
 			end
 		end
 	end
