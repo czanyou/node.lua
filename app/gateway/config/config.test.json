@@ -1,6 +1,6 @@
 {
     "did": "94de80b0cea7",
-    "mqtt": "mqtt://iot.beaconice.cn/",
+    "mqtt": "mqtt://www.wotcloud.cn/",
     "secret": "5c25b29e8ca1712897c805c0",
     "cameras": {
         "112233445599": {
@@ -20,7 +20,7 @@
                 "password": "admin123456"
             }],
             "modbus": [{
-                "did": "990123456789"
+                "did": "ff2233445599"
             }]
         }
     },
@@ -28,8 +28,8 @@
         "112233445599": {
 
         },
-        "990123456789": {
-            "secret": "5c25b29e8ca1712897c805c0"
+        "ff2233445599": {
+            
         }
     }
 }

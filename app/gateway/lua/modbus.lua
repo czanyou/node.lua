@@ -11,19 +11,12 @@ exports.services = {}
 
 local function getDeviceInformation()
     local device = {}
-    device.cpuUsage = getCpuUsage()
-    device.currentTime = os.time()
-    device.deviceType = 'gateway'
+    device.deviceType = 'modbus'
     device.errorCode = 0
     device.firmwareVersion = '1.0'
     device.hardwareVersion = '1.0'
-    device.manufacturer = 'TDK'
-    device.memoryFree = math.floor(os.freemem() / 1024)
-    device.memoryTotal = math.floor(os.totalmem() / 1024)
-    device.modelNumber = 'DT02'
-    device.powerSources = 0
-    device.powerVoltage = 12000
-    device.serialNumber = getMacAddress()
+    device.manufacturer = 'MODBUS'
+    device.modelNumber = 'MODBUS'
 
     return device
 end
@@ -32,8 +25,9 @@ local function onRebootDevice()
 
 end
 
-local function getConfigInformation()
-    local config = {}
+local function getConfigInformation(input, webThing)
+    local peripherals = exports.app.get('peripherals') or {}
+    local config = peripherals[webThing.id] or {}
 
     return config
 end
@@ -65,7 +59,7 @@ end
 
 local function processConfigActions(input, webThing)
     if (input.read) then
-        return getConfigInformation()
+        return getConfigInformation(input.read, webThing)
 
     elseif (input.write) then
         setConfigInformation(input.write);
@@ -89,21 +83,12 @@ local function createModbusThing(options)
 
     local gateway = { 
         id = options.did, 
-        name = options.name or 'gateway' 
+        name = options.name or 'modbus' 
     }
 
     local mqttUrl = options.mqtt
     local webThing = wot.produce(gateway)
     webThing.secret = options.secret
-
-    -- 
-    local action = { input = { type = 'object'} }
-    webThing:addAction('bind', action, function(input)
-        console.log('device', input);
-        local did = webThing.id;
-
-        return { code = 0 }
-    end)
 
     -- device actions
     local action = { input = { type = 'object'} }

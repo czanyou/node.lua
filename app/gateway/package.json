@@ -1,9 +1,8 @@
 {
 	"depends": [],
-	"description": "pusher manager",
-	"title": "pusher",
-	"name": "pusher",
-	"tags": ["pusher", "runtime"],
-	"thing": {},
-	"version": "1.0.0"
+	"description": "wot gateway application",
+	"title": "gateway",
+	"name": "gateway",
+	"tags": ["pusher", "gateway"],
+	"version": "2.0.0"
 }

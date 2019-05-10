@@ -9,10 +9,18 @@ local exports = {}
 
 exports.services = {}
 
-local cpuInfo = {}
+local cpuInfo = {
+    used_time = 0,
+    total_time = 0
+}
 
 local function getWotClient()
     return wot.client
+end
+
+local function resetCpuUsage() 
+    cpuInfo.used_time = 0;
+    cpuInfo.total_time = 0;
 end
 
 local function getCpuUsage()
@@ -155,6 +163,7 @@ local function getFirmwareInformation()
 end
 
 local function getConfigInformation()
+    exports.services.config = exports.app.get('gateway');
     local config = exports.services.config or {}
 
     return config
@@ -233,7 +242,7 @@ local function processConfigActions(input, webThing)
     end
 end
 
-local function createMediaGatewayThing(options, webThing)
+local function createMediaGatewayThing(options)
     if (not options) then
         return nil, 'need options'
 
@@ -298,6 +307,10 @@ local function createMediaGatewayThing(options, webThing)
             console.log('register', response.did, result.token)
         end
     end)
+
+    if (not cpuInfo.timer) then
+        cpuInfo.timer = setInterval(1000 * 10, resetCpuUsage);
+    end
 
     return webThing
 end

@@ -9,6 +9,7 @@ local wot   = require('wot')
 
 local rtmp  = require('../lua/rtmp')
 local rtsp  = require('../lua/rtsp')
+local modbus = require('../lua/modbus')
 local camera  = require('./camera')
 local gateway = require('./gateway')
 
@@ -75,9 +76,6 @@ local function loadConfig()
 end
 
 function exports.notify()
-    cpuInfo.used_time = 0;
-    cpuInfo.total_time = 0;
-
     setInterval(1000 * 15, function()
         -- sendGatewayStatus()
     end)
@@ -125,15 +123,58 @@ function exports.rtsp()
 end
 
 function exports.config()
-    console.log('config', loadConfig())
-
     console.log('gateway', app.get('gateway'))
+    --console.log('modbus', app.get('gateway.peripherals'))
 
 end
 
 function exports.gateway()
-    local config = loadConfig()
-    app.gateway = gateway.createThing(config)
+    gateway.app = app
+
+    local options = {}
+    options.did = app.get('did')
+    options.mqtt = app.get('mqtt')
+    options.secret = app.get('secret')
+    app.gateway = gateway.createThing(options)
+end
+
+function exports.modbus()
+    modbus.app = app
+
+    local gateway = app.get('gateway')
+    local peripherals = gateway and gateway.peripherals
+    local list = peripherals and peripherals.modbus
+
+    local did = app.get('did')
+    local secret = app.get('secret')
+    local mqtt = app.get('mqtt')
+
+    peripherals = app.get('peripherals') or {}
+    if (not list) then
+        return
+    end
+
+    local things = {}
+    for index, options in ipairs(list) do
+        options.gateway = did
+        options.mqtt = mqtt
+        options.secret = secret
+
+        local config = peripherals[options.did]
+        if (config) then
+            
+        end
+
+        console.log(options);
+
+        local thing, err = modbus.createThing(options)
+        if (err) then
+            console.log('createThing', err)
+        end
+
+        things[did] = thing
+    end
+    app.modbusDevices = things
 end
 
 -- 注册 WoT 客户端
