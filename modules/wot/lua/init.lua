@@ -480,10 +480,16 @@ function ThingClient:processMessage(message, topic)
 end
 
 function ThingClient:readProperties(thing, names)
+    if (not names) or (not (#names > 0)) then
+        names = {}
+        for name, property in pairs(thing.properties) do
+            names[#names + 1] = name
+        end
+    end
+
     local properties = {}
     for index, name in ipairs(names) do
         local property = thing.properties[name]
-
         if (property) then
             local handlerName = '@read:' .. name
             local handler = thing.handlers[handlerName]
@@ -494,7 +500,7 @@ function ThingClient:readProperties(thing, names)
             end
         end
     end
-
+    
     return properties
 end
 

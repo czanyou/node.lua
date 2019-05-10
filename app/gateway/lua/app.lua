@@ -162,7 +162,8 @@ function exports.modbus()
 
         local config = peripherals[options.did]
         if (config) then
-            
+            options.properties = config.p
+            options.modbus = config.f
         end
 
         console.log(options);

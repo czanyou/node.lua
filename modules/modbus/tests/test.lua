@@ -2,8 +2,9 @@ local modbus = require('lmodbus')
 
 console.log(modbus.version())
 
-dev=modbus.new("COM3",9600)
---dev=modbus.new("127.0.0.1",9600)
+--dev=modbus.new("COM3",9600)
+dev=modbus.new("127.0.0.1", 502)
+
 console.log(dev)
 
 dev:connect()

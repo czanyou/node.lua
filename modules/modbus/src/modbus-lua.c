@@ -51,8 +51,12 @@ static int l_init(lua_State *L){
     luaL_getmetatable(L, "modbus");
     lua_setmetatable(L, -2);
 
-    // ctx->modbus = modbus_new_tcp(host, port);
-    ctx->modbus = modbus_new_rtu(host, port, 'N', 8, 1);
+    if (port < 9600) {
+        ctx->modbus = modbus_new_tcp(host, port);
+    } else {
+        ctx->modbus = modbus_new_rtu(host, port, 'N', 8, 1);
+    }
+    
     if(ctx->modbus == NULL){
         fprintf(stderr, "Init Error: %s\n", modbus_strerror(errno));
         return -1;

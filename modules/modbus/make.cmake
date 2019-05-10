@@ -24,7 +24,6 @@ elseif (APPLE)
 
 elseif (LINUX)
   add_library(lmodbus SHARED ${SOURCES})
-  target_link_libraries(lmodbus modbus)
   set_target_properties(lmodbus PROPERTIES PREFIX "")
 
 endif ()

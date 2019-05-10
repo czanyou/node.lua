@@ -12,24 +12,46 @@
     },
     "gateway": {
         "peripherals": {
-            "camera": [{
-                "did": "112233445599",
-                "secret": "5c25b29e8ca1712897c805c0",
-                "url": "rtsp://192.168.1.64/live.mp4",
-                "username": "admin",
-                "password": "admin123456"
-            }],
-            "modbus": [{
-                "did": "990123456789"
-            }]
+            "camera": [
+                {
+                    "did": "112233445599",
+                    "secret": "5c25b29e8ca1712897c805c0",
+                    "url": "rtsp://192.168.1.64/live.mp4",
+                    "username": "admin",
+                    "password": "admin123456"
+                }
+            ],
+            "modbus": [
+                {
+                    "did": "990123456789"
+                }
+            ]
         }
     },
     "peripherals": {
-        "112233445599": {
-
-        },
+        "112233445599": {},
         "990123456789": {
-            "secret": "5c25b29e8ca1712897c805c0"
+            "v": 0,
+            "p": {
+                "temperature": {
+                    "s": 0.1,
+                    "a": 1
+                },
+                "humidity": {
+                    "s": 0.1,
+                    "a": 0
+                },
+                "illuminance": {
+                    "q": 2,
+                    "a": 2
+                }
+            },
+            "f": {
+                "d": 2,
+                "m": 0,
+                "i": 10000,
+                "t": 3000
+            }
         }
     }
 }

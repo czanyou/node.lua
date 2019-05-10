@@ -70,6 +70,53 @@ local function processConfigActions(input, webThing)
     end
 end
 
+local function initModbusProperties(options, webThing)
+    -- console.log(options.properties);
+    -- console.log(options.modbus);
+
+    local common = options.modbus or {}
+
+    webThing.modbus = {}
+    webThing.modbus.properties = {}
+    local properties = webThing.modbus.properties;
+
+    for name, value in pairs(options.properties) do
+        local property = {}
+        properties[name] = property
+        property.address = common.d or 0
+        property.interval = common.i or 60
+        property.timeout = common.t or 500
+        property.register = value.a or 0
+        property.quantity = value.quantity or 1
+        property.scale = value.s or 1
+        property.offset = value.o or 0
+        property.code = value.c or 0x03
+        property.type = value.y or 0
+        property.flags = value.f or 0
+        property.fixed = value.x or 0
+        property.value = 0
+
+        local property = {}
+        property.value = 0
+        webThing:addProperty(name, property);
+    end
+
+    console.log(webThing.properties);
+end
+
+local function processReadAction(input, webThing)
+    local properties = webThing.modbus.properties;
+    local result = {}
+
+    for name, property in pairs(options.properties) do
+        result[name] = property.value or 0
+    end
+
+    console.log(properties, result);
+
+    return result
+end
+
 local function createModbusThing(options)
     if (not options) then
         return nil, 'need options'
@@ -89,6 +136,8 @@ local function createModbusThing(options)
     local mqttUrl = options.mqtt
     local webThing = wot.produce(gateway)
     webThing.secret = options.secret
+
+    initModbusProperties(options, webThing)
 
     -- device actions
     local action = { input = { type = 'object'} }
@@ -110,6 +159,12 @@ local function createModbusThing(options)
         else
             return { code = 400, error = 'Unsupported methods' }
         end
+    end)
+
+    local action = { input = { type = 'object'} }
+    webThing:addAction('read', action, function(input)
+        console.log('read', input);
+        return processReadAction(input, webThing)
     end)
 
     -- register
