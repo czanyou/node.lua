@@ -190,6 +190,7 @@ end
 
 function sdk.build_win_sdk(target, packageInfo)
 	local nodePath 		= join(cwd, "core")
+	local binPath 		= join(cwd, "bin")
 	local releasePath 	= join(cwd, "build/win32/Release")
 	local sdkPath 		= sdk.get_sdk_build_path(target)
 
@@ -200,29 +201,34 @@ function sdk.build_win_sdk(target, packageInfo)
 	mkdir(join(sdkPath, "lnode/lua"))
 
 	-- copy node lua files
-	copy(nodePath .. "/install.lua", 		sdkPath .. "/lnode/install.lua")
-	copy(nodePath .. "/install.bat", 		sdkPath .. "/lnode/install.bat")
-	copy(nodePath .. "/bin/lpm.bat", 		sdkPath .. "/lnode/bin/lpm.bat")
-	copy(nodePath .. "/bin/lts.dll", 		sdkPath .. "/lnode/bin/lts.dll")
-	copy(nodePath .. "/bin/lsqlite.dll",	sdkPath .. "/lnode/bin/lsqlite.dll")
-	copy(nodePath .. "/bin/lnode.exe", 		sdkPath .. "/lnode/bin/lnode.exe")
-	copy(nodePath .. "/bin/lua53.dll", 		sdkPath .. "/lnode/bin/lua53.dll")
-	xcopy(nodePath .. "/lua", 				sdkPath .. "/lnode/lua")
+	copy(nodePath .. "/install.lua", 	sdkPath .. "/lnode/install.lua")
+	copy(nodePath .. "/install.bat", 	sdkPath .. "/lnode/install.bat")
+	copy(binPath .. "/lmbedtls.dll", 	sdkPath .. "/lnode/bin/lmbedtls.dll")
+	copy(binPath .. "/lmodbus.dll", 	sdkPath .. "/lnode/bin/lmodbus.dll")
+	copy(binPath .. "/lnode.exe", 		sdkPath .. "/lnode/bin/lnode.exe")
+	copy(binPath .. "/lpm.bat", 		sdkPath .. "/lnode/bin/lpm.bat")
+	copy(binPath .. "/lsqlite.dll",		sdkPath .. "/lnode/bin/lsqlite.dll")
+	copy(binPath .. "/lua53.dll", 		sdkPath .. "/lnode/bin/lua53.dll")
+	xcopy(nodePath .. "/lua", 			sdkPath .. "/lnode/lua")
 
 	-- copy vision lua files
 	local visionPath = join(cwd, "modules/lua")
 	xcopy(visionPath, join(sdkPath, "lnode/lib"))
 	local modulePath = join(nodePath, "../modules")
 
+	xcopy(join(modulePath, 'app/lua'), 			join(sdkPath, "lnode/lib/app"))
 	xcopy(join(modulePath, 'bluetooth/lua'), 	join(sdkPath, "lnode/lib/bluetooth"))
 	xcopy(join(modulePath, 'express/lua'), 		join(sdkPath, "lnode/lib/express"))
 	xcopy(join(modulePath, 'mqtt/lua'), 		join(sdkPath, "lnode/lib/mqtt"))
+	xcopy(join(modulePath, 'rtmp/lua'), 		join(sdkPath, "lnode/lib/rtmp"))
+	xcopy(join(modulePath, 'rtsp/lua'), 		join(sdkPath, "lnode/lib/rtsp"))
 	xcopy(join(modulePath, 'sdl/lua'), 			join(sdkPath, "lnode/lib/sdl"))
 	xcopy(join(modulePath, 'sqlite3/lua'), 		join(sdkPath, "lnode/lib/sqlite3"))
 	xcopy(join(modulePath, 'ssdp/lua'), 		join(sdkPath, "lnode/lib/ssdp"))
+	xcopy(join(modulePath, 'wot/lua'), 			join(sdkPath, "lnode/lib/wot"))
 
 	-- copy app files
-	local applications = {"lpm", "lhost"}
+	local applications = {"lpm", "lhost", "gateway"}
 	for _, key in ipairs(applications) do
 		local file =  key
 		xcopy(join(cwd, "app", file),  join(sdkPath , "lnode/app", file))
