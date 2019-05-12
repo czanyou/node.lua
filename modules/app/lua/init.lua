@@ -325,9 +325,9 @@ function exports.kill(name)
 
     local uv = require('uv')
     local tmpdir = os.tmpdir or '/tmp'
+    local ppid = process.pid
 
     if (name == 'all') then
-        local ppid = process.pid
         for _, proc in ipairs(list) do
             if (ppid ~= proc.pid) then
                 print('kill: ' .. proc.name .. '(' .. proc.pid .. ')')
@@ -339,7 +339,7 @@ function exports.kill(name)
 
     else
         for _, proc in ipairs(list) do
-            if (proc.name == name) then
+            if (proc.name == name) and (ppid ~= proc.pid) then
                 local cmd = "kill " .. proc.pid
                 print("kill (" .. name .. ") " .. proc.pid)
                 uv.kill(proc.pid, "sigterm")

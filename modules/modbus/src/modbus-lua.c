@@ -8,6 +8,13 @@
 
 #include <modbus.h>
 
+#define LUV_MODBUS "modbus"
+
+typedef struct l_modbus_t
+{
+    modbus_t *modbus;
+} l_modbus_t;
+
 void l_pushtable(lua_State *L, int key, void *value, char *vtype)
 {
     lua_pushnumber(L, key);
@@ -36,19 +43,15 @@ void l_pushtable(lua_State *L, int key, void *value, char *vtype)
         printf("Get NULL value\n");
         lua_pushnil(L);
     }
+
     lua_settable(L, -3);
 }
 
 static int l_version(lua_State *L)
 {
-    lua_pushstring(L, "0.0.3");
+    lua_pushstring(L, LIBMODBUS_VERSION_STRING);
     return 1;
 }
-
-typedef struct l_modbus_t
-{
-    modbus_t *modbus;
-} l_modbus_t;
 
 static int l_init(lua_State *L)
 {
@@ -59,7 +62,7 @@ static int l_init(lua_State *L)
     l_modbus_t *ctx;
     ctx = (l_modbus_t *)lua_newuserdata(L, sizeof(l_modbus_t));
 
-    luaL_getmetatable(L, "modbus");
+    luaL_getmetatable(L, LUV_MODBUS);
     lua_setmetatable(L, -2);
 
     if (port < 9600)
@@ -73,32 +76,33 @@ static int l_init(lua_State *L)
 
     if (ctx->modbus == NULL)
     {
-        fprintf(stderr, "Init Error: %s\n", modbus_strerror(errno));
+        fprintf(stderr, "Modbus init error: %s\n", modbus_strerror(errno));
         return -1;
     }
+    
     return 1;
 }
 
 static int l_connect(lua_State *L)
 {
-    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, "modbus");
-    luaL_argcheck(L, ctx != NULL, 1, "Context Error");
+    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, LUV_MODBUS);
+    luaL_argcheck(L, (ctx != NULL) && (ctx->modbus != NULL), 1, "Context Error");
 
     if (modbus_connect(ctx->modbus) == -1)
     {
-        fprintf(stderr, "Connect Failed: %s\n", modbus_strerror(errno));
+        fprintf(stderr, "Modbus connect failed: %s\n", modbus_strerror(errno));
         modbus_free(ctx->modbus);
         return -1;
     }
 
-    printf("Connect Successed!\n");
+    printf("Modbus connect successed!\n");
     return 1;
 }
 
 static int l_close(lua_State *L)
 {
-    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, "modbus");
-    luaL_argcheck(L, ctx != NULL, 1, "Context Error");
+    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, LUV_MODBUS);
+    luaL_argcheck(L, (ctx != NULL) && (ctx->modbus != NULL), 1, "Context Error");
 
     modbus_close(ctx->modbus);
     modbus_free(ctx->modbus);
@@ -112,8 +116,8 @@ static int l_close(lua_State *L)
 
 static int l_slave(lua_State *L)
 {
-    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, "modbus");
-    luaL_argcheck(L, ctx != NULL, 1, "Context Error");
+    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, LUV_MODBUS);
+    luaL_argcheck(L, (ctx != NULL) && (ctx->modbus != NULL), 1, "Context Error");
 
     int slave = lua_tointeger(L, 2);
     lua_pop(L, 1);
@@ -123,8 +127,8 @@ static int l_slave(lua_State *L)
 
 static int l_read(lua_State *L)
 {
-    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, "modbus");
-    luaL_argcheck(L, ctx != NULL, 1, "Context Error");
+    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, LUV_MODBUS);
+    luaL_argcheck(L, (ctx != NULL) && (ctx->modbus != NULL), 1, "Context Error");
 
     int cnt = lua_rawlen(L, -1);
     int addr[256];
@@ -139,6 +143,7 @@ static int l_read(lua_State *L)
         lua_pop(L, 2);
         i++;
     }
+
     lua_pop(L, 1);
 
     lua_newtable(L);
@@ -149,11 +154,13 @@ static int l_read(lua_State *L)
             fprintf(stderr, "Read Error: %s\n", modbus_strerror(errno));
             return -1;
         }
+
         if (buf == NULL)
         {
             fprintf(stderr, "Read Error: %s\n", modbus_strerror(errno));
             return -1;
         }
+
         long int res = (long int)*buf;
         l_pushtable(L, addr[i], &res, "integer");
         //printf("%d,%ld\n", addr[i], (long int)buf);
@@ -164,8 +171,8 @@ static int l_read(lua_State *L)
 
 static int l_mread(lua_State *L)
 {
-    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, "modbus");
-    luaL_argcheck(L, ctx != NULL, 1, "Context Error");
+    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, LUV_MODBUS);
+    luaL_argcheck(L, (ctx != NULL) && (ctx->modbus != NULL), 1, "Context Error");
 
     int addr = lua_tointeger(L, 2);
     int cnt = lua_tointeger(L, 3);
@@ -181,6 +188,7 @@ static int l_mread(lua_State *L)
         fprintf(stderr, "Read Error: %s\n", modbus_strerror(errno));
         return -1;
     }
+
     if (buf == NULL)
     {
         fprintf(stderr, "Read Error: %s\n", modbus_strerror(errno));
@@ -192,8 +200,8 @@ static int l_mread(lua_State *L)
 
 static int l_mwrite(lua_State *L)
 {
-    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, "modbus");
-    luaL_argcheck(L, ctx != NULL, 1, "Context Error");
+    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, LUV_MODBUS);
+    luaL_argcheck(L, (ctx != NULL) && (ctx->modbus != NULL), 1, "Context Error");
 
     int addr = lua_tointeger(L, 2);
     int value = lua_tointeger(L, 3);
@@ -211,8 +219,8 @@ static int l_mwrite(lua_State *L)
 
 static int l_write(lua_State *L)
 {
-    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, "modbus");
-    luaL_argcheck(L, ctx != NULL, 1, "Context Error");
+    l_modbus_t *ctx = (l_modbus_t *)luaL_checkudata(L, 1, LUV_MODBUS);
+    luaL_argcheck(L, (ctx != NULL) && (ctx->modbus != NULL), 1, "Context Error");
 
     lua_pushvalue(L, -1);
     int cnt = 0;
@@ -223,6 +231,7 @@ static int l_write(lua_State *L)
         lua_pop(L, 2);
         cnt++;
     }
+
     lua_pop(L, 1);
 
     int addr[256];
@@ -238,6 +247,7 @@ static int l_write(lua_State *L)
         lua_pop(L, 2);
         i++;
     }
+
     lua_pop(L, 1);
 
     lua_newtable(L);
@@ -253,6 +263,7 @@ static int l_write(lua_State *L)
         {
             res = 1;
         }
+
         l_pushtable(L, addr[i], &res, "boolean");
     }
 
@@ -286,7 +297,7 @@ LUALIB_API int luaopen_lmodbus(lua_State *L)
 
     luaL_newlib(L, modbus_lib);
 
-    luaL_newmetatable(L, "modbus");
+    luaL_newmetatable(L, LUV_MODBUS);
 
     luaL_newlib(L, modbus_func);
     lua_setfield(L, -2, "__index");

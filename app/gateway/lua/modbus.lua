@@ -4,10 +4,111 @@ local fs 	= require('fs')
 local path 	= require('path')
 local json  = require('json')
 local wot   = require('wot')
+local modbus = require('lmodbus')
 
 local exports = {}
 
 exports.services = {}
+
+local context = {}
+
+local function readFromModbus(webThing)
+
+    local function initModbus(slave, options)
+        options = options or {}
+    
+        if (not context.device) then
+            local deviceName = options.device or 'COM3'
+            local baudrate = options.baudrate or 9600
+            local dev = modbus.new(deviceName, baudrate)
+            if (dev) then
+                context.device = dev
+    
+                dev:connect()
+                dev:slave(options.slave or 1)
+            end
+        end
+    end
+
+    local function getPropertyValue(property, result)
+        local type = property.type or 0
+        local count = property.quantity or 1
+        local value = 0
+        if (type == 0) then
+            if (count == 1) then -- int16
+                value = string.unpack('>B', result)
+
+            elseif (count == 2) then -- int32
+                value = string.unpack('>I2', result)
+
+            elseif (count == 4) then -- int64
+                value = string.unpack('>I4', result)
+
+            end
+
+        elseif (type == 1) then
+            if (count == 1) then -- uint16
+                value = string.unpack('>B', result)
+
+            elseif (count == 2) then -- uint32
+                value = string.unpack('>I2', result)
+
+            elseif (count == 4) then -- uint64
+                value = string.unpack('>I4', result)
+
+            end
+
+        elseif (type == 2) then
+            if (count == 2) then -- float
+                value = string.unpack('>I2', result)
+
+            elseif (count == 4) then -- double
+                value = string.unpack('>I4', result)
+            end
+
+        elseif (type == 3) then -- string
+            return result
+
+        elseif (type == 4) then -- boolean
+            return string.unpack('>B', result)
+
+        elseif (type == 5) then -- raw
+            return result
+
+        else
+            return 0
+        end
+
+        if (property.scale and property.scale ~= 1) then
+            value = value * property.scale
+        end
+
+        if (property.offset and property.offset ~= 0) then
+            value = value + property.offset
+        end
+
+    end
+
+    local dev = context.device
+    if (not dev) then
+        initModbus(slave)
+
+        if (not dev) then
+            return
+        end
+    end
+
+    local properties = webThing.modbus.properties;
+    for name, property in pairs(properties) do
+        local register = property.register
+        local count = property.quantity
+
+        if (register >= 0) and (count >= 1) then
+            local result = dev:mread(register, count)
+            property.value = getPropertyValue(property, result)
+        end
+    end
+end
 
 local function getDeviceInformation()
     local device = {}
@@ -83,9 +184,9 @@ local function initModbusProperties(options, webThing)
     for name, value in pairs(options.properties) do
         local property = {}
         properties[name] = property
-        property.address = common.d or 0
-        property.interval = common.i or 60
-        property.timeout = common.t or 500
+        property.address = value.d or common.d or 0
+        property.interval = value.i or common.i or 60
+        property.timeout = value.t or common.t or 500
         property.register = value.a or 0
         property.quantity = value.quantity or 1
         property.scale = value.s or 1
@@ -102,6 +203,11 @@ local function initModbusProperties(options, webThing)
     end
 
     console.log(webThing.properties);
+
+    local interval = (options.interval or 60) * 1000
+    setInterval(interval, function()
+        readFromModbus(webThing)
+    end)
 end
 
 local function processReadAction(input, webThing)
