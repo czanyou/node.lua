@@ -18,20 +18,13 @@ limitations under the License.
 
 local core      = require('core')
 local fs        = require('fs')
-local http      = require('http')
 local json      = require('json')
 local miniz     = require('miniz')
 local path      = require('path')
-local thread    = require('thread')
-local timer     = require('timer')
 local url       = require('url')
-local utils     = require('util')
-local qstring   = require('querystring')
 
-local request  	= require('http/request')
 local conf   	= require('app/conf')
 local ext   	= require('app/utils')
-
 
 --[[
 Node.lua 系统更新程序
@@ -39,12 +32,42 @@ Node.lua 系统更新程序
 
 这个脚本用于自动在线更新 Node.lua SDK, 包含可执行主程序, 核心库, 以及核心应用等等
 
+0：初始状态
+1：固件更新成功
+2：没有足够的 Flash 空间
+3：没有足够的内存空间
+4：下载过程中连接断开
+5：固件验证失败
+6：不支持的固件类型
+7：无效的 URI
+8：固件更新失败
+9：不支持的通信协议
+
 --]]
+
+-------------------------------------------------------------------------------
 
 local exports = {}
 
-local noop 		  		= ext.noop
-local getSystemTarget 	= ext.getSystemTarget
+-- Update states
+local STATE_INIT = 0
+local STATE_DOWNLOADING = 1
+local STATE_DOWNLOAD_COMPLETED = 2
+local STATE_UPDATING = 3
+
+-- Update result code
+local UPDATE_INIT = 0
+local UPDATE_SUCCESSFULLY = 1
+local UPDATE_NOT_ENOUGH_FLASH = 2
+local UPDATE_NOT_ENOUGH_RAM = 3
+local UPDATE_DISCONNECTED = 4
+local UPDATE_VALIDATION_FAILED = 5
+local UPDATE_UNSUPPORTED_FIRMWARE_TYPE = 6
+local UPDATE_INVALID_URI = 7
+local UPDATE_FAILED = 8
+local UPDATE_UNSUPPORTED_PROTOCOL = 9
+
+-------------------------------------------------------------------------------
 
 local function getNodePath()
 	return conf.rootPath
@@ -249,15 +272,13 @@ function BundleUpdater:checkFile(index)
 	--console.log('destname', destname)
 	if (reader:is_directory(index)) then
 		fs.mkdirpSync(destname)
-		console.log('mkdirpSync', destname)
+		-- console.log('mkdirpSync', destname)
 		return 0
 	end
 	--console.log(srcInfo)
 
 	self.totalBytes = (self.totalBytes or 0) + srcInfo.uncomp_size
 	self.total      = (self.total or 0) + 1
-
-	--thread.sleep(10) -- test only
 
 	-- check file size
 	local destInfo 	= fs.statSync(destname)
@@ -313,8 +334,6 @@ end
 -- 
 function BundleUpdater:updateFile(rootPath, reader, index)
 	local join 	 	= path.join
-
-	--thread.sleep(10) -- test only
 
 	if (not rootPath) or (not rootPath) then
 		return -6, 'invalid parameters' 
@@ -372,7 +391,7 @@ end
 -- checkInfo 会更新的属性:
 --  - faileds 更新失败的文件数
 function BundleUpdater:updateAllFiles(callback)
-	callback = callback or noop
+	callback = callback or ext.noop
 
 	local rootPath = self.rootPath
 	local files = self.list or {}
@@ -403,9 +422,13 @@ function BundleUpdater:updateAllFiles(callback)
 end
 
 function BundleUpdater:parsePackageInfo(callback)
-	callback = callback or noop
+	callback = callback or ext.noop
 
 	local reader = self.reader
+	if (not reader) then
+		callback('The reader is empty!', filename)
+		return nil
+	end
 
    	local filename = path.join('package.json')
 	local index, err = reader:locate_file(filename)
@@ -443,7 +466,7 @@ end
 --  - faileds
 -- 
 function BundleUpdater:upgradeSystemPackage(callback)
-	callback = callback or noop
+	callback = callback or ext.noop
 
 	local filename 	= self.filename
 	if (not filename) or (filename == '') then
@@ -466,7 +489,7 @@ function BundleUpdater:upgradeSystemPackage(callback)
 
     -- 验证安装目标平台是否一致
     if (packageInfo.target) then
-		local target = getSystemTarget()
+		local target = ext.getSystemTarget()
 		if (target ~= packageInfo.target) then
 			callback('Mismatched target: local is `' .. target .. 
 				'`, but the update file is `' .. tostring(packageInfo.target) .. '`')
@@ -513,6 +536,30 @@ function BundleUpdater:showUpgradeResult()
 	end
 end
 
+local function saveUpdateStatus(status) 
+	local nodePath = getNodePath()
+	local basePath = path.join(nodePath, 'update')
+	local ret, err = fs.mkdirpSync(basePath)
+	if (err) then
+		print(err)
+		return
+	end
+
+	local filename = path.join(basePath, 'status.json')
+	local filedata = json.stringify(status);
+	fs.writeFileSync(filename, filedata);
+end
+
+local function readUpdateStatus()
+	local nodePath = getNodePath()
+	local basePath = path.join(nodePath, 'update')
+	local filename = path.join(basePath, 'status.json')
+	local filedata = fs.readFileSync(filename);
+	if (filedata) then
+		return json.parse(filedata)
+	end
+end
+
 -------------------------------------------------------------------------------
 -- exports
 
@@ -535,19 +582,30 @@ function exports.install(filename, callback)
 		callback = nil
 	end
 
+	local status = readUpdateStatus()
+	if (not status) or (status.state ~= STATE_DOWNLOAD_COMPLETED) then
+		print('Please update firmware first.')
+		return
+	end
+
 	local lockfd = upgradeLock()
 	if (not lockfd) then
+		print('Upgrade lock failed')
 		return
 	end
 
 	local nodePath = getNodePath()
 	local rootPath = getRootPath()
 	if (isDevelopmentPath(nodePath)) then
-		rootPath = '/tmp' -- only for test
+		rootPath = path.join(nodePath, 'tmp') -- only for test
 	end
 
-	--console.log(source, rootPath)
-	print("Upgrade path: " .. nodePath)
+	if (not filename) then
+		filename = path.join(nodePath, 'update/update.zip')
+	end
+
+	-- console.log(source, rootPath)
+	-- console.log("Upgrade path: " .. nodePath, rootPath)
 
 	local options = {}
 	options.filename 	= filename
@@ -576,8 +634,20 @@ function exports.install(filename, callback)
 		end)
 	end
 
+	status = { state = 0, result = 0 }
+	status.state = 3 -- 3：正在更新
+	saveUpdateStatus(status)
+
 	updater:upgradeSystemPackage(function(err)
 		upgradeUnlock(lockfd)
+
+		if (err) then
+			status.result = UPDATE_FAILED -- 8：固件更新失败
+		else
+			status.result = UPDATE_SUCCESSFULLY -- 1：固件更新成功
+		end
+
+		saveUpdateStatus(status)
 
 		if (callback) then 
 			callback(err, updater)
@@ -589,26 +659,6 @@ function exports.install(filename, callback)
 	end)
 
 	return true
-end
-
---[[
-更新系统
-
---]]
-function exports.upgrade(callback)
-	if (type(callback) ~= 'function') then
-		callback = nil
-	end
-
-	-- Upgrade form network
-	downloadUpdateFiles({type = 'patch'}, function(err, filename)
-		if (err) then
-			console.log('upgrade', err)
-			return
-		end
-
-		exports.install(filename, callback)
-	end)
 end
 
 return exports

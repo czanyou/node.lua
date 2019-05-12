@@ -68,25 +68,6 @@ local function getAppPath()
 
 end
 
-local function getRootURL()
-	if (exports.rootURL) then
-		return exports.rootURL
-	end
-
-	local systemInformation = getSystemInformation()
-	if (systemInformation and systemInformation.registry) then
-		local registry = systemInformation.registry
-		if (registry) and (registry.url) then
-			exports.rootURL = registry.url
-		end
-
-	else
-		-- exports.rootURL = "http://node.sae-sz.com"
-	end
-
-	return exports.rootURL
-end
-
 local function getApplicationInfo(basePath)
 	local filename = path.join(basePath, "package.json")
 	local data = fs.readFileSync(filename)
@@ -154,7 +135,7 @@ setmetatable(exports, exports.meta)
 
 --
 exports.rootPath 		= getRootPath()
-exports.rootURL 		= getRootURL()
+exports.rootURL 		= 'http://iot.beaconice.cn/v2/'
 exports.appPath 		= getAppPath()
 
 --

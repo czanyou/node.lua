@@ -174,7 +174,7 @@ function exports.list(...)
 end
 
 -- List all application processes
-function exports.l(...)
+function exports.ls(...)
 	app.printList(...)
 end
 
@@ -203,6 +203,10 @@ function exports.stop(...)
 	app.stop(...)
 end
 
+function exports.watch(...)
+	app.start('lpm', 'start', ...)
+end
+
 -------------------------------------------------------------------------------
 -- package & upgrade
 
@@ -216,12 +220,7 @@ end
 
 -- Retrieve new lists of packages
 function exports.update(...)
-	require('lpm/upgrade').update(...)
-end
-
--- Perform an upgrade
-function exports.upgrade(...)
-	require('lpm/upgrade').upgrade(...)
+	require('lpm/update').update(...)
 end
 
 -------------------------------------------------------------------------------

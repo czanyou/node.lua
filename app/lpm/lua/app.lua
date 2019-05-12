@@ -9,7 +9,7 @@ local rpc       = require('app/rpc')
 
 local exports = {}
 
-app.name = 'lhost'
+app.name = 'apm'
 
 -- 返回所有需要后台运行的应用
 function exports.getStartNames()
@@ -41,6 +41,9 @@ end
 function exports.check()
     local names = exports.getStartNames()
     local procs = app.processes()
+    if (not procs) then
+        return
+    end
 
     for _, proc in ipairs(procs) do
         names[proc.name] = nil
@@ -63,7 +66,7 @@ end
 function exports.help()
     print([[
         
-usage: lhost <command> [args]
+usage: apm <command> [args]
 
 Node.lua application daemon manager
     
@@ -71,19 +74,19 @@ Available command:
 
 - check              Check all application daemon status
 - help               Display help information
-- start [interval]   Start lhost
+- start [interval]   Start apm
 
 ]])
 end
 
 -- 启动应用进程守护程序
 function exports.start(interval, ...)
-    print("Start lhost...")
+    print("Start apm...")
 
     -- Check lock
-    local lockfd = app.tryLock('lhost')
+    local lockfd = app.tryLock('apm')
     if (not lockfd) then
-        print('The lhost is locked!')
+        print('The apm is locked!')
         return
     end
 

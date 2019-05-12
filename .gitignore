@@ -5,3 +5,5 @@
 /core/bin/*.dll
 /core/bin/*.exe
 /app/humiture/data/data.db
+/tmp/
+/update/
