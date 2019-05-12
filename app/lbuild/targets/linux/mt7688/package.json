@@ -2,7 +2,7 @@
 	"description": "MT7688",
 	"name": "mt7688",
 	"tags": ["mt7688", "core"],
-    "applications": ["lgateway", "lhost", "lpm"],
+    "applications": ["gateway", "lpm"],
     "libs": ["lsdl.so", "lsqlite.so"],
 	"version": "0.0.1"
 }

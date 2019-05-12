@@ -6,8 +6,6 @@ project(Node.lua)  # Project Name
 set(LNODE_MAJOR_VERSION 4)
 set(LNODE_MINOR_VERSION 1)
 
-# The PATCH version see `app/lhost/lua/init.lua`
-
 set(LNODE_VERSION ${LNODE_MAJOR_VERSION}.${LNODE_MINOR_VERSION})
 add_definitions(-DLNODE_MAJOR_VERSION=${LNODE_MAJOR_VERSION})
 add_definitions(-DLNODE_MINOR_VERSION=${LNODE_MINOR_VERSION})

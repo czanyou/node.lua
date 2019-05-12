@@ -14,4 +14,3 @@
 - [lnode 主程序](vision_lnode.md)
 - [lpm 命令行工具](vision_lpm.md)
 - [lbuild 打包工具](vision_lbuild.md)
-- [lhost 应用守护](vision_lhost.md)

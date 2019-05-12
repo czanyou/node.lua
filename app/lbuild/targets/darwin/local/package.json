@@ -2,7 +2,7 @@
 	"description": "macos PC",
 	"name": "macos",
 	"tags": ["macos", "core"],
-    "applications": ["lhttpd", "lhost"],
+    "applications": ["gateway", "lpm"],
 	"files": ["install.sh"],
 	"version": "0.0.1"
 }

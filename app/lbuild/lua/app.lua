@@ -228,7 +228,7 @@ function sdk.build_win_sdk(target, packageInfo)
 	xcopy(join(modulePath, 'wot/lua'), 			join(sdkPath, "lnode/lib/wot"))
 
 	-- copy app files
-	local applications = {"lpm", "lhost", "gateway"}
+	local applications = {"lpm", "gateway"}
 	for _, key in ipairs(applications) do
 		local file =  key
 		xcopy(join(cwd, "app", file),  join(sdkPath , "lnode/app", file))

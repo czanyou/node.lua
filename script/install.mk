@@ -59,7 +59,6 @@ define sdk_install
 
 	$(call make_module_bin_link,lpm)
 	$(call make_module_bin_link,lbuild)
-	$(call make_module_bin_link,lhost)
 	$(call make_module_bin_link,lhttpd)
 
 	$(call make_lua_lib_links)

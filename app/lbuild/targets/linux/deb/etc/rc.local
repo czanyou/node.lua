@@ -13,6 +13,6 @@
 
 export PATH=$PATH:/usr/local/bin
 
-lpm start lhost lhttpd gateway
+lpm start lpm gateway
 
 exit 0

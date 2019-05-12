@@ -2,7 +2,7 @@
 	"description": "raspberry pi PC",
 	"name": "pi",
 	"tags": ["raspberry", "core"],
-    "applications": ["lhttpd", "lhost"],
+    "applications": ["lhttpd", "lpm"],
 	"files": ["install.sh", "bin/init.sh"],
     "libs": ["lmedia.so", "lsqlite.so", "lbluetooth.so"],
 	"version": "0.0.1"
