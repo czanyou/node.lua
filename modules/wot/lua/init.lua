@@ -683,7 +683,7 @@ function ThingClient:sendActionResult(name, output, request)
         response.result = output
     end
 
-    console.log('response', response)
+    -- console.log('response', response)
     self:sendMessage(response)
 end
 

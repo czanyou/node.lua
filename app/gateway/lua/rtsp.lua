@@ -271,18 +271,24 @@ local function onRtspSessionTimer(rtspSession)
     end
 end
 
-local function startRtspClient(did, options)
+local function startRtspClient(rtmp, options)
     if (not exports.rtspSessions) then
         exports.rtspSessions = {}
     end
 
-    if (not options.rtmp) then
+    if (not rtmp) then
         console.log('Empty rtmp')
     end
-    exports.rtmp = options.rtmp
+
+    local did = options.did
+    if (not did) then
+        console.log('Empty did')
+    end
+
+    exports.rtmp = rtmp
 
     local onRtspTimer = function()
-        for did, rtspSession in pairs(exports.rtspSessions) do
+        for _, rtspSession in pairs(exports.rtspSessions) do
             onRtspSessionTimer(rtspSession)
         end
     end

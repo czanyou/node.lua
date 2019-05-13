@@ -6,7 +6,9 @@ local path 	= require('path')
 local http  = require('http')
 local json  = require('json')
 local wot   = require('wot')
+
 local Promise = require('wot/promise')
+local rtmp  = require('../lua/rtmp')
 
 local exports = {}
 
@@ -148,6 +150,8 @@ local function processPlayActions(input, webThing)
     local url = input and input.url
     local did = webThing.id;
 
+    console.log('play', did, url)
+
     local promise = Promise.new()
     if (not url) then
         setTimeout(0, function()
@@ -195,14 +199,10 @@ local function createCameraThing(options)
 
     elseif (not options.did) then
         return nil, 'need did option'
-
-    elseif (not options.rtmp) then
-        console.log('need rtmp option')
     end
 
     local mqttUrl = options.mqtt
     local did = options.did
-    local rtmp = options.rtmp
 
     local camera = { id = did, name = 'camera' }
     local webThing = wot.produce(camera)

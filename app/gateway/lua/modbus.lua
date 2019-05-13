@@ -131,7 +131,8 @@ local function readFromModbus(webThing)
 
         if (register >= 0) and (quantity >= 1) then
             local data = dev:mread(register, quantity)
-            if (data) and (#data == quantity * 2) then
+            console.log('data', data, type(data))
+            if (data) and (type(data) == 'string') and (#data == quantity * 2) then
                 -- console.log('mread', register, quantity);
                 -- console.printBuffer(result)
                 local value = getPropertyValue(property, data)

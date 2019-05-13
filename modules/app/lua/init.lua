@@ -158,6 +158,15 @@ local function loadProfile()
     return exports._profile
 end
 
+local function loadUserProfile()
+    if (exports._userProfile) then
+        return exports._userProfile
+    end
+
+	exports._userProfile = conf('user')
+    return exports._userProfile
+end
+
 function exports.appName()
 	return exports.name or 'user'
 end
@@ -183,7 +192,13 @@ function exports.get(key)
         return
     end
 
-	local profile = loadProfile()
+    local profile = loadUserProfile()
+    local value = profile and profile:get(key)
+    if (value) then
+        return value
+    end
+
+	profile = loadProfile()
     if (profile) then
 		return profile:get(key)
 	end

@@ -45,6 +45,22 @@ exports.rootPath = app.rootPath
 
 local config = {}
 
+function getProfile(key)
+	local pos = key:find(':')
+	local module = nil
+	if (pos) then
+		module = key:sub(1, pos - 1)
+		key = key:sub(pos + 1)
+	end
+
+	if (module) then
+		local configPath = path.join(app.rootPath, 'app', module, 'config/config.json')
+		return conf.Profile:new(configPath), key
+	else
+		return conf('user'), key
+	end
+end
+
 -- 打印指定名称的配置参数项的值
 function config.get(key)
 	if (not key) then
@@ -53,8 +69,13 @@ function config.get(key)
 		return
 	end
 
-	local profile = conf('user')
-	console.printr(profile:get(key))
+	local profile, name = getProfile(key)
+	if (name == '*') then
+		console.printr(profile.settings)
+
+	else
+		console.printr(profile:get(name))
+	end
 end
 
 function config.help()
@@ -92,10 +113,10 @@ function config.set(key, value)
 		return
 	end
 
-	local profile = conf('user')
-	local oldValue = profile:get(key)
+	local profile, name = getProfile(key)
+	local oldValue = profile:get(name)
 	if (not oldValue) or (value ~= oldValue) then
-		profile:set(key, value)
+		profile:set(name, value)
 		profile:commit()
 	end
 

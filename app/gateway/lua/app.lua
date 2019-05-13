@@ -60,21 +60,6 @@ end
 -- ////////////////////////////////////////////////////////////////////////////
 --
 
-local function loadConfig()
-    if (app.config) then
-        return app.config
-    end
-
-    local filename = path.join(util.dirname(), '../config/config.json')
-    local filedata = fs.readFileSync(filename)
-    local config = json.parse(filedata)
-
-    app.config = config or {}
-
-    -- console.log(config)
-    return app.config
-end
-
 function exports.notify()
     setInterval(1000 * 15, function()
         -- sendGatewayStatus()
@@ -107,11 +92,12 @@ function exports.rtmp()
 end
 
 function exports.rtsp()
-    local config = loadConfig()
-    local cameras = config.cameras or {}
-    for did, options in pairs(cameras) do
-        options.rtmp = rtmp
-        rtsp.startRtspClient(did, options);
+    local gateway = app.get('gateway')
+    local peripherals = gateway and gateway.peripherals
+    local cameras = peripherals and peripherals.camera
+    for index, options in ipairs(cameras) do
+        -- console.log(options)
+        rtsp.startRtspClient(rtmp, options);
     end
 
     createHttpServer();
@@ -180,19 +166,21 @@ end
 
 -- 注册 WoT 客户端
 function exports.cameras()
-    local config = loadConfig()
-    local cameras = config.cameras or {}
-
+    local mqtt = app.get('mqtt')
+    local gateway = app.get('gateway')
+    local peripherals = gateway and gateway.peripherals
+    local cameras = peripherals and peripherals.camera
     local things = {}
-    for did, options in pairs(cameras) do
-        options.did = did
-        options.mqtt = config.mqtt
+    for index, options in ipairs(cameras) do
+        options.mqtt = mqtt
+
+        -- console.log('cameras', options)
         local thing, err = camera.createThing(options)
         if (err) then
             console.log('createThing', err)
         end
 
-        things[did] = thing
+        things[options.did] = thing
     end
     app.cameras = things
 end
