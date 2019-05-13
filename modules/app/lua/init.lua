@@ -212,7 +212,7 @@ function exports.set(key, value)
 		return
 	end
 
-	local profile = loadProfile()
+	local profile = loadUserProfile()
     if (not profile) then
         return
     end

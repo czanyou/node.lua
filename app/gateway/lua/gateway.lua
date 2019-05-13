@@ -129,9 +129,9 @@ local function onRebootDevice()
 
     exports.rebootTimer = setTimeout(1000 * 10, function()
         exports.rebootTimer = nil;
-        console.log('rebootTimer');
+        console.log('reboot timeout');
 
-        os.execute('lpm restart gateway &')
+        process:exit(0);
     end)
 end
 
@@ -173,7 +173,7 @@ local function onUpdateFirmware(params)
         exports.updateTimer = nil;
         console.log('updateTimer');
 
-        os.execute('lpm upgrade &')
+        os.execute('lpm upgrade > /tmp/upgrade.log &')
     end)
 end
 
@@ -198,23 +198,9 @@ local function setConfigInformation(config)
         exports.services.config = {}
     end
 
-    local localConfig = exports.services.config
     if (config) then
-        local peripherals = config.peripherals
-        local log = config.log
-        local version = config.v
-
-        if (peripherals) then
-            localConfig.peripherals = peripherals
-        end
-
-        if (version) then
-            localConfig.v = version
-        end
-
-        if (log) then
-            localConfig.log = log
-        end
+        exports.services.config = config
+        exports.app.set('gateway', config)
     end
 end
 
