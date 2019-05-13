@@ -1,0 +1,8 @@
+{
+	"description": "HI3516",
+	"name": "hi3516",
+	"tags": ["hi3516", "core"],
+    "applications": ["gateway", "lpm"],
+    "libs": ["lmodbus.so", "lsdl.so"],
+	"version": "2.0.1"
+}

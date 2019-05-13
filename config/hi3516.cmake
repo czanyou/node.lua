@@ -7,5 +7,8 @@ set(BUILD_MESSAGE        OFF)
 set(BUILD_SDL            OFF)
 set(BUILD_SQLITE         OFF)
 set(BUILD_TS             OFF)
+set(BUILD_MODBUS         ON)
 
-set(CMAKE_C_COMPILER "arm-hisiv300-linux-gcc")
+add_definitions(-D_NO_GLIBC)
+
+set(CMAKE_C_COMPILER "/opt/hisi-linux/x86-arm/arm-hisiv500-linux/target/bin/arm-hisiv500-linux-gcc")

@@ -59,7 +59,6 @@ define sdk_install
 
 	$(call make_module_bin_link,lpm)
 	$(call make_module_bin_link,lbuild)
-	$(call make_module_bin_link,lhttpd)
 
 	$(call make_lua_lib_links)
 	$(call make_bin_lib_links)
@@ -81,7 +80,6 @@ define sdk_remove
 	rm -rf ${LOCAL_BIN_PATH}/lnode
 	rm -rf ${LOCAL_BIN_PATH}/lpm
 	rm -rf ${LOCAL_BIN_PATH}/lbuild
-	rm -rf ${LOCAL_BIN_PATH}/lhttpd
 
 	@echo "Remove finish!"
 	@echo ""
