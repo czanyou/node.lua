@@ -14,11 +14,12 @@ local context = {}
 
 local function readFromModbus(webThing)
 
-    local function initModbus(slave, options)
+    local function initModbus(options)
         options = options or {}
+        -- console.log('initModbus', options)
     
         if (not context.device) then
-            local deviceName = options.device or 'COM3'
+            local deviceName = options.device
             local baudrate = options.baudrate or 9600
             local dev = modbus.new(deviceName, baudrate)
             if (dev) then
@@ -30,50 +31,71 @@ local function readFromModbus(webThing)
         end
     end
 
-    local function getPropertyValue(property, result)
+    local function getPropertyValue(property, buffer)
         local type = property.type or 0
+        local flags = property.flags or 0
         local count = property.quantity or 1
         local value = 0
-        if (type == 0) then
-            if (count == 1) then -- int16
-                value = string.unpack('>B', result)
 
-            elseif (count == 2) then -- int32
-                value = string.unpack('>I2', result)
+        if (type == 0) then
+            local fmt = 'i2'
+            if (count == 2) then -- int32
+                fmt = 'i4'
 
             elseif (count == 4) then -- int64
-                value = string.unpack('>I4', result)
-
+                fmt = 'i8'
             end
+
+            if (flags & 0x01) ~= 0 then
+                fmt = '>' .. fmt
+            else
+                fmt = '<' .. fmt
+            end
+
+            value = string.unpack(fmt, buffer)
 
         elseif (type == 1) then
-            if (count == 1) then -- uint16
-                value = string.unpack('>B', result)
-
-            elseif (count == 2) then -- uint32
-                value = string.unpack('>I2', result)
+            local fmt = 'I2'
+            if (count == 2) then -- uint32
+                fmt = 'I4'
 
             elseif (count == 4) then -- uint64
-                value = string.unpack('>I4', result)
-
+                fmt = 'I8'
             end
+
+            if (flags & 0x01) ~= 0 then
+                fmt = '>' .. fmt
+            else
+                fmt = '<' .. fmt
+            end
+
+            value = string.unpack(fmt, buffer)
 
         elseif (type == 2) then
+            local fmt = 'I2'
             if (count == 2) then -- float
-                value = string.unpack('>I2', result)
+                fmt = 'f'
 
             elseif (count == 4) then -- double
-                value = string.unpack('>I4', result)
+                fmt = 'd'
             end
 
+            if (flags & 0x01) ~= 0 then
+                fmt = '>' .. fmt
+            else
+                fmt = '<' .. fmt
+            end
+
+            value = string.unpack(fmt, buffer)
+
         elseif (type == 3) then -- string
-            return result
+            return buffer
 
         elseif (type == 4) then -- boolean
-            return string.unpack('>B', result)
+            return string.unpack('<I2', buffer)
 
         elseif (type == 5) then -- raw
-            return result
+            return buffer
 
         else
             return 0
@@ -87,27 +109,44 @@ local function readFromModbus(webThing)
             value = value + property.offset
         end
 
+        return value
     end
 
     local dev = context.device
     if (not dev) then
-        initModbus(slave)
+        initModbus(webThing.modbus)
 
         if (not dev) then
             return
         end
     end
 
+    local result = {}
+    local count = 0
+
     local properties = webThing.modbus.properties;
     for name, property in pairs(properties) do
         local register = property.register
-        local count = property.quantity
+        local quantity = property.quantity
 
-        if (register >= 0) and (count >= 1) then
-            local result = dev:mread(register, count)
-            property.value = getPropertyValue(property, result)
+        if (register >= 0) and (quantity >= 1) then
+            local data = dev:mread(register, quantity)
+            if (data) and (#data == quantity * 2) then
+                -- console.log('mread', register, quantity);
+                -- console.printBuffer(result)
+                local value = getPropertyValue(property, data)
+                if (value ~= null) then
+                    property.value = value
+
+                    -- console.log(name, 'value', value);
+                    result[name] = value
+                    count = count + 1
+                end
+            end
         end
     end
+
+    return result, count
 end
 
 local function getDeviceInformation()
@@ -178,6 +217,10 @@ local function initModbusProperties(options, webThing)
     local common = options.modbus or {}
 
     webThing.modbus = {}
+    webThing.modbus.device = common.n
+    webThing.modbus.slave = common.d or 2
+    webThing.modbus.baudrate = common.b or 9600
+    webThing.modbus.interval = common.i or 60
     webThing.modbus.properties = {}
     local properties = webThing.modbus.properties;
 
@@ -202,11 +245,17 @@ local function initModbusProperties(options, webThing)
         webThing:addProperty(name, property);
     end
 
-    console.log(webThing.properties);
-
-    local interval = (options.interval or 60) * 1000
+    -- console.log(webThing.properties);
+    local interval = webThing.modbus.interval * 1000
     setInterval(interval, function()
-        readFromModbus(webThing)
+        local result, count = readFromModbus(webThing)
+        console.log(result)
+
+        if (result) and (count > 0) then
+            local wotClient = wot.client
+            wotClient:sendStream(result, webThing)
+        end
+
     end)
 end
 
@@ -290,6 +339,11 @@ local function createModbusThing(options)
     end)
 
     return webThing
+end
+
+exports.readProperties = function (webThing)
+
+
 end
 
 exports.createThing = createModbusThing
