@@ -210,7 +210,7 @@ exports.versions    = lnode.versions    -- A property exposing version strings o
 
 --
 
-local patch = 202
+local patch = 204
 exports.version = exports.version .. '.' .. patch
 
 -------------------------------------------------------------------------------

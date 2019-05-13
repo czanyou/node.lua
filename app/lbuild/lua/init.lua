@@ -190,7 +190,7 @@ local function buildPackage(name)
 	fs.mkdirpSync(buildPath)
     print('build path: ' .. console.colorize("quotes", buildPath))
 
-	local filename = path.join(buildPath, "" .. name .. ".zip")
+	local filename = path.join(buildPath, "" .. name .. "." .. process.version .. ".zip")
     local builder = zlib.BundleBuilder:new(basePath, filename)
 
     builder:addFile("") -- add all files
@@ -740,7 +740,7 @@ function PackageManager:savePackage(packageInfo, content)
 		fs.mkdirpSync(self.cachePath)
 	end
 
-	local filename = path.join(self.cachePath, name .. ".zip")
+	local filename = path.join(self.cachePath, name .. "." .. process.version .. ".zip")
 	os.remove(filename)
 	fs.writeFileSync(filename, content)
 end

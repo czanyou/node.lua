@@ -121,10 +121,23 @@ local function getDeviceInformation()
 end
 
 local function onRebootDevice()
+    console.log('onRebootDevice');
 
+    if (exports.rebootTimer) then
+        clearTimeout(exports.rebootTimer)
+    end
+
+    exports.rebootTimer = setTimeout(1000 * 10, function()
+        exports.rebootTimer = nil;
+        console.log('rebootTimer');
+
+        os.execute('lpm restart gateway &')
+    end)
 end
 
 local function onUpdateFirmware(params)
+    console.log('onUpdateFirmware');
+
     params = params or {}
     -- uri
     -- version
@@ -151,6 +164,17 @@ local function onUpdateFirmware(params)
     if (params.size) then
         firmware.size = params.size
     end
+
+    if (exports.updateTimer) then
+        clearTimeout(exports.updateTimer)
+    end
+
+    exports.updateTimer = setTimeout(1000 * 10, function()
+        exports.updateTimer = nil;
+        console.log('updateTimer');
+
+        os.execute('lpm upgrade &')
+    end)
 end
 
 local function getFirmwareInformation()
@@ -195,6 +219,8 @@ local function setConfigInformation(config)
 end
 
 local function processDeviceActions(input)
+    console.log('processDeviceActions', input)
+
     if (input.reboot) then
         onRebootDevice(input.reboot);
         return { code = 0 }
@@ -214,6 +240,8 @@ local function processDeviceActions(input)
 end
 
 local function processFirmwareActions(input, webThing)
+    console.log('processFirmwareActions', input)
+
     if (input.update) then
         onUpdateFirmware(input.update);
         return { code = 0 }
@@ -230,6 +258,8 @@ local function processFirmwareActions(input, webThing)
 end
 
 local function processConfigActions(input, webThing)
+    console.log('processConfigActions', input)
+
     if (input.read) then
         return getConfigInformation()
 
@@ -309,7 +339,10 @@ local function createMediaGatewayThing(options)
     end)
 
     if (not cpuInfo.timer) then
-        cpuInfo.timer = setInterval(1000 * 10, resetCpuUsage);
+        cpuInfo.timer = setInterval(1000 * 5, function()
+            -- console.log('resetCpuUsage')
+            resetCpuUsage()
+        end);
     end
 
     return webThing

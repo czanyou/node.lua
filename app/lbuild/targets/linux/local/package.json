@@ -8,6 +8,6 @@
 	},
 	"tags": ["linux", "core"],
     "applications": ["lpm", "gateway"],
-    "libs": ["lsdl.so", "lsqlite.so", "lbluetooth.so"],
+    "libs": ["lsdl.so", "lsqlite.so", "lbluetooth.so", "lmodbus.so"],
 	"version": "1.0.1"
 }

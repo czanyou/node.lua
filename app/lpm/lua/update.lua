@@ -110,7 +110,7 @@ local function downloadFirmwarePackage(options, callback)
 		end
 	end
 
-	local rootURL 	= options.base
+	local rootURL = options.base
 	if (not rootURL) then
 		callback({ code = UPDATE_INVALID_URI, error = 'Invalid URI' })
 		return
@@ -289,6 +289,7 @@ local function downloadFirmwareFile(options, callback)
 		args.did 		 = options.did
 		args.printInfo   = options.printInfo
 		args.type        = options.type
+		args.base        = options.base
 		args.packageInfo = packageInfo
 		downloadFirmwarePackage(args, function(err, filename)
 			if (err) or (not filename) then
@@ -358,6 +359,31 @@ function exports.update(callback)
 	end
 	
 	downloadFirmwareFile(options, callback)
+end
+
+function exports.upgrade()
+	exports.update(function(err, filename, packageInfo) 
+		local status = { state = 0, result = 0 }
+
+		if (err) then
+			console.log('err: ', err)
+			status.result = 8
+			if (err.result) then
+				status.result = err.result
+			end
+
+			saveUpdateStatus(status)
+			return
+		end
+
+		local version = packageInfo.version
+		print('Latest firmware version: ' .. tostring(version))
+		status.state = STATE_DOWNLOAD_COMPLETED
+		status.version = version
+		saveUpdateStatus(status)
+
+		upgrade.install()
+	end)
 end
 
 return exports

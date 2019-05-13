@@ -776,6 +776,15 @@ function exports.register(directory, thing)
         client:start()
     end
 
+    if (not thing.registerTimer) then
+        thing.registerTimer = setInterval(1000 * 3600, function() 
+            local client = exports.client
+            client:sendRegister(thing.id, thing)
+
+            console.log('sendRegister', thing.id, thing);
+        end)
+    end
+
     client.things[thing.id] = thing;
     return client
 end
@@ -790,6 +799,11 @@ function exports.unregister(directory, thing)
     local client = exports.client
     if (client) then
         client.things[thing.id] = nil;
+
+        if (thing.registerTimer) then
+            clearInterval(thing.registerTimer)
+            thing.registerTimer = nil;
+        end
     end
 
     return promise

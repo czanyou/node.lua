@@ -291,10 +291,13 @@ function sdk.build_sdk_package(type)
 	-- build zip file
 	local pathname  = path.join(cwd, "/build/", (type or "sdk"), target)
     local builder = zlib.ZipBuilder:new()
-    builder:build(pathname)
+	builder:build(pathname)
+	
+	console.log('pathname', pathname)
+	os.rename(pathname .. '.zip', pathname .. '-' .. process.version .. '.zip')
 
 	-- build package info
-    print('Builded: "build/sdk/' .. target .. '.zip".')
+    print('Builded: "build/sdk/' .. target .. "." .. process.version .. '.zip".')
     sdk.build_sdk_package_info(target, packageInfo)
 end
 
@@ -350,7 +353,7 @@ function sdk.build_sdk_package_info(target, packageInfo)
 	local name 		= "nodelua-" .. target .. "-" .. (packageInfo.type or "sdk")
 
 	local buildPath = path.join(cwd, "/build/")
-	local filename  = path.join(buildPath, name .. ".zip")
+	local filename  = path.join(buildPath, name .. "." .. process.version .. ".zip")
 	local statInfo  = fs.statSync(filename)
 	if (not statInfo) then
 		return
