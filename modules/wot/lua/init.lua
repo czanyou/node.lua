@@ -644,7 +644,7 @@ function ThingClient:sendStream(streams, thing)
         data = streams
     }
 
-    --console.log('response', response, self.sendMessage)
+    console.log('stream', message)
     self:sendMessage(message)
 end
 

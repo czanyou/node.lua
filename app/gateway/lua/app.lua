@@ -95,11 +95,6 @@ function exports.play(rtmpUrl)
     end)
 end
 
-function exports.test()
-    local urlString = 'rtmp://iot.beaconice.cn:1935/live/test'
-    local rtmpClient = rtmp.open('test', urlString)
-end
-
 function exports.start()
     exports.rtmp()
     exports.rtsp()
@@ -138,6 +133,10 @@ function exports.gateway()
     app.gateway = gateway.createThing(options)
 end
 
+function exports.test()
+    
+end
+
 function exports.modbus()
     modbus.app = app
 
@@ -166,7 +165,7 @@ function exports.modbus()
             options.modbus = config.f
         end
 
-        console.log(options);
+        -- console.log(options);
 
         local thing, err = modbus.createThing(options)
         if (err) then
@@ -175,6 +174,7 @@ function exports.modbus()
 
         things[did] = thing
     end
+
     app.modbusDevices = things
 end
 

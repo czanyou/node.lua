@@ -9,6 +9,7 @@ if "%1" equ "install" goto install
 if "%1" equ "remove"  goto remove
 if "%1" equ "clean"   goto clean
 
+@set PATH=%CD%\bin;%PATH%
 
 rem -------------------------------------------
 :menu
