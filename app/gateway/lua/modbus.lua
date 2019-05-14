@@ -243,7 +243,6 @@ local function initModbusProperties(options, webThing)
 
         local property = {}
         property.value = 0
-        webThing:addProperty(name, property);
     end
 
     -- console.log(webThing.properties);
@@ -273,6 +272,12 @@ local function processReadAction(input, webThing)
     return result
 end
 
+-- Create a Modbus thing
+-- @param {object} options
+-- - options.mqtt
+-- - options.did
+-- - options.name
+-- - options.secret
 local function createModbusThing(options)
     if (not options) then
         return nil, 'need options'
@@ -286,18 +291,20 @@ local function createModbusThing(options)
 
     local gateway = { 
         id = options.did, 
-        name = options.name or 'modbus' 
+        url = options.mqtt,
+        name = options.name or 'modbus',
+        actions = {},
+        properties = {},
+        events = {}
     }
 
-    local mqttUrl = options.mqtt
     local webThing = wot.produce(gateway)
     webThing.secret = options.secret
 
     initModbusProperties(options, webThing)
 
     -- device actions
-    local action = { input = { type = 'object'} }
-    webThing:addAction('device', action, function(input)
+    webThing:setActionHandler('device', function(input)
         if (input) then
             return processDeviceActions(input, webThing)
             
@@ -307,8 +314,7 @@ local function createModbusThing(options)
     end)
 
     -- config actions
-    local action = { input = { type = 'object'} }
-    webThing:addAction('config', action, function(input)
+    webThing:setActionHandler('config', function(input)
         if (input) then
             return processConfigActions(input, webThing)
             
@@ -317,17 +323,8 @@ local function createModbusThing(options)
         end
     end)
 
-    local action = { input = { type = 'object'} }
-    webThing:addAction('read', action, function(input)
-        console.log('read', input);
-        return processReadAction(input, webThing)
-    end)
-
     -- register
-    local wotClient, err = wot.register(mqttUrl, webThing)
-    if (err) then
-        return nil, err
-    end
+    webThing:expose()
 
     webThing:on('register', function(response)
         local result = response and response.result

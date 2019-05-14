@@ -11,334 +11,216 @@ local mqtt     = require('wot/bindings/mqtt')
 local exports = {}
 
 -- ------------------------------------------------------------
--- DataSchema
-
-local DataSchema = core.Object:extend()
-
-function DataSchema:initialize(options)
-    options = options or {}
-
-    self.type           = options.type or 'string'
-    self.description    = options.description or nil
-    self.title          = options.title or nil
-    self.constant       = options.constant or false
-    self.readOnly       = options.readOnly or false
-    self.writeOnly      = options.writeOnly or false
-
-    if (self.type == 'array') then
-        self.items      = options.items or nil
-        self.minItems   = options.minItems or nil
-        self.maxItems   = options.maxItems or nil
-
-    elseif (self.type == 'object') then
-        self.properties = options.properties or nil
-        self.mandatory  = options.mandatory  or nil
-
-    elseif (self.type == 'number') then
-        self.minimum    = options.minimum  or nil
-        self.maximum    = options.maximum  or nil
-
-    elseif (self.type == 'integer') then
-        self.minimum    = options.minimum  or nil
-        self.maximum    = options.maximum  or nil
-
-    elseif (self.type == 'string') then
-        self.enumeration = options.enumeration or nil
-
-    elseif (self.type == 'boolean') then
-
-    else
-        console.log('unknown type:', self.type)
-    end
-end
-
--- ------------------------------------------------------------
--- ThingAction
-
-local ThingAction = core.Object:extend()
-
-function ThingAction:initialize(options)
-    options = options or {}
-
-    self.title          = options.title or nil
-    self.description    = options.description or nil
-    self.forms          = options.forms or {}
-
-    self.input          = options.input or nil
-    self.output         = options.output or nil
-end
-
-function ThingAction:invoke(input)
-    local promise = Promise.new()
-
-    local forms = self.forms or {}
-    local url = forms.href
-
-    setTimeout(100, function()
-        console.log(forms)
-        promise:resolve(0)
-    end)
-
-    return promise
-end
-
--- ------------------------------------------------------------
--- ThingProperty
-
-local ThingProperty = DataSchema:extend()
-
-function ThingProperty:initialize(options)
-    options = options or {}
-    DataSchema.initialize(self, options)
-
-    self.observable = options.observable or false
-    self.forms      = options.forms or {}
-end
-
-function ThingProperty:subscribe(callback, error, finished)
-    local timer = setInterval(1000, function()
-        callback(1000)
-    end)
-
-    local subscription = {
-        closed = false,
-        unsubscribe = function(self)
-            self.closed = true
-
-            if (timer) then
-                clearInterval(timer)
-                timer = nil
-            end
-        end
-    }
-
-    return subscription 
-end
-
-function ThingProperty:read()
-    local promise = Promise.new()
-
-    setTimeout(100, function()
-        promise:resolve(100)
-    end)
-
-    return promise
-end
-
-function ThingProperty:write(value)
-    local promise = Promise.new()
-
-    setTimeout(100, function()
-        promise:resolve()
-    end)
-
-    return promise
-end
-
--- ------------------------------------------------------------
--- ThingEvent
-
-local ThingEvent = ThingProperty:extend()
-
-function ThingEvent:initialize(options)
-    options = options or {}
-
-    ThingProperty.initialize(self, options)
-end
-
-function ThingEvent:emit(payload)
-    
-end
-
--- ------------------------------------------------------------
 -- ThingDiscover
 
 local ThingDiscover = core.Emitter:extend()
 
 function ThingDiscover:initialize(filter)
     self.filter = filter
+    self.active = false
+    self.done = false
+    self.error = nil
 end
 
-function ThingDiscover:subscribe(callback, error, finished)
-    local subscription = {
-        closed = false,
-        unsubscribe = function()
-            self.closed = false
-        end
-    }
+function ThingDiscover:start()
 
-    self.callback = callback
-
-    return subscription
 end
 
--- ------------------------------------------------------------
--- ThingInstance
+function ThingDiscover:stop()
 
-local ThingInstance = core.Emitter:extend()
-
-function ThingInstance:initialize(options)
-    options = options or {}
-
-    self.id          = options.id or nil            -- optional
-    self.name        = options.name or 'thing'      -- mandatory
-    self.base        = options.base
-
-    self.description = options.description
-    self.support     = options.support
-
-    self.security    = options.security
-    self.links       = options.links
-
-    self.properties  = {}
-    self.actions     = {}
-    self.events      = {}
-
-    self.handlers    = {}
-
-    self['@context'] = options['@context'] or nil;
-    self['@type']    = options['@type'] or nil;
 end
 
-function ThingInstance:getDescription()
-    local result = {}
+function ThingDiscover:next()
 
-    result.id           = self.id
-    result.name         = self.name
-    result.description  = self.description
-    result.support      = self.support
-
-    result.security     = self.security
-    result.links        = self.links
-
-    result.properties   = self.properties
-    result.actions      = self.actions
-    result.events       = self.events  
-
-    result['@context']  = self['@context']
-    result['@type']     = self['@type']
-
-    return result
 end
 
 -- ------------------------------------------------------------
 -- ConsumedThing
 
-local ConsumedThing  = ThingInstance:extend()
+local ConsumedThing  = core.Emitter:extend()
 
-function ConsumedThing:initialize(td)
-    if (type(td) == 'string') then
-        td = json.parse(td)
+function ConsumedThing:initialize(thingInstance)
+    if (type(thingInstance) == 'string') then
+        thingInstance = json.parse(thingInstance)
     end
 
-    td = td or {}
+    self.handlers = {}
+    self.instance = thingInstance or {}
+    self.id = thingInstance.id
+end
 
-    ThingInstance.initialize(self, td)
+function ConsumedThing:readProperty(name)
+    
+end
 
-    local properties  = td.properties or {}
-    local actions     = td.actions or {}
-    local events      = td.events or {}
+function ConsumedThing:readMultipleProperties(names)
+    
+end
 
-    for key, value in pairs(properties) do
-        local property = ThingProperty:new(value)
-        self.properties[key] = property
-    end
+function ConsumedThing:readAllProperties()
+    
+end
 
-    for key, value in pairs(actions) do
-        local action = ThingAction:new(value)
-        self.actions[key] = action
-    end
+function ConsumedThing:writeProperty(name, value)
+    
+end
 
-    for key, value in pairs(events) do
-        local event = ThingEvent:new(value)
-        self.events[key] = event
-    end
+function ConsumedThing:writeMultipleProperties(values)
+    
+end
+
+function ConsumedThing:invokeAction(name, params)
+    
+end
+
+function ConsumedThing:subscribeProperty(name, listener)
+    
+end
+
+function ConsumedThing:unsubscribeProperty(name)
+    
+end
+
+function ConsumedThing:subscribeEvent(name, listener)
+    
+end
+
+function ConsumedThing:unsubscribeEvent(name)
+    
 end
 
 -- ------------------------------------------------------------
 -- ExposedThing
 
-local ExposedThing  = ThingInstance:extend()
+local ExposedThing  = core.Emitter:extend()
 
-function ExposedThing:initialize(model)
-    ThingInstance.initialize(self, model)
+function ExposedThing:initialize(thingInstance)
+    if (type(thingInstance) == 'string') then
+        thingInstance = json.parse(thingInstance)
+    end
 
-    self.events = {}
+    self.handlers = {}
+    self.instance = thingInstance or {}
+    self.id = thingInstance.id
 end
 
-function ExposedThing:addProperty(name, property)
-    self.properties[name] = property
+function ExposedThing:_setHandler(type, name, handler)
+    if (not name) then
+        return
+    end
 
-    return self
-end
-
-function ExposedThing:removeProperty(name)
-    self.properties[name] = null
-
+    self.handlers[type .. name] = handler
     return self
 end
 
 function ExposedThing:setPropertyReadHandler(name, handler)
-    if (not name) then
-        return
-    end
-
-    self.handlers['@read:' .. name] = handler
-
-    return self
+    return self:_setHandler('@read:', name, handler)
 end
 
 function ExposedThing:setPropertyWriteHandler(name, handler)
-    if (not name) then
-        return
+    return self:_setHandler('@write:', name, handler)
+end
+
+function ExposedThing:setActionHandler(name, handler)
+    return self:_setHandler('@action:', name, handler)
+end
+
+function ExposedThing:emitEvent(name, data)
+    
+
+end
+
+function ExposedThing:readProperty(name)
+    local handler = self.handlers['@read:' .. name]
+    if (handler) then
+        return handler()
+    end
+
+    local instance = self.instance
+    local property = instance.properties[name]
+    if (property) then
+        return property.value
+    end
+end
+
+function ExposedThing:readAllProperties()
+    local names = {}
+    for name, property in pairs(instance.properties) do
+        names[#names + 1] = name
+    end
+  
+    local properties = {}
+    for index, name in ipairs(names) do
+        properties[name] = self:readProperty(name)
     end
     
-    self.handlers['@write:' .. name] = handler
-
-    return self
+    return properties
 end
 
-function ExposedThing:addAction(name, action, handler)
-    if (not name) then
-        return
+function ExposedThing:readMultipleProperties(names)
+    local instance = self.instance
+    if (not names) or (not (#names > 0)) then
+        names = {}
+        for name, property in pairs(instance.properties) do
+            names[#names + 1] = name
+        end
+    end
+
+    local properties = {}
+    for index, name in ipairs(names) do
+        properties[name] = self:readProperty(name)
     end
     
-    self.actions[name] = action
-
-    self.handlers['@action:' .. name] = handler
-
-    -- console.log(name, action, handler, self.actions, self.handlers)
-
-    return self
+    return properties
 end
 
-function ExposedThing:removeAction(name)
-    self.actions[name] = null
+function ExposedThing:writeProperty(name, value)
+    local instance = self.instance
+    local property = instance.properties[name]
+    if (property) then
+        property.value = value
 
-    return self
+        local handler = self.handlers['@write:' .. name]
+        if (handler) then
+            handler(value)
+        end
+    end
 end
 
-function ExposedThing:addEvent(name, event)
-    self.events[name] = event
+function ExposedThing:writeMultipleProperties(values)
+    if (type(values) ~= 'table') then
+        return 0
+    end
 
-    return self
+    local count = 0
+    for name, value in pairs(values) do
+        self:writeProperty(name, value)
+        count = count + 1
+    end
+
+    return count
 end
 
--- Removes the event specified by the name argument and updates the Thing 
--- Description. Returns a reference to the same object for supporting 
--- chaining.
-function ExposedThing:removeEvent(name)
-    self.events[name] = null
+function ExposedThing:invokeAction(name, params)
+    local handler = self.handlers['@action:' .. name]
+    if (not handler) then
+        console.log('Action handler not found: ', name)
+        return { code = 404, error = 'Unsupported action' }
+    end
 
-    return self
+    return handler(params)
 end
 
 -- Start serving external requests for the Thing, so that WoT interactions
 -- using Properties, Actions and Events will be possible.
-function ExposedThing:expose(options)
+function ExposedThing:expose()
     local promise = Promise.new()
 
-    if (not self.httpd) then
+    -- console.log(self.instance)
+    local mqtt = self.instance.url
+
+    if (mqtt) then
+        exports.register(mqtt, self)
         promise:resolve()
 
     else
@@ -353,6 +235,10 @@ end
 -- method.
 function ExposedThing:destroy()
     local promise = Promise.new()
+
+    local mqtt = self.instance.url
+    exports.unregister(mqtt, self)
+    promise:resolve()
 
     return promise
 end
@@ -383,11 +269,12 @@ function ThingClient:start()
     local mqttClient = mqtt.connect(urlString, options)
 
     mqttClient:on('connect', function ()
-        console.log('connect')
+        -- console.log('connect')
 
         for did, thing in pairs(self.things) do
             local topic = 'actions/' .. did
             mqttClient:subscribe(topic)
+            console.log('subscribe', topic)
 
             self:sendRegister(did, thing)
         end
@@ -405,55 +292,9 @@ function ThingClient:start()
     self.mqtt = mqttClient;
 end
 
-function ThingClient:invokeAction(name, input, request)
-    -- console.log('invokeAction', name, input, request)
-    -- check name
-    if (not name) then
-        local err = { code = 400, error = 'Invalid action name' }
-        return thingClient:sendActionResult(nil, err, request)
-    end
-
-    -- console.log('invokeAction', name, input, request, self.things)
-    -- check did
-    local did = request.did;
-    local thing = self.things[did]
-    if (not thing) then
-        console.log('Invalid thing id')
-        local err = { code = 404, error = 'Invalid thing id' }
-        return self:sendActionResult(name, err, request)
-    end
-
-    -- check handler
-    local actionName = '@action:' .. name;
-    local handler = thing.handlers[actionName]
-    if (not handler) then
-        console.log('Action handler not found: ', name)
-        local err = { code = 404, error = 'Unsupported action' }
-        return self:sendActionResult(name, err, request)
-    end
-
-    -- handler
-    local ret = handler(input)
-    if (not ret) then
-        console.log('Action invoke result is empty')
-        return self:sendActionResult(name, { code = 0 }, request)
-
-    elseif (not ret.next) then
-        return self:sendActionResult(name, ret, request)
-    end
-
-    -- next
-    local thingClient = self
-    ret:next(function(data)
-        thingClient:sendActionResult(name, data, request)
-
-    end):catch(function(err)
-        thingClient:sendActionResult(name, err, request)
-    end)
-end
-
 function ThingClient:processMessage(message, topic)
     -- print(TAG, 'message', topic, message)
+
     local messageType = message.type
     if (not messageType) then
         return
@@ -479,52 +320,26 @@ function ThingClient:processMessage(message, topic)
     end
 end
 
-function ThingClient:readProperties(thing, names)
-    if (not names) or (not (#names > 0)) then
-        names = {}
-        for name, property in pairs(thing.properties) do
-            names[#names + 1] = name
-        end
+function ThingClient:processActionMessage(message, topic)
+    local data = message.data
+    if (not data) then
+        return
     end
 
-    local properties = {}
-    for index, name in ipairs(names) do
-        local property = thing.properties[name]
-        if (property) then
-            local handlerName = '@read:' .. name
-            local handler = thing.handlers[handlerName]
-            if (handler) then
-                properties[name] = handler()
-            else
-                properties[name] = property.value
-            end
+    for name, input in pairs(data) do
+        if (name == 'read') then
+            self:processReadAction(message, topic)
+
+        elseif (name == 'write') then
+            self:processWriteAction(message, topic)
+
+        else
+            self:processInvokeAction(name, input, message)
         end
     end
-    
-    return properties
 end
 
-function ThingClient:writeProperties(thing, properties)
-    local count = 0
-    for name, value in pairs(properties) do
-        local property = thing.properties[name]
-        if (property) then
-            local actionName = '@write:' .. name;
-            local handler = thing.handlers[actionName]
-            if (handler) then
-                handler(value)
-            else
-                property.value = value
-            end
-
-            count = count + 1
-        end
-    end
-
-    return count
-end
-
-function ThingClient:processReadMessage(request, topic)
+function ThingClient:processReadAction(request, topic)
     local did = request and request.did;
     local thing = self.things[did]
     if (not thing) then
@@ -533,7 +348,7 @@ function ThingClient:processReadMessage(request, topic)
     end
 
     local names = request.data and request.data.read;
-    local properties = self:readProperties(thing, names)
+    local properties = thing:readMultipleProperties(names)
     local response = {
         did = request.did,
         mid = request.mid,
@@ -547,7 +362,7 @@ function ThingClient:processReadMessage(request, topic)
     self:sendMessage(response)
 end
 
-function ThingClient:processWriteMessage(request, topic)
+function ThingClient:processWriteAction(request, topic)
     local did = request and request.did;
     local thing = self.things[did]
     if (not thing) then
@@ -556,7 +371,7 @@ function ThingClient:processWriteMessage(request, topic)
     end
 
     local properties = request.data and request.data.write;
-    local ret = self:writeProperties(thing, properties)
+    local ret = thing:writeMultipleProperties(properties)
     local response = {
         did = request.did,
         mid = request.mid,
@@ -573,23 +388,42 @@ function ThingClient:processWriteMessage(request, topic)
     self:sendMessage(response)
 end
 
-function ThingClient:processActionMessage(message, topic)
-    local data = message.data
-    if (not data) then
-        return
+function ThingClient:processInvokeAction(name, input, request)
+    -- console.log('processInvokeAction', name, input, request)
+    -- check name
+    if (not name) then
+        local err = { code = 400, error = 'Invalid action name' }
+        return thingClient:sendResult(nil, err, request)
     end
 
-    for name, input in pairs(data) do
-        if (name == 'read') then
-            self:processReadMessage(message, topic)
-
-        elseif (name == 'write') then
-            self:processWriteMessage(message, topic)
-
-        else 
-            self:invokeAction(name, input, message)
-        end
+    -- console.log('processInvokeAction', name, input, request, self.things)
+    -- check did
+    local did = request.did;
+    local thing = self.things[did]
+    if (not thing) then
+        console.log('Invalid thing id')
+        local err = { code = 404, error = 'Invalid thing id' }
+        return self:sendResult(name, err, request)
     end
+
+    -- check handler
+    local ret = thing:invokeAction(name, input)
+    if (not ret) then
+        console.log('Action invoke result is empty')
+        return self:sendResult(name, { code = 0 }, request)
+
+    elseif (not ret.next) then
+        return self:sendResult(name, ret, request)
+    end
+
+    -- next
+    local thingClient = self
+    ret:next(function(data)
+        thingClient:sendResult(name, data, request)
+
+    end):catch(function(err)
+        thingClient:sendResult(name, err, request)
+    end)
 end
 
 function ThingClient:sendMessage(message)
@@ -608,7 +442,7 @@ function ThingClient:sendMessage(message)
 end
 
 function ThingClient:sendRegister(did, thing)
-    local description = thing:getDescription()
+    local description = thing.instance
 
     local message = {
         did = did,
@@ -666,7 +500,7 @@ function ThingClient:sendProperty(name, properties, request)
     self:sendMessage(message)
 end
 
-function ThingClient:sendActionResult(name, output, request)
+function ThingClient:sendResult(name, output, request)
     if (not output) then
         output = { code = 0 }
     end
@@ -703,40 +537,20 @@ function exports.discover(filter)
     return ThingDiscover:new(method);
 end
 
--- Accepts an url argument of type USVString that represents a URL 
--- (e.g. "file://..." or "https://...") and returns a Promise that resolves
--- with a ThingDescription (a serialized JSON-LD document of type USVString).
--- @param url String
--- Promise<ThingDescription>
-function exports.fetch(url)
-    local promise = Promise.new()
-
-    local td = { url = url }
-
-    setTimeout(100, function()
-        console.log('timeout')
-        promise:resolve(td)
-    end)
-
-    return promise
-end
-
 -- Accepts an td argument of type ThingDescription and returns a 
 -- ConsumedThing object instantiated based on parsing that description.
--- @param description ThingDescription
--- ConsumedThing
-function exports.consume(description)
-    return ConsumedThing:new(description);
+-- @param {string|object} thingDescription ThingDescription
+-- @returns {ConsumedThing}
+function exports.consume(thingDescription)
+    return ConsumedThing:new(thingDescription);
 end
 
 -- Accepts a model argument of type ThingModel and returns an 
 -- ExposedThing object
--- @param model ThingModel 
--- ExposedThing
-function exports.produce(model)
-    local thing = ExposedThing:new(model)
-
-    return thing
+-- @param {string|object} model ThingModel 
+-- @returns {ExposedThing}
+function exports.produce(thingDescription)
+    return ExposedThing:new(thingDescription)
 end
 
 -- Generate the Thing Description as td, given the Properties, Actions 

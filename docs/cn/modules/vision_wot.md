@@ -318,11 +318,11 @@ IoT 客户端模块
 - options 选项
   - did 设备 ID
 
-### sendActionResult
+### sendResult
 
 发送操作调用应答消息
 
-> ThingClient:sendActionResult(name, output, message)
+> ThingClient:sendResult(name, output, message)
 
 - name 操作名
 - output 输出参数

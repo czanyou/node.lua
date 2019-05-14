@@ -167,12 +167,14 @@ end
 -- 注册 WoT 客户端
 function exports.cameras()
     local mqtt = app.get('mqtt')
+    local secret = app.get('secret')
     local gateway = app.get('gateway')
     local peripherals = gateway and gateway.peripherals
     local cameras = peripherals and peripherals.camera
     local things = {}
     for index, options in ipairs(cameras) do
         options.mqtt = mqtt
+        options.secret = secret
 
         -- console.log('cameras', options)
         local thing, err = camera.createThing(options)

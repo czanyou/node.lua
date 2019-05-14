@@ -38,109 +38,6 @@ if (osType == 'win32') then
 	exports.rootPath = path.dirname(pathname)
 end
 
--------------------------------------------------------------------------------
--- encode
-
-local _encodeTokenTable = {
-	['\\'] = '\\\\',
-	['"'] = '\\"',
-	['\a'] = '\\a',
-	['\b'] = '\\b',
-	['\t'] = '\\t',
-	['\n'] = '\\n',
-	['\v'] = '\\v',
-	['\f'] = '\\f',
-	['\r'] = '\\r'
-}
-
-local _encodeLuaString, _encodeLuaValue, _encodeLuaTable
-
-
---[[
-The escape function used by querystring.stringify, provided so that it could be
-overridden if necessary.
---]]
-function _encodeLuaString(str)
-    if not str then
-    	return str
-    end
-
-    str = str:gsub('([^%w])', function(c)
-    	return _encodeTokenTable[c] or c
-
-    	--return c
-        --return string.format('%%%02X', string.byte(c))
-    end)
-
-    return str
-end
-
-
-function _encodeLuaValue(sb, value, indent)
-	if (value == nil) then
-		sb:append("null")
-
-	elseif (type(value) == 'string') then
-		value = _encodeLuaString(value)
-		sb:append('"'):append(value):append('"')
-
-	elseif (type(value) == 'number') then
-		sb:append(value)
-
-	elseif (type(value) == 'boolean') then
-		if (value) then
-			sb:append('true')
-		else
-			sb:append('false')	
-		end
-
-	elseif (type(value) == 'table') then
-		_encodeLuaTable(sb, value, indent)
-			
-	else
-		sb:append("null")
-	end
-end
-
-function _encodeLuaTable(sb, object, indent)
-	if (not indent) then
-		indent = ""
-	end
-
-	local nextIndent = indent .. "  "
-	local sep = ""
-
-	local keys = {}
-	for k,v in pairs(object) do
-		table.insert(keys, k)
-	end
-	table.sort( keys, function(a, b) return tostring(a) < tostring(b) end)
-
-	sb:append("{\n")
-	for i = 1, #keys do
-		local k = keys[i]
-		local v = object[k]
-
-		sb:append(sep)
-		sb:append(nextIndent)
-		sb:append('"')
-		sb:append(k)
-		sb:append('":')
-		_encodeLuaValue(sb, v, nextIndent)
-
-		sep = ",\n"
-	end
-
-	if (#sep == 0) then
-		sb:append("}\n")
-
-	else
-		sb:append("\n")
-		sb:append(indent)
-		sb:append("}")
-	end
-end
-
 local function trimValue(value)
 	local valueType = type(value)
 	if (valueType == 'function') then
@@ -153,8 +50,15 @@ local function trimValue(value)
 		return tostring(value)
 
 	elseif (valueType == 'table') then
-		for k, v in pairs(value) do
-			value[k] = trimValue(v)
+		if (#value > 0) then
+			for k, v in ipairs(value) do
+				value[k] = trimValue(v)
+			end
+
+		else
+			for k, v in pairs(value) do
+				value[k] = trimValue(v)
+			end
 		end
 	end
 
@@ -293,9 +197,7 @@ function Profile:toString()
 		return
 	end
 
-	local sb = util.StringBuffer:new()
-	_encodeLuaTable(sb, self.settings, "")
-	return sb:toString()
+	return json.stringify(self.settings)
 end
 
 function exports.load(name, callback)

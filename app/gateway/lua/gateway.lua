@@ -244,7 +244,7 @@ local function processFirmwareActions(input, webThing)
 end
 
 local function processConfigActions(input, webThing)
-    console.log('processConfigActions', input)
+    -- console.log('processConfigActions', input)
 
     if (input.read) then
         return getConfigInformation()
@@ -269,15 +269,20 @@ local function createMediaGatewayThing(options)
         return nil, 'need did option'
     end
 
-    local gateway = { id = options.did, name = 'gateway' }
+    local gateway = { 
+        id = options.did, 
+        url = options.mqtt,
+        name = 'gateway',
+        actions = {},
+        properties = {},
+        events = {}
+    }
 
-    local mqttUrl = options.mqtt
     local webThing = wot.produce(gateway)
     webThing.secret = options.secret
 
     -- device actions
-    local action = { input = { type = 'object'} }
-    webThing:addAction('device', action, function(input)
+    webThing:setActionHandler('device', function(input)
         if (input) then
             return processDeviceActions(input, webThing)
             
@@ -287,8 +292,7 @@ local function createMediaGatewayThing(options)
     end)
 
     -- firmware actions
-    local action = { input = { type = 'object'} }
-    webThing:addAction('firmware', action, function(input)
+    webThing:setActionHandler('firmware', function(input)
         if (input) then
             return processFirmwareActions(input, webThing)
             
@@ -298,8 +302,7 @@ local function createMediaGatewayThing(options)
     end)
 
     -- config actions
-    local action = { input = { type = 'object'} }
-    webThing:addAction('config', action, function(input)
+    webThing:setActionHandler('config', function(input)
         if (input) then
             return processConfigActions(input, webThing)
             
@@ -309,10 +312,7 @@ local function createMediaGatewayThing(options)
     end)
 
     -- register
-    local cient, err = wot.register(mqttUrl, webThing)
-    if (err) then
-        return nil, err
-    end
+    webThing:expose()
 
     webThing:on('register', function(response)
         local result = response and response.result

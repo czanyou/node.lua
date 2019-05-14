@@ -201,29 +201,35 @@ local function createCameraThing(options)
         return nil, 'need did option'
     end
 
-    local mqttUrl = options.mqtt
-    local did = options.did
+    local camera = { 
+        ['@context'] = "https://iot.beaconice.cn/schemas",
+        ['@type'] = 'Camera',
+        id = options.did, 
+        url = options.mqtt,
+        name = 'camera',
+        actions = {
+            play = { ['@type'] = 'play' },
+            stop = { ['@type'] = 'stop' },
+        },
+        properties = {},
+        events = {}
+    }
 
-    local camera = { id = did, name = 'camera' }
     local webThing = wot.produce(camera)
-
-    webThing.secret = options and options.secret
+    webThing.secret = options.secret
 
     -- play action
-    local play = { input = { type = 'object' } }
-    webThing:addAction('play', play, function(input)
+    webThing:setActionHandler('play', function(input)
         return processPlayActions(input, webThing)
     end)
 
     -- stop action
-    local stop = { input = { type = 'object' } }
-    webThing:addAction('stop', stop, function(input)
+    webThing:setActionHandler('stop', function(input)
         return processStopActions(input, webThing)
     end)
 
     -- ptz action
-    local ptz = { input = { type = 'object'} }
-    webThing:addAction('ptz', ptz, function(input)
+    webThing:setActionHandler('ptz', function(input)
         if (input) then
             return processPtzActions(input, webThing)
             
@@ -233,8 +239,7 @@ local function createCameraThing(options)
     end)
 
     -- preset action
-    local preset = { input = { type = 'object'} }
-    webThing:addAction('preset', preset, function(input)
+    webThing:setActionHandler('preset', function(input)
         if (input) then
             return processPresetActions(input, webThing)
             
@@ -245,8 +250,7 @@ local function createCameraThing(options)
     end)
 
     -- device actions
-    local action = { input = { type = 'object'} }
-    webThing:addAction('device', action, function(input)
+    webThing:setActionHandler('device', function(input)
         if (input) then
             return processDeviceActions(input, webThing)
             
@@ -256,8 +260,7 @@ local function createCameraThing(options)
     end)
 
     -- config actions
-    local action = { input = { type = 'object'} }
-    webThing:addAction('config', action, function(input)
+    webThing:setActionHandler('config', function(input)
         if (input) then
             return processConfigActions(input, webThing)
             
@@ -266,16 +269,8 @@ local function createCameraThing(options)
         end
     end)
 
-    -- play event
-    local event = { type = 'object' }
-    webThing:addEvent('play', event)
-
     -- register
-    -- console.log('webThing', webThing)
-    local client, err = wot.register(mqttUrl, webThing)
-    if (err) then
-        console.log(err)
-    end
+    webThing:expose()
 
     webThing:on('register', function(response)
         local result = response and response.result
