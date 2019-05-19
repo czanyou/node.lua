@@ -14,7 +14,7 @@ http://nikhilm.github.io/uvbook/index.html
 Here is a small example showing a TCP echo server:
 
 ```lua
-local uv = require('uv')
+local uv = require('luv')
 
 local server = uv.new_tcp()
 server:bind("127.0.0.1", 1337)

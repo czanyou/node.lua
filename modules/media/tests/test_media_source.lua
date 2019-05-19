@@ -63,5 +63,3 @@ end
 
 test_media_source1()
 test_media_source2()
-
-run_loop()

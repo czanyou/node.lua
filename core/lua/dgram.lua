@@ -27,7 +27,7 @@ local exports = { meta = meta }
 
 local core    = require('core')
 local timer   = require('timer')
-local uv      = require('uv')
+local uv      = require('luv')
 
 -------------------------------------------------------------------------------
 -- Socket

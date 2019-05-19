@@ -24,7 +24,7 @@ local net     = require('net')
 local path    = require('path')
 local timer   = require('timer')
 local utils   = require('util')
-local uv      = require('uv')
+local uv      = require('luv')
 local tls     = require('lmbedtls.tls')
 
 local _, openssl = pcall(require, 'ssl')

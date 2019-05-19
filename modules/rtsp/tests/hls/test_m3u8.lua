@@ -2,7 +2,7 @@ local path  	= require('path')
 local utils		= require('util')
 local url   	= require('url')
 local fs    	= require('fs')
-local uv 		= require('uv')
+local uv 		= require('luv')
 local assert 	= require("assert")
 local tap 		= require("ext/tap")
 

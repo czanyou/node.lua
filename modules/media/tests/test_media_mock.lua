@@ -256,5 +256,3 @@ if (writer) then
 	writer:close()
 	writer = nil
 end
-
-run_loop()

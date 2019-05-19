@@ -2,7 +2,7 @@ local path  	= require('path')
 local utils 	= require('util')
 local url   	= require('url')
 local fs    	= require('fs')
-local uv 		= require('uv')
+local uv 		= require('luv')
 local tap 		= require("ext/tap")
 
 local segmenter = require('hls/segmenter')
@@ -80,6 +80,4 @@ local function test_media_source()
 	end
 	reader:close()
 end
-
-run_loop()
 

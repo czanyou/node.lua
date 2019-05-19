@@ -434,9 +434,8 @@ LUALIB_API int lnode_openlibs(lua_State* L) {
 
   // Store uv module definition at loaded.uv
   luaopen_luv(L);
-  lua_setfield(L, -2, "uv");
+  lua_setfield(L, -2, "luv");
   lua_pop(L, 1);
-
 
   // Get package.preload so we can store builtins in it.
   lua_getglobal(L, "package");

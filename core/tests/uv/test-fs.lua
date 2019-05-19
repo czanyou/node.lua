@@ -1,6 +1,6 @@
 local utils  = require('util')
 local assert = require('assert')
-local uv     = require('uv')
+local uv     = require('luv')
 
 local tap = require('ext/tap')
 local test = tap.test

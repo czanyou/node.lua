@@ -30,7 +30,7 @@ meta.tags        = { "lnode", "process" }
 meta.version     = "1.0.1"
 
 local env       = require('env')
-local uv        = require('uv')
+local uv        = require('luv')
 local Emitter   = require('core').Emitter
 local lutils    = require('lutils')
 local lnode     = require('lnode')

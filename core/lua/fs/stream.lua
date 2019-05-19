@@ -17,7 +17,7 @@ limitations under the License.
 
 --]]
 
-local uv        = require('uv')
+local uv        = require('luv')
 local adapt     = require('util').adapt
 local bind      = require('util').bind
 

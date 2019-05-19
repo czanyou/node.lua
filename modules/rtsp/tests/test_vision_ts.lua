@@ -157,5 +157,3 @@ if (action == 'b') then
 else
 	test_hls_writer()
 end
-
-run_loop()

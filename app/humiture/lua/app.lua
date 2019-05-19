@@ -27,7 +27,7 @@ end
 local function _onReadTimer()
     sensor.read(function(temperature, humidity)
         if (not temperature) then
-            _print(humidity)
+            rawPrint(humidity)
             return
         end
         

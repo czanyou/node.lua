@@ -1,7 +1,7 @@
 local utils   	= require('util')
 local lmedia  	= require('lmedia')
 local thread  	= require('thread')
-local uv      	= require('uv')
+local uv      	= require('luv')
 local fs      	= require('fs')
 
 local audio_input 	= nil
@@ -109,6 +109,6 @@ main(arg)
 
 setTimeout(100, function() end)
 
-run_loop()
+runLoop()
 stop_mpp()
 

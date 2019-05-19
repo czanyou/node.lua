@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local uv = require('uv')
+local uv = require('luv')
 
 local meta = { }
 meta.name           = "lnode/init"
@@ -264,13 +264,11 @@ package.searchers[8] = appSearcher
 -------------------------------------------------------------------------------
 -- run loop
 
-if (not _G.run_loop) then
-    _G.run_loop = function(mode)
+if (not _G.runLoop) then
+    _G.runLoop = function(mode)
         uv.run(mode)
         uv.loop_close()
     end
-
-    _G.runLoop = _G.run_loop
 end
 
 -------------------------------------------------------------------------------

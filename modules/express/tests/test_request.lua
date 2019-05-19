@@ -9,5 +9,3 @@ local url = 'http://node.sae-sz.com/'
 request(url, function(error, response, body)
 	print(error, response, body)
 end)
-
-run_loop()

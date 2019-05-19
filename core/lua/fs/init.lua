@@ -25,7 +25,7 @@ meta.description = "Node-style filesystem module for lnode"
 meta.tags        = { "lnode", "fs", "stream" }
 
 local lutils    = require('lutils')
-local uv        = require('uv')
+local uv        = require('luv')
 local adapt     = require('util').adapt
 local Error     = require('core').Error
 

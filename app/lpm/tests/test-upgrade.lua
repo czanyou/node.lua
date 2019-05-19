@@ -5,7 +5,7 @@ local app    = require('app')
 local upgrade    = require('app/upgrade')
 
 local conf 	 = require('app/conf')
-local uv 	 = require('uv')
+local uv 	 = require('luv')
 local assert = require('assert')
 
 return require('ext/tap')(function (test)

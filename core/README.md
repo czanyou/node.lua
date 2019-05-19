@@ -34,7 +34,7 @@ The main program of Node.lua is implemented by C language and contains core libr
 - (lua) PUC lua 5.3 and above
 - (luajson) cjson codec, which can be called in Lua via require("cjson")
 - (luautils) implements buffer, hex, HTTP parser, md5 and other functions, which can be called in Lua by require("lutils")
-- (luauv) is mainly used to bind libuv to lua. in Lua, it can be called via require("uv")
+- (luauv) is mainly used to bind libuv to lua. in Lua, it can be called via require('luv')
 - (luazip) miniz ZIP decompression library, which can be called in Lua by require("miniz")
 - (lnode) lnode main program entry function code
 

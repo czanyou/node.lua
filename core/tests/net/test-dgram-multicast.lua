@@ -42,7 +42,7 @@ test("tls dgram multicast", function()
 
 	s1:send("HELLO", PORT + 1, "127.0.0.1")
 
-	run_loop()
+	runLoop()
 
 	s1:close()
 	s2:close()

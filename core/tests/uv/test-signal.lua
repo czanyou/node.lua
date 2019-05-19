@@ -1,4 +1,4 @@
-local uv    = require('uv')
+local uv    = require('luv')
 local tap   = require('ext/tap')
 local test = tap.test
 
@@ -6,7 +6,7 @@ local isWindows = os.platform() == "win32"
 
 -- child process 
 local child_code = string.dump(function ()
-	local uv = require('uv')
+	local uv = require('luv')
 
 	-- wait 'sigint' signal
 	local signal = uv.new_signal()

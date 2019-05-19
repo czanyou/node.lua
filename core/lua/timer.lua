@@ -25,7 +25,7 @@ meta.tags        = { "lnode", "timer" }
 
 local exports = { meta = meta }
 
-local uv = require('uv')
+local uv = require('luv')
 
 local Object = require('core').Object
 local bind   = require('util').bind

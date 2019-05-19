@@ -1,6 +1,6 @@
 local spawn = require("child_process").spawn
 local net = require("net")
-local uv = require("uv")
+local uv = require('luv')
 
 local tap = require("ext/tap")
 local test = tap.test

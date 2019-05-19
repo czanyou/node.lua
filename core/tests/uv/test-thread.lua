@@ -5,7 +5,7 @@ test("test thread create", function(print, p, expect, uv)
 	local delay = 1000
 	local before = uv.uptime()
 	local thread = uv.new_thread(function(delay)
-		require('uv').sleep(delay)
+		require('luv').sleep(delay)
 	end, delay)
 
 	uv.thread_join(thread)
@@ -26,7 +26,7 @@ test("test thread create with arguments", function(print, p, expect, uv)
 		assert(bool == false)
 		assert(five == 5)
 		assert(hw == 'helloworld')
-		require('uv').sleep(1000)
+		require('luv').sleep(1000)
 	end, table.unpack(args)):join()
 
 	local elapsed = (uv.uptime() - before) * 1000

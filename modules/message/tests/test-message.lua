@@ -1,6 +1,6 @@
 local lmessage 	= require('lmessage')
 local thread  	= require('thread')
-local uv   		= require('uv')
+local uv   		= require('luv')
 local tap   	= require('ext/tap')
 
 -- console.log(lmessage)

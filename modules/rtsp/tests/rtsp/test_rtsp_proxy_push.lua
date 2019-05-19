@@ -60,6 +60,3 @@ end
 
 test_rtsp_proxy()
 test_rtsp_push_delay()
-
-run_loop()
-

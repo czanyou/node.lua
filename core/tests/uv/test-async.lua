@@ -32,7 +32,7 @@ test("test pass async between threads", function(p, p, expect, uv)
 	local unpack = unpack or table.unpack
 
 	local thread_func = function(num, s, null, bool, five, hw, async)
-		local uv = require('uv')
+		local uv = require('luv')
 		local init = require('init')
 
 		assert(type(num) == "number")

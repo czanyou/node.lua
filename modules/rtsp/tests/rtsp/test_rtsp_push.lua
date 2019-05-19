@@ -98,5 +98,3 @@ function test_rtsp_pusher()
 end
 
 test_rtsp_pusher()
-
-run_loop()

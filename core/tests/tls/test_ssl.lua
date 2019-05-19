@@ -3,7 +3,7 @@ local utils 	= require('util')
 local lcrypto 	= require('tls/lcrypto')
 local tap 		= require('ext/tap')
 local net 		= require('net')
-local uv 		= require('uv')
+local uv 		= require('luv')
 
 local data = ""
 

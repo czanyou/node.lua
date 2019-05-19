@@ -1,4 +1,4 @@
-local uv = require('uv')
+local uv = require('luv')
 local tap = require('ext/tap')
 
 tap.test("test uv.new_work", function()
@@ -24,7 +24,7 @@ tap.test("test uv.new_work", function()
 
 	-- work, in threadpool
 	local work = function(n, s) 
-		local uv = require('uv')
+		local uv = require('luv')
 		local threadId = uv.thread_self()
 
 		uv.sleep(1)

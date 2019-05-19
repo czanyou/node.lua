@@ -28,7 +28,7 @@ meta.tags        = { "lnode", "thread", "threadpool", "work" }
 
 local exports = { meta = meta }
 
-local uv = require('uv')
+local uv = require('luv')
 local Object = require('core').Object
 
 -------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ function exports.start(thread_func, ...)
         end
 
         -- Start new event loop for thread.
-        local uv = require('uv')
+        local uv = require('luv')
         uv.run()
         uv.loop_close()
     end

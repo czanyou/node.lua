@@ -338,7 +338,7 @@ function exports.kill(name)
         return
     end
 
-    local uv = require('uv')
+    local uv = require('luv')
     local tmpdir = os.tmpdir or '/tmp'
     local ppid = process.pid
 

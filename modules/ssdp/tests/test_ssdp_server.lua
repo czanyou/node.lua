@@ -26,6 +26,3 @@ end
 
 test_ssdp_server()
 
-run_loop()
-
-

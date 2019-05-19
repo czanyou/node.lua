@@ -31,7 +31,7 @@ meta.tags        = { "lnode", "tcp", "pipe", "stream" }
 
 local exports = { meta = meta }
 
-local uv    = require('uv')
+local uv    = require('luv')
 local timer = require('timer')
 local util = require('util')
 

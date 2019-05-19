@@ -18,6 +18,3 @@ end
 
 test_ssdp_client()
 
-run_loop()
-
-

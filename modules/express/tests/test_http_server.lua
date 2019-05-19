@@ -18,7 +18,7 @@ function http_loop()
 	--local server = express.Server:new()
 	--server.root = root;
 	--server:start(8098)
-	--run_loop()
+	--runLoop()
 end
 
 function main()
@@ -37,7 +37,7 @@ function main()
 		isRunning = true -- debug only
 	end
 
-	run_loop()
+	runLoop()
 end
 
 main()

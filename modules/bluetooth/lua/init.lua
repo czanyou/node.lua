@@ -17,7 +17,7 @@ limitations under the License.
 --]]
 local lbluetooth = require('lbluetooth')
 local fs  		 = require('fs')
-local uv 	     = require('uv')
+local uv 	     = require('luv')
 local core 	     = require('core')
 
 local exports = {}

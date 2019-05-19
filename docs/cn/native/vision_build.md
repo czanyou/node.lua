@@ -33,7 +33,7 @@ Node.lua 主程序由 C 语言实现, 并且包含了 lua, libuv, miniz 等核�
 - (lua) PUC lua 5.3 以上
 - (luajson) cjson JSON 编解码器, 在 Lua 中可通过 require("cjson") 调用
 - (luautils) 实现 buffer, hex, http parser, md5 等功能, 在 Lua 中可通过 require("lutils") 调用
-- (luauv) 主要用于将 libuv 绑定到 Lua. 在 Lua 中可通过 require("uv") 调用
+- (luauv) 主要用于将 libuv 绑定到 Lua. 在 Lua 中可通过 require('luv') 调用
 - (luazip) miniz ZIP 压缩解压库, 在 Lua 中可通过 require("miniz") 调用
 
 相关依赖库源代码下载地址：

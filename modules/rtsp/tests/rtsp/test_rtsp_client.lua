@@ -143,5 +143,3 @@ end
 
 test_rtsp_client()
 
-run_loop()
-

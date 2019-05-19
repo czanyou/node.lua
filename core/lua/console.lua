@@ -27,7 +27,7 @@ meta.author      = { name = "Tim Caswell" }
 
 local exports = { meta = meta }
 
-local uv  = require('uv')
+local uv  = require('luv')
 
 local dump, color, colorize
 
@@ -467,11 +467,11 @@ end
 -------------------------------------------------------------------------------
 --
 
-function initConsoleStream()
+local function initConsoleStream()
     -- Print replacement that goes through libuv.  This is useful on windows
     -- to use libuv's code to translate ansi escape codes to windows API calls.
 
-    _G._print = _G.print
+    _G.rawPrint = _G.print
     _G.print = function(...)
         local n = select('#', ...)
         local arguments = { ... }

@@ -23,7 +23,7 @@ local fs    = require('fs')
 local path  = require('path')
 local string = require('string')
 local init  = require('init')
-local uv    = require('uv')
+local uv    = require('luv')
 
 local is_windows = os.platform() == 'win32'
 local __dirname = require("util").dirname()

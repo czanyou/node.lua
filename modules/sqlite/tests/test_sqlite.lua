@@ -54,6 +54,6 @@ stmt:close()
 
 db:close()
 
-run_loop()
+runLoop()
 
 os.remove(filename)

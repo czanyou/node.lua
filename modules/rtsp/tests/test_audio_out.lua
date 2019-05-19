@@ -1,7 +1,7 @@
 local utils   	= require('util')
 local lmedia  	= require('lmedia')
 local thread  	= require('thread')
-local uv     	= require('uv')
+local uv     	= require('luv')
 local path     	= require('path')
 local fs     	= require('fs')
 
@@ -122,6 +122,6 @@ main(arg)
 
 setTimeout(100, function() end)
 
-run_loop()
+runLoop()
 stop_mpp()
 

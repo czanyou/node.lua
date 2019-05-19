@@ -323,7 +323,7 @@ int main(int argc, char* argv[]) {
 
 		res = lnode_dofile(L, filename);
 
-		lnode_call_script(L, "run_loop()", "loop");
+		lnode_call_script(L, "runLoop()", "loop");
 		lnode_call_script(L, "process:emit('exit')\n", "exit");
 
 	} else {

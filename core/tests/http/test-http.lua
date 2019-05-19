@@ -18,7 +18,7 @@ limitations under the License.
 
 local decoder = require('http/codec').decoder
 local encoder = require('http/codec').encoder
-local uv = require('uv')
+local uv = require('luv')
 
 require('ext/tap')(function (test)
 

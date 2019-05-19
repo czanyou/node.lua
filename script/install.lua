@@ -6,7 +6,7 @@
 -- Include executables and related Lua module.
 --
 
-local uv     = require('uv')
+local uv     = require('luv')
 local lutils = require('lutils')
 
 local cwd    = uv.cwd()

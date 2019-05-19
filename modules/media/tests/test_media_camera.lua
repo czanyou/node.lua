@@ -2,7 +2,7 @@ local fs 		= require('fs')
 local path  	= require('path')
 local timer 	= require('timer')
 local utils 	= require('util')
-local uv 		= require('uv')
+local uv 		= require('luv')
 
 local basePath  = utils.dirname()
 
@@ -69,6 +69,4 @@ end
 
 test_media_camera_preview()
 --test_media_camera_take_picture()
-
-run_loop()
 

@@ -31,5 +31,3 @@ local files = { file = { name = 'test.txt', data = data }}
 request.post(urlString, { files = files }, function(err, response, body)
     print('body:', body)
 end)
-
-run_loop()

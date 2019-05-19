@@ -16,7 +16,7 @@ limitations under the License.
 
 --]]
 
-local uv      = require('uv')
+local uv      = require('luv')
 
 local colorize  = console.colorize
 

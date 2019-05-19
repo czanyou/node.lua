@@ -33,6 +33,3 @@ local function test_rtsp_proxy()
 end
 
 test_rtsp_proxy()
-
-run_loop()
-

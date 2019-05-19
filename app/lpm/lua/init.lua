@@ -489,7 +489,7 @@ function exports.call(args)
 	local func = exports[command or 'usage']
 	if (type(func) == 'function') then
 		local status, ret = pcall(func, table.unpack(args))
-		run_loop()
+		runLoop()
 
 		if (not status) then
 			print(ret)

@@ -40,6 +40,3 @@ if (i2c) then
 	console.log('crc', ret, err)
 
 end
-
-run_loop()
-

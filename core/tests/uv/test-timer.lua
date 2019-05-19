@@ -1,5 +1,5 @@
 local tap = require('ext/tap')
-local uv  = require('uv')
+local uv  = require('luv')
 
 local test = tap.test
 

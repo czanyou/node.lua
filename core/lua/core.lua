@@ -493,7 +493,7 @@ end
 -------------------------------------------------------------------------------
 -- os
 
-local uv     = require('uv')
+local uv     = require('luv')
 local lutils = require('lutils')
 
 -- A constant defining the appropriate End-of-line marker for the operating system.

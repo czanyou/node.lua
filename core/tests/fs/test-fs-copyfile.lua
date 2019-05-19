@@ -20,7 +20,7 @@ local tap = require('ext/tap')
 local test = tap.test
 
 local fs = require('fs')
-local uv = require('uv')
+local uv = require('luv')
 local path = require('path')
 local util = require('util')
 
