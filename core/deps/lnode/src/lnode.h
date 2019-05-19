@@ -33,15 +33,40 @@
 #define NODE_LUA_ROOT '/usr/local/lnode/'
 #endif
 
+/**
+ * 执行指定名称的 lua 文件
+ * @param filename 要运行的文件的名称
+ */
 LUALIB_API int lnode_call_file(lua_State* L, const char* filename);
-LUALIB_API int lnode_call_script(lua_State* L, const char* script, const char* name);
-LUALIB_API int lnode_create_arg_table(lua_State *L, char **argv, int argc, int offset);
-LUALIB_API int lnode_init(lua_State* L);
-LUALIB_API int lnode_openlibs(lua_State* L);
-LUALIB_API int lnode_run_as_deamon();
-LUALIB_API int lnode_get_script_path(char* buffer, size_t size);
-LUALIB_API int lnode_set_script_path(const char* buffer);
 
-const char* lnode_get_realpath(const char* filename, char* realname);
+/**
+ * 执行指定的 lua 脚本
+ * @param script 要运行的脚本
+ * @param name 要运行的脚本的名称
+ */
+LUALIB_API int lnode_call_script(lua_State* L, const char* script, const char* name);
+
+/**
+ * 创建 arg 参数数组
+ * @param argv 参数列表
+ * @param argc 参数数量
+ * @param offset arg[0] 参数偏移位置
+ */
+LUALIB_API int lnode_create_arg_table(lua_State *L, char **argv, int argc, int offset);
+
+/**
+ * 初始化
+ */ 
+LUALIB_API int lnode_path_init(lua_State* L);
+
+/**
+ * 注册 lnode 核心模块到预加载列表中
+ */ 
+LUALIB_API int lnode_openlibs(lua_State* L);
+
+/**
+ * 在后台运行
+ */
+LUALIB_API int lnode_run_as_deamon();
 
 #endif // _LNODE_H

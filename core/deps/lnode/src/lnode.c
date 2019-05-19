@@ -52,28 +52,6 @@ static int lua_table_set(lua_State *L, const char* key, const char* value)
   return 0;
 }
 
-static char script_path[PATH_MAX];
-
-int lnode_get_script_path(char* buffer, size_t size) {
-  if (buffer == NULL || size <= 0) {
-    return -1;
-  }
-
-  memset(buffer, 0, size);
-  strncpy(buffer, script_path, PATH_MAX);
-  return 0;
-}
-
-int lnode_set_script_path(const char* buffer) {
-  memset(script_path, 0, PATH_MAX);
-  if (buffer == NULL) {
-    return -1;
-  }
-
-  strncpy(script_path, buffer, PATH_MAX);
-  return 0;
-}
-
 static int lnode_get_exepath(char* buffer, size_t size) {
   if (buffer == NULL || size <= 0) {
     return -1;
@@ -324,65 +302,49 @@ LUALIB_API int lnode_call_script(lua_State* L, const char* script, const char* n
   return ret;
 }
 
-LUALIB_API int lnode_init(lua_State* L) {
+LUALIB_API int lnode_path_init(lua_State* L) {
   char buffer[PATH_MAX];
   memset(buffer, 0, sizeof(buffer));
 
   char root[PATH_MAX];
   memset(root, 0, sizeof(root));
-
-  char appPath[PATH_MAX];
-  memset(appPath, 0, sizeof(appPath));
-
   lnode_get_root(root);
-  lnode_get_script_path(appPath, PATH_MAX);
-  //printf("SCRIPT: %s\r\n", appPath);
-
-  lnode_get_dirname(appPath);
-
-  //printf("APP: %s\r\n", appPath);
 
 #ifdef _WIN32
-  char nodeRoot[PATH_MAX];
-  memset(nodeRoot, 0, sizeof(nodeRoot));
-
-  strcpy(nodeRoot, root);
-  lnode_get_dirname(root);
-
   const char* fmt = "package.path='"
+    "./?.lua;"
+    "./?/init.lua;"
+    "./lua/?.lua;"
+    "./lua/?/init.lua;"
     "%s/lua/?.lua;"
     "%s/lua/?/init.lua;"
     "%s/core/lua/?.lua;"
     "%s/core/lua/?/init.lua;"
-    "./lua/?.lua;"
-    "./lua/?/init.lua;"
-    "./?.lua;"
-    "./?/init.lua;"
     "'\n"
     "package.cpath='"
-    "%s/bin/?.dll;"
     "./?.dll;"
+    "%s/bin/?.dll;"
     "%s/bin/loadall.dll;"
     "'\n";
 
   snprintf(buffer, PATH_MAX, fmt,
-    nodeRoot, nodeRoot, nodeRoot, nodeRoot, nodeRoot, nodeRoot);
+    root, root, root, root, root, root);
 
 #else
   const char* fmt = "package.path='"
+    "./?.lua;"
+    "./?/init.lua;"
+    "./lua/?.lua;"
+    "./lua/?/init.lua;"
     "%s/lua/?.lua;"
     "%s/lua/?/init.lua;"
     "%s/lib/?.lua;"
     "%s/lib/?/init.lua;"
-    "./lua/?.lua;"
-    "./lua/?/init.lua;"
-    "./?.lua;"
-    "./?/init.lua;"
     "'\n"
     "package.cpath='"
+    "./?.so;"
     "%s/bin/?.so;"
     "%s/lib/?.so;"
-    "./?.so;"
     "%s/bin/loadall.so;"
     "'\n";
 

@@ -27,85 +27,7 @@ meta.tags           = { "lnode", "init" }
 local exports = { meta = meta }
 
 -------------------------------------------------------------------------------
--- Bundle module loader
-
-local function bundleSearcher(name)
-    local miniz = require('miniz')
-
-    if (type(name) ~= 'string') then
-        return nil
-    end
-
-    local bundle_reader = function (filename)
-        if (not _G._miniz_readers) then
-            _G._miniz_readers = { }
-        end
-
-        local reader = _G._miniz_readers[filename]
-        if (not reader) then
-            reader = miniz.new_reader(filename)
-            if (reader) then
-                _G._miniz_readers[filename] = reader
-            end
-        end
-
-        return reader
-    end
-
-    local load_bundle_module = function (filename, name)
-        if (type(name) ~= 'string') then
-            return
-
-        elseif (type(filename) ~= 'string') then
-            return
-        end
-
-        local reader = bundle_reader(filename)
-        if (reader == nil) then
-            return
-        end
-
-        local path =  'lib/' .. name .. '.lua'
-        local index, err = reader:locate_file(path)
-        if (not index) then
-            path = 'lib/' .. name .. '/init.lua'
-            index, err = reader:locate_file(path)
-            if (not index) then
-                return
-            end
-        end
-
-        if (reader:is_directory(index)) then
-            return
-        end
-
-        local data = reader:extract(index)
-        if (data) then
-             return load(data)
-        end
-    end
-
-    local load_bundle_file = function (libname, subpath)
-        local filename = package.searchpath(libname, package.cpath)
-        if (filename) then
-            return load_bundle_module(filename, subpath)
-        end
-    end
-
-    local ret = load_bundle_file('lnode', name)
-    if (ret) then
-        return ret
-    end
-
-    local index = name:find('/')
-    if (index) then
-        local libname = name:sub(1, index - 1)
-        local subpath = name:sub(index + 1)
-        return load_bundle_file(libname, subpath)
-    end
-
-    return nil
-end
+-- module loader
 
 local function localSearcher(name)
     if (type(name) ~= 'string') then
@@ -256,10 +178,13 @@ local function appSearcher(name)
     return ret, err
 end
 
-package.searchers[5] = localSearcher
-package.searchers[6] = bundleSearcher
-package.searchers[7] = moduleSearcher
-package.searchers[8] = appSearcher
+package.searchers[7] = appSearcher
+package.searchers[6] = moduleSearcher
+package.searchers[5] = package.searchers[4]
+package.searchers[4] = package.searchers[3]
+package.searchers[3] = package.searchers[2]
+package.searchers[2] = package.searchers[1]
+package.searchers[1] = localSearcher
 
 -------------------------------------------------------------------------------
 -- run loop

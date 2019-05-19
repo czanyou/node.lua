@@ -76,7 +76,7 @@ static lua_State* lnode_vm_acquire() {
 
 	luaL_openlibs(L);	// Add in the lua standard libraries
 	lnode_openlibs(L);	// Add in the lnode lua ext libraries
-	lnode_init(L);
+	lnode_path_init(L);
 
 	return L;
 }
@@ -286,14 +286,7 @@ int main(int argc, char* argv[]) {
 
 	luv_set_thread_cb(lnode_vm_acquire, lnode_vm_release);
 
-	if (has_script) {
-		filename = lnode_get_realpath(filename, pathBuffer);
-		lnode_set_script_path(filename);
-	} else {
-		lnode_set_script_path((char*)NULL);
-	}
-
-	lnode_init(L);
+	lnode_path_init(L);
 
 	if (has_info) {
 		lnode_print_info(L);

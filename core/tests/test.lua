@@ -1,4 +1,4 @@
-local ret, data = pcall(require, 'script/preinit')
+pcall(require, 'script/debug')
 
 local util = require('util')
 print(util)

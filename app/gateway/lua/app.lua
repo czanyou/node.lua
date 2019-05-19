@@ -7,9 +7,9 @@ local http  = require('http')
 local json  = require('json')
 local wot   = require('wot')
 
-local rtmp  = require('../lua/rtmp')
-local rtsp  = require('../lua/rtsp')
-local modbus = require('../lua/modbus')
+local rtmp  = require('./rtmp')
+local rtsp  = require('./rtsp')
+local modbus = require('./modbus')
 local camera  = require('./camera')
 local gateway = require('./gateway')
 
