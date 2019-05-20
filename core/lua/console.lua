@@ -28,6 +28,7 @@ meta.author      = { name = "Tim Caswell" }
 local exports = { meta = meta }
 
 local uv  = require('luv')
+local util = require('util')
 
 local dump, color, colorize
 
@@ -442,25 +443,30 @@ end
 
 -------------------------------------------------------------------------------
 
-function exports.log(message, ...)
-    local utils = require('util')
-    local file, line = utils.filename(3)
+function exports.getFileLine()
+    local file, line = util.filename(4)
     local path = require('path')
     file = path.basename(file) or ''
-    print(colorize("sep", '- ' .. file .. ':' .. (line or 0)))
+    return file .. ':' .. (line or 0)
+end
 
+function exports.log(message, ...)
+    print(colorize("sep", '- ' .. exports.getFileLine()))
     exports.printr(message, ...)
 end
 
 function exports.error(message, ...)
+    print(colorize("err", 'Error: ' .. exports.getFileLine()))
     exports.printr(message, ...)
 end
 
 function exports.info(message, ...)
+    print(colorize("quotes", 'Info: ' .. exports.getFileLine()))
     exports.printr(message, ...)
 end
 
 function exports.warn(message, ...)
+    print(colorize("number", 'Warn: ' .. exports.getFileLine()))
     exports.printr(message, ...)
 end
 

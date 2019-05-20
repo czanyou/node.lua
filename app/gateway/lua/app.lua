@@ -12,6 +12,7 @@ local rtsp  = require('./rtsp')
 local modbus = require('./modbus')
 local camera  = require('./camera')
 local gateway = require('./gateway')
+local log = require('./log')
 
 local exports = {}
 
@@ -106,7 +107,6 @@ end
 function exports.config()
     console.log('gateway', app.get('gateway'))
     --console.log('modbus', app.get('gateway.peripherals'))
-
 end
 
 function exports.gateway()
@@ -117,6 +117,8 @@ function exports.gateway()
     options.mqtt = app.get('mqtt')
     options.secret = app.get('secret')
     app.gateway = gateway.createThing(options)
+
+    log.init(app.gateway)
 end
 
 function exports.test()
