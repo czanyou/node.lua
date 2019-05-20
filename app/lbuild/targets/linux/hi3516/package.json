@@ -1,6 +1,7 @@
 {
 	"description": "HI3516",
 	"name": "hi3516",
+	"target": "arm-linux",
 	"tags": ["hi3516", "core"],
     "applications": ["gateway", "lpm"],
     "libs": ["lmodbus.so", "lsdl.so"],

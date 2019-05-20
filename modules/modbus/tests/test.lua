@@ -2,7 +2,7 @@ local modbus = require('lmodbus')
 
 console.log(modbus.version())
 
-dev=modbus.new("COM3",9600)
+dev=modbus.new("/dev/ttyUSB0", 9600)
 -- dev=modbus.new("127.0.0.1", 502)
 
 console.log(dev)

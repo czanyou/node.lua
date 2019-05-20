@@ -62,14 +62,14 @@ end
 
 local xcopy = copy_files
 
-local function get_make_board()
+local function getMakeBoard()
     -- 只有 linux 下支持交叉编译
 	local target = fs.readFileSync('build/target') or 'local'
 	return target:trim()
 end
 
-local function get_make_target()
-	local board = get_make_board()
+local function getMakeTarget()
+	local board = getMakeBoard()
 	if (board ~= "local") then
 		return board .. "-linux"
 	end
@@ -77,7 +77,7 @@ local function get_make_target()
 	return arch .. "-" .. platform
 end
 
-local function get_make_version()
+local function getMakeVersion()
 	local version = process.version
 	version = version:trim()
 	return version
@@ -99,17 +99,17 @@ local function get_source_path()
 	return sourcePath
 end
 
-function sdk.build_common_sdk(target, packageInfo)
+function sdk.buildCommonSDK(target, packageInfo)
 	local sourcePath = get_source_path()
 	console.log('sourcePath', sourcePath)
 
-	local sdkPath  = sdk.get_sdk_build_path(target, packageInfo.type)
+	local sdkPath  = sdk.getSDKBuildPath(target, packageInfo.type)
 	local nodePath = join(sdkPath, "usr/local/lnode")
 
 	local mkdir = fs.mkdirpSync
 	mkdir(join(nodePath, "lib"))
 
-	local board = get_make_board()
+	local board = getMakeBoard()
 
 	-- copy lib files
 	local buildPath  = join(sourcePath, "build", board)
@@ -145,8 +145,8 @@ function sdk.build_common_sdk(target, packageInfo)
 
 		-- copy node lua files
 		local nodeluaPath = join(sourcePath, "core")
-		copy (nodeluaPath .. "/bin/lpm",       nodePath .. "/bin/lpm")
-		xcopy(nodeluaPath .. "/lua", 	       nodePath .. "/lua")
+		copy (nodeluaPath .. "/bin/lpm", nodePath .. "/bin/lpm")
+		xcopy(nodeluaPath .. "/lua", 	 nodePath .. "/lua")
 		--console.log(nodeluaPath .. "/lua", 	       nodePath .. "/lua")
 
 		-- copy target files
@@ -188,11 +188,11 @@ end
 -------------------------------------------------------------------------------
 -- win
 
-function sdk.build_win_sdk(target, packageInfo)
+function sdk.buildWindowSDK(target, packageInfo)
 	local nodePath 		= join(cwd, "core")
 	local binPath 		= join(cwd, "bin")
 	local releasePath 	= join(cwd, "build/win32/Release")
-	local sdkPath 		= sdk.get_sdk_build_path(target)
+	local sdkPath 		= sdk.getSDKBuildPath(target)
 
 	local mkdir = fs.mkdirpSync
 	mkdir(join(sdkPath, "lnode/app"))
@@ -243,8 +243,8 @@ end
 -------------------------------------------------------------------------------
 -- build
 
-function sdk.build_sdk(target, type)
-	local board = get_make_board()
+function sdk.buildSDK(target, type)
+	local board = getMakeBoard()
 
 	--console.log(util.dirname())
 	local dirname = util.dirname()
@@ -264,14 +264,18 @@ function sdk.build_sdk(target, type)
 		return false
 	end
 
-	packageInfo.version = get_make_version()
-	packageInfo.target  = target
+	packageInfo.version = getMakeVersion()
 	packageInfo.type    = type
+	packageInfo.board   = getMakeBoard()
+
+	if (not packageInfo.target) then
+		packageInfo.target = target
+	end
 
 	if (platform == 'win32') then
-		sdk.build_win_sdk(target, packageInfo)
+		sdk.buildWindowSDK(target, packageInfo)
 	else
-		sdk.build_common_sdk(target, packageInfo)
+		sdk.buildCommonSDK(target, packageInfo)
 	end
 
 	return packageInfo
@@ -282,28 +286,30 @@ end
 
 @param target {String} 构建目标，如 win,linux,pi 等等.
 --]]
-function sdk.build_sdk_package(type)
-	local target = get_make_target()
-	local packageInfo = sdk.build_sdk(target, type)
+function sdk.buildSDKPackage(type)
+	type = type or 'sdk'
 
+	local target = getMakeTarget()
+	local board = getMakeBoard()
+	local version = getMakeVersion()
+	local packageInfo = sdk.buildSDK(target, type, board, version)
 	--console.log(target)
 
 	-- build zip file
-	local pathname  = path.join(cwd, "/build/", (type or "sdk"), target)
+	local pathname  = path.join(cwd, "build", type, target)
     local builder = zlib.ZipBuilder:new()
 	builder:build(pathname)
 	
-	console.log('pathname', pathname)
-	os.rename(pathname .. '.zip', pathname .. '-' .. process.version .. '.zip')
+	os.rename(pathname .. '.zip', pathname .. '-' .. version .. '.zip')
 
 	-- build package info
-    print('Builded: "build/sdk/' .. target .. "." .. process.version .. '.zip".')
-    sdk.build_sdk_package_info(target, packageInfo)
+    print('Builded: "build/sdk/' .. target .. "-" .. version .. '.zip".')
+    sdk.buildPackageInfo(target, packageInfo)
 end
 
-function sdk.build_tar_package()
-	local target = get_make_target()
-	local packageInfo = sdk.build_sdk(target)
+function sdk.buildTarPackage()
+	local target = getMakeTarget()
+	local packageInfo = sdk.buildSDK(target)
 
 	-- build tar.gz file
 	local name = "nodelua-" .. target .. "-sdk"
@@ -313,9 +319,9 @@ function sdk.build_tar_package()
     print('Builded: "build/' .. name .. '.tar.gz".')
 end
 
-function sdk.build_deb_package()
-	local target = get_make_target()
-	local packageInfo = sdk.build_sdk(target)
+function sdk.buildDebPackage()
+	local target = getMakeTarget()
+	local packageInfo = sdk.buildSDK(target)
 
 	local sdk_name = "nodelua-" .. target .. "-sdk"
 	local deb_name = "nodelua-" .. target
@@ -349,7 +355,7 @@ end
 
 @param target {String} 构建目标，如 win,linux,pi 等等.
 --]]
-function sdk.build_sdk_package_info(target, packageInfo)
+function sdk.buildPackageInfo(target, packageInfo)
 	local name 		= "nodelua-" .. target .. "-" .. (packageInfo.type or "sdk")
 
 	local buildPath = path.join(cwd, "/build/")
@@ -368,7 +374,7 @@ function sdk.build_sdk_package_info(target, packageInfo)
 	local fileHash = util.bin2hex(util.md5(fileData))
 
 	local package = packageInfo or {}
-	local version = get_make_version()
+	local version = getMakeVersion()
 
 	local registry = package.registry
 	if (type(registry) ~= 'table') then
@@ -404,7 +410,7 @@ end
 
 @param target {String} 构建目标，如 win,linux,pi 等等.
 --]]
-function sdk.get_sdk_build_path(target, type)
+function sdk.getSDKBuildPath(target, type)
 	return join(process.cwd(), "build", (type or 'sdk') .. "/" .. target)
 end
 
@@ -425,22 +431,22 @@ end
 -- exports
 
 function exports.sdk(...)
-	sdk.build_sdk_package("sdk", ...)
+	sdk.buildSDKPackage("sdk", ...)
 	print(console.colorize("success", 'Finished!'))
 end
 
 function exports.patch(...)
-	sdk.build_sdk_package("patch", ...)
+	sdk.buildSDKPackage("patch", ...)
 	print(console.colorize("success", 'Finished!'))
 end
 
 function exports.deb(...)
-	sdk.build_deb_package(...)
+	sdk.buildDebPackage(...)
 	print(console.colorize("success", 'Finished!'))
 end
 
 function exports.tar(...)
-	sdk.build_tar_package(...)
+	sdk.buildTarPackage(...)
 	print(console.colorize("success", 'Finished!'))
 end
 
@@ -464,7 +470,7 @@ please execute this APP by the Makefile.
 
 ]])
 
-	print("Current make target is: " .. get_make_target())
+	print("Current make target is: " .. getMakeTarget())
 	print("")
 end
 
