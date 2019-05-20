@@ -101,7 +101,7 @@ local function getMacAddress()
     return util.bin2hex(item.mac)
 end
 
-local function getDeviceInformation()
+local function onDeviceRead(input, webThing)
     local device = {}
     device.cpuUsage = getCpuUsage()
     device.currentTime = os.time()
@@ -120,8 +120,8 @@ local function getDeviceInformation()
     return device
 end
 
-local function onRebootDevice()
-    console.log('onRebootDevice');
+local function onDeviceReboot(input, webThing)
+    console.log('onDeviceReboot');
 
     if (exports.rebootTimer) then
         clearTimeout(exports.rebootTimer)
@@ -133,10 +133,54 @@ local function onRebootDevice()
 
         process:exit(0);
     end)
+
+    return { code = 0 }
 end
 
-local function onUpdateFirmware(params)
-    console.log('onUpdateFirmware');
+local function onDeviceReset(input, webThing)
+    console.log('onDeviceReset');
+
+    return { code = 0 }
+end
+
+local function onDeviceWrite(input, webThing)
+    console.log('onDeviceWrite');
+
+    return { code = 0 }
+end
+
+local function onDeviceExecute(input, webThing)
+    console.log('onDeviceExecute');
+
+    return { code = 0 }
+end
+
+local function onDeviceActions(input, webThing)
+    if (not input) then
+        return { code = 400, error = 'Unsupported methods' }
+
+    elseif (input.reboot) then
+        return onDeviceReboot(input.reboot, webThing);
+
+    elseif (input.reset) then
+        return onDeviceReset(input.reset, webThing)
+
+    elseif (input.read) then
+        return onDeviceRead(input.read, webThing)
+
+    elseif (input.write) then   
+        return onDeviceWrite(input.write, webThing)
+
+    elseif (input.execute) then   
+        return onDeviceExecute(input.execute, webThing)
+
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+local function onFirmwareUpdate(params)
+    console.log('onFirmwareUpdate');
 
     params = params or {}
     -- uri
@@ -177,7 +221,7 @@ local function onUpdateFirmware(params)
     end)
 end
 
-local function getFirmwareInformation()
+local function onFirmwareRead(input, webThing)
     local firmware = exports.services.firmware or {}
     firmware.state = 0
     firmware.result = 0
@@ -186,14 +230,33 @@ local function getFirmwareInformation()
     return firmware
 end
 
-local function getConfigInformation()
+local function onConfigRead(input, webThing)
     exports.services.config = exports.app.get('gateway');
     local config = exports.services.config or {}
 
     return config
 end
 
-local function setConfigInformation(config)
+local function onFirmwareActions(input, webThing)
+    if (not input) then
+        return { code = 400, error = 'Unsupported methods' }
+
+    elseif (input.update) then
+        onFirmwareUpdate(input.update, webThing);
+        return { code = 0 }
+
+    elseif (input.read) then
+        return onFirmwareRead(input.read, webThing)
+
+    elseif (input.write) then   
+        return { code = 0 }
+
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+local function onConfigWrite(config, webThing)
     if (not exports.services.config) then
         exports.services.config = {}
     end
@@ -204,59 +267,45 @@ local function setConfigInformation(config)
     end
 end
 
-local function processDeviceActions(input)
-    console.log('processDeviceActions', input)
-
-    if (input.reboot) then
-        onRebootDevice(input.reboot);
-        return { code = 0 }
-
-    elseif (input.reset) then
-        return { code = 0 }
+local function onConfigActions(input, webThing)
+    if (not input) then
+        return { code = 400, error = 'Unsupported methods' }
 
     elseif (input.read) then
-        return getDeviceInformation()
-
-    elseif (input.write) then   
-        return { code = 0 }
-
-    else
-        return { code = 400, error = 'Unsupported methods' }
-    end
-end
-
-local function processFirmwareActions(input, webThing)
-    console.log('processFirmwareActions', input)
-
-    if (input.update) then
-        onUpdateFirmware(input.update);
-        return { code = 0 }
-
-    elseif (input.read) then
-        return getFirmwareInformation()
-
-    elseif (input.write) then   
-        return { code = 0 }
-
-    else
-        return { code = 400, error = 'Unsupported methods' }
-    end
-end
-
-local function processConfigActions(input, webThing)
-    -- console.log('processConfigActions', input)
-
-    if (input.read) then
-        return getConfigInformation()
+        return onConfigRead(input.read, webThing)
 
     elseif (input.write) then
-        setConfigInformation(input.write);
+        onConfigWrite(input.write, webThing);
         return { code = 0 }
 
     else
         return { code = 400, error = 'Unsupported methods' }
     end
 end
+
+local function onLogRead(coinput, webThingnfig)
+    return { code = 0 }
+end
+
+local function onLogWrite(input, webThing)
+    return { code = 0 }
+end
+
+local function onLogActions(input, webThing)
+    if (not input) then
+        return { code = 400, error = 'Unsupported methods' }
+
+    elseif (input.read) then
+        return onLogRead(input.read, webThing)
+
+    elseif (input.write) then
+        return onLogWrite(input.write, webThing);
+        
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
 
 local function createMediaGatewayThing(options)
     if (not options) then
@@ -283,32 +332,22 @@ local function createMediaGatewayThing(options)
 
     -- device actions
     webThing:setActionHandler('device', function(input)
-        if (input) then
-            return processDeviceActions(input, webThing)
-            
-        else
-            return { code = 400, error = 'Unsupported methods' }
-        end
+        return onDeviceActions(input, webThing)
     end)
 
     -- firmware actions
     webThing:setActionHandler('firmware', function(input)
-        if (input) then
-            return processFirmwareActions(input, webThing)
-            
-        else
-            return { code = 400, error = 'Unsupported methods' }
-        end
+        return onFirmwareActions(input, webThing)
     end)
 
     -- config actions
     webThing:setActionHandler('config', function(input)
-        if (input) then
-            return processConfigActions(input, webThing)
-            
-        else
-            return { code = 400, error = 'Unsupported methods' }
-        end
+        return onConfigActions(input, webThing)
+    end)
+
+    -- log actions
+    webThing:setActionHandler('log', function(input)
+        return onLogActions(input, webThing)
     end)
 
     -- register

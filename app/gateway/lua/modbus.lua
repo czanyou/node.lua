@@ -150,7 +150,7 @@ local function readFromModbus(webThing)
     return result, count
 end
 
-local function getDeviceInformation()
+local function onDeviceRead()
     local device = {}
     device.deviceType = 'modbus'
     device.errorCode = 0
@@ -162,33 +162,23 @@ local function getDeviceInformation()
     return device
 end
 
-local function onRebootDevice()
+local function onDeviceReboot()
 
 end
 
-local function getConfigInformation(input, webThing)
-    local peripherals = exports.app.get('peripherals') or {}
-    local config = peripherals[webThing.id] or {}
+local function onDeviceActions(input)
+    if (not input) then
+        return { code = 400, error = 'Unsupported methods' }
 
-    return config
-end
-
-local function setConfigInformation(config)
-    local config = {}
-
-    return config
-end
-
-local function processDeviceActions(input)
-    if (input.reboot) then
-        onRebootDevice(input.reboot);
+    elseif (input.reboot) then
+        onDeviceReboot(input.reboot);
         return { code = 0 }
 
     elseif (input.reset) then
         return { code = 0 }
 
     elseif (input.read) then
-        return getDeviceInformation()
+        return onDeviceRead()
 
     elseif (input.write) then   
         return { code = 0 }
@@ -198,12 +188,28 @@ local function processDeviceActions(input)
     end
 end
 
-local function processConfigActions(input, webThing)
-    if (input.read) then
-        return getConfigInformation(input.read, webThing)
+local function onConfigRead(input, webThing)
+    local peripherals = exports.app.get('peripherals') or {}
+    local config = peripherals[webThing.id] or {}
+
+    return config
+end
+
+local function onConfigWrite(config)
+    local config = {}
+
+    return config
+end
+
+local function onConfigActions(input, webThing)
+    if (not input) then
+        return { code = 400, error = 'Unsupported methods' }
+
+    elseif (input.read) then
+        return onConfigRead(input.read, webThing)
 
     elseif (input.write) then
-        setConfigInformation(input.write);
+        onConfigWrite(input.write);
         return { code = 0 }
 
     else
@@ -305,22 +311,12 @@ local function createModbusThing(options)
 
     -- device actions
     webThing:setActionHandler('device', function(input)
-        if (input) then
-            return processDeviceActions(input, webThing)
-            
-        else
-            return { code = 400, error = 'Unsupported methods' }
-        end
+        return onDeviceActions(input, webThing)
     end)
 
     -- config actions
     webThing:setActionHandler('config', function(input)
-        if (input) then
-            return processConfigActions(input, webThing)
-            
-        else
-            return { code = 400, error = 'Unsupported methods' }
-        end
+        return onConfigActions(input, webThing)
     end)
 
     -- register

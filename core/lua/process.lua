@@ -29,6 +29,8 @@ meta.name        = "lnode/process"
 meta.tags        = { "lnode", "process" }
 meta.version     = "1.0.1"
 
+local patch = 205
+
 local env       = require('env')
 local uv        = require('luv')
 local Emitter   = require('core').Emitter
@@ -210,7 +212,6 @@ exports.versions    = lnode.versions    -- A property exposing version strings o
 
 --
 
-local patch = 204
 exports.version = exports.version .. '.' .. patch
 
 -------------------------------------------------------------------------------

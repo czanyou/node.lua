@@ -18,7 +18,7 @@ local function getWotClient()
     return wot.client
 end
 
-local function getDeviceInformation()
+local function onDeviceRead()
     local device = {}
     device.cpuUsage = getCpuUsage()
     device.currentTime = os.time()
@@ -37,32 +37,23 @@ local function getDeviceInformation()
     return device
 end
 
-local function onRebootDevice()
-
+local function onDeviceReboot()
+    return { code = 0 }
 end
 
-local function getConfigInformation()
-    local config = {}
+local function onDeviceActions(input, webThing)
+    if (not input) then
+        return { code = 400, error = 'Unsupported methods' }
 
-    return config
-end
-
-local function setConfigInformation(config)
-    local config = {}
-
-    return config
-end
-
-local function processDeviceActions(input)
-    if (input.reboot) then
-        onRebootDevice(input.reboot);
-        return { code = 0 }
+    elseif (input.reboot) then
+        return onDeviceReboot(input.reboot, webThing);
+        
 
     elseif (input.reset) then
         return { code = 0 }
 
     elseif (input.read) then
-        return getDeviceInformation()
+        return onDeviceRead(input.read, webThing)
 
     elseif (input.write) then   
         return { code = 0 }
@@ -72,20 +63,34 @@ local function processDeviceActions(input)
     end
 end
 
-local function processConfigActions(input, webThing)
-    if (input.read) then
-        return getConfigInformation()
+local function onConfigRead(input, webThing)
+    local config = {}
+
+    return config
+end
+
+local function onConfigWrite(input, webThing)
+    local config = {}
+
+    return { code = 0 }
+end
+
+local function onConfigActions(input, webThing)
+    if (not input) then
+        return { code = 400, error = 'Unsupported methods' }
+
+    elseif (input.read) then
+        return onConfigRead(input.read, webThing)
 
     elseif (input.write) then
-        setConfigInformation(input.write);
-        return { code = 0 }
+        return onConfigWrite(input.write, webThing);
 
     else
         return { code = 400, error = 'Unsupported methods' }
     end
 end
 
-local function processPtzActions(input, webThing)
+local function onPtzActions(input, webThing)
     if (input.start) then
         local direction = tonumber(input.start.direction)
         local speed = input.start.speed or 1
@@ -104,7 +109,7 @@ local function processPtzActions(input, webThing)
     end
 end
 
-local function processPresetActions(input, webThing)
+local function onPresetActions(input, webThing)
     local did = webThing.id;
 
     local getIndex = function(input, name)
@@ -146,7 +151,7 @@ local function processPresetActions(input, webThing)
     end
 end
 
-local function processPlayActions(input, webThing)
+local function onPlayAction(input, webThing)
     local url = input and input.url
     local did = webThing.id;
 
@@ -165,7 +170,6 @@ local function processPlayActions(input, webThing)
     end
 
     -- promise
-    
     setTimeout(0, function()
         promise:resolve({ code = 0 })
     end)
@@ -173,7 +177,7 @@ local function processPlayActions(input, webThing)
     return promise
 end
 
-local function processStopActions(input, webThing)
+local function onStopAction(input, webThing)
     console.log('stop', input);
 
     local did = webThing.id;
@@ -220,53 +224,32 @@ local function createCameraThing(options)
 
     -- play action
     webThing:setActionHandler('play', function(input)
-        return processPlayActions(input, webThing)
+        return onPlayAction(input, webThing)
     end)
 
     -- stop action
     webThing:setActionHandler('stop', function(input)
-        return processStopActions(input, webThing)
+        return onStopAction(input, webThing)
     end)
 
     -- ptz action
     webThing:setActionHandler('ptz', function(input)
-        if (input) then
-            return processPtzActions(input, webThing)
-            
-        else
-            return { code = 400, error = 'Unsupported methods' }
-        end
+        return onPtzActions(input, webThing)
     end)
 
     -- preset action
     webThing:setActionHandler('preset', function(input)
-        if (input) then
-            return processPresetActions(input, webThing)
-            
-        else
-            return { code = 400, error = 'Unsupported methods' }
-        end
-  
+        return onPresetActions(input, webThing)
     end)
 
     -- device actions
     webThing:setActionHandler('device', function(input)
-        if (input) then
-            return processDeviceActions(input, webThing)
-            
-        else
-            return { code = 400, error = 'Unsupported methods' }
-        end
+        return onDeviceActions(input, webThing)
     end)
 
     -- config actions
     webThing:setActionHandler('config', function(input)
-        if (input) then
-            return processConfigActions(input, webThing)
-            
-        else
-            return { code = 400, error = 'Unsupported methods' }
-        end
+        return onConfigActions(input, webThing)
     end)
 
     -- register

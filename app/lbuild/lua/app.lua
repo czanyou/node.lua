@@ -206,9 +206,11 @@ function sdk.buildWindowSDK(target, packageInfo)
 	copy(binPath .. "/lmbedtls.dll", 	sdkPath .. "/lnode/bin/lmbedtls.dll")
 	copy(binPath .. "/lmodbus.dll", 	sdkPath .. "/lnode/bin/lmodbus.dll")
 	copy(binPath .. "/lnode.exe", 		sdkPath .. "/lnode/bin/lnode.exe")
+	copy(binPath .. "/lua.exe", 		sdkPath .. "/lnode/bin/lua.exe")
 	copy(binPath .. "/lpm.bat", 		sdkPath .. "/lnode/bin/lpm.bat")
 	copy(binPath .. "/lsqlite.dll",		sdkPath .. "/lnode/bin/lsqlite.dll")
 	copy(binPath .. "/lua53.dll", 		sdkPath .. "/lnode/bin/lua53.dll")
+	copy(binPath .. "/nodelua.dll", 	sdkPath .. "/lnode/bin/nodelua.dll")
 	xcopy(nodePath .. "/lua", 			sdkPath .. "/lnode/lua")
 
 	-- copy vision lua files
