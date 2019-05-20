@@ -20,20 +20,8 @@ end
 
 local function onDeviceRead()
     local device = {}
-    device.cpuUsage = getCpuUsage()
-    device.currentTime = os.time()
-    device.deviceType = 'gateway'
+    device.deviceType = 'camera'
     device.errorCode = 0
-    device.firmwareVersion = '1.0'
-    device.hardwareVersion = '1.0'
-    device.manufacturer = 'TDK'
-    device.memoryFree = math.floor(os.freemem() / 1024)
-    device.memoryTotal = math.floor(os.totalmem() / 1024)
-    device.modelNumber = 'DT02'
-    device.powerSources = 0
-    device.powerVoltage = 12000
-    device.serialNumber = getMacAddress()
-
     return device
 end
 
@@ -48,7 +36,6 @@ local function onDeviceActions(input, webThing)
     elseif (input.reboot) then
         return onDeviceReboot(input.reboot, webThing);
         
-
     elseif (input.reset) then
         return { code = 0 }
 

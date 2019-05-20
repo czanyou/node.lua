@@ -179,35 +179,32 @@ local function onDeviceActions(input, webThing)
     end
 end
 
+local function onFirmwareRead(input, webThing)
+    console.error('onFirmwareRead');
+
+    local base = exports.app.get('base') or '';
+    local did = exports.app.get('did') or '';
+    local uri = base .. 'device/firmware/file?did=' .. did;
+
+    local rootPath = exports.app.rootPath
+    local filename = path.join(rootPath, 'update/status.json')
+    local filedata = fs.readFileSync(filename)
+    local status = {}
+    if (filedata) then
+        status = json.parse(filedata) or {}
+    end
+
+    local firmware = exports.services.firmware or {}
+    firmware.uri = uri
+    firmware.state = status.state or 0
+    firmware.result = status.result or 0
+    firmware.protocol = 2 -- HTTP
+    firmware.delivery = 0 -- PULL
+    return firmware
+end
+
 local function onFirmwareUpdate(params)
-    console.log('onFirmwareUpdate');
-
-    params = params or {}
-    -- uri
-    -- version
-    -- md5sum
-    -- size
-
-    if (not exports.services.firmware) then
-        exports.services.firmware = {}
-    end
-
-    local firmware = exports.services.firmware
-    if (params.uri) then
-        firmware.uri = params.uri
-    end
-
-    if (params.version) then
-        firmware.version = params.version
-    end
-
-    if (params.md5sum) then
-        firmware.md5sum = params.md5sum
-    end
-
-    if (params.size) then
-        firmware.size = params.size
-    end
+    console.warn('onFirmwareUpdate');
 
     if (exports.updateTimer) then
         clearTimeout(exports.updateTimer)
@@ -219,22 +216,8 @@ local function onFirmwareUpdate(params)
 
         os.execute('lpm upgrade > /tmp/upgrade.log &')
     end)
-end
 
-local function onFirmwareRead(input, webThing)
-    local firmware = exports.services.firmware or {}
-    firmware.state = 0
-    firmware.result = 0
-    firmware.protocol = 2
-    firmware.delivery = 0
-    return firmware
-end
-
-local function onConfigRead(input, webThing)
-    exports.services.config = exports.app.get('gateway');
-    local config = exports.services.config or {}
-
-    return config
+    return { code = 0 }
 end
 
 local function onFirmwareActions(input, webThing)
@@ -242,8 +225,7 @@ local function onFirmwareActions(input, webThing)
         return { code = 400, error = 'Unsupported methods' }
 
     elseif (input.update) then
-        onFirmwareUpdate(input.update, webThing);
-        return { code = 0 }
+        return onFirmwareUpdate(input.update, webThing);
 
     elseif (input.read) then
         return onFirmwareRead(input.read, webThing)
@@ -254,6 +236,13 @@ local function onFirmwareActions(input, webThing)
     else
         return { code = 400, error = 'Unsupported methods' }
     end
+end
+
+local function onConfigRead(input, webThing)
+    exports.services.config = exports.app.get('gateway');
+    local config = exports.services.config or {}
+
+    return config
 end
 
 local function onConfigWrite(config, webThing)
@@ -283,11 +272,22 @@ local function onConfigActions(input, webThing)
     end
 end
 
-local function onLogRead(coinput, webThingnfig)
-    return { code = 0 }
+local function onLogRead(input, webThing)
+    local result = {
+        enable = true,
+        level = 1,
+        columns = {"at", "level", "message"},
+        data = {{
+            0, 0, "message"
+        }}
+    }
+    return result
 end
 
 local function onLogWrite(input, webThing)
+    if (input) then
+        
+    end
     return { code = 0 }
 end
 
@@ -305,7 +305,6 @@ local function onLogActions(input, webThing)
         return { code = 400, error = 'Unsupported methods' }
     end
 end
-
 
 local function createMediaGatewayThing(options)
     if (not options) then
