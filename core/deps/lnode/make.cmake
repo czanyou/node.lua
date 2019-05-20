@@ -16,6 +16,10 @@ set(MAIN_SOURCES
   ${MAINDIR}/src/main.c
 )
 
+set(LUA_SOURCES
+  ${MAINDIR}/src/lua.c
+)
+
 add_executable(lnode ${MAIN_SOURCES} ${SOURCES})
 
 target_link_libraries(lualib luazip luajson luautils luauv uv)
@@ -24,7 +28,7 @@ target_link_libraries(lnode lualib)
 add_library(nodelua SHARED ${SOURCES})
 target_link_libraries(nodelua lualib)
 
-add_executable(lua ${MAIN_SOURCES})
+add_executable(lua ${LUA_SOURCES})
 target_link_libraries(lua nodelua)
 
 if (APPLE)

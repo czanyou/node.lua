@@ -365,75 +365,117 @@ LUALIB_API int lnode_path_init(lua_State* L) {
 ** other arguments (before the script name) go to negative indices.
 ** If there is no script name, assume interpreter's name as base.
 */
-LUALIB_API int lnode_create_arg_table (lua_State *L, char **argv, int argc, int script) {
-  int i, narg;
+LUALIB_API int lnode_create_arg_table(lua_State *L, char **argv, int argc, int script)
+{
+    int i, narg;
 
-  if (script == argc) {
-    script = 0;  /* no script name? */
-  }
+    if (script == argc) {
+        script = 0; /* no script name? */
+    }
 
-  narg = argc - (script + 1);  /* number of positive indices */
+    narg = argc - (script + 1); /* number of positive indices */
 
-  lua_createtable(L, narg, script + 1);
-  for (i = 0; i < argc; i++) {
-    lua_pushstring(L, argv[i]);
-    lua_rawseti(L, -2, i - script);
-  }
-  lua_setglobal(L, "arg");
+    lua_createtable(L, narg, script + 1);
+    for (i = 0; i < argc; i++) {
+        lua_pushstring(L, argv[i]);
+        lua_rawseti(L, -2, i - script);
+    }
+    lua_setglobal(L, "arg");
 
-  return 0;
+    return 0;
 }
 
 /**
  * Open and register the lnode related core module
  */
-LUALIB_API int lnode_openlibs(lua_State* L) {
+LUALIB_API int lnode_openlibs(lua_State *L)
+{
+    // Get package.loaded, so we can store uv in it.
+    lua_getglobal(L, "package");
+    lua_getfield(L, -1, "loaded");
+    lua_remove(L, -2); // Remove package
 
-  // Get package.loaded, so we can store uv in it.
-  lua_getglobal(L, "package");
-  lua_getfield(L, -1, "loaded");
-  lua_remove(L, -2); // Remove package
+    // Store uv module definition at loaded.uv
+    luaopen_luv(L);
+    lua_setfield(L, -2, "luv");
+    lua_pop(L, 1);
 
-  // Store uv module definition at loaded.uv
-  luaopen_luv(L);
-  lua_setfield(L, -2, "luv");
-  lua_pop(L, 1);
-
-  // Get package.preload so we can store builtins in it.
-  lua_getglobal(L, "package");
-  lua_getfield(L, -1, "preload");
-  lua_remove(L, -2); // Remove package
+    // Get package.preload so we can store builtins in it.
+    lua_getglobal(L, "package");
+    lua_getfield(L, -1, "preload");
+    lua_remove(L, -2); // Remove package
 
 #ifdef WITH_CJSON
-  lua_pushcfunction(L, luaopen_cjson);
-  lua_setfield(L, -2, "cjson");
+    lua_pushcfunction(L, luaopen_cjson);
+    lua_setfield(L, -2, "cjson");
 #endif
 
 #ifdef WITH_ENV
-  lua_pushcfunction(L, luaopen_env);
-  lua_setfield(L, -2, "env");
+    lua_pushcfunction(L, luaopen_env);
+    lua_setfield(L, -2, "env");
 #endif
 
-  // Store lnode module definition at preload.lnode
-  lua_pushcfunction(L, luaopen_lnode);
-  lua_setfield(L, -2, "lnode");
+    // Store lnode module definition at preload.lnode
+    lua_pushcfunction(L, luaopen_lnode);
+    lua_setfield(L, -2, "lnode");
 
 #ifdef WITH_LUTILS
-  lua_pushcfunction(L, luaopen_lutils);
-  lua_setfield(L, -2, "lutils");
+    lua_pushcfunction(L, luaopen_lutils);
+    lua_setfield(L, -2, "lutils");
 #endif
 
 #ifdef WITH_MINIZ
-  lua_pushcfunction(L, luaopen_miniz);
-  lua_setfield(L, -2, "miniz");
+    lua_pushcfunction(L, luaopen_miniz);
+    lua_setfield(L, -2, "miniz");
 #endif
 
 #ifdef LUA_USE_LSQLITE
-  lua_pushcfunction(L, luaopen_lsqlite);
-  lua_setfield(L, -2, "lsqlite");
+    lua_pushcfunction(L, luaopen_lsqlite);
+    lua_setfield(L, -2, "lsqlite");
 #endif
 
-  lua_pop(L, 1);
+    lua_pop(L, 1);
 
-  return 0;
+    return 0;
+}
+
+/** Prints the current lnode version information. */
+LUALIB_API int lnode_print_version()
+{
+    char buffer[PATH_MAX];
+    memset(buffer, 0, sizeof(buffer));
+    sprintf(buffer, "lnode %d.%d (Lua %s.%s.%s, libuv %s, build %s %s)",
+            LNODE_MAJOR_VERSION, LNODE_MINOR_VERSION,
+            LUA_VERSION_MAJOR, LUA_VERSION_MINOR, LUA_VERSION_RELEASE,
+            uv_version_string(), __DATE__, __TIME__);
+    lua_writestring(buffer, strlen(buffer));
+    lua_writeline();
+
+    return 0;
+}
+
+/** Prints the current lnode usage information. */
+LUALIB_API int lnode_print_usage() 
+{
+  	char buffer[PATH_MAX];
+  	memset(buffer, 0, sizeof(buffer));
+  	sprintf(buffer, "\n"
+	  	"usage: lnode [options] [ -e script | script.lua [arguments]]\n"
+	  	"\n"
+  		"options:\n"
+		"\n"
+  		"  -d  run as daemon\n"
+  		"  -e  evaluate script\n"
+  		"  -l  print path information\n"
+  		"  -p  evaluate script and print result	\n"
+  		"  -r  module to preload\n"
+  		"  -v  print Node.lua version\n"
+  		"  -   load script from stdin\n"
+		"\n"
+	);
+
+    lua_writestring(buffer, strlen(buffer));
+    lua_writeline();
+
+    return 0;
 }

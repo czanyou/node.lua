@@ -56,6 +56,7 @@ define sdk_install
 	$(call make_link,${PWD}/app,${NODE_ROOTPATH}/app)
 
 	$(call make_link,${PWD}/build/local/lnode,${LOCAL_BIN_PATH}/lnode)
+	$(call make_link,${PWD}/build/local/lua,${LOCAL_BIN_PATH}/lua)
 
 	$(call make_module_bin_link,lpm)
 	$(call make_module_bin_link,lbuild)
@@ -77,6 +78,7 @@ define sdk_remove
 	rm -rf ${NODE_ROOTPATH}/lua
 	rm -rf ${NODE_ROOTPATH}/conf
 
+	rm -rf ${LOCAL_BIN_PATH}/lua
 	rm -rf ${LOCAL_BIN_PATH}/lnode
 	rm -rf ${LOCAL_BIN_PATH}/lpm
 	rm -rf ${LOCAL_BIN_PATH}/lbuild

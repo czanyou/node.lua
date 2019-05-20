@@ -16,38 +16,6 @@
  */
 #include "lnode.h"
 
-/** Prints the current lnode version information. */
-static void lnode_print_version(int flags) {
-  	char buffer[PATH_MAX];
-  	memset(buffer, 0, sizeof(buffer));
-  	sprintf(buffer, "v%d.%d (Lua %s.%s.%s, libuv %s, build %s %s)",
-  		LNODE_MAJOR_VERSION, LNODE_MINOR_VERSION,
-  		LUA_VERSION_MAJOR, LUA_VERSION_MINOR, LUA_VERSION_RELEASE,
-  		uv_version_string(), __DATE__, __TIME__);
-  	lua_writestring(buffer, strlen(buffer));
-  	lua_writeline();
-
-  	sprintf(buffer, "\n"
-	  	"usage: lnode [options] [ -e script | script.lua [arguments]]\n"
-	  	"\n"
-  		"options:\n"
-		"\n"
-  		"  -d  run as daemon\n"
-  		"  -e  evaluate script\n"
-  		"  -l  print path information\n"
-  		"  -p  evaluate script and print result	\n"
-  		"  -r  module to preload\n"
-  		"  -v  print Node.lua version\n"
-  		"  -   load script from stdin\n"
-		"\n"
-		);
-
-	if (flags & 0x01) {
-		lua_writestring(buffer, strlen(buffer));
-		lua_writeline();
-	}
-}
-
 static int lnode_print_info(lua_State* L) {
   char script[] =
     "pcall(require, 'init')\n"
@@ -250,7 +218,7 @@ int main(int argc, char* argv[]) {
 			has_require = 1;
 
 		} else if (strcmp(option, "-v") == 0) {
-			lnode_print_version(0);
+			lnode_print_version();
 			return 0;		
 
 		} else if (strcmp(option, "-") == 0) {
@@ -320,7 +288,8 @@ int main(int argc, char* argv[]) {
 		lnode_call_script(L, "process:emit('exit')\n", "exit");
 
 	} else {
-		lnode_print_version(1);
+		lnode_print_version();
+		lnode_print_usage();
 	}
 
 	lnode_vm_release(L);

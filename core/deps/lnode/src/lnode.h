@@ -69,4 +69,8 @@ LUALIB_API int lnode_openlibs(lua_State* L);
  */
 LUALIB_API int lnode_run_as_deamon();
 
+
+LUALIB_API int lnode_print_version();
+LUALIB_API int lnode_print_usage();
+
 #endif // _LNODE_H
