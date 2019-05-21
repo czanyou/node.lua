@@ -14,10 +14,6 @@ local exports = {}
 
 exports.services = {}
 
-local function getWotClient()
-    return wot.client
-end
-
 local function onDeviceRead()
     local device = {}
     device.deviceType = 'camera'

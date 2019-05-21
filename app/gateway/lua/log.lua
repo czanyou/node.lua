@@ -1,5 +1,6 @@
 local exports = {}
 
+-- Redirect log information to the WoT server
 function exports.log(gateway, at, level, line, message, ...)
     console.log(at, level, line, message, ...)
     local log = {
@@ -11,6 +12,7 @@ function exports.log(gateway, at, level, line, message, ...)
     end
 end
 
+-- Init log module
 function exports.init(gateway)
     console.error = function (message, ...) 
         exports.log(gateway, Date.now(), 3, console.getFileLine(), message, ...)

@@ -258,10 +258,8 @@ local function initModbusProperties(options, webThing)
         console.log(result)
 
         if (result) and (count > 0) then
-            local wotClient = wot.client
-            wotClient:sendStream(result, webThing)
+            webThing:sendStream(result)
         end
-
     end)
 end
 

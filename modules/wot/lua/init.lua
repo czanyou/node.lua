@@ -11,6 +11,9 @@ local mqtt     = require('wot/bindings/mqtt')
 local exports = {}
 
 local REGISTER_EXPIRES = 3600
+local STATE_UNREGISTER = 0
+local STATE_REGISTER   = 1
+local REGISTER_MIN_INTERVAL = 4
 
 -- ------------------------------------------------------------
 -- ThingDiscover
@@ -101,9 +104,20 @@ function ExposedThing:initialize(thingInstance)
         thingInstance = json.parse(thingInstance)
     end
 
-    self.handlers = {}
-    self.instance = thingInstance or {}
-    self.id = thingInstance.id
+    self.client = nil -- MQTT thing client
+    self.deviceId = nil
+    self.handlers = {} -- Action handlers
+    self.id = thingInstance.id -- Thing ID / DID
+    self.instance = thingInstance or {} -- Thing instance
+    self.token = nil -- Access token
+
+    -- register state
+    self.registerExpires = REGISTER_EXPIRES -- Register expires
+    self.registerInterval = REGISTER_MIN_INTERVAL -- Register retry interval
+    self.registerState = STATE_UNREGISTER -- Register state
+    self.registerTime = 0    -- The last register send time
+    self.registerTimer = nil -- The register timer
+    self.registerUpdated = 0 -- Register updated time
 end
 
 function ExposedThing:_setHandler(type, name, handler)
@@ -126,11 +140,11 @@ function ExposedThing:_onRegister()
 
     if (not self.registerState) then
         -- init
-        self.registerState = 0
+        self.registerState = STATE_UNREGISTER
         self.registerTime = now
         client:sendRegister(self.id, self)
 
-    elseif (self.registerState == 1) then
+    elseif (self.registerState == STATE_REGISTER) then
         -- register
         local span = (now - (self.registerUpdated or 0)) / 1000
         local expires = self.registerExpires or REGISTER_EXPIRES
@@ -161,11 +175,11 @@ function ExposedThing:_onRegisterResult(response)
 
     local result = response.result
     if (result and result.code and result.error) then
-        self.registerState = 0
+        self.registerState = STATE_UNREGISTER
 
     else
-        self.registerState = 1
-        self.registerInterval = 2
+        self.registerState = STATE_REGISTER
+        self.registerInterval = REGISTER_MIN_INTERVAL
 
         local data = result.data or {}
 
@@ -191,8 +205,6 @@ function ExposedThing:setActionHandler(name, handler)
 end
 
 function ExposedThing:emitEvent(name, data)
-    -- console.log('emitEvent', name, data)
-
     local client = self.client;
     if (not client) then
         return
@@ -202,6 +214,15 @@ function ExposedThing:emitEvent(name, data)
     events[name] = data;
 
     client:sendEvent(events, self)
+end
+
+function ExposedThing:sendStream(values)
+    local client = self.client;
+    if (not client) or (not values) then
+        return
+    end
+
+    client:sendStream(values, self)
 end
 
 function ExposedThing:readProperty(name)
@@ -292,14 +313,13 @@ function ExposedThing:expose()
 
     -- console.log(self.instance)
     local mqtt = self.instance.url
-
     if (mqtt) then
         exports.register(mqtt, self)
-        promise:resolve()
-
-    else
-        promise:reject()
     end
+
+    setImmediate(function()
+        promise:resolve()
+    end)
 
     return promise
 end
@@ -312,11 +332,26 @@ function ExposedThing:destroy()
 
     local mqtt = self.instance.url
     exports.unregister(mqtt, self)
-    promise:resolve()
+    
+    if (self.registerTimer) then
+        clearInterval(self.registerTimer)
+        self.registerTimer = nil;
+    end
 
     self.instance = nil
     self.client = nil
     self.token = nil
+
+    self.registerExpires = REGISTER_EXPIRES
+    self.registerInterval = REGISTER_MIN_INTERVAL
+    self.registerState = STATE_UNREGISTER
+    self.registerTime = 0
+    self.registerTimer = nil
+    self.registerUpdated = 0
+
+    setImmediate(function()
+        promise:resolve()
+    end)
 
     return promise
 end
@@ -557,7 +592,7 @@ function ThingClient:sendStream(streams, thing)
         data = streams
     }
 
-    console.log('stream', message)
+    -- console.log('stream', message)
     self:sendMessage(message)
 end
 
@@ -703,11 +738,6 @@ function exports.unregister(directory, thing)
     local client = exports.client
     if (client) then
         client.things[thing.id] = nil;
-
-        if (thing.registerTimer) then
-            clearInterval(thing.registerTimer)
-            thing.registerTimer = nil;
-        end
     end
 
     return promise

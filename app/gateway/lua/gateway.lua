@@ -14,10 +14,6 @@ local cpuInfo = {
     total_time = 0
 }
 
-local function getWotClient()
-    return wot.client
-end
-
 local function resetCpuUsage() 
     cpuInfo.used_time = 0;
     cpuInfo.total_time = 0;
@@ -55,16 +51,6 @@ local function getCpuUsage()
 
     local cpuUserPercent = math.floor(cpuUsedTime / cpuTotalTime * 100)
     return cpuUserPercent
-end
-
-local function sendGatewayEventNotify(name, data)
-    local event = {}
-    event[name] = data
-
-    local wotClient = getWotClient();
-    if (wotClient) then
-        wotClient:sendEvent(event, exports.gateway)
-    end
 end
 
 -- Get the MAC address of localhost 

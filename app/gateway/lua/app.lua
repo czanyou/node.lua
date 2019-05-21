@@ -30,7 +30,15 @@ function getThingStatus()
             local data = {}
             data.id = thing.id
             data.name = thing.name
+            data.token = thing.token
             data.deviceId = thing.deviceId
+            data.instance = thing.instance
+            data.registerExpires = thing.registerExpires
+            data.registerInterval = thing.registerInterval
+            data.registerState = thing.registerState
+            data.registerTime = thing.registerTime
+            data.registerUpdated = thing.registerUpdated
+
             list[did] = data
         end
     end
