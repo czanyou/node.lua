@@ -360,6 +360,11 @@ local function createMediaGatewayThing(options)
         elseif (result.token) then
             console.log('register', response.did, result.token)
         end
+
+        if (not webThing.started) then
+            webThing.started = true;
+            console.info('Gateway service restart.')  
+        end
     end)
 
     if (not cpuInfo.timer) then

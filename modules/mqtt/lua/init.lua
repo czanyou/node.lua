@@ -99,7 +99,7 @@ function Client:publish(topic, data, options, callback)
         local messageId = self:_nextMessageId()
         message.messageId = messageId
 
-        self:outgoingStore(messageId, { 
+        self:outgoingStore(messageId, {
             message   = "publish", 
             topic     = topic,
             messageId = messageId,

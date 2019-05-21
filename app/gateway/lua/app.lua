@@ -85,7 +85,7 @@ function exports.start()
     exports.rtmp()
     exports.rtsp()
     exports.gateway()
-    exports.cameras()
+    exports.cameras() 
 end
 
 function exports.rtmp()

@@ -10,6 +10,8 @@ local mqtt     = require('wot/bindings/mqtt')
 
 local exports = {}
 
+local REGISTER_EXPIRES = 3600
+
 -- ------------------------------------------------------------
 -- ThingDiscover
 
@@ -113,6 +115,69 @@ function ExposedThing:_setHandler(type, name, handler)
     return self
 end
 
+function ExposedThing:_onRegister()
+    local client = self.client
+    if (not client) then
+        return
+    end
+
+    -- console.log('register', self.registerState, self.registerInterval, self.registerExpires, self.registerUpdated)
+    local now = Date.now()
+
+    if (not self.registerState) then
+        -- init
+        self.registerState = 0
+        self.registerTime = now
+        client:sendRegister(self.id, self)
+
+    elseif (self.registerState == 1) then
+        -- register
+        local span = (now - (self.registerUpdated or 0)) / 1000
+        local expires = self.registerExpires or REGISTER_EXPIRES
+        -- console.log('span', span, expires)
+        if (span >= expires) or (span <= -expires) then
+            self.registerTime = now
+            client:sendRegister(self.id, self)
+        end
+
+    else
+        -- unregister
+        local span = math.abs(now - (self.registerTime or 0)) / 1000
+        local registerInterval = self.registerInterval or 2
+        -- console.log('span', span, registerInterval)
+        if (span >= registerInterval) then
+            self.registerInterval = math.min(REGISTER_EXPIRES, 2 * registerInterval)
+            self.registerTime = now
+
+            client:sendRegister(self.id, self)
+        end
+    end
+end
+
+function ExposedThing:_onRegisterResult(response)
+    if (not response) then
+        return
+    end
+
+    local result = response.result
+    if (result and result.code and result.error) then
+        self.registerState = 0
+
+    else
+        self.registerState = 1
+        self.registerInterval = 2
+
+        local data = result.data or {}
+
+        self.token = data.token
+        self.deviceId = data.deviceId
+        self.registerExpires = data.expires or REGISTER_EXPIRES
+        self.registerUpdated = Date.now()
+    end
+
+    self:emit('register', response)
+end
+
 function ExposedThing:setPropertyReadHandler(name, handler)
     return self:_setHandler('@read:', name, handler)
 end
@@ -126,8 +191,17 @@ function ExposedThing:setActionHandler(name, handler)
 end
 
 function ExposedThing:emitEvent(name, data)
-    
+    -- console.log('emitEvent', name, data)
 
+    local client = self.client;
+    if (not client) then
+        return
+    end
+
+    local events = {}
+    events[name] = data;
+
+    client:sendEvent(events, self)
 end
 
 function ExposedThing:readProperty(name)
@@ -240,6 +314,10 @@ function ExposedThing:destroy()
     exports.unregister(mqtt, self)
     promise:resolve()
 
+    self.instance = nil
+    self.client = nil
+    self.token = nil
+
     return promise
 end
 
@@ -276,7 +354,8 @@ function ThingClient:start()
             mqttClient:subscribe(topic)
             console.log('subscribe', topic)
 
-            self:sendRegister(did, thing)
+            thing:_onRegister()
+            -- self:sendRegister(did, thing)
         end
     end)
 
@@ -426,11 +505,11 @@ function ThingClient:processInvokeAction(name, input, request)
     end)
 end
 
-function ThingClient:sendMessage(message)
+function ThingClient:sendMessage(message, callback)
     --console.log('sendMessage', message)
-    local client = self.mqtt
+    local client = self.mqtt -- MQTT client
     if (not client) then
-        console.log('empty mqtt client')
+        if (callback) then callback(nil, 'empty mqtt client') end
         return
     end
 
@@ -459,7 +538,7 @@ function ThingClient:sendRegister(did, thing)
     self:sendMessage(message)
 end
 
-function ThingClient:sendEvent(events, thing)
+function ThingClient:sendEvent(events, thing, callback)
     local message = {
         did = thing.id,
         token = thing.token,
@@ -467,7 +546,7 @@ function ThingClient:sendEvent(events, thing)
         data = events
     }
 
-    self:sendMessage(message)
+    self:sendMessage(message, callback)
 end
 
 function ThingClient:sendStream(streams, thing)
@@ -553,6 +632,31 @@ function exports.produce(thingDescription)
     return ExposedThing:new(thingDescription)
 end
 
+function exports.getClient(options, flags)
+    local client = exports.client
+    if (client) then
+        return client
+    end
+
+    if (not flags) then
+        return nil
+    end
+
+    client = ThingClient:new(options)
+    exports.client = client
+
+    client:on('register', function(result)
+        local did = result and result.did
+        local webThing = client.things[did]
+        if (webThing) then
+            webThing:_onRegisterResult(result)
+        end
+    end)
+
+    client:start()
+    return client
+end
+
 -- Generate the Thing Description as td, given the Properties, Actions 
 -- and Events defined for this ExposedThing object.
 -- Then make a request to register td to the given WoT Thing Directory.
@@ -574,29 +678,15 @@ function exports.register(directory, thing)
     options.url = directory
     options.id = thing.id
 
-    local client = exports.client
-    if (not client) then
-        client = ThingClient:new(options)
-        exports.client = client
+    local client = exports.getClient(options, true)
+    thing.client = client;
 
-        client:on('register', function(result)
-            local did = result.did
-            local webThing = client.things[did]
-            if (webThing) then
-                webThing:emit('register', result)
-            end
-        end)
-
-        client:start()
+    local onRegister = function()
+        thing:_onRegister()
     end
 
     if (not thing.registerTimer) then
-        thing.registerTimer = setInterval(1000 * 3600, function() 
-            local client = exports.client
-            client:sendRegister(thing.id, thing)
-
-            console.log('sendRegister', thing.id, thing);
-        end)
+        thing.registerTimer = setInterval(1000 * 5, onRegister)
     end
 
     client.things[thing.id] = thing;

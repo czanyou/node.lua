@@ -21,7 +21,7 @@ function exports.init(gateway)
     end
 
     console.info = function (message, ...) 
-        exports.log(gateway, Date.now(), 2, console.getFileLine(), message, ...)
+        exports.log(gateway, Date.now(), 1, console.getFileLine(), message, ...)
     end
 end
 
