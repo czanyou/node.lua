@@ -128,7 +128,7 @@ function exports.read(options, callback)
 	end
 
     local _work_func = function (options)
-        local  sht20 = require('sdl/sht20')
+        local  sht20 = require('devices/sht20')
         return sht20.temperatureAndHumidity(options)
     end
 

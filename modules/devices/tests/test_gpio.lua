@@ -1,5 +1,5 @@
 local util  = require('util')
-local gpio  = require('sdl/gpio')
+local gpio  = require('devices/gpio')
 
 local await = util.await
 

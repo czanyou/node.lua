@@ -4,7 +4,7 @@ local thread 	= require('thread')
 local path 		= require('path')
 local json 		= require('json')
 local conf      = require('app/conf')
-local sensor    = require('sdl/sht20')
+local sensor    = require('devices/sht20')
 local fs 		= require('fs')
 
 local data      = require('./data')

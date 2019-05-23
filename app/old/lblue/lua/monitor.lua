@@ -2,7 +2,7 @@ local app       = require('app')
 local utils     = require('util')
 local request   = require('http/request')
 local fs        = require('fs')
-local sdl       = require('sdl')
+local devices       = require('devices')
 local json      = require('json')
 local config    = require('app/conf')
 local rpc       = require('app/rpc')
@@ -396,7 +396,7 @@ function exports.init()
     cpu_info.total_time = 0;
     networkInfo.tx = 0;
     networkInfo.rx = 0;
-    mac = sdl.getMacAddress()
+    mac = devices.getMacAddress()
 
     version = process.version
 end

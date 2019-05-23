@@ -10,7 +10,7 @@ local rpc       = require('app/rpc')
 local clound    = require('./clound')
 local beacon    = require('./beacon')
 local monitor   = require('./monitor')
-local sdl       = require('sdl')
+local devices       = require('devices')
 
 local SCAN_RESPONSE = 0x04
 local RPC_PORT      = 38888
@@ -73,7 +73,7 @@ function startRegister()
     local registerTimer = nil;
     local registerState  = false
 
-    local id = sdl.getMacAddress()
+    local id = devices.getMacAddress()
 
     rpcServer = rpc.server(RPC_PORT, rpcMethods)
     monitor.init()
@@ -136,7 +136,7 @@ end
 
 function exports.info()
     exports.updateSettings()
-    local mac = sdl.getMacAddress()
+    local mac = devices.getMacAddress()
 
     clound.settings.id = mac
 

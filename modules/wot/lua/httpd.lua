@@ -7,7 +7,7 @@ local utils     = require('util')
 local path      = require('path')
 local json      = require('json')
 local conf      = require('app/conf')
-local device    = require('sdl')
+local device    = require('devices')
 local directory = require('wot/directory').directory()
 
 local WEB_PORT  = 9100
