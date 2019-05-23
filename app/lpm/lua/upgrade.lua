@@ -82,8 +82,7 @@ local function isDevelopmentPath(rootPath)
 	local filename2 = path.join(rootPath, 'app/lbuild')
 	local filename3 = path.join(rootPath, 'src')
 	if (fs.existsSync(filename1) or fs.existsSync(filename2) or fs.existsSync(filename3)) then
-		print('The "' .. rootPath .. '" is a development path.')
-		print('You can not update the system in development mode.\n')
+		print('Warning: The "' .. rootPath .. '" is in development mode.')
 		return true
 	end
 
@@ -94,13 +93,13 @@ end
 local function upgradeLock()
 	local tmpdir = os.tmpdir or '/tmp'
 
-	print("Try to lock upgrade...")
+	print("Upgrade: Lock")
 
 	local lockname = path.join(tmpdir, '/update.lock')
 	local lockfd = fs.openSync(lockname, 'w+')
 	local ret = fs.fileLock(lockfd, 'w')
 	if (ret == -1) then
-		print('The system update is already locked!')
+		print('Error: The update already locked!')
 		return nil
 	end
 
@@ -395,8 +394,11 @@ function BundleUpdater:updateAllFiles(callback)
 
 	local rootPath = self.rootPath
 	local files = self.list or {}
-	print('Upgrading system "' .. rootPath .. '" (total ' 
-		.. #files .. ' files need to update).')
+
+	if (#files > 0) then
+		print('Updating: "' .. rootPath .. '" (total ' 
+			.. #files .. ' files need to update).')
+	end
 
 	--console.log(self)
 
@@ -475,7 +477,7 @@ function BundleUpdater:upgradeSystemPackage(callback)
 	end
 
 	--print('update file: ' .. tostring(filename))
-	print('\nInstalling package (' .. filename .. ')')
+	print('Installing: (' .. filename .. ')')
 
 	local reader = createBundleReader(filename)
 	if (reader == nil) then
@@ -526,13 +528,13 @@ end
 
 function BundleUpdater:showUpgradeResult()
 	if (self.faileds and self.faileds > 0) then
-		print(string.format('Total (%d) error has occurred!', self.faileds))
+		print(string.format('Result: Total (%d) error has occurred!', self.faileds))
 
 	elseif (self.updated and self.updated > 0) then
-		print(string.format('Total (%d) files has been updated!', self.updated))
+		print(string.format('Result: Total (%d) files has been updated!', self.updated))
 
 	else
-		print('\nFinished\n')
+		print('Result: Finished')
 	end
 end
 
@@ -579,18 +581,18 @@ end
 
 function exports.install(filename, callback)
 	if (type(callback) ~= 'function') then
-		callback = nil
+		callback = function() end
 	end
 
 	local status = readUpdateStatus()
 	if (not status) or (status.state ~= STATE_DOWNLOAD_COMPLETED) then
-		print('Please update firmware first.')
+		callback('Error: Please update firmware first.')
 		return
 	end
 
 	local lockfd = upgradeLock()
 	if (not lockfd) then
-		print('Upgrade lock failed')
+		callback('Error: Upgrade lock failed')
 		return
 	end
 
@@ -606,37 +608,34 @@ function exports.install(filename, callback)
 
 	-- console.log(source, rootPath)
 	-- console.log("Upgrade path: " .. nodePath, rootPath)
+	status = { state = 0, result = 0 }
+	status.state = STATE_UPDATING -- 3：正在更新
+	saveUpdateStatus(status)
 
 	local options = {}
 	options.filename 	= filename
 	options.rootPath 	= rootPath
 
 	local updater = BundleUpdater:new(options)
-	if (not callback) then 
-		updater:on('check', function(index)
-			if (index) then
-				console.write('\rChecking (' .. index .. ')...  ')
-			else 
-				print('')
-			end
-		end)
+	updater:on('check', function(index)
+		if (index) then
+			console.write('\rChecking Files: (' .. index .. ')...  ')
+		else 
+			print('')
+		end
+	end)
 
-		updater:on('update', function(index, filename, ret, err)
-			local total = updater.updated or 0
-			if (index) then
-				console.write('\rUpdating (' .. index .. '/' .. total .. ')...  ')
-				if (ret == 0) then
-					print(filename or '')
-				end
-			else
-				print('')
+	updater:on('update', function(index, filename, ret, err)
+		local total = updater.updated or 0
+		if (index) then
+			console.write('\rUpdating: (' .. index .. '/' .. total .. ')...  ')
+			if (ret == 0) then
+				print(filename or '')
 			end
-		end)
-	end
-
-	status = { state = 0, result = 0 }
-	status.state = 3 -- 3：正在更新
-	saveUpdateStatus(status)
+		else
+			print('')
+		end
+	end)
 
 	updater:upgradeSystemPackage(function(err)
 		upgradeUnlock(lockfd)
@@ -647,10 +646,11 @@ function exports.install(filename, callback)
 			status.result = UPDATE_SUCCESSFULLY -- 1：固件更新成功
 		end
 
+		status.state = 0
 		saveUpdateStatus(status)
 
 		if (callback) then 
-			callback(err, updater)
+			callback(err, 'Updated: Done')
 			return 
 		end
 

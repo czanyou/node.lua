@@ -121,12 +121,9 @@ local function downloadFirmwarePackage(options, callback)
 
 	--console.log(filename)
 	local baseURL 	= rootURL .. 'device/firmware/file'
-	local url 		= baseURL .. '?type=' .. (options.type or 'sdk')
-	url = url .. '&target=' .. target
-	url = url .. '&localVersion=' .. version
-	url = url .. '&did=' .. options.did
+	local url 		= baseURL .. '?did=' .. options.did
 
-	printInfo('Package url: ' .. url)
+	printInfo('Package URL: ' .. url)
 
 	-- 下载最新的 SDK 更新包
 	request.download(url, {}, function(err, percent, response)
@@ -138,11 +135,11 @@ local function downloadFirmwarePackage(options, callback)
 		if (percent == 0 and response) then
 			local contentLength = tonumber(response.headers['Content-Length']) or 0
 
-			print('Downloading package (' .. ext.formatBytes(contentLength) .. ').')
+			printInfo('Package Size: (' .. ext.formatBytes(contentLength) .. ').')
 		end
 
 		if (percent <= 100) then
-			console.write('\rDownloading package (' .. percent .. '%)...  ')
+			console.write('\rDownloading: (' .. percent .. '%)...  ')
 		end
 
 		if (percent < 100) or (not response) then
@@ -150,7 +147,7 @@ local function downloadFirmwarePackage(options, callback)
 		end
 
 		-- write to a temp file
-		print('Done!')
+		console.write('\rDownloading: Done        \r\n')
 
 		local filedata = response.body
 		local md5sum = utils.bin2hex(utils.md5(filedata))
@@ -166,6 +163,8 @@ local function downloadFirmwarePackage(options, callback)
 				return
 			end
 
+			printInfo('Updated to version: ' .. tostring(packageInfo.version))
+
 			callback(nil, filename)
 		end)
 	end)
@@ -180,11 +179,12 @@ end
 -- @param {function} callback
 local function downloadFirmwareInfo(options, callback)
 	options = options or {}
-	local printInfo = options.printInfo or function() end
 
-	-- URL
+	local printInfo = options.printInfo or function() end
+	local nodePath  = getNodePath()
 	local did 		= options.did
 	local rootURL 	= options.base
+
 	if (not did) then
 		callback({ code = UPDATE_INVALID_URI, error = 'Invalid did' })
 		return
@@ -195,6 +195,8 @@ local function downloadFirmwareInfo(options, callback)
 	end
 
 	local url 	= rootURL .. 'device/firmware/?did=' .. did
+	printInfo('Path: ' .. nodePath)
+	printInfo('DID: ' .. did)
 	printInfo('URL: ' .. url)
 
 	request.download(url, {}, function(err, percent, response)
@@ -202,24 +204,32 @@ local function downloadFirmwareInfo(options, callback)
 			callback({ code = UPDATE_DISCONNECTED, error = err })
 			return
 
-		elseif (percent < 100) or (not response) then
+		elseif (percent and (percent < 100)) or (not response) then
 			return
 		end
 
 		--console.log(response.body)
 		local packageInfo = json.parse(response.body)
-		if (not packageInfo) or (not packageInfo.version) then
-			callback({ code = UPDATE_VALIDATION_FAILED, error = "Invalid firmware package information." })
+		if (not packageInfo) then
+			callback({ code = UPDATE_VALIDATION_FAILED, error = "Firmware information is not valid JSON string." })
+			return
+
+		elseif (not packageInfo.version) then
+			callback({ 
+				code = UPDATE_VALIDATION_FAILED,
+				error = packageInfo.error or "Invalid firmware package information."
+			})
 			return
 		end
 
 		local version = parseVersion(packageInfo.version)
 		local current = parseVersion(process.version)
+		printInfo('Current Version: ' .. process.version)
+
 		if (version < current) then
-			print('Note: The firmware package version is less than current version: v' .. tostring(packageInfo.version) .. '<v' .. tostring(process.version))
+			printInfo('New Version: ' .. packageInfo.version)
 		end
 
-		local nodePath  = getNodePath()
 		local basePath  = path.join(nodePath, 'update')
 		local ret, err = fs.mkdirpSync(basePath)
 		if (err) then
@@ -227,10 +237,13 @@ local function downloadFirmwareInfo(options, callback)
 			return
 		end
 
+		printInfo('Updated: ' .. tostring(packageInfo.updated))
+		printInfo('Size: ' .. tostring(packageInfo.size))
+		printInfo('MD5: ' ..  tostring(packageInfo.md5sum))
+
 		local filename 	= path.join(basePath, 'update.json')
 		local filedata  = fs.readFileSync(filename)
 		if (filedata == response.body) then
-			-- print("The firmware information is up-to-date!")
 			callback(nil, packageInfo)
 			return
 		end
@@ -251,7 +264,7 @@ local function downloadFirmwareInfo(options, callback)
 				return
 			end
 
-			print("Firmware information saved to: " ..  filename)
+			print("Firmware Path: " ..  filename)
 			callback(nil, packageInfo)
 		end)
 	end)
@@ -266,15 +279,6 @@ end
 local function downloadFirmwareFile(options, callback)
 	options = options or {}
 	local printInfo = options.printInfo or function() end
-
-	-- Update Path
-	local nodePath  = getNodePath()
-	local basePath  = path.join(nodePath, 'update')
-	local ret, err = fs.mkdirpSync(basePath)
-	if (err) then
-		callback({ code = UPDATE_NOT_ENOUGH_FLASH, error = err })
-		return
-	end
 
 	-- downloading firmware info
 	downloadFirmwareInfo(options, function(err, packageInfo)
@@ -313,9 +317,6 @@ local function downloadFirmwareFile(options, callback)
 				return callback({ code = UPDATE_VALIDATION_FAILED, error = 'Invalid firmware file format'});
 			end
 
-			--local newname = basePath .. '/update-' .. version .. '.zip'
-			--os.remove(newname)
-			--os.rename(filename, newname)
 			callback(nil, filename, packageInfo)
 		end)
 	end)
@@ -326,37 +327,45 @@ end
 
 -- Dnowload update files only
 function exports.update(callback)
-	local options = { type = 'update' }
-
+	-- options
 	local profile = conf('user')
+	local options = { type = 'update' }
 	options.did = profile:get('did')
 	options.base = profile:get('base')
 	
+	-- callback
 	if (type(callback) ~= 'function') then
 		callback = function(err, filename, packageInfo)
 			packageInfo = packageInfo or {}
-			local status = { state = 0, result = 0 }
 
-			--console.log(err, filename, packageInfo)
+			local status = { state = 0, result = 0 }
 			if (err) then
-				console.log('err: ', err)
-				status.result = 8
-				if (err.result) then
-					status.result = err.result
+				-- error
+				if (err.code) then
+					print("Code: " .. tostring(err.code))
 				end
+	
+				if (err.error) then
+					print("Error: " .. tostring(err.error))
+				else
+					console.log('Error: ', err)
+				end
+			
+				status.result = err.result or 8
 
 			else
+				-- version
 				local version = packageInfo.version
-				print('Latest firmware version: ' .. tostring(version))
+				print('At Version: ' .. tostring(version))
 				status.state = STATE_DOWNLOAD_COMPLETED
 				status.version = version
 			end
 
 			saveUpdateStatus(status)
 		end
-
-		options.printInfo = function(...) print(...) end
 	end
+
+	options.printInfo = function(...) print(...) end
 	
 	downloadFirmwareFile(options, callback)
 end
@@ -366,7 +375,16 @@ function exports.upgrade()
 		local status = { state = 0, result = 0 }
 
 		if (err) then
-			console.log('err: ', err)
+			if (err.code) then
+				print("Code: " .. tostring(err.code))
+			end
+
+			if (err.error) then
+				print("Message: " .. tostring(err.error))
+			else
+				console.log('Error: ', err)
+			end
+
 			status.result = 8
 			if (err.result) then
 				status.result = err.result
@@ -377,12 +395,19 @@ function exports.upgrade()
 		end
 
 		local version = packageInfo.version
-		print('Latest firmware version: ' .. tostring(version))
 		status.state = STATE_DOWNLOAD_COMPLETED
 		status.version = version
 		saveUpdateStatus(status)
+		print('Latest Version: ' .. tostring(version))
 
-		upgrade.install()
+		upgrade.install(nil, function(err, message)
+			if (err) then
+				print('Error: ' .. tostring(err))
+
+			elseif (message) then
+				print(message)
+			end
+		end)
 	end)
 end
 
