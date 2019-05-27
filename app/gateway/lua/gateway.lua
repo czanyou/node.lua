@@ -4,6 +4,8 @@ local fs 	= require('fs')
 local path 	= require('path')
 local json  = require('json')
 local wot   = require('wot')
+local Promise  = require('wot/promise')
+local exec  = require('child_process').exec
 
 local exports = {}
 
@@ -13,6 +15,71 @@ local cpuInfo = {
     used_time = 0,
     total_time = 0
 }
+
+local SHELL_RUN_TIMEOUT = 2000
+local isWindows = (os.platform() == 'win32')
+
+local function shellGetEnvironment()
+    return { hostname = hostname, path = process.cwd() }
+end
+
+function shellExecute(cmd, callback, timeout)
+	local result = {}
+
+    if (not isWindows) then
+        -- 重定向 stderr(2) 输出到 stdout(1)
+        cmd = cmd .. " 2>&1"
+    end
+
+    -- [[
+    local options = { timeout = (timeout or SHELL_RUN_TIMEOUT), env = process.env }
+
+    exec(cmd, options, function(err, stdout, stderr) 
+        --console.log(err, stdout, stderr)
+        if (not stdout) or (stdout == '') then
+            stdout = stderr
+        end
+
+        if (err and err.message) then
+            stdout = err.message .. ': \n\n' .. stdout
+        end
+
+        os.execute(cmd)
+
+        result.output = stdout
+        result.environment = shellGetEnvironment()
+
+        callback(result)
+    end)
+    --]]
+end
+
+function shellChdir(dir, callback)
+    local result = {}
+
+    -- console.log('dir', dir)
+
+    if (type(dir) == 'string') and (#dir > 0) then
+        local cwd = process.cwd()
+        local newPath = dir
+        if (not dir:startsWith('/')) then
+            newPath = path.join(cwd, dir)
+        end
+        --console.log(dir, newPath)
+
+        if newPath and (newPath ~= cwd) then
+            local ret, err = process.chdir(newPath)
+            --console.log(dir, newPath, ret, err)
+            if (not ret) then
+                result.output = err or 'Unable to change directory'
+            end
+        end
+    end
+
+    result.environment = shellGetEnvironment()
+
+    callback(result)
+end
 
 local function resetCpuUsage() 
     cpuInfo.used_time = 0;
@@ -136,9 +203,22 @@ local function onDeviceWrite(input, webThing)
 end
 
 local function onDeviceExecute(input, webThing)
-    console.log('onDeviceExecute');
+    -- console.log('onDeviceExecute', input);
 
-    return { code = 0 }
+    local promise = Promise.new()
+
+    if (input and input:startsWith('cd ')) then
+        shellChdir(input:sub(4), function(result) 
+            promise:resolve(result)
+        end)
+
+    else
+        shellExecute(input, function(result) 
+            promise:resolve(result)
+        end)
+    end
+
+    return promise
 end
 
 local function onDeviceActions(input, webThing)

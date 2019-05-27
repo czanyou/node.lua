@@ -502,7 +502,8 @@ local function initConsoleStream()
     end
 
     local isTTY
-    stdin,  isTTY = _initStream(0, true)
+    -- Fix: lua stdin bug
+    -- stdin,  isTTY = _initStream(0, true)
     stderr, isTTY = _initStream(2, false)
     stdout, isTTY = _initStream(1, false)
 
