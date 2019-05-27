@@ -176,7 +176,7 @@ end
 -- Indicates the directory where the source file to which the current line
 -- of code belongs
 function exports.dirname()
-    local path = require('path')
+    local path = require('path')   
     return path.dirname(exports.filename(3))
 end
 
@@ -188,6 +188,8 @@ end
 -- @return filename, linenumber
 function exports.filename(index)
     local info = debug.getinfo(index or 2, 'Sl') or {}
+    -- print(index, console.dump(info))
+
     local filename = info.source or ''
     if (filename:startsWith("@")) then
         filename = filename:sub(2)

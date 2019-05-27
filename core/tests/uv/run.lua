@@ -1,4 +1,6 @@
-local tap 	= require("ext/tap")
-local utils = require('util')
+local tap  = require("ext/tap")
+local util = require('util')
 
-tap.testAll(utils.dirname())
+local dirname = util.dirname()
+console.log('dirname', dirname);
+tap.testAll(dirname)

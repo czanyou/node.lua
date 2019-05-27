@@ -519,6 +519,7 @@ local function initConsoleStream()
 end
 
 initConsoleStream()
+
 exports.loadColors()
 
 -------------------------------------------------------------------------------

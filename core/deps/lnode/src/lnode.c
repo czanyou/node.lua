@@ -460,18 +460,17 @@ LUALIB_API int lnode_print_usage()
   	char buffer[PATH_MAX];
   	memset(buffer, 0, sizeof(buffer));
   	sprintf(buffer, "\n"
-	  	"usage: lnode [options] [ -e script | script.lua [arguments]]\n"
-	  	"\n"
-  		"options:\n"
-		"\n"
-  		"  -d  run as daemon\n"
-  		"  -e  evaluate script\n"
-  		"  -l  print path information\n"
-  		"  -p  evaluate script and print result	\n"
-  		"  -r  module to preload\n"
-  		"  -v  print Node.lua version\n"
-  		"  -   load script from stdin\n"
-		"\n"
+	  	"usage: lnode [options] [script [args]]\n"
+  		"Available options are:\n"
+		  "\n"
+  		"  -d      run as daemon\n"
+  		"  -e stat execute string `stat`\n"
+  		"  -p      show package path information\n"
+  		"  -l name require package `name`\n"
+  		"  -v      show version information\n"
+      "  --      stop handling options\n"
+  		"  -       stop handling options and execute stdin\n"
+		  "\n"
 	);
 
     lua_writestring(buffer, strlen(buffer));

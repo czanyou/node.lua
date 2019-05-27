@@ -22,13 +22,13 @@ test(
 		assert.equal(path.basename(ret), "test-util.lua")
 		print("utils.filename", ret)
 
-		print("utils.filename", utils.filename(0))
-		print("utils.filename", utils.filename(1))
-		print("utils.filename", utils.filename(2))
-		print("utils.filename", utils.filename(4))
-		print("utils.filename", utils.filename(5))
-		print("utils.filename", utils.filename(6))
-		print("utils.filename", utils.filename(7))
+		print("utils.filename(0)", utils.filename(0))
+		print("utils.filename(1)", utils.filename(1))
+		print("utils.filename(2)", utils.filename(2))
+		print("utils.filename(3)", utils.filename(3))
+		print("utils.filename(4)", utils.filename(4))
+		print("utils.filename(5)", utils.filename(5))
+		print("utils.filename(6)", utils.filename(6))
 	end
 )
 

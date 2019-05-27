@@ -13,7 +13,7 @@ set(SOURCES
 )
 
 set(MAIN_SOURCES
-  ${MAINDIR}/src/main.c
+  ${MAINDIR}/src/node.c
 )
 
 set(LUA_SOURCES

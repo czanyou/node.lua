@@ -20,7 +20,7 @@ local uv      = require('luv')
 
 local colorize  = console.colorize
 
--- test
+-- test`
 _G.module       = {}
 _G.module.dir   = uv.cwd()
 _G.module.path  = uv.cwd()
@@ -218,9 +218,11 @@ function exports.testAll(dirname)
 
 	repeat
 		local name = uv.fs_scandir_next(req)
+		console.log(name)
+
 		if not name then
-				-- run the tests!
-				tap(true)
+			-- run the tests!
+			tap(true)
 		end
 
 		local match = string.match(name, "^test%-(.*).lua$")
