@@ -465,6 +465,7 @@ LUALIB_API int lnode_print_usage()
 		  "\n"
   		"  -d      run as daemon\n"
   		"  -e stat execute string `stat`\n"
+      "  -E      ignores environment variables\n"
   		"  -p      show package path information\n"
   		"  -l name require package `name`\n"
   		"  -v      show version information\n"

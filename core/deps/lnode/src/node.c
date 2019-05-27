@@ -213,6 +213,7 @@ int main(int argc, char* argv[]) {
 	int has_deamon  = 0;
     int has_version = 0;
     int has_error   = 0;
+    int has_ignore  = 0;
     int i = 0;
 
 #ifndef _WIN32
@@ -256,6 +257,9 @@ int main(int argc, char* argv[]) {
 
 		} else if (strcmp(option, "-v") == 0) {
             has_version = 1;
+
+        } else if (strcmp(option, "-E") == 0) {
+            has_ignore = 1;    
 
 		} else if (strcmp(option, "-") == 0) {
 			// Read Lua script content from the pipeline
@@ -313,7 +317,14 @@ int main(int argc, char* argv[]) {
 	luv_set_thread_cb(lnode_vm_acquire, lnode_vm_release);
 
 	lnode_path_init(L);
-    handle_luainit(L);
+
+    if (has_ignore == 0) {
+        handle_luainit(L);
+        
+    } else {
+        lua_pushboolean(L, 1); /* signal for libraries to ignore env. vars. */
+		lua_setfield(L, LUA_REGISTRYINDEX, "LUA_NOENV");
+    }
 
 	if (has_info) {
 		lnode_print_info(L);
