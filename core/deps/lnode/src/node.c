@@ -16,6 +16,12 @@
  */
 #include "lnode.h"
 
+#if !defined(LUA_INIT_VAR)
+#define LUA_INIT_VAR "LUA_INIT"
+#endif
+
+#define LUA_INITVARVERSION LUA_INIT_VAR LUA_VERSUFFIX
+
 static int lnode_print_info(lua_State* L) {
   char script[] =
     "pcall(require, 'init')\n"
@@ -174,6 +180,27 @@ static void lnode_vm_release(lua_State* L) {
   	lua_close(L);
 }
 
+static int handle_luainit(lua_State *L) {
+	const char *name = "=" LUA_INITVARVERSION;
+	const char *init = getenv(name + 1);
+	if (init == NULL) {
+		name = "=" LUA_INIT_VAR;
+		init = getenv(name + 1); /* try alternative name */
+	}
+
+    // printf("init: %s\r\n", init);
+
+	if (init == NULL) {
+		return LUA_OK;
+
+    } else if (init[0] == '@') {
+		return lnode_dofile(L, init + 1);
+
+    } else {
+		return lnode_call_script(L, init, name);
+    }
+}
+
 int main(int argc, char* argv[]) {
 	lua_State* L 	= NULL;
 	int index 		= 0;
@@ -286,6 +313,7 @@ int main(int argc, char* argv[]) {
 	luv_set_thread_cb(lnode_vm_acquire, lnode_vm_release);
 
 	lnode_path_init(L);
+    handle_luainit(L);
 
 	if (has_info) {
 		lnode_print_info(L);
@@ -301,11 +329,11 @@ int main(int argc, char* argv[]) {
                 i++;
 
                 const char* text = argv[i];
-                res = lnode_call_script(L, text, "eval.lua");
+                res = lnode_call_script(L, text, "=(command line)");
 
             } else if (strcmp(option, "-l") == 0) {
                 i++;
-                
+
                 const char* text = argv[i];
                 res = lnode_dolibrary(L, text);
             }
@@ -315,8 +343,8 @@ int main(int argc, char* argv[]) {
 	if (has_script) {
 		res = lnode_dofile(L, filename);
 
-		lnode_call_script(L, "runLoop()", "loop");
-		lnode_call_script(L, "process:emit('exit')\n", "exit");
+		lnode_call_script(L, "runLoop()", "=(C run)");
+		lnode_call_script(L, "process:emit('exit')\n", "=(C exit)");
 
 	} else if (script <= 1) {
 		lnode_print_version();
