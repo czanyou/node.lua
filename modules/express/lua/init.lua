@@ -404,6 +404,7 @@ function Express:initialize(options)
     self.list 		= {}
     self.root 		= options.root
     self.routes     = {}
+    self.functions  = {}
 end
 
 function Express:close()
@@ -411,6 +412,10 @@ function Express:close()
         self.server:close()
         self.server = nil
     end
+end
+
+function Express:use(func)
+    table.insert(self.functions, func)
 end
 
 function Express:all(method, pathname, handler)
@@ -537,6 +542,10 @@ function Express:handleRequest(request, response)
     -- 供子类拦截所有请求处理
     if (self:onRequest(request, response)) then
         return
+    end
+
+    for index, func in ipairs(self.functions) do
+        func(request, response)
     end
 
     -- handler

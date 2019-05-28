@@ -7,6 +7,8 @@ local http  = require('http')
 local json  = require('json')
 local wot   = require('wot')
 
+local httpd   = require('wot/bindings/http')
+
 local rtmp  = require('./rtmp')
 local rtsp  = require('./rtsp')
 local modbus = require('./modbus')
@@ -47,7 +49,9 @@ function getThingStatus()
 end
 
 function createHttpServer()
-    local server = http.createServer(function(req, res)
+    local server = httpd.createServer()
+
+    server:get('/status/', function(req, res)
         -- console.log(req.url, req.method)
 
         local result = {}
@@ -59,10 +63,6 @@ function createHttpServer()
         res:setHeader("Content-Type", "application/json")
         res:setHeader("Content-Length", #body)
         res:finish(body)
-    end)
-
-    server:listen(8000, function()
-
     end)
 end
 
@@ -94,10 +94,12 @@ function exports.start()
     exports.rtsp()
     exports.gateway()
     exports.cameras() 
+
+    createHttpServer()
 end
 
 function exports.rtmp()
-    rtmp.startRtmpClient();
+    rtmp.startRtmpClient()
 end
 
 function exports.rtsp()
@@ -106,10 +108,8 @@ function exports.rtsp()
     local cameras = peripherals and peripherals.camera
     for index, options in ipairs(cameras) do
         -- console.log(options)
-        rtsp.startRtspClient(rtmp, options);
+        rtsp.startRtspClient(rtmp, options)
     end
-
-    createHttpServer();
 end
 
 function exports.config()
@@ -172,6 +172,18 @@ function exports.modbus()
     end
 
     app.modbusDevices = things
+end
+
+function exports.server()
+    gateway.app = app
+
+    local options = {}
+    options.did = app.get('did')
+    options.mqtt = app.get('mqtt')
+    options.secret = app.get('secret')
+    app.gateway = gateway.createThing(options)
+
+    createHttpServer()
 end
 
 -- 注册 WoT 客户端

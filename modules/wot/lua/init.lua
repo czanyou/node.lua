@@ -10,10 +10,18 @@ local mqtt     = require('wot/bindings/mqtt')
 
 local exports = {}
 
+-- ------------------------------------------------------------
+-- constants
+
 local REGISTER_EXPIRES = 3600
 local STATE_UNREGISTER = 0
 local STATE_REGISTER   = 1
 local REGISTER_MIN_INTERVAL = 4
+
+-- ------------------------------------------------------------
+-- ThingClient
+
+local ThingClient = core.Emitter:extend()
 
 -- ------------------------------------------------------------
 -- ThingDiscover
@@ -314,7 +322,7 @@ function ExposedThing:expose()
     -- console.log(self.instance)
     local mqtt = self.instance.url
     if (mqtt) then
-        exports.register(mqtt, self)
+        ThingClient.register(mqtt, self)
     end
 
     setImmediate(function()
@@ -331,7 +339,7 @@ function ExposedThing:destroy()
     local promise = Promise.new()
 
     local mqtt = self.instance.url
-    exports.unregister(mqtt, self)
+    ThingClient.unregister(mqtt, self)
     
     if (self.registerTimer) then
         clearInterval(self.registerTimer)
@@ -358,8 +366,6 @@ end
 
 -- ------------------------------------------------------------
 -- ThingClient
-
-local ThingClient  = core.Emitter:extend()
 
 function ThingClient:initialize(options)
     -- console.log('ThingClient', options);
@@ -635,6 +641,82 @@ function ThingClient:sendResult(name, output, request)
     self:sendMessage(response)
 end
 
+-- Generate the Thing Description as td, given the Properties, Actions 
+-- and Events defined for this ExposedThing object.
+-- Then make a request to register td to the given WoT Thing Directory.
+-- @param directory String
+-- @param thing ExposedThing 
+-- Promise<void>
+function ThingClient.register(directory, thing)
+    if (not directory) then
+        return nil, 'empty directory url'
+
+    elseif (not thing) then
+        return nil, 'empty thing'
+
+    elseif (not thing.id) then
+        return nil, 'empty thing.id'
+    end
+
+    local options = {}
+    options.url = directory
+    options.id = thing.id
+
+    local client = ThingClient.getClient(options, true)
+    thing.client = client;
+
+    local onRegister = function()
+        thing:_onRegister()
+    end
+
+    if (not thing.registerTimer) then
+        thing.registerTimer = setInterval(1000 * 5, onRegister)
+    end
+
+    client.things[thing.id] = thing;
+    return client
+end
+
+-- Makes a request to unregister the thing from the given WoT Thing Directory.
+-- @param directory String
+-- @param thing ExposedThing 
+-- Promise<void>
+function ThingClient.unregister(directory, thing)
+    local promise = Promise.new()
+
+    local client = exports.client
+    if (client) then
+        client.things[thing.id] = nil;
+    end
+
+    return promise
+end
+
+function ThingClient.getClient(options, flags)
+    local client = exports.client
+    if (client) then
+        return client
+    end
+
+    if (not flags) then
+        return nil
+    end
+
+    client = ThingClient:new(options)
+    exports.client = client
+
+    client:on('register', function(result)
+        local did = result and result.did
+        local webThing = client.things[did]
+        if (webThing) then
+            webThing:_onRegisterResult(result)
+        end
+    end)
+
+    client:start()
+    return client
+end
+
 -- ------------------------------------------------------------
 -- exports
 
@@ -665,82 +747,6 @@ end
 -- @returns {ExposedThing}
 function exports.produce(thingDescription)
     return ExposedThing:new(thingDescription)
-end
-
-function exports.getClient(options, flags)
-    local client = exports.client
-    if (client) then
-        return client
-    end
-
-    if (not flags) then
-        return nil
-    end
-
-    client = ThingClient:new(options)
-    exports.client = client
-
-    client:on('register', function(result)
-        local did = result and result.did
-        local webThing = client.things[did]
-        if (webThing) then
-            webThing:_onRegisterResult(result)
-        end
-    end)
-
-    client:start()
-    return client
-end
-
--- Generate the Thing Description as td, given the Properties, Actions 
--- and Events defined for this ExposedThing object.
--- Then make a request to register td to the given WoT Thing Directory.
--- @param directory String
--- @param thing ExposedThing 
--- Promise<void>
-function exports.register(directory, thing)
-    if (not directory) then
-        return nil, 'empty directory url'
-
-    elseif (not thing) then
-        return nil, 'empty thing'
-
-    elseif (not thing.id) then
-        return nil, 'empty thing.id'
-    end
-
-    local options = {}
-    options.url = directory
-    options.id = thing.id
-
-    local client = exports.getClient(options, true)
-    thing.client = client;
-
-    local onRegister = function()
-        thing:_onRegister()
-    end
-
-    if (not thing.registerTimer) then
-        thing.registerTimer = setInterval(1000 * 5, onRegister)
-    end
-
-    client.things[thing.id] = thing;
-    return client
-end
-
--- Makes a request to unregister the thing from the given WoT Thing Directory.
--- @param directory String
--- @param thing ExposedThing 
--- Promise<void>
-function exports.unregister(directory, thing)
-    local promise = Promise.new()
-
-    local client = exports.client
-    if (client) then
-        client.things[thing.id] = nil;
-    end
-
-    return promise
 end
 
 return exports
