@@ -353,7 +353,7 @@ end
 
 function ServerResponse:sendStream(stream, contentType, contentLength)
     self:set("Content-Type",   contentType   or "text/html")
-    self:set("Content-Length", contentLength or nil)
+    self:set("Content-Length", tonumber(contentLength) or nil)
 
     self:checkSessionId()
     stream:pipe(self)

@@ -231,13 +231,16 @@ local function onDeviceActions(input, webThing)
     elseif (input.reset) then
         return onDeviceReset(input.reset, webThing)
 
+    elseif (input.factoryReset) then
+        return onDeviceReset(input.factoryReset, webThing)
+
     elseif (input.read) then
         return onDeviceRead(input.read, webThing)
 
-    elseif (input.write) then   
+    elseif (input.write) then
         return onDeviceWrite(input.write, webThing)
 
-    elseif (input.execute) then   
+    elseif (input.execute) then
         return onDeviceExecute(input.execute, webThing)
 
     else
@@ -296,9 +299,6 @@ local function onFirmwareActions(input, webThing)
     elseif (input.read) then
         return onFirmwareRead(input.read, webThing)
 
-    elseif (input.write) then   
-        return { code = 0 }
-
     else
         return { code = 400, error = 'Unsupported methods' }
     end
@@ -320,6 +320,8 @@ local function onConfigWrite(config, webThing)
         exports.services.config = config
         exports.app.set('gateway', config)
     end
+
+    return { code = 0 }
 end
 
 local function onConfigActions(input, webThing)
@@ -330,9 +332,8 @@ local function onConfigActions(input, webThing)
         return onConfigRead(input.read, webThing)
 
     elseif (input.write) then
-        onConfigWrite(input.write, webThing);
-        return { code = 0 }
-
+        return onConfigWrite(input.write, webThing);
+        
     else
         return { code = 400, error = 'Unsupported methods' }
     end
