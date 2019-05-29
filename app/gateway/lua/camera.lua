@@ -8,7 +8,6 @@ local json  = require('json')
 local wot   = require('wot')
 
 local Promise = require('wot/promise')
-local rtmp  = require('../lua/rtmp')
 
 local exports = {}
 
@@ -148,6 +147,7 @@ local function onPlayAction(input, webThing)
         return promise
     end
 
+    local rtmp = exports.rtmp;
     if (rtmp) then
         rtmp.publishRtmpUrl(did, url);
     end
@@ -164,6 +164,8 @@ local function onStopAction(input, webThing)
     console.log('stop', input);
 
     local did = webThing.id;
+
+    local rtmp = exports.rtmp;
     if (rtmp) then
         rtmp.stopRtmpClient(did, 'stoped');
     end

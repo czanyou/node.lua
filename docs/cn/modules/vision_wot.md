@@ -248,11 +248,11 @@ IoT 客户端模块
 
 ### consume
 
-消费 (使用) 指定的事物
+消费指定的事物
 
 > wot.consume(thingInstance)
 
-- thingInstance要消费的事物描述
+- thingInstance `{ThingInstance}` 要消费的事物
 
 ### produce
 
@@ -260,4 +260,4 @@ IoT 客户端模块
 
 > wot.produce(thingInstance)
 
-- thingInstance事件模型描述
+- thingInstance `{ThingInstance}` 事物模型

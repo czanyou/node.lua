@@ -26,10 +26,12 @@ exports.rtmpSessions = {}
 local function getRtmpSession(did, create)
     create = true
 
-    local rtmpSession = exports.rtmpSessions[did]
+    local rtmpSessions = exports.rtmpSessions
+
+    local rtmpSession = rtmpSessions[did]
     if (not rtmpSession) and (create) then
         rtmpSession = {}
-        exports.rtmpSessions[did] = rtmpSession
+        rtmpSessions[did] = rtmpSession
     end
 
     return rtmpSession;
@@ -40,19 +42,19 @@ end
 -- Snapshot
 
 local function saveSnapshot(did, videoConfiguration, body, timestamp)
-    local rtspSession = getRtmpSession(did)
+    local rtmpSession = getRtmpSession(did)
     local now = process.now()
-    local span = now - (rtspSession.lastSnapshotTime or 0)
+    local span = now - (rtmpSession.lastSnapshotTime or 0)
     if (span < 3600 * 1000) then
         return
     end
 
-    local did = rtspSession.did
+    local did = rtmpSession.did
     if (not did) then
         return
     end
 
-    rtspSession.lastSnapshotTime = now;
+    rtmpSession.lastSnapshotTime = now;
 
     local filePath = os.tmpdir .. '/snapshot.flv'
     os.remove(filePath)
@@ -134,7 +136,6 @@ end
 -- RTMP
 
 local function sendMetadataMessage(did, meta)
-    local rtspSession = getRtmpSession(did)
 
     local metadata = {
         copyright = 'anyou',
@@ -146,7 +147,8 @@ local function sendMetadataMessage(did, meta)
         --audiocodecid = 10
     }
 
-    local rtmpClient = rtspSession.rtmpClient
+    local rtmpSession = getRtmpSession(did)
+    local rtmpClient = rtmpSession.rtmpClient
     if (rtmpClient) then
         rtmpClient.metadata = metadata
         rtmpClient:sendMetadataMessage()
@@ -189,8 +191,9 @@ local function stopRtmpClient(did, error)
     if (rtmpSession.rtmpClient) then
         local rtmpClient = rtmpSession.rtmpClient
         rtmpSession.rtmpClient = nil
-        rtmpSession.rtmpUrl = nil
         rtmpClient:close(error)
+
+        -- rtmpSession.rtmpUrl = nil
     end
 end
 
@@ -288,6 +291,11 @@ end
 local function getRtmpSessionStatus(did)
     local rtmpSession = getRtmpSession(did)
     local status = { url = rtmpSession.rtmpUrl }
+
+    status.lastNotifyTime = rtmpSession.lastNotifyTime
+    status.mediaInfo = rtmpSession.rtmpMediaInfo
+    status.videoConfiguration = util.bin2hex(rtmpSession.videoConfiguration)
+
     local rtmpClient = rtmpSession.rtmpClient
     if (not rtmpClient) then
         return status
@@ -361,7 +369,8 @@ end
 
 local function getRtmpStatus()
     local sessions = {}
-    for did, rtmpSession in pairs(exports.rtmpSessions) do
+    local rtmpSessions = exports.rtmpSessions
+    for did, rtmpSession in pairs(rtmpSessions) do
         sessions[did] = getRtmpSessionStatus(did, rtmpSession);
     end
     return sessions
@@ -395,19 +404,21 @@ local function setVideoConfiguration(did, videoConfiguration)
     if (not rtmpSession.videoConfiguration) then
         console.log('setVideoConfiguration', did, videoConfiguration)
     end
+
     rtmpSession.videoConfiguration = videoConfiguration
 end
 
+-- 推送指定的流
 local function publishRtmpUrl(did, rtmpUrl)
+    console.log('publishRtmpUrl', did, rtmpUrl)
     local now = process.now()
 
     local rtmpSession = getRtmpSession(did)
     rtmpSession.rtmpUrl = rtmpUrl;
     rtmpSession.lastNotifyTime = now;
+    -- console.log('rtmpSessions', rtmpSession)
 
     onRtmpSessionTimer(did);
-
-    console.log('publishRtmpUrl', did, rtmpUrl)
 end
 
 exports.getRtmpSession = getRtmpSession

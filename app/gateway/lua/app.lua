@@ -23,33 +23,38 @@ app.name = 'gateway'
 -- ////////////////////////////////////////////////////////////////////////////
 -- Web Server
 
-function getThingStatus()
+function getThingsStatus()
     local wotClient = wot.client
     local things = wotClient and wotClient.things
     local list = {}
-    if (things) then
-        for did, thing in pairs(things) do 
-            local data = {}
-            data.id = thing.id
-            data.name = thing.name
-            data.token = thing.token
-            data.deviceId = thing.deviceId
-            data.instance = thing.instance
-            data.registerExpires = thing.registerExpires
-            data.registerInterval = thing.registerInterval
-            data.registerState = thing.registerState
-            data.registerTime = thing.registerTime
-            data.registerUpdated = thing.registerUpdated
-
-            list[did] = data
-        end
+    if (not things) then
+        return list
     end
 
+    for did, thing in pairs(things) do 
+        local data = {}
+        data.id = thing.id
+        data.name = thing.name
+        data.token = thing.token
+        data.deviceId = thing.deviceId
+        data.instance = thing.instance
+
+        data.register = {}
+        data.register.expires = thing.registerExpires
+        data.register.interval = thing.registerInterval
+        data.register.state = thing.registerState
+        data.register.time = thing.registerTime
+        data.register.updated = thing.registerUpdated
+
+        list[did] = data
+    end
+    
     return list
 end
 
 function createHttpServer()
     local server = httpd.createServer()
+    app.httpServer = server
 
     server:get('/status/', function(req, res)
         -- console.log(req.url, req.method)
@@ -57,27 +62,17 @@ function createHttpServer()
         local result = {}
         result.rtmp = rtmp.getRtmpStatus()
         result.rtsp = rtsp.getRtspStatus()
-        result.things = getThingStatus()
+        result.things = getThingsStatus()
 
         local body = json.stringify(result)
-        res:setHeader("Content-Type", "application/json")
-        res:setHeader("Content-Length", #body)
+        res:set("Content-Type", "application/json")
+        res:set("Content-Length", #body)
         res:finish(body)
     end)
 end
 
 -- ////////////////////////////////////////////////////////////////////////////
 --
-
-function exports.notify()
-    setInterval(1000 * 15, function()
-        -- sendGatewayStatus()
-    end)
-
-    setInterval(1000 * 3600, function()
-        -- sendGatewayDeviceInformation()
-    end)
-end
 
 function exports.play(rtmpUrl)
     local urlString = rtmpUrl or 'rtmp://iot.beaconice.cn:1935/live/test'
@@ -114,7 +109,6 @@ end
 
 function exports.config()
     console.log('gateway', app.get('gateway'))
-    --console.log('modbus', app.get('gateway.peripherals'))
 end
 
 function exports.gateway()
@@ -188,6 +182,8 @@ end
 
 -- 注册 WoT 客户端
 function exports.cameras()
+    camera.rtmp = rtmp
+    
     local mqtt = app.get('mqtt')
     local secret = app.get('secret')
     local gateway = app.get('gateway')

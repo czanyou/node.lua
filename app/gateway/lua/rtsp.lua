@@ -40,28 +40,32 @@ local function getRtspSessionStatus(rtspSession)
     end
 
     status.lastActiveTime = rtspClient.lastActiveTime
-    status.urlObject = rtspClient.urlObject
     status.rtspState = rtspClient.rtspState
     status.sentRequests = rtspClient.sentRequests
-    --status.mediaTracks = rtspClient.mediaTracks
-
     status.lastCSeq = rtspClient.lastCSeq
     status.lastConnectTime = rtspClient.lastConnectTime
     status.id = rtspClient.id
 
-    status.audioSamples = rtspClient.audioSamples
-    status.audioTrack = rtspClient.audioTrack
-    status.audioTrackId = rtspClient.audioTrackId
-    status.videoSamples = rtspClient.videoSamples
-    status.videoTrack = rtspClient.videoTrack
-    status.videoTrackId = rtspClient.videoTrackId
+    -- audio
+    local audio = {}
+    status.audio = audio
+    audio.samples = rtspClient.audioSamples
+    -- audio.track = rtspClient.audioTrack
+    audio.trackId = rtspClient.audioTrackId
+
+    -- video
+    local video = {}
+    status.video = video
+    video.samples = rtspClient.videoSamples
+    -- video.track = rtspClient.videoTrack
+    video.trackId = rtspClient.videoTrackId
 
     local sps, pps, error = rtspClient:getParameterSets()
     if (sps) then
-        status.sps = util.bin2hex(sps)
-        status.pps = util.bin2hex(pps)
+        video.sps = util.bin2hex(sps)
+        video.pps = util.bin2hex(pps)
     else
-        status.sps = error
+        video.sps = error
     end
 
     return status
