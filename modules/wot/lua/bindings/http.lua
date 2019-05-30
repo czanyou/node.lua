@@ -116,7 +116,22 @@ local function onPostThingAction(request, response)
         output = thing:invokeAction(name, input)
     end
 
-    response:json(output or { code = 0 })
+    if (not output) then
+        output = { code = 0, message = 'output is empty' }
+        return response:json(output)
+
+    elseif (not output.next) then
+        return response:json(output)
+    end
+
+    -- next
+    local thingClient = self
+    output:next(function(data)
+        return response:json(data)
+
+    end):catch(function(err)
+        return response:json(err)
+    end)
 end
 
 local function onGetThingEvents(request, response)

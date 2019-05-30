@@ -1,17 +1,16 @@
 {
     "mqtt": "mqtt://www.wotcloud.cn/",
     "gateway": {
-        "peripherals": {
-            "camera": [{
-                "did": "112233445599",
-                "url": "rtsp://192.168.1.64/live.mp4",
-                "username": "admin",
-                "password": "admin123456"
-            }],
-            "modbus": [{
-                "did": "ff2233445599"
-            }]
-        }
+        "cameras": [{
+            "did": "112233445599",
+            "url": "rtsp://192.168.1.64/live.mp4",
+            "username": "admin",
+            "password": "admin123456"
+        }],
+        "modbus": [{
+            "did": "ff2233445599"
+        }],
+        "peripherals": []
     },
     "peripherals": {
         "112233445599": {

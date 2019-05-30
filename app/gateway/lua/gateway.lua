@@ -78,7 +78,9 @@ function shellChdir(dir, callback)
 
     result.environment = shellGetEnvironment()
 
-    callback(result)
+    setImmediate(function()
+        callback(result)
+    end)
 end
 
 local function resetCpuUsage() 
@@ -154,6 +156,7 @@ local function getMacAddress()
     return util.bin2hex(item.mac)
 end
 
+-- Read device information
 local function onDeviceRead(input, webThing)
     local device = {}
     device.cpuUsage = getCpuUsage()
@@ -173,33 +176,49 @@ local function onDeviceRead(input, webThing)
     return device
 end
 
+-- Reboot the device
+-- @param input {object}
+--  - delay {number} 大于 0 表示延时重启，小于等于 0 表示取消重启
 local function onDeviceReboot(input, webThing)
-    console.log('onDeviceReboot');
+    local delay = tonumber(input and input.delay)
 
     if (exports.rebootTimer) then
         clearTimeout(exports.rebootTimer)
     end
 
-    exports.rebootTimer = setTimeout(1000 * 10, function()
-        exports.rebootTimer = nil;
-        console.log('reboot timeout');
+    if (delay and delay > 0) then
+        if (delay < 5) then
+            delay = 5
+        end
 
-        process:exit(0);
-    end)
+        exports.rebootTimer = setTimeout(1000 * delay, function()
+            exports.rebootTimer = nil;
+            console.log('reboot timeout');
+            process:exit(0);
+        end)
+        return { code = 0, delay = delay, message = 'Device will reboot' }
 
-    return { code = 0 }
+    else 
+        return { code = 0, delay = delay, message = 'reboot is cancel' }
+    end
 end
 
+-- Factory Reset
 local function onDeviceReset(input, webThing)
-    console.log('onDeviceReset');
-
-    return { code = 0 }
+    local type = tonumber(input and input.type)
+    return { code = 0, type = type, message = 'device reset' }
 end
 
+-- Set Date & Time
 local function onDeviceWrite(input, webThing)
-    console.log('onDeviceWrite');
+    -- console.log('onDeviceWrite');
+    if (input) then
+        -- currentTime
+        -- UTCOffset
+        -- timezone
+    end
 
-    return { code = 0 }
+    return { code = 0, message = 'write' }
 end
 
 local function onDeviceExecute(input, webThing)
@@ -208,12 +227,15 @@ local function onDeviceExecute(input, webThing)
     local promise = Promise.new()
 
     if (input and input:startsWith('cd ')) then
-        shellChdir(input:sub(4), function(result) 
+        local dir = input:sub(4)
+        shellChdir(dir, function(result)
+            -- console.log('shellChdir', dir, result)
             promise:resolve(result)
         end)
 
     else
-        shellExecute(input, function(result) 
+        shellExecute(input, function(result)
+            -- console.log('shellExecute', input, result)
             promise:resolve(result)
         end)
     end
@@ -222,6 +244,8 @@ local function onDeviceExecute(input, webThing)
 end
 
 local function onDeviceActions(input, webThing)
+    -- console.log('onDeviceActions', input);
+
     if (not input) then
         return { code = 400, error = 'Unsupported methods' }
 

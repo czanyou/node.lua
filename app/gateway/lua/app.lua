@@ -99,8 +99,11 @@ end
 
 function exports.rtsp()
     local gateway = app.get('gateway')
-    local peripherals = gateway and gateway.peripherals
-    local cameras = peripherals and peripherals.camera
+    local cameras = gateway and gateway.cameras
+    if (not cameras) then
+        return
+    end
+
     for index, options in ipairs(cameras) do
         -- console.log(options)
         rtsp.startRtspClient(rtmp, options)
@@ -187,8 +190,11 @@ function exports.cameras()
     local mqtt = app.get('mqtt')
     local secret = app.get('secret')
     local gateway = app.get('gateway')
-    local peripherals = gateway and gateway.peripherals
-    local cameras = peripherals and peripherals.camera
+    local cameras = gateway and gateway.cameras
+    if (not cameras) then
+        return
+    end
+
     local things = {}
     for index, options in ipairs(cameras) do
         options.mqtt = mqtt

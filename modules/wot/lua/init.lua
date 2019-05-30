@@ -413,7 +413,7 @@ function ThingClient:start()
 end
 
 function ThingClient:processMessage(message, topic)
-    -- print(TAG, 'message', topic, message)
+    print(TAG, 'message', topic, message)
 
     local messageType = message.type
     if (not messageType) then
@@ -508,8 +508,11 @@ function ThingClient:processWriteAction(request, topic)
     self:sendMessage(response)
 end
 
+console.log(23)
+
 function ThingClient:processInvokeAction(name, input, request)
-    -- console.log('processInvokeAction', name, input, request)
+    console.log('processInvokeAction', name, input, request)
+
     -- check name
     if (not name) then
         local err = { code = 400, error = 'Invalid action name' }
@@ -529,8 +532,8 @@ function ThingClient:processInvokeAction(name, input, request)
     -- check handler
     local ret = thing:invokeAction(name, input)
     if (not ret) then
-        console.log('Action invoke result is empty')
-        return self:sendResult(name, { code = 0 }, request)
+        ret = { code = 0, message = 'result is empty' }
+        return self:sendResult(name, ret, request)
 
     elseif (not ret.next) then
         return self:sendResult(name, ret, request)
