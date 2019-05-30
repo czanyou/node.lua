@@ -89,6 +89,7 @@ function exports.start()
     exports.rtsp()
     exports.gateway()
     exports.cameras() 
+    exports.modbus()
 
     createHttpServer()
 end
@@ -134,14 +135,13 @@ function exports.modbus()
     modbus.app = app
 
     local gateway = app.get('gateway')
-    local peripherals = gateway and gateway.peripherals
-    local list = peripherals and peripherals.modbus
+    local list = gateway and gateway.modbus
 
     local did = app.get('did')
     local secret = app.get('secret')
     local mqtt = app.get('mqtt')
 
-    peripherals = app.get('peripherals') or {}
+    local peripherals = app.get('peripherals') or {}
     if (not list) then
         return
     end
@@ -186,6 +186,7 @@ end
 -- 注册 WoT 客户端
 function exports.cameras()
     camera.rtmp = rtmp
+    camera.app = app
     
     local mqtt = app.get('mqtt')
     local secret = app.get('secret')

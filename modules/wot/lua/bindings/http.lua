@@ -112,7 +112,7 @@ local function onPostThingAction(request, response)
     local input = request.query or request.body
     local output = nil
 
-    if (thing) then
+    if (thing and thing.invokeAction) then
         output = thing:invokeAction(name, input)
     end
 

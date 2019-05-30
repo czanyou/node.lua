@@ -20,25 +20,15 @@ local function onDeviceRead()
     return device
 end
 
-local function onDeviceReboot()
-    return { code = 0 }
-end
-
 local function onDeviceActions(input, webThing)
     if (not input) then
         return { code = 400, error = 'Unsupported methods' }
-
-    elseif (input.reboot) then
-        return onDeviceReboot(input.reboot, webThing);
-        
+   
     elseif (input.reset) then
         return { code = 0 }
 
     elseif (input.read) then
         return onDeviceRead(input.read, webThing)
-
-    elseif (input.write) then   
-        return { code = 0 }
 
     else
         return { code = 400, error = 'Unsupported methods' }
@@ -46,13 +36,18 @@ local function onDeviceActions(input, webThing)
 end
 
 local function onConfigRead(input, webThing)
-    local config = {}
+    local config = exports.app.get('peripherals');
+    config = config and config[webThing.id]
 
     return config
 end
 
 local function onConfigWrite(input, webThing)
-    local config = {}
+    local config = exports.app.get('peripherals') or {}
+    if (input) then
+        config[webThing.id] = input
+        exports.app.set('peripherals', config)
+    end
 
     return { code = 0 }
 end
@@ -72,19 +67,27 @@ local function onConfigActions(input, webThing)
     end
 end
 
+local function onPtzStart(direction, speed)
+    return { code = 0 }
+end
+
+local function onPtzStop()
+    return { code = 0 }
+end
+
 local function onPtzActions(input, webThing)
     if (input.start) then
         local direction = tonumber(input.start.direction)
         local speed = input.start.speed or 1
 
         if direction and (direction >= 0) and (direction <= 9) then
-            return { code = 0 }
+            return onPtzStart(direction, speed)
         else 
             return { code = 400, error = 'Invalid direction' }
         end
 
     elseif (input.stop) then
-        return { code = 0 }
+        return onPtzStop()
         
     else
         return { code = 400, error = 'Unsupported methods' }
@@ -125,7 +128,7 @@ local function onPresetActions(input, webThing)
             return { code = 400, error = "Invalid preset index" }
         end
 
-    elseif (input.list) then
+    elseif (input.read) then
         return { code = 0, presets = { { index = 1 }, { index = 2 } } }
 
     else

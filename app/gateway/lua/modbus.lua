@@ -150,7 +150,7 @@ local function readFromModbus(webThing)
     return result, count
 end
 
-local function onDeviceRead()
+local function onDeviceRead(input, webThing)
     local device = {}
     device.deviceType = 'modbus'
     device.errorCode = 0
@@ -162,26 +162,15 @@ local function onDeviceRead()
     return device
 end
 
-local function onDeviceReboot()
-
-end
-
-local function onDeviceActions(input)
+local function onDeviceActions(input, webThing)
     if (not input) then
         return { code = 400, error = 'Unsupported methods' }
-
-    elseif (input.reboot) then
-        onDeviceReboot(input.reboot);
-        return { code = 0 }
 
     elseif (input.reset) then
         return { code = 0 }
 
     elseif (input.read) then
-        return onDeviceRead()
-
-    elseif (input.write) then   
-        return { code = 0 }
+        return onDeviceRead(input.read, webThing)
 
     else
         return { code = 400, error = 'Unsupported methods' }
@@ -195,10 +184,13 @@ local function onConfigRead(input, webThing)
     return config
 end
 
-local function onConfigWrite(config)
-    local config = {}
+local function onConfigWrite(config, webThing)
+    local peripherals = exports.app.get('peripherals') or {}
+    if (config) then
+        peripherals[webThing.id] = config
+    end
 
-    return config
+    return { code = 0 }
 end
 
 local function onConfigActions(input, webThing)
@@ -209,8 +201,7 @@ local function onConfigActions(input, webThing)
         return onConfigRead(input.read, webThing)
 
     elseif (input.write) then
-        onConfigWrite(input.write);
-        return { code = 0 }
+        return onConfigWrite(input.write, webThing);
 
     else
         return { code = 400, error = 'Unsupported methods' }
@@ -231,7 +222,7 @@ local function initModbusProperties(options, webThing)
     webThing.modbus.properties = {}
     local properties = webThing.modbus.properties;
 
-    for name, value in pairs(options.properties) do
+    for name, value in pairs(options.properties or {}) do
         local property = {}
         properties[name] = property
         property.address = value.d or common.d or 0
