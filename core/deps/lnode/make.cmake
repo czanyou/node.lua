@@ -25,18 +25,20 @@ add_executable(lnode ${MAIN_SOURCES} ${SOURCES})
 target_link_libraries(lualib luazip luajson luautils luauv uv)
 target_link_libraries(lnode lualib)
 
-add_library(nodelua SHARED ${SOURCES})
-target_link_libraries(nodelua lualib)
+add_library(luv SHARED ${SOURCES})
+target_link_libraries(luv lualib)
 
 add_executable(lua ${LUA_SOURCES})
-target_link_libraries(lua nodelua)
+target_link_libraries(lua lualib)
+set_target_properties(luv PROPERTIES PREFIX "")
 
 if (APPLE)
 target_link_libraries(lnode lsqlite)
 
 elseif (LINUX)
 target_link_libraries(lnode dl m rt)
-target_link_libraries(nodelua dl m rt)
+target_link_libraries(luv dl m rt)
+target_link_libraries(lua dl m rt)
 
 endif ()
 

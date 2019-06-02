@@ -248,6 +248,10 @@ function exports.upgrade(...)
 	require('lpm/update').upgrade(...)
 end
 
+function exports.status(...)
+	require('lpm/update').status(...)
+end
+
 -------------------------------------------------------------------------------
 -- misc
 

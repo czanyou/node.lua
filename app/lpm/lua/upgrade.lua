@@ -526,39 +526,15 @@ function BundleUpdater:reset()
     self.files      = {}
 end
 
-function BundleUpdater:showUpgradeResult()
+function BundleUpdater:getUpgradeResult()
 	if (self.faileds and self.faileds > 0) then
-		print(string.format('Result: Total (%d) error has occurred!', self.faileds))
+		return string.format('Total (%d) error has occurred!', self.faileds)
 
 	elseif (self.updated and self.updated > 0) then
-		print(string.format('Result: Total (%d) files has been updated!', self.updated))
+		return nil, string.format('Total (%d) files has been updated!', self.updated)
 
 	else
-		print('Result: Finished')
-	end
-end
-
-local function saveUpdateStatus(status) 
-	local nodePath = getNodePath()
-	local basePath = path.join(nodePath, 'update')
-	local ret, err = fs.mkdirpSync(basePath)
-	if (err) then
-		print(err)
-		return
-	end
-
-	local filename = path.join(basePath, 'status.json')
-	local filedata = json.stringify(status);
-	fs.writeFileSync(filename, filedata);
-end
-
-local function readUpdateStatus()
-	local nodePath = getNodePath()
-	local basePath = path.join(nodePath, 'update')
-	local filename = path.join(basePath, 'status.json')
-	local filedata = fs.readFileSync(filename);
-	if (filedata) then
-		return json.parse(filedata)
+		return nil, 'Finished'
 	end
 end
 
@@ -581,13 +557,16 @@ end
 
 function exports.install(filename, callback)
 	if (type(callback) ~= 'function') then
-		callback = function() end
-	end
+		callback = function(err, message)
+			if (err) then
+				print('Failed:', err)
+				return
+			end
 
-	local status = readUpdateStatus()
-	if (not status) or (status.state ~= STATE_DOWNLOAD_COMPLETED) then
-		callback('Error: Please update firmware first.')
-		return
+			if (message) then
+				print('Done:', message)
+			end
+		end
 	end
 
 	local lockfd = upgradeLock()
@@ -606,24 +585,20 @@ function exports.install(filename, callback)
 		filename = path.join(nodePath, 'update/update.zip')
 	end
 
-	-- console.log(source, rootPath)
-	-- console.log("Upgrade path: " .. nodePath, rootPath)
-	status = { state = 0, result = 0 }
-	status.state = STATE_UPDATING -- 3：正在更新
-	saveUpdateStatus(status)
-
 	local options = {}
 	options.filename 	= filename
 	options.rootPath 	= rootPath
 
 	local updater = BundleUpdater:new(options)
-	updater:on('check', function(index)
+
+	--[[ updater:on('check', function(index)
 		if (index) then
 			console.write('\rChecking Files: (' .. index .. ')...  ')
 		else 
 			print('')
 		end
 	end)
+	--]]
 
 	updater:on('update', function(index, filename, ret, err)
 		local total = updater.updated or 0
@@ -640,22 +615,9 @@ function exports.install(filename, callback)
 	updater:upgradeSystemPackage(function(err)
 		upgradeUnlock(lockfd)
 
-		if (err) then
-			status.result = UPDATE_FAILED -- 8：固件更新失败
-		else
-			status.result = UPDATE_SUCCESSFULLY -- 1：固件更新成功
-		end
-
-		status.state = 0
-		saveUpdateStatus(status)
-
 		if (callback) then 
-			callback(err, 'Updated: Done')
-			return 
+			callback(updater:getUpgradeResult())
 		end
-
-		if (err) then print(err) end
-		updater:showUpgradeResult()
 	end)
 
 	return true

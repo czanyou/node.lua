@@ -56,9 +56,9 @@ local function parseVersion(version)
 		 + (parseVersionNumber(tokens[3]))
 end
 
-local function saveUpdateStatus(status) 
-	local nodePath  = getNodePath()
-	local basePath  = path.join(nodePath, 'update')
+local function saveUpdateStatus(status)
+	local nodePath = getNodePath()
+	local basePath = path.join(nodePath, 'update')
 	local ret, err = fs.mkdirpSync(basePath)
 	if (err) then
 		print(err)
@@ -66,8 +66,21 @@ local function saveUpdateStatus(status)
 	end
 
 	local filename = path.join(basePath, 'status.json')
-	local filedata = json.stringify(status);
-	fs.writeFileSync(filename, filedata);
+	local filedata = fs.readFileSync(filename)
+	local output = json.stringify(status)
+	if (output and output ~= filedata) then
+		fs.writeFileSync(filename, output)
+	end
+end
+
+local function readUpdateStatus()
+	local nodePath = getNodePath()
+	local basePath = path.join(nodePath, 'update')
+	local filename = path.join(basePath, 'status.json')
+	local filedata = fs.readFileSync(filename)
+	if (filedata) then
+		return json.parse(filedata)
+	end
 end
 
 --
@@ -400,7 +413,7 @@ function exports.upgrade()
 		saveUpdateStatus(status)
 		print('Latest Version: ' .. tostring(version))
 
-		upgrade.install(nil, function(err, message)
+		exports.install(function(err, message)
 			if (err) then
 				print('Error: ' .. tostring(err))
 
@@ -409,6 +422,50 @@ function exports.upgrade()
 			end
 		end)
 	end)
+end
+
+function exports.install(callback)
+	if (type(callback) ~= 'function') then
+		callback = function(err)
+			print(err)
+		end
+	end
+
+	local status = readUpdateStatus()
+	if (not status) or (status.state ~= STATE_DOWNLOAD_COMPLETED) then
+		callback('Error: Please update firmware first.')
+		return
+	end
+
+	-- console.log(source, rootPath)
+	-- console.log("Upgrade path: " .. nodePath, rootPath)
+	status = { state = 0, result = 0 }
+	status.state = STATE_UPDATING -- 3：正在更新
+	saveUpdateStatus(status)
+
+	upgrade.install(nil, function(err, message)
+		if (err) then
+			status.result = UPDATE_FAILED -- 8：固件更新失败
+		else
+			status.result = UPDATE_SUCCESSFULLY -- 1：固件更新成功
+		end
+
+		status.state = 0
+		saveUpdateStatus(status)
+
+		if (callback) then 
+			callback(err, message)
+		end
+	end)
+
+	return true
+end
+
+function exports.status()
+	local status = readUpdateStatus()
+	if (status) then
+		console.printr(status)
+	end
 end
 
 return exports
