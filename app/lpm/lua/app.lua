@@ -1,4 +1,4 @@
-local app       = require('app')
+local app       = require('app/init')
 local utils     = require('util')
 local path      = require('path')
 local fs        = require('fs')

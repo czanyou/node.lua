@@ -17,7 +17,7 @@ set(MAIN_SOURCES
 )
 
 set(LUA_SOURCES
-  ${MAINDIR}/src/lua.c
+  ${MAINDIR}/src/main.c
 )
 
 add_executable(lnode ${MAIN_SOURCES} ${SOURCES})

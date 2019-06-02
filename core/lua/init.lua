@@ -92,20 +92,19 @@ local function moduleSearcher(name)
         return nil
     end
 
-    local lnode = require('lnode')
-    local path  = require('path')
-    local fs    = require('fs')
+    if (name == 'lnode') then
+        return nil
+    end
 
+    local lnode = require('lnode')
     local basePath = lnode.NODE_LUA_ROOT
     if (not basePath) then
         return nil
     end
 
-    if (not fs.existsSync(path.join(basePath, 'modules'))) then
-        basePath = path.dirname(basePath)
-    end
-    if (not basePath) then
-        return nil
+    local stat, err = uv.fs_stat(basePath .. '/modules')
+    if (stat == nil) then
+        basePath = basePath .. '/../'
     end
 
     local filename;
@@ -116,13 +115,14 @@ local function moduleSearcher(name)
         local libname = name:sub(1, index - 1)
         local subpath = name:sub(index + 1)
 
-        filename = path.join(basePath, 'modules', libname, 'lua', subpath .. ".lua")
+        filename = (basePath .. '/modules/' .. libname .. '/lua/' .. subpath .. ".lua")
 
     else
-        filename = path.join(basePath, 'modules', name, 'lua', "init.lua")
+        filename = (basePath .. '/modules/' .. name .. '/lua/' .. "init.lua")
     end
 
-    if (not fs.existsSync(filename)) then
+    local stat, err = uv.fs_stat(filename)
+    if (stat == nil) then
         return nil
     end
 
@@ -136,21 +136,23 @@ local function appSearcher(name)
         return nil
     end
 
+    if (name == 'lnode' or name == 'path' or name == 'fs') then
+        return nil
+    end
+
     local lnode = require('lnode')
-    local path  = require('path')
-    local fs    = require('fs')
+    if (lnode == nil) then
+        return
+    end
 
     local basePath = lnode.NODE_LUA_ROOT
     if (not basePath) then
         return nil
     end
 
-    if (not fs.existsSync(path.join(basePath, 'app'))) then
-        basePath = path.dirname(basePath)
-    end
-
-    if (not basePath) then
-        return nil
+    local stat, err = uv.fs_stat(basePath .. '/app')
+    if (stat == nil) then
+        basePath = basePath .. '/../'
     end
 
     local filename
@@ -161,15 +163,15 @@ local function appSearcher(name)
         local libname = name:sub(1, index - 1)
         local subpath = name:sub(index + 1)
 
-        filename = path.join(basePath, 'app', libname, 'lua', subpath .. ".lua")
+        filename = (basePath .. '/app/' .. libname .. '/lua/' .. subpath .. ".lua")
 
     else
-        filename = path.join(basePath, 'app', name, 'lua', "init.lua")
+        filename = (basePath .. '/app/' .. name .. '/lua/' .. "init.lua")
     end
 
     --console.log('filename', filename)
-
-    if (not fs.existsSync(filename)) then
+    local stat, err = uv.fs_stat(filename)
+    if (stat == nil) then
         return nil
     end
 

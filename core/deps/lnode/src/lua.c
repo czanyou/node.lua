@@ -19,7 +19,7 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-#include "lnode.h"
+
 
 #if !defined(LUA_PROMPT)
 #define LUA_PROMPT		"> "
@@ -210,9 +210,8 @@ static int docall (lua_State *L, int narg, int nres) {
 
 
 static void print_version (void) {
-  // lua_writestring(LUA_COPYRIGHT, strlen(LUA_COPYRIGHT));
-  // lua_writeline();
-  lnode_print_version();
+  lua_writestring(LUA_COPYRIGHT, strlen(LUA_COPYRIGHT));
+  lua_writeline();
 }
 
 
@@ -569,11 +568,7 @@ static int pmain (lua_State *L) {
     lua_pushboolean(L, 1);  /* signal for libraries to ignore env. vars. */
     lua_setfield(L, LUA_REGISTRYINDEX, "LUA_NOENV");
   }
-
   luaL_openlibs(L);  /* open standard libraries */
-  lnode_openlibs(L); 	// Add in the lua ext libraries
-  lnode_path_init(L);
-
   createargtable(L, argv, argc, script);  /* create table 'arg' */
   if (!(args & has_E)) {  /* no option '-E'? */
     if (handle_luainit(L) != LUA_OK)  /* run LUA_INIT */
@@ -597,21 +592,4 @@ static int pmain (lua_State *L) {
   return 1;
 }
 
-int main (int argc, char **argv) {
-  int status, result;
-  lua_State *L = luaL_newstate();  /* create state */
-  if (L == NULL) {
-    l_message(argv[0], "cannot create state: not enough memory");
-    return EXIT_FAILURE;
-  }
-  lua_pushcfunction(L, &pmain);  /* to call 'pmain' in protected mode */
-  lua_pushinteger(L, argc);  /* 1st argument */
-  lua_pushlightuserdata(L, argv); /* 2nd argument */
-
-  status = lua_pcall(L, 2, 1, 0);  /* do the call */
-  result = lua_toboolean(L, -1);  /* get result */
-  report(L, status);
-  lua_close(L);
-  return (result && status == LUA_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
-}
 
