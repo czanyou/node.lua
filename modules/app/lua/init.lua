@@ -598,7 +598,9 @@ function exports.start(name, ...)
         end
     end
 
-    exports.printProcesses()
+    setTimeout(100, function()
+        exports.printProcesses()
+    end)
 end
 
 -- 杀掉指定名称的进程，并阻止其在后台继续运行
@@ -620,7 +622,9 @@ function exports.stop(name, ...)
         print("done.")
     end
 
-    exports.printProcesses()
+    setTimeout(100, function()
+        exports.printProcesses()
+    end)
 end
 
 -- 返回当前系统目标平台名称, 一般是开发板的型号或 PC 操作系统的名称
