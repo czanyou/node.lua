@@ -146,7 +146,19 @@ exports.table 			= ext.table
 -------------------------------------------------------------------------------
 -- profile
 
-function exports.config()
+local function loadProfile()
+    if (exports._profile) then
+        return exports._profile
+    end
+
+    local configPath = path.join(getAppPath(), exports.appName(), 'config/config.json')
+    -- console.log(configPath)
+
+	exports._profile = conf.Profile:new(configPath)
+    return exports._profile
+end
+
+local function loadUserProfile()
     if (exports._userProfile) then
         return exports._userProfile
     end
@@ -166,7 +178,7 @@ function exports.unset(key)
         return
     end
 
-	local profile = exports.config()
+	local profile = loadProfile()
 	if (profile) and (profile:get(key)) then
 		profile:set(key, nil)
 		profile:commit()
@@ -180,11 +192,16 @@ function exports.get(key)
         return
     end
 
-    local profile = exports.config()
+    local profile = loadUserProfile()
     local value = profile and profile:get(key)
     if (value) then
         return value
     end
+
+	profile = loadProfile()
+    if (profile) then
+		return profile:get(key)
+	end
 end
 
 -- 设置指定名称的配置参数项的值
@@ -195,7 +212,7 @@ function exports.set(key, value)
 		return
 	end
 
-	local profile = exports.config()
+	local profile = loadUserProfile()
     if (not profile) then
         return
     end
