@@ -1,4 +1,4 @@
-local app   = require('app/init')
+local app   = require('app')
 local util  = require('util')
 local url 	= require('url')
 local fs 	= require('fs')
@@ -17,8 +17,6 @@ local gateway = require('./gateway')
 local log = require('./log')
 
 local exports = {}
-
-app.name = 'gateway'
 
 -- ////////////////////////////////////////////////////////////////////////////
 -- Web Server

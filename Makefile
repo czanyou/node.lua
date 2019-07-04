@@ -4,7 +4,7 @@ BOARDS 			= $(shell ls config)
 
 ## ------------------------------------------------------------
 
-define sdk_build
+define make_build
 	@mkdir -p build
 
 	@echo "Build: ${BOARD_TYPE}"
@@ -13,16 +13,15 @@ define sdk_build
 	cmake --build build/${BOARD_TYPE} --config Release
 
 	@echo "Build Done."
-
 endef
 
-define make_config
+define make_load_config
 	@echo "BOARD_TYPE: ${board}";
 	@echo "${board}" > build/target;
-	@make config
+	@echo "Next, you can type 'make build' to build the SDK";
 endef
 
-define load_config_help
+define make_load_help
 	@echo "Usage: make load board=<BOARD_TYPE>"
 	@echo "Available boards:"
 	@echo ""
@@ -30,11 +29,10 @@ define load_config_help
 	@echo ""
 endef
 
-define load_config
+define make_load
 	@mkdir -p build
 
-	# $(shell if [ -f $(FILE) ]; then echo "exist"; else echo "notexist"; fi;)
-	$(if ${board}, $(call make_config), $(call load_config_help))
+	$(if ${board}, $(call make_load_config), $(call make_load_help))
 endef
 
 ## ------------------------------------------------------------
@@ -52,30 +50,33 @@ help:
 	@echo "Welcome to Node.lua build system. Some useful make targets:"
 	@echo ""
 
-	@echo '  build   Build lnode and other modules'
-	@echo '  config  Configure Node.lua project'
-	@echo '  load    `board=<name>`, Load defaults configuration'
+	@echo '  load    `board=<name>`, Load make configuration'
+	@echo '  build   Build `lnode` and other native modules'
 
 	@echo ""
 
-	@echo '  clean   Clean all build output files'
 	@echo '  sdk     Build the SDK package'
 	@echo '  patch   Build the PATCH package'
+	@echo '  clean   Clean all build output files'
 
 	@echo ""
-	@echo "  install Install the Lua runtime files of the SDK"
-	@echo "  remove  Remove all installed Lua runtime files"
+	@echo "  install Install the Node.Lua runtime to current system"
+	@echo "  remove  Remove all installed Node.Lua runtime files"
 	@echo ""
 
-	@echo "You can type 'make build' to build the SDK and then type 'make install' to install the Lua runtime."
+	@echo "You can type 'make build' to build the SDK and then type 'make install' to install the Node.Lua runtime."
 	@echo ""
 
 ## ------------------------------------------------------------
+## make
 
 all: help
 
+load:
+	$(call make_load)
+
 build:
-	$(call sdk_build)
+	$(call make_build)
 
 clean:
 	rm -rf build
@@ -83,11 +84,8 @@ clean:
 config:
 	cmake -H. -Bbuild/${BOARD_TYPE} -DBOARD_TYPE=${BOARD_TYPE}
 
-load:
-	$(call load_config)
-
 local:
-	@mkdir -p build; echo "$@" > build/target; make config;
+	@make load board=local
 
 ## ------------------------------------------------------------
 ## SDK
@@ -102,7 +100,7 @@ remove:
 ## shortcuts
 
 sdk:
-	lbuild sdk 
+	lbuild sdk
 
 patch:
 	lbuild patch
@@ -112,11 +110,3 @@ deb:
 
 tar:
 	lbuild tar
-
-make_lib_link:
-	$(call make_lib_link,${name})
-
-make_bin_link:
-	$(call make_bin_link,${name})
-
-	

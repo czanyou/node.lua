@@ -85,21 +85,31 @@ end
 
 local sdk = {}
 
-local function get_source_path()
-	local filename = path.join(cwd, 'core/deps/lua')
-	if (fs.existsSync(filename)) then
-		return cwd
-	end
+--[[
+生成 SDK 目录框架 (如 /bin/nodelua-xxx-sdk/*)
 
-	local sourcePath = util.dirname()
-	sourcePath = path.dirname(sourcePath)
-	sourcePath = path.dirname(sourcePath)
-	sourcePath = path.dirname(sourcePath)
-	console.log('sourcePath', sourcePath);
-	return sourcePath
+@param target {String} 构建目标，如 win,linux,pi 等等.
+--]]
+function sdk.getSDKBuildPath(target, type)
+	return join(process.cwd(), "build", (type or 'sdk') .. "/" .. target)
 end
 
 function sdk.buildCommonSDK(target, packageInfo)
+
+	local function get_source_path()
+		local filename = path.join(cwd, 'core/deps/lua')
+		if (fs.existsSync(filename)) then
+			return cwd
+		end
+	
+		local sourcePath = util.dirname()
+		sourcePath = path.dirname(sourcePath)
+		sourcePath = path.dirname(sourcePath)
+		sourcePath = path.dirname(sourcePath)
+		console.log('sourcePath', sourcePath);
+		return sourcePath
+	end
+	
 	local sourcePath = get_source_path()
 	console.log('sourcePath', sourcePath)
 
@@ -224,7 +234,7 @@ function sdk.buildWindowSDK(target, packageInfo)
 	xcopy(join(modulePath, 'mqtt/lua'), 		join(sdkPath, "lnode/lib/mqtt"))
 	xcopy(join(modulePath, 'rtmp/lua'), 		join(sdkPath, "lnode/lib/rtmp"))
 	xcopy(join(modulePath, 'rtsp/lua'), 		join(sdkPath, "lnode/lib/rtsp"))
-	xcopy(join(modulePath, 'devices/lua'), 			join(sdkPath, "lnode/lib/devices"))
+	xcopy(join(modulePath, 'devices/lua'), 		join(sdkPath, "lnode/lib/devices"))
 	xcopy(join(modulePath, 'sqlite3/lua'), 		join(sdkPath, "lnode/lib/sqlite3"))
 	xcopy(join(modulePath, 'ssdp/lua'), 		join(sdkPath, "lnode/lib/ssdp"))
 	xcopy(join(modulePath, 'wot/lua'), 			join(sdkPath, "lnode/lib/wot"))
@@ -407,28 +417,6 @@ function sdk.buildPackageInfo(target, packageInfo)
     print('Builded SDK info: "build/' .. name .. '.json".')
 end
 
---[[
-生成 SDK 目录框架 (如 /bin/nodelua-xxx-sdk/*)
-
-@param target {String} 构建目标，如 win,linux,pi 等等.
---]]
-function sdk.getSDKBuildPath(target, type)
-	return join(process.cwd(), "build", (type or 'sdk') .. "/" .. target)
-end
-
-local function build_install_sh(name, url)
-	local list = {}
-	list[#list + 1] = '#!/bin/sh'
-	list[#list + 1] = 'wget ' .. url .. ' -q -O /tmp/update.zip'
-	list[#list + 1] = 'mkdir -p /tmp/lnode'
-	list[#list + 1] = 'rm -rf /tmp/lnode/*; unzip /tmp/update.zip -d /tmp/lnode'
-	list[#list + 1] = 'cd /tmp/lnode/; chmod 777 install.sh; ./install.sh;'
-	list[#list + 1] = 'rm -rf /tmp/lnode/*'
-	local data = table.concat(list, '\n')
-	local filename = path.join(cwd, 'build', name .. ".sh")
-	fs.writeFileSync(filename, data)
-end
-
 -------------------------------------------------------------------------------
 -- exports
 
@@ -452,11 +440,6 @@ function exports.tar(...)
 	print(console.colorize("success", 'Finished!'))
 end
 
-function exports.upload(...)
-	local upload = require('./upload')
-	upload.upload_sdk_package(...)
-end
-
 function exports.help()
 	print([[
 
@@ -466,7 +449,6 @@ usage: lbuild <command> [args]
 
 - help    Display help information
 - sdk	  Build Node.lua SDK package (Must `make <target>` firist)
-- upload  Upload Node.lua SDK package (Must `make sdk` firist)
 
 please execute this APP by the Makefile.
 

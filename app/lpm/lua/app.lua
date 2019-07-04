@@ -9,10 +9,8 @@ local rpc       = require('app/rpc')
 
 local exports = {}
 
-app.name = 'apm'
-
 -- 返回所有需要后台运行的应用
-function exports.getStartNames()
+function exports.getApplicationNames()
     local configPath = path.join(app.rootPath, 'conf/process.conf')
     local filedata = fs.readFileSync(configPath)
     local names = {}
@@ -39,7 +37,7 @@ end
 
 -- 检查应用进程，自动重启意外退出的应用程序
 function exports.check()
-    local names = exports.getStartNames()
+    local names = exports.getApplicationNames()
     local procs = app.processes()
     if (not procs) then
         return
@@ -55,33 +53,9 @@ function exports.check()
     end
 end
 
-function exports.list()
-    local names = exports.getStartNames()
-    console.log(names)
-
-    local processes = app.processes()
-    console.log(processes)    
-end
-
-function exports.help()
-    print([[
-        
-usage: apm <command> [args]
-
-Node.lua application daemon manager
-    
-Available command:
-
-- check              Check all application daemon status
-- help               Display help information
-- start [interval]   Start apm
-
-]])
-end
-
 -- 启动应用进程守护程序
 function exports.start(interval, ...)
-    print("Start apm...")
+    print("Start lpm...")
 
     -- Check lock
     local lockfd = app.tryLock('apm')

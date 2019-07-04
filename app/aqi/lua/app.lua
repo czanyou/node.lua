@@ -310,4 +310,8 @@ function exports.test()
     pushVentilatorStatus(did);
 end
 
+function exports.run()
+
+end
+
 app(exports)

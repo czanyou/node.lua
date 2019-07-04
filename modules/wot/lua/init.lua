@@ -508,8 +508,6 @@ function ThingClient:processWriteAction(request, topic)
     self:sendMessage(response)
 end
 
-console.log(23)
-
 function ThingClient:processInvokeAction(name, input, request)
     console.log('processInvokeAction', name, input, request)
 
