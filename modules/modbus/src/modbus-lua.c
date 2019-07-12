@@ -2,11 +2,16 @@
 #include <string.h>
 #include <errno.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
 
 #include <modbus.h>
+#include "modbus-private.h"
 
 #define LUV_MODBUS "modbus"
 
@@ -206,6 +211,7 @@ static int l_receive(lua_State *L)
     }
     
     lua_pushinteger(L, ret);
+    lua_pushlstring(L, query, MODBUS_TCP_MAX_ADU_LENGTH);
     return 1;
 }
 
@@ -318,8 +324,81 @@ static int l_write_register(lua_State *L)
     }
 
     lua_pushinteger(L, 0);
+ 
     return 1;
 }
+
+
+static int l_uart_write(lua_State *L)
+{
+    size_t len;
+    
+    l_modbus_t *self = l_check_modbus(L, 1);
+    const char *reg = lua_tolstring(L, 2, &len);
+    modbus_t *modbus = self->modbus;
+    if(modbus == NULL)
+    {
+        lua_pushinteger(L, -1);
+        return 1;
+    }
+
+    const modbus_backend_t * backend = modbus->backend;
+    size_t ret = backend->send(modbus, ( const uint8_t *)reg, len);
+    
+
+    lua_pushinteger(L, ret);
+    return 1;
+
+}
+
+
+static int l_get_fd(lua_State *L)
+{
+    l_modbus_t *self = l_check_modbus(L, 1);
+    modbus_t *modbus = self->modbus;
+    if(modbus == NULL)
+    {
+        lua_pushinteger(L, -1);
+        return 1;
+    }
+    int fd = modbus->s;
+    lua_pushinteger(L, fd);
+    return 1;
+}
+
+
+static int l_uart_read(lua_State *L)
+{
+    uint8_t query[MODBUS_TCP_MAX_ADU_LENGTH];
+    size_t len = lua_tointeger(L, 2);;
+    if(len > MODBUS_TCP_MAX_ADU_LENGTH)
+        len = MODBUS_TCP_MAX_ADU_LENGTH;
+    
+    l_modbus_t *self = l_check_modbus(L, 1);
+    modbus_t *modbus = self->modbus;
+    if(modbus == NULL)
+    {
+        lua_pushinteger(L, -1);
+        return 1;
+    }
+    
+    const modbus_backend_t * backend = modbus->backend;
+    size_t ret = backend->recv(modbus, query,len);
+
+    lua_pushinteger(L, ret);
+    if(ret > 0)
+    {
+        lua_pushlstring(L, query, ret);
+        return 2;
+    }  
+    return 1;
+
+}
+
+
+
+
+
 
 static int l_write(lua_State *L)
 {
@@ -373,6 +452,8 @@ static int l_write(lua_State *L)
     return 1;
 }
 
+
+
 static const struct luaL_Reg modbus_func[] = {
     {"close", l_close},
     {"connect", l_connect},
@@ -385,6 +466,11 @@ static const struct luaL_Reg modbus_func[] = {
     {"set_value", l_set_mapping},
     {"slave", l_set_slave},
     {"write", l_write},
+    {"uart_write", l_uart_write},
+    {"uart_read", l_uart_read},
+    {"uart_fd",l_get_fd},
+
+    
     {NULL, NULL},
 };
 
@@ -413,3 +499,6 @@ LUALIB_API int luaopen_lmodbus(lua_State *L)
 
     return 1;
 }
+
+
+

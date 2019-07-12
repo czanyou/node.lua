@@ -87,6 +87,31 @@ static const uint8_t table_crc_lo[] = {
     0x43, 0x83, 0x41, 0x81, 0x80, 0x40
 };
 
+FILE * dir_fp;
+
+static FILE *dir_open()
+{  
+    const char * dir_gpio_val_path = "/sys/class/gpio/gpio24/value";
+    const char * dir_gpio_mode = "rb+";
+    dir_fp = fopen("/sys/class/gpio/gpio24/value", "rb+");
+    return dir_fp;
+}
+
+static void dir_read()
+{
+    char *write_cmd = "0";
+    fwrite(write_cmd,1,strlen(write_cmd),dir_fp);
+    fflush(dir_fp);
+}
+
+static void dir_write()
+{
+    char *write_cmd = "1";
+    fwrite(write_cmd,1,strlen(write_cmd),dir_fp);
+    fflush(dir_fp);
+    usleep(100000);  
+}
+
 /* Define the slave ID of the remote device to talk in master mode or set the
  * internal slave ID in slave mode */
 static int _modbus_set_slave(modbus_t *ctx, int slave)
@@ -269,6 +294,7 @@ static void _modbus_rtu_ioctl_rts(modbus_t *ctx, int on)
 
 static ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_length)
 {
+    ssize_t size;
 #if defined(_WIN32)
     modbus_rtu_t *ctx_rtu = ctx->backend_data;
     DWORD n_bytes = 0;
@@ -277,7 +303,7 @@ static ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_lengt
 #if HAVE_DECL_TIOCM_RTS
     modbus_rtu_t *ctx_rtu = ctx->backend_data;
     if (ctx_rtu->rts != MODBUS_RTU_RTS_NONE) {
-        ssize_t size;
+        
 
         if (ctx->debug) {
             fprintf(stderr, "Sending request using RTS signal\n");
@@ -287,14 +313,22 @@ static ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_lengt
         usleep(ctx_rtu->rts_delay);
 
         size = write(ctx->s, req, req_length);
+        
 
         usleep(ctx_rtu->onebyte_time * req_length + ctx_rtu->rts_delay);
         ctx_rtu->set_rts(ctx, ctx_rtu->rts != MODBUS_RTU_RTS_UP);
 
+
         return size;
     } else {
 #endif
-        return write(ctx->s, req, req_length);
+        dir_write();
+        size  =  write(ctx->s, req, req_length);
+        fsync(ctx->s);
+        usleep(1/9600*10*1000*1000* req_length);
+        dir_read();
+        return size;
+
 #if HAVE_DECL_TIOCM_RTS
     }
 #endif
@@ -894,7 +928,7 @@ static int _modbus_rtu_connect(modbus_t *ctx)
         return -1;
     }
 #endif
-
+    dir_fp = dir_open();
     return 0;
 }
 

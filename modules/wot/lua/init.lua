@@ -750,4 +750,10 @@ function exports.produce(thingDescription)
     return ExposedThing:new(thingDescription)
 end
 
+function exports.isConnected()
+    local client = exports.client;
+    local mqttClient = client and client.mqtt
+    return mqttClient and mqttClient.connected;
+end
+
 return exports

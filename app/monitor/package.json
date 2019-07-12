@@ -1,0 +1,8 @@
+{
+	"depends": [],
+	"description": "wot monitor application",
+	"title": "monitor",
+	"name": "monitor",
+	"tags": ["pusher", "monitor"],
+	"version": "2.0.0"
+}

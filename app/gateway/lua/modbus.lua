@@ -1,13 +1,14 @@
 local util  = require('util')
-local url 	= require('url')
-local fs 	= require('fs')
-local path 	= require('path')
+local url   = require('url')
+local fs    = require('fs')
+local path  = require('path')
 local json  = require('json')
 local wot   = require('wot')
 local modbus = require('lmodbus')
 
 local exports = {}
-
+local timer
+local dataReady = 0
 exports.services = {}
 
 local context = {}
@@ -16,18 +17,26 @@ local function readFromModbus(webThing)
 
     local function initModbus(options)
         options = options or {}
-        -- console.log('initModbus', options)
-    
+
+        console.log(options.slave);
         if (not context.device) then
-            local deviceName = options.device
+
+            local deviceName = "/dev/ttyAMA1"
+
             local baudrate = options.baudrate or 9600
             local dev = modbus.new(deviceName, baudrate)
             if (dev) then
                 context.device = dev
     
                 dev:connect()
+                console.log(context)
+
+                console.log('dev connected')
+       
                 dev:slave(options.slave or 1)
             end
+        else
+            context.device:slave(options.slave)
         end
     end
 
@@ -46,7 +55,7 @@ local function readFromModbus(webThing)
                 fmt = 'i8'
             end
 
-            if (flags & 0x01) ~= 0 then
+            if ((flags & 0x01) ~= 0) then
                 fmt = '>' .. fmt
             else
                 fmt = '<' .. fmt
@@ -113,14 +122,18 @@ local function readFromModbus(webThing)
     end
 
     local dev = context.device
+  
     if (not dev) then
+        -- console.log(webThing.modbus)
+        console.log(webThing.modbus.slave)
         initModbus(webThing.modbus)
-
+        console.log(context.device)
         if (not dev) then
             return
         end
+    else
+        dev:slave(webThing.modbus.slave) 
     end
-
     local result = {}
     local count = 0
 
@@ -128,7 +141,7 @@ local function readFromModbus(webThing)
     for name, property in pairs(properties) do
         local register = property.register
         local quantity = property.quantity
-
+        -- console.log(property)
         if (register >= 0) and (quantity >= 1) then
             local data = dev:mread(register, quantity)
             console.log('data', data, type(data))
@@ -185,9 +198,21 @@ local function onConfigRead(input, webThing)
 end
 
 local function onConfigWrite(config, webThing)
+    
     local peripherals = exports.app.get('peripherals') or {}
+
+    
+
+
     if (config) then
-        peripherals[webThing.id] = config
+        local newPeripherals ={}
+        for key,value in pairs (peripherals) do
+            newPeripherals[key] = value
+        end
+        
+        newPeripherals[webThing.id] = config
+        console.log(webThing.id);
+        exports.app.set('peripherals', newPeripherals)
     end
 
     return { code = 0 }
@@ -209,27 +234,31 @@ local function onConfigActions(input, webThing)
 end
 
 local function initModbusProperties(options, webThing)
-    -- console.log(options.properties);
-    -- console.log(options.modbus);
+    console.log(options.properties);
+    console.log(options.modbus);
 
     local common = options.modbus or {}
 
     webThing.modbus = {}
-    webThing.modbus.device = common.n
+    -- webThing.modbus.device = options.device
+    webThing.modbus.device = common.n 
     webThing.modbus.slave = common.d or 2
     webThing.modbus.baudrate = common.b or 9600
-    webThing.modbus.interval = common.i or 60
+    webThing.modbus.interval = common.i or 1
     webThing.modbus.properties = {}
+
+    console.log(webThing.modbus);
     local properties = webThing.modbus.properties;
 
     for name, value in pairs(options.properties or {}) do
+        console.log(name)
         local property = {}
         properties[name] = property
         property.address = value.d or common.d or 0
         property.interval = value.i or common.i or 60
         property.timeout = value.t or common.t or 500
         property.register = value.a or 0
-        property.quantity = value.quantity or 1
+        property.quantity = value.q or 1
         property.scale = value.s or 1
         property.offset = value.o or 0
         property.code = value.c or 0x03
@@ -242,13 +271,23 @@ local function initModbusProperties(options, webThing)
         property.value = 0
     end
 
-    -- console.log(webThing.properties);
+    console.log(webThing.properties);
     local interval = webThing.modbus.interval * 1000
     setInterval(interval, function()
         local result, count = readFromModbus(webThing)
-        console.log(result)
+           
 
         if (result) and (count > 0) then
+            console.log(result)
+
+            if(timer) then
+                clearTimeout(timer)
+            end
+            dataReady = 1
+            timer = setTimeout(5000,function()
+                dataReady = 0
+            end)
+
             webThing:sendStream(result)
         end
     end)
@@ -289,13 +328,14 @@ local function createModbusThing(options)
         url = options.mqtt,
         name = options.name or 'modbus',
         actions = {},
+        
         properties = {},
         events = {}
     }
-
+    
     local webThing = wot.produce(gateway)
     webThing.secret = options.secret
-
+    console.log(options)
     initModbusProperties(options, webThing)
 
     -- device actions
@@ -305,12 +345,13 @@ local function createModbusThing(options)
 
     -- config actions
     webThing:setActionHandler('config', function(input)
+        console.log(input)
         return onConfigActions(input, webThing)
     end)
 
     -- register
     webThing:expose()
-
+    console.log('modbus register')
     webThing:on('register', function(response)
         local result = response and response.result
         if (result and result.code and result.error) then
@@ -324,11 +365,13 @@ local function createModbusThing(options)
     return webThing
 end
 
-exports.readProperties = function (webThing)
 
 
+exports.createModbus = createModbusThing
+
+
+function exports.dataStatus()
+    return dataReady
 end
-
-exports.createThing = createModbusThing
 
 return exports

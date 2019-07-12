@@ -1,4 +1,4 @@
-local app   = require('app')
+local app   = require('app/init')
 local util  = require('util')
 local url 	= require('url')
 local fs 	= require('fs')
@@ -15,8 +15,12 @@ local modbus = require('./modbus')
 local camera  = require('./camera')
 local gateway = require('./gateway')
 local log = require('./log')
+local bluetooth = require('./bluetooth')
+local button = require('./button')
 
 local exports = {}
+
+app.name = 'gateway'
 
 -- ////////////////////////////////////////////////////////////////////////////
 -- Web Server
@@ -82,19 +86,95 @@ function exports.play(rtmpUrl)
     end)
 end
 
+local function runningStateindex()
+    setInterval(1000,function()
+        button.ledSwitch("green","toggle")
+
+        local ret = wot.isConnected()
+        if ret == 1 then
+            button.ledSwitch("yellow","on")
+        else
+            button.ledSwitch("yellow","off")
+        end
+
+        ret = bluetooth:dataStatus() or modbus:dataStatus()
+        console.log(ret)
+        if ret == 1 then
+            button.ledSwitch("blue","on")
+        else
+            button.ledSwitch("blue","off")
+        end
+    
+    end)
+end
+
+
+
 function exports.start()
+
+    console.log("start")
+    
     exports.rtmp()
     exports.rtsp()
     exports.gateway()
     exports.cameras() 
     exports.modbus()
+    exports.bluetooth()
+    exports.button()
 
     createHttpServer()
+    runningStateindex()
 end
+
+function exports.button()
+    console.log("app check button")
+    button.checkButton(1000)
+
+end
+
+function exports.bluetooth()
+    bluetooth.app =app
+    -- local options = {}
+    local did = app.get('did')
+    local secret = app.get('secret')
+    local mqtt = app.get('mqtt')
+
+    local gateway = app.get('gateway')
+    console.log('start bluetooth')
+    local list = gateway and gateway.bluetooth
+    if (not list) then
+        return
+    end
+    console.log('start bluetooth')
+    console.log(list)
+
+    local things = {}
+    for index, options in ipairs(list) do
+        console.log(index);
+        
+
+        options.mqtt = mqtt
+        options.secret = secret
+
+        console.log(options);
+        local thing = bluetooth.createBluetooth(options)
+
+        things[options.did] = thing
+    end
+
+    app.bluetoothDevices = things
+end
+
+
+
+
+
 
 function exports.rtmp()
     rtmp.startRtmpClient()
 end
+
+
 
 function exports.rtsp()
     local gateway = app.get('gateway')
@@ -115,9 +195,10 @@ end
 
 function exports.gateway()
     gateway.app = app
-
+    print("gateway init")
     local options = {}
     options.did = app.get('did')
+    print(options.did)
     options.mqtt = app.get('mqtt')
     options.secret = app.get('secret')
     app.gateway = gateway.createThing(options)
@@ -134,39 +215,45 @@ function exports.modbus()
 
     local gateway = app.get('gateway')
     local list = gateway and gateway.modbus
-
+    
+    
     local did = app.get('did')
     local secret = app.get('secret')
     local mqtt = app.get('mqtt')
 
     local peripherals = app.get('peripherals') or {}
+    console.log(peripherals);
     if (not list) then
         return
     end
 
+    console.log(list);
     local things = {}
     for index, options in ipairs(list) do
+        console.log(index);
+        console.log(options);
         options.gateway = did
         options.mqtt = mqtt
         options.secret = secret
 
         local config = peripherals[options.did]
+        
         if (config) then
             options.properties = config.p
             options.modbus = config.f
         end
 
-        -- console.log(options);
+        console.log(options);
 
-        local thing, err = modbus.createThing(options)
+        local thing, err = modbus.createModbus(options)
         if (err) then
             console.log('createThing', err)
         end
 
-        things[did] = thing
+        things[options.did] = thing
     end
 
-    app.modbusDevices = things
+    app.modbusDevices = thing
 end
 
 function exports.server()

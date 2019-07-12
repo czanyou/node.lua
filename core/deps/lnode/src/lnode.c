@@ -312,18 +312,18 @@ LUALIB_API int lnode_path_init(lua_State* L) {
 
 #ifdef _WIN32
   const char* fmt = "package.path='"
-    "./?.lua;"
-    "./?/init.lua;"
-    "./lua/?.lua;"
-    "./lua/?/init.lua;"
     "%s/lua/?.lua;"
     "%s/lua/?/init.lua;"
     "%s/core/lua/?.lua;"
     "%s/core/lua/?/init.lua;"
+    "./lua/?.lua;"
+    "./lua/?/init.lua;"
+    "./?.lua;"
+    "./?/init.lua;"
     "'\n"
     "package.cpath='"
-    "./?.dll;"
     "%s/bin/?.dll;"
+    "./?.dll;"
     "%s/bin/loadall.dll;"
     "'\n";
 
@@ -332,19 +332,19 @@ LUALIB_API int lnode_path_init(lua_State* L) {
 
 #else
   const char* fmt = "package.path='"
-    "./?.lua;"
-    "./?/init.lua;"
-    "./lua/?.lua;"
-    "./lua/?/init.lua;"
     "%s/lua/?.lua;"
     "%s/lua/?/init.lua;"
     "%s/lib/?.lua;"
     "%s/lib/?/init.lua;"
+    "./lua/?.lua;"
+    "./lua/?/init.lua;"
+    "./?.lua;"
+    "./?/init.lua;"
     "'\n"
     "package.cpath='"
-    "./?.so;"
     "%s/bin/?.so;"
     "%s/lib/?.so;"
+    "./?.so;"
     "%s/bin/loadall.so;"
     "'\n";
 
