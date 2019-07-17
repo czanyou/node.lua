@@ -150,13 +150,12 @@ if(APPLE)
     -D=_DARWIN_USE_64_BIT_INODE
   )
   set(SOURCES ${SOURCES}
-    ${LIBUVDIR}/src/unix/proctitle.c
+    ${LIBUVDIR}/src/unix/bsd-ifaddrs.c
+    ${LIBUVDIR}/src/unix/darwin-proctitle.c
     ${LIBUVDIR}/src/unix/darwin.c
     ${LIBUVDIR}/src/unix/fsevents.c
-    ${LIBUVDIR}/src/unix/darwin-proctitle.c
     ${LIBUVDIR}/src/unix/kqueue.c
-    ${LIBUVDIR}/src/unix/pthread-barrier.c
-    ${LIBUVDIR}/src/unix/bsd-ifaddrs.c
+    ${LIBUVDIR}/src/unix/proctitle.c
   )
 endif()
 

@@ -33,7 +33,6 @@ target_link_libraries(lua lualib)
 set_target_properties(luv PROPERTIES PREFIX "")
 
 if (APPLE)
-target_link_libraries(lnode lsqlite)
 
 elseif (LINUX)
 target_link_libraries(lnode dl m rt)
