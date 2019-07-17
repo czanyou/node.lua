@@ -345,6 +345,19 @@ function exports.update(callback)
 	local options = { type = 'update' }
 	options.did = profile:get('did')
 	options.base = profile:get('base')
+
+	if (not options.base) then
+		print('Missing the required config parameter `base`');
+		return;
+
+	elseif (not options.did) then
+		print('Missing the required config parameter `did`');
+		return;
+	end
+
+	if (not options.base:endsWith('/')) then
+		options.base = options.base .. '/'
+	end
 	
 	-- callback
 	if (type(callback) ~= 'function') then

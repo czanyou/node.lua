@@ -93,7 +93,7 @@ end
 local function upgradeLock()
 	local tmpdir = os.tmpdir or '/tmp'
 
-	print("Upgrade: Lock")
+	print("Upgrade: Start")
 
 	local lockname = path.join(tmpdir, '/update.lock')
 	local lockfd = fs.openSync(lockname, 'w+')
@@ -272,6 +272,7 @@ function BundleUpdater:checkFile(index)
 	if (reader:is_directory(index)) then
 		fs.mkdirpSync(destname)
 		-- console.log('mkdirpSync', destname)
+		self.folders      = (self.folders or 0) + 1
 		return 0
 	end
 	--console.log(srcInfo)
@@ -286,7 +287,6 @@ function BundleUpdater:checkFile(index)
 
 	elseif (srcInfo.uncomp_size ~= destInfo.size) then 
 		return 2, filename
-
 	end
 
 	-- check file hash
@@ -316,10 +316,16 @@ function BundleUpdater:checkAllFiles()
 		self:emit('check', index)
 
 		local ret, filename = self:checkFile(index)
-		if (ret > 0) then
+		if (ret == 0) then
+			self.confirms = (self.confirms or 0) + 1
+			self.skips = (self.skips or 0) + 1
+
+		elseif ret and (ret > 0) then
 			self.updated = (self.updated or 0) + 1
 			table.insert(self.list, index)
 			table.insert(self.files, filename)
+		else
+			self.skips = (self.skips or 0) + 1
 		end
 	end
 
@@ -406,7 +412,9 @@ function BundleUpdater:updateAllFiles(callback)
 	for _, index in ipairs(files) do
 
 		local ret, err, filename = self:updateFile(rootPath, self.reader, index)
-		if (ret ~= 0) then
+		if (ret == 0) then
+			self.confirms = (self.confirms or 0) + 1
+		else
 			--print('ERROR.' .. index, err)
             self.faileds = (self.faileds or 0) + 1
 		end
@@ -416,9 +424,6 @@ function BundleUpdater:updateAllFiles(callback)
 	end
 
 	self:emit('update')
-
-	--fs.chmodSync(rootPath .. '/usr/local/lnode/bin/lnode', 511)
-	--fs.chmodSync(rootPath .. '/usr/local/lnode/bin/lpm', 511)
 
 	callback(nil, self)
 end
@@ -498,11 +503,6 @@ function BundleUpdater:upgradeSystemPackage(callback)
 	    	return
 		end
 
-	elseif (packageInfo.name) then
-		-- Signal Application update file
-		self.name     = packageInfo.name
-		self.rootPath = path.join(self.rootPath, 'app', self.name)
-
 	else
 		callback("Upgrade error: bad package information file", filename)
 		return
@@ -511,19 +511,33 @@ function BundleUpdater:upgradeSystemPackage(callback)
 	self:reset()
 
     self.version    = packageInfo.version
-    self.target     = packageInfo.target
+	self.target     = packageInfo.target
 
-	self:checkAllFiles()
-	self:updateAllFiles(callback)
+	if (not self.version) then
+		print('Invalid version');
+		return
+	end
+
+	self.rootPath = self.rootPath .. '/version.' .. self.version
+	
+	print('Version: ' .. self.version)
+	print('Path: ' .. self.rootPath)
+
+	self:checkAllFiles() -- 检查需要更新的文件
+	self:updateAllFiles(callback) -- 写入修改的文件
 end
 
 function BundleUpdater:reset()
 	self.list 		= {}
 	self.total 	 	= 0
-    self.updated 	= 0
+	self.updated 	= 0
+	self.skips      = 0
 	self.totalBytes = 0
     self.faileds 	= 0
-    self.files      = {}
+	self.files      = {}
+	self.folders    = 0
+	self.index      = 0
+	self.confirms   = 0
 end
 
 function BundleUpdater:getUpgradeResult()
@@ -563,9 +577,7 @@ function exports.install(filename, callback)
 				return
 			end
 
-			if (message) then
-				print('Done:', message)
-			end
+			print('Done: ' .. (message or ''))
 		end
 	end
 
@@ -577,8 +589,10 @@ function exports.install(filename, callback)
 
 	local nodePath = getNodePath()
 	local rootPath = getRootPath()
+	rootPath = path.join(nodePath, 'update')
+
 	if (isDevelopmentPath(nodePath)) then
-		rootPath = path.join(nodePath, 'tmp') -- only for test
+		
 	end
 
 	if (not filename) then
@@ -590,15 +604,6 @@ function exports.install(filename, callback)
 	options.rootPath 	= rootPath
 
 	local updater = BundleUpdater:new(options)
-
-	--[[ updater:on('check', function(index)
-		if (index) then
-			console.write('\rChecking Files: (' .. index .. ')...  ')
-		else 
-			print('')
-		end
-	end)
-	--]]
 
 	updater:on('update', function(index, filename, ret, err)
 		local total = updater.updated or 0
@@ -615,9 +620,23 @@ function exports.install(filename, callback)
 	updater:upgradeSystemPackage(function(err)
 		upgradeUnlock(lockfd)
 
+		if (err) then
+			print("Error: ", err)
+			return;
+		end
+
 		if (callback) then 
 			callback(updater:getUpgradeResult())
 		end
+
+		print('Files: ' .. updater.total)
+		print('Updated: ' .. updater.updated)
+		print('Faileds: ' .. updater.faileds)
+		print('Total Bytes: ' .. updater.totalBytes)
+		print('Folders: ' .. updater.folders)
+		print('Skips: ' .. updater.skips)
+		print('Index: ' .. updater.index)
+		print('Confirms: ' .. updater.confirms)
 	end)
 
 	return true
