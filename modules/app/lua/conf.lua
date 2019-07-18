@@ -28,9 +28,9 @@ local exports = {}
 -- search path
 
 exports.rootPath = "/usr/local/lnode"
-if (process.rootPath) then
-	exports.rootPath = process.rootPath
-end
+-- if (process.rootPath) then
+--	 exports.rootPath = process.rootPath
+-- end
 
 local osType = os.platform()
 if (osType == 'win32') then

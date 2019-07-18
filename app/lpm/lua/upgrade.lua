@@ -618,7 +618,7 @@ function exports.install(filename, callback)
 
 		if (err) then
 			print("Error: ", err)
-			return;
+			return
 		end
 
 		if (callback) then 
@@ -633,6 +633,15 @@ function exports.install(filename, callback)
 		print('Skips: ' .. updater.skips)
 		print('Index: ' .. updater.index)
 		print('Confirms: ' .. updater.confirms)
+		print('Path: ' .. updater.rootPath)
+
+		if (updater.faileds > 0) then
+			return
+		end
+
+		local binPath = updater.rootPath .. '/bin'
+		os.execute(binPath .. '/lnode ' .. binPath .. '/lpm upgrade switch')
+		-- os.execute("")
 	end)
 
 	return true

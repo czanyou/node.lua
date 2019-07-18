@@ -248,10 +248,6 @@ function exports.upgrade(...)
 	require('lpm/update').upgrade(...)
 end
 
-function exports.status(...)
-	require('lpm/update').status(...)
-end
-
 -------------------------------------------------------------------------------
 -- misc
 
@@ -338,6 +334,7 @@ function exports.info(...)
 	end	
 
 	print(console.colorful('${string}app.rootPath: ${normal}') .. (app.rootPath or '-'))
+	print(console.colorful('${string}conf.rootPath: ${normal}') .. (conf.rootPath or '-'))	
 	print(console.colorful('${string}app.target:   ${normal}') .. (app.target() or '-'))
 	print(console.colorful('${string}os.arch:      ${normal}') .. os.arch())
 	print(console.colorful('${string}os.time:      ${normal}') .. os.time())

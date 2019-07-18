@@ -5,6 +5,7 @@ local url       = require('url')
 local utils     = require('util')
 
 local request  	= require('http/request')
+local app   	= require('app')
 local conf   	= require('app/conf')
 local ext   	= require('app/utils')
 local upgrade 	= require('./upgrade')
@@ -335,11 +336,7 @@ local function downloadFirmwareFile(options, callback)
 	end)
 end
 
--------------------------------------------------------------------------------
---
-
--- Dnowload update files only
-function exports.update(callback)
+local function updateFirmwareInfo(callback)
 	-- options
 	local profile = conf('user')
 	local options = { type = 'update' }
@@ -394,10 +391,48 @@ function exports.update(callback)
 	options.printInfo = function(...) print(...) end
 	
 	downloadFirmwareFile(options, callback)
+
 end
 
-function exports.upgrade()
-	exports.update(function(err, filename, packageInfo) 
+local function installFirmwareFile(callback)
+	if (type(callback) ~= 'function') then
+		callback = function(err)
+			print(err)
+		end
+	end
+
+	local status = readUpdateStatus()
+	if (not status) or (status.state ~= STATE_DOWNLOAD_COMPLETED) then
+		callback('Error: Please update firmware first.')
+		return
+	end
+
+	-- console.log(source, rootPath)
+	-- console.log("Upgrade path: " .. nodePath, rootPath)
+	status = { state = 0, result = 0 }
+	status.state = STATE_UPDATING -- 3：正在更新
+	saveUpdateStatus(status)
+
+	upgrade.install(nil, function(err, message)
+		if (err) then
+			status.result = UPDATE_FAILED -- 8：固件更新失败
+		else
+			status.result = UPDATE_SUCCESSFULLY -- 1：固件更新成功
+		end
+
+		status.state = 0
+		saveUpdateStatus(status)
+
+		if (callback) then 
+			callback(err, message)
+		end
+	end)
+
+	return true
+end
+
+local function upgradeFirmwareFile(callback)
+	updateFirmwareInfo(function(err, filename, packageInfo) 
 		local status = { state = 0, result = 0 }
 
 		if (err) then
@@ -437,48 +472,54 @@ function exports.upgrade()
 	end)
 end
 
-function exports.install(callback)
-	if (type(callback) ~= 'function') then
-		callback = function(err)
-			print(err)
-		end
-	end
-
-	local status = readUpdateStatus()
-	if (not status) or (status.state ~= STATE_DOWNLOAD_COMPLETED) then
-		callback('Error: Please update firmware first.')
-		return
-	end
-
-	-- console.log(source, rootPath)
-	-- console.log("Upgrade path: " .. nodePath, rootPath)
-	status = { state = 0, result = 0 }
-	status.state = STATE_UPDATING -- 3：正在更新
-	saveUpdateStatus(status)
-
-	upgrade.install(nil, function(err, message)
-		if (err) then
-			status.result = UPDATE_FAILED -- 8：固件更新失败
-		else
-			status.result = UPDATE_SUCCESSFULLY -- 1：固件更新成功
-		end
-
-		status.state = 0
-		saveUpdateStatus(status)
-
-		if (callback) then 
-			callback(err, message)
-		end
-	end)
-
-	return true
-end
-
-function exports.status()
+local function printUpgradeStatus()
 	local status = readUpdateStatus()
 	if (status) then
 		console.printr(status)
 	end
+end
+
+local function switchFirmwareFile()
+	local rootPath = app.rootPath;
+	local nodePath = conf.rootPath;
+
+	console.log(rootPath, nodePath)
+	if (rootPath == nodePath) then
+		return
+	end
+
+	os.execute('rm -rf ' .. nodePath .. '/bin');
+	os.execute('ln -s ' .. rootPath .. '/bin ' .. nodePath .. '/bin');
+end
+
+-------------------------------------------------------------------------------
+--
+
+-- Dnowload update files only
+function exports.update(callback)
+	updateFirmwareInfo(callback)
+end
+
+function exports.upgrade(applet)
+	if (applet == 'firmware') then
+		upgradeFirmwareFile()
+
+	elseif (applet == 'system') then
+		upgradeFirmwareFile()
+
+	elseif (applet == 'status') then
+		printUpgradeStatus()
+
+	elseif (applet == 'switch') then
+		switchFirmwareFile()
+
+	else
+		printUpgradeStatus()
+	end
+end
+
+function exports.install(callback)
+	installFirmwareFile(callback)
 end
 
 return exports
