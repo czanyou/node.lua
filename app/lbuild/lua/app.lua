@@ -114,7 +114,7 @@ function sdk.buildCommonSDK(target, packageInfo)
 	console.log('sourcePath', sourcePath)
 
 	local sdkPath  = sdk.getSDKBuildPath(target, packageInfo.type)
-	local nodePath = join(sdkPath, "usr/local/lnode")
+	local nodePath = join(sdkPath, "")
 
 	local mkdir = fs.mkdirpSync
 	mkdir(join(nodePath, "lib"))
@@ -152,21 +152,11 @@ function sdk.buildCommonSDK(target, packageInfo)
 		mkdir(join(nodePath, "lua"))
 
 		copy(buildPath .. "/lnode", join(nodePath, "bin/lnode"))
+		copy(sourcePath .. "/app/lpm/bin/lpm", nodePath .. "/bin/lpm")
 
 		-- copy node lua files
 		local nodeluaPath = join(sourcePath, "core")
-		copy (nodeluaPath .. "/bin/lpm", nodePath .. "/bin/lpm")
 		xcopy(nodeluaPath .. "/lua", 	 nodePath .. "/lua")
-		--console.log(nodeluaPath .. "/lua", 	       nodePath .. "/lua")
-
-		-- copy target files
-		local dirname = util.dirname()
-		local targetPath = join(dirname, "targets/linux/local")
-		xcopy(join(targetPath, "usr"),  join(sdkPath , "usr"))
-
-		--console.log(targetPath)
-		copy(join(targetPath, 'install.sh'), join(sdkPath, 'install.sh'))
-		fs.chmodSync(join(sdkPath, 'install.sh'), 511)
 	end
 
 	::exit::
@@ -341,9 +331,9 @@ function sdk.buildDebPackage()
 	local deb_path  = path.join(cwd, "/build/", deb_name .. "-deb")
 
 	-- deb files
-	fs.mkdirpSync(deb_path .. '/usr/local/lnode/')
+	fs.mkdirpSync(deb_path .. '/')
 	os.execute('rm -rf ' .. deb_path .. '/usr/local/lnode/*')
-	os.execute('cp -rf ' .. sdk_path .. '/usr/local/lnode/* ' .. deb_path .. '/usr/local/lnode/')
+	os.execute('cp -rf ' .. sdk_path .. '/* ' .. deb_path .. '/usr/local/lnode/')
 
 	-- deb meta files
 	local dirname = util.dirname()

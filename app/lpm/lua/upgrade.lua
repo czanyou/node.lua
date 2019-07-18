@@ -73,10 +73,6 @@ local function getNodePath()
 	return conf.rootPath
 end
 
-local function getRootPath()
-	return '/'
-end
-
 local function isDevelopmentPath(rootPath)
 	local filename1 = path.join(rootPath, 'lua/lnode')
 	local filename2 = path.join(rootPath, 'app/lbuild')
@@ -518,13 +514,15 @@ function BundleUpdater:upgradeSystemPackage(callback)
 		return
 	end
 
-	self.rootPath = self.rootPath .. '/version.' .. self.version
+	self.rootPath = self.rootPath .. '/v' .. self.version
 	
 	print('Version: ' .. self.version)
 	print('Path: ' .. self.rootPath)
 
 	self:checkAllFiles() -- 检查需要更新的文件
 	self:updateAllFiles(callback) -- 写入修改的文件
+
+	os.execute('chmod -R 755 ' .. self.rootPath .. '/bin/*')
 end
 
 function BundleUpdater:reset()
@@ -588,8 +586,6 @@ function exports.install(filename, callback)
 	end
 
 	local nodePath = getNodePath()
-	local rootPath = getRootPath()
-	rootPath = path.join(nodePath, 'update')
 
 	if (isDevelopmentPath(nodePath)) then
 		
@@ -601,7 +597,7 @@ function exports.install(filename, callback)
 
 	local options = {}
 	options.filename 	= filename
-	options.rootPath 	= rootPath
+	options.rootPath 	= nodePath
 
 	local updater = BundleUpdater:new(options)
 
