@@ -1,4 +1,4 @@
-local app   = require('app/init')
+local app   = require('app')
 local util  = require('util')
 local url 	= require('url')
 local fs 	= require('fs')
@@ -21,21 +21,26 @@ end
 
 function exports.ssdp()
     local version = process.version
-    local did = app.get('did');
+    local did = app.get('did') or gateway.getMacAddress();
     local model = 'DT02/' .. version
-	local ssdpSig = "Node.lua/" .. version .. ", UPnP/1.0, ssdp/" .. ssdpServer.version
-    local options = { 
+    local ssdpSig = "lnode/" .. version .. ", ssdp/" .. ssdpServer.version
+    
+    local options = {
         udn = 'uuid:' .. did, 
         ssdpSig = ssdpSig, 
         deviceModel = model 
     }
+    -- console.log(options, did)
+    local server, error = ssdpServer(options)
+    if (error) then
+        print('Start sddp error:', error)
+        return
+    end
 
-    exports.ssdpServer = ssdpServer(options)
+    exports.ssdpServer = server
 end
 
 function exports.gateway()
-    gateway.app = app
-    
     -- options
     -- - did
     -- - mqtt
@@ -44,8 +49,14 @@ function exports.gateway()
     options.did = app.get('did')
     options.mqtt = app.get('mqtt')
     options.secret = app.get('secret')
-    app.gateway = gateway.createThing(options)
 
+    local gateway, error = gateway.createThing(options)
+    if (error) then
+        print('Create thing error:', error)
+        return
+    end
+
+    app.gateway = gateway
     log.init(app.gateway)
 end
 

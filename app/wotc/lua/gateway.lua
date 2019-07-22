@@ -1,3 +1,5 @@
+
+local app   = require('app')
 local util  = require('util')
 local url 	= require('url')
 local fs 	= require('fs')
@@ -9,11 +11,13 @@ local exec  = require('child_process').exec
 
 local exports = {}
 
-exports.services = {}
+local gateway = {}
+
+gateway.services = {}
 
 local cpuInfo = {
-    used_time = 0,
-    total_time = 0
+    usedTime = 0,
+    totalTime = 0
 }
 
 local SHELL_RUN_TIMEOUT = 2000
@@ -83,9 +87,9 @@ function shellChdir(dir, callback)
     end)
 end
 
-local function resetCpuUsage() 
-    cpuInfo.used_time = 0;
-    cpuInfo.total_time = 0;
+local function resetCpuUsage()
+    cpuInfo.usedTime = 0;
+    cpuInfo.totalTime = 0;
 end
 
 local function getCpuUsage()
@@ -108,11 +112,11 @@ local function getCpuUsage()
 
     local totalCpuUsedTime = x[1] + x[2] + x[3] + x[6] + x[7] + x[8] + x[9] + x[10]
 
-    local cpuUsedTime = totalCpuUsedTime - cpuInfo.used_time
-    local cpuTotalTime = totalCpuTime - cpuInfo.total_time
+    local cpuUsedTime = totalCpuUsedTime - cpuInfo.usedTime
+    local cpuTotalTime = totalCpuTime - cpuInfo.totalTime
 
-    cpuInfo.used_time = math.floor(totalCpuUsedTime) --record
-    cpuInfo.total_time = math.floor(totalCpuTime) --record
+    cpuInfo.usedTime = math.floor(totalCpuUsedTime) --record
+    cpuInfo.totalTime = math.floor(totalCpuTime) --record
 
     if (cpuTotalTime == 0) then
         return 0
@@ -182,8 +186,8 @@ end
 local function onDeviceReboot(input, webThing)
     local delay = tonumber(input and input.delay)
 
-    if (exports.rebootTimer) then
-        clearTimeout(exports.rebootTimer)
+    if (gateway.rebootTimer) then
+        clearTimeout(gateway.rebootTimer)
     end
 
     if (delay and delay > 0) then
@@ -191,8 +195,8 @@ local function onDeviceReboot(input, webThing)
             delay = 5
         end
 
-        exports.rebootTimer = setTimeout(1000 * delay, function()
-            exports.rebootTimer = nil;
+        gateway.rebootTimer = setTimeout(1000 * delay, function()
+            gateway.rebootTimer = nil;
             console.log('reboot timeout');
             process:exit(0);
         end)
@@ -275,11 +279,11 @@ end
 local function onFirmwareRead(input, webThing)
     console.error('onFirmwareRead');
 
-    local base = exports.app.get('base') or '';
-    local did = exports.app.get('did') or '';
+    local base = app.get('base') or '';
+    local did = app.get('did') or '';
     local uri = base .. 'device/firmware/file?did=' .. did;
 
-    local rootPath = exports.app.rootPath
+    local rootPath = app.rootPath
     local filename = path.join(rootPath, 'update/status.json')
     local filedata = fs.readFileSync(filename)
     local status = {}
@@ -287,7 +291,7 @@ local function onFirmwareRead(input, webThing)
         status = json.parse(filedata) or {}
     end
 
-    local firmware = exports.services.firmware or {}
+    local firmware = gateway.services.firmware or {}
     firmware.uri = uri
     firmware.state = status.state or 0
     firmware.result = status.result or 0
@@ -299,12 +303,12 @@ end
 local function onFirmwareUpdate(params)
     console.warn('onFirmwareUpdate');
 
-    if (exports.updateTimer) then
-        clearTimeout(exports.updateTimer)
+    if (gateway.updateTimer) then
+        clearTimeout(gateway.updateTimer)
     end
 
-    exports.updateTimer = setTimeout(1000 * 10, function()
-        exports.updateTimer = nil;
+    gateway.updateTimer = setTimeout(1000 * 10, function()
+        gateway.updateTimer = nil;
         console.log('updateTimer');
 
         os.execute('lpm upgrade > /tmp/upgrade.log &')
@@ -329,20 +333,20 @@ local function onFirmwareActions(input, webThing)
 end
 
 local function onConfigRead(input, webThing)
-    exports.services.config = exports.app.get('gateway');
-    local config = exports.services.config or {}
+    gateway.services.config = app.get('gateway');
+    local config = gateway.services.config or {}
 
     return config
 end
 
 local function onConfigWrite(config, webThing)
-    if (not exports.services.config) then
-        exports.services.config = {}
+    if (not gateway.services.config) then
+        gateway.services.config = {}
     end
 
     if (config) then
-        exports.services.config = config
-        exports.app.set('gateway', config)
+        gateway.services.config = config
+        app.set('gateway', config)
     end
 
     return { code = 0 }
@@ -408,7 +412,6 @@ local function createMediaGatewayThing(options)
         return nil, 'need did option'
     end
 
-    
     local clientId = 'gateway_' .. options.did
 
     local gateway = { 
@@ -477,5 +480,6 @@ local function createMediaGatewayThing(options)
 end
 
 exports.createThing = createMediaGatewayThing
+exports.getMacAddress = getMacAddress
 
 return exports
