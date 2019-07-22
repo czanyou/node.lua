@@ -513,6 +513,9 @@ function exports.upgrade(applet)
 	elseif (applet == 'switch') then
 		switchFirmwareFile()
 
+	elseif (applet == 'clean') then
+		upgrade.clean('4.2.206')
+
 	else
 		printUpgradeStatus()
 	end

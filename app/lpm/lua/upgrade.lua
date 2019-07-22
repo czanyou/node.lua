@@ -22,6 +22,7 @@ local json      = require('json')
 local miniz     = require('miniz')
 local path      = require('path')
 local url       = require('url')
+local app       = require('app')
 
 local conf   	= require('app/conf')
 local ext   	= require('app/utils')
@@ -224,6 +225,36 @@ end
 
 -------------------------------------------------------------------------------
 -- BundleUpdater
+
+local function cleanFirmwareFile(newVersion)
+	function getVersions(nodePath, currentPath, newPath)
+		local result = {}
+		for name,type in fs.scandirSync(nodePath) do
+			if (name == currentPath) or (name == newPath) then
+			elseif (type == 'directory' and name:startsWith('v')) then
+				result[#result + 1] = name
+			end
+		  end
+		  
+		  return result
+	end
+
+	local nodePath = conf.rootPath;
+	local rootPath = app.rootPath .. '/v4.2.205'
+	local currentPath = path.basename(rootPath)
+	local newPath = 'v' .. newVersion
+
+	local versions = getVersions(nodePath, currentPath, newPath)
+	console.log(nodePath, currentPath, versions)
+
+	for index, name in ipairs(versions) do
+		local cmdline = 'rm -rf ' .. nodePath .. '/' .. name;
+		console.log(cmdline)
+		os.execute(cmdline);
+	end
+
+	return versions
+end
 
 local BundleUpdater = core.Emitter:extend()
 exports.BundleUpdater = BundleUpdater
@@ -519,6 +550,8 @@ function BundleUpdater:upgradeSystemPackage(callback)
 	print('Version: ' .. self.version)
 	print('Path: ' .. self.rootPath)
 
+	cleanFirmwareFile(self.version)
+
 	self:checkAllFiles() -- 检查需要更新的文件
 	self:updateAllFiles(callback) -- 写入修改的文件
 
@@ -550,24 +583,7 @@ function BundleUpdater:getUpgradeResult()
 	end
 end
 
--------------------------------------------------------------------------------
--- exports
-
-exports.nodePath = getNodePath()
-
-function exports.isDevelopmentPath(pathname)
-	return isDevelopmentPath(pathname or getNodePath())
-end
-
-function exports.openBundle(filename)
-	return createBundleReader(filename)
-end
-
-function exports.openUpdater(options)
-	return BundleUpdater:new(options)
-end
-
-function exports.install(filename, callback)
+local function installFirmwareFile(callback)
 	if (type(callback) ~= 'function') then
 		callback = function(err, message)
 			if (err) then
@@ -639,12 +655,37 @@ function exports.install(filename, callback)
 			return
 		end
 
+		-- 
 		local binPath = updater.rootPath .. '/bin'
 		os.execute(binPath .. '/lnode ' .. binPath .. '/lpm upgrade switch')
-		-- os.execute("")
 	end)
 
 	return true
+end
+
+-------------------------------------------------------------------------------
+-- exports
+
+exports.nodePath = getNodePath()
+
+function exports.isDevelopmentPath(pathname)
+	return isDevelopmentPath(pathname or getNodePath())
+end
+
+function exports.openBundle(filename)
+	return createBundleReader(filename)
+end
+
+function exports.openUpdater(options)
+	return BundleUpdater:new(options)
+end
+
+function exports.clean(version)
+	cleanFirmwareFile(version)
+end
+
+function exports.install(filename, callback)
+	installFirmwareFile(filename, callback)
 end
 
 return exports
