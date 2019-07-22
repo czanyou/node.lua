@@ -204,7 +204,10 @@ local function createCameraThing(options)
             stop = { ['@type'] = 'stop' },
         },
         properties = {},
-        events = {}
+        events = {},
+        version = {
+            instance = '1.0'
+        }
     }
 
     local webThing = wot.produce(camera)

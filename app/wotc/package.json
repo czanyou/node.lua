@@ -1,0 +1,8 @@
+{
+	"depends": [],
+	"description": "wot client application",
+	"title": "wot client",
+	"name": "wotc",
+	"tags": ["wot", "gateway"],
+	"version": "1.0.0"
+}

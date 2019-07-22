@@ -20,8 +20,6 @@ local button = require('./button')
 
 local exports = {}
 
-app.name = 'gateway'
-
 -- ////////////////////////////////////////////////////////////////////////////
 -- Web Server
 
@@ -98,7 +96,7 @@ local function runningStateindex()
         end
 
         ret = bluetooth:dataStatus() or modbus:dataStatus()
-        console.log(ret)
+        -- console.log(ret)
         if ret == 1 then
             button.ledSwitch("blue","on")
         else
@@ -116,7 +114,7 @@ function exports.start()
     
     exports.rtmp()
     exports.rtsp()
-    exports.gateway()
+    -- exports.gateway()
     exports.cameras() 
     exports.modbus()
     exports.bluetooth()
@@ -165,26 +163,24 @@ function exports.bluetooth()
     app.bluetoothDevices = things
 end
 
-
-
-
-
-
 function exports.rtmp()
     rtmp.startRtmpClient()
 end
 
-
-
 function exports.rtsp()
+    -- gateway.cameras
     local gateway = app.get('gateway')
     local cameras = gateway and gateway.cameras
     if (not cameras) then
         return
     end
 
+    -- options
+    -- - `did` Device ID
+    -- - `url` RTSP URL
+    -- - `username` Username
+    -- - `password` Password
     for index, options in ipairs(cameras) do
-        -- console.log(options)
         rtsp.startRtspClient(rtmp, options)
     end
 end
@@ -195,10 +191,13 @@ end
 
 function exports.gateway()
     gateway.app = app
-    print("gateway init")
+    
+    -- options
+    -- - did
+    -- - mqtt
+    -- - secret
     local options = {}
     options.did = app.get('did')
-    print(options.did)
     options.mqtt = app.get('mqtt')
     options.secret = app.get('secret')
     app.gateway = gateway.createThing(options)

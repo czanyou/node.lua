@@ -116,6 +116,7 @@ function ExposedThing:initialize(thingInstance)
     self.deviceId = nil
     self.handlers = {} -- Action handlers
     self.id = thingInstance.id -- Thing ID / DID
+    self.clientId = thingInstance.clientId
     self.instance = thingInstance or {} -- Thing instance
     self.token = nil -- Access token
 
@@ -126,6 +127,8 @@ function ExposedThing:initialize(thingInstance)
     self.registerTime = 0    -- The last register send time
     self.registerTimer = nil -- The register timer
     self.registerUpdated = 0 -- Register updated time
+
+    thingInstance.clientId = nil
 end
 
 function ExposedThing:_setHandler(type, name, handler)
@@ -380,7 +383,11 @@ function ThingClient:start()
         console.log('empty MQTT url string.')
     end
 
-    local clientId = 'camera-' .. (self.options.id or '')
+    local clientId = self.options.clientId
+    if (not clientId) then
+        clientId = 'lnode-' .. (self.options.id or '')
+    end
+
     local options = {
         clientId = clientId
     }
@@ -413,7 +420,7 @@ function ThingClient:start()
 end
 
 function ThingClient:processMessage(message, topic)
-    print(TAG, 'message', topic, message)
+    -- print(TAG, 'message', topic, message)
 
     local messageType = message.type
     if (not messageType) then
@@ -564,11 +571,15 @@ end
 
 function ThingClient:sendRegister(did, thing)
     local description = thing.instance
+    local data = {}
+    data.version = description.version
+    data['@context'] = description['@context']
+    data['@type'] = description['@type']
 
     local message = {
         did = did,
         type = 'register',
-        data = description
+        data = data
     }
 
     if (thing.secret) then
@@ -662,6 +673,7 @@ function ThingClient.register(directory, thing)
     local options = {}
     options.url = directory
     options.id = thing.id
+    options.clientId = thing.clientId
 
     local client = ThingClient.getClient(options, true)
     thing.client = client;
