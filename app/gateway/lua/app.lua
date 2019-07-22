@@ -1,4 +1,4 @@
-local app   = require('app/init')
+local app   = require('app')
 local util  = require('util')
 local url 	= require('url')
 local fs 	= require('fs')
@@ -17,6 +17,7 @@ local gateway = require('./gateway')
 local log = require('./log')
 local bluetooth = require('./bluetooth')
 local button = require('./button')
+local test  = require('./test')
 
 local exports = {}
 
@@ -206,7 +207,7 @@ function exports.gateway()
 end
 
 function exports.test()
-    
+    test.test()
 end
 
 function exports.modbus()

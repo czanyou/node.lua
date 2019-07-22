@@ -351,16 +351,13 @@ fs.open() 的同步版.
 
 ## fs.read
 
-    fs.read(fd, buffer, offset, length, position, callback)
+    fs.read(fd, size, offset, callback)
 
 从指定的文档标识符fd读取文件数据。
 
-- buffer 是缓冲区, 数据将会写入这里。
-- offset 是开始向缓冲区 buffer 写入的偏移量。
 - length 是一个整形值, 指定了读取的字节数。
-- position 是一个整形值, 指定了从哪里开始读取文件, 如果 position 为 null, 将会从文件当前的位置读取数据。
-
-- callback 回调函数给定了三个参数,  (err, bytesRead, buffer),  分别为错误, 读取的字节和缓冲区。
+- offset 是开始向缓冲区 buffer 写入的偏移量。
+- callback 回调函数给定了三个参数,  (err, buffer),  分别为错误, 读取的字节和缓冲区。
 
 ## fs.readFile
 
