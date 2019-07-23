@@ -1,8 +1,9 @@
-local app       = require('app/init')
+local app       = require('app')
 local utils     = require('util')
 local path      = require('path')
 local fs        = require('fs')
 local rpc       = require('app/rpc')
+local conf       = require('app/conf')
 
 -------------------------------------------------------------------------------
 -- exports
@@ -11,7 +12,7 @@ local exports = {}
 
 -- 返回所有需要后台运行的应用
 function exports.getApplicationNames()
-    local configPath = path.join(app.rootPath, 'conf/process.conf')
+    local configPath = path.join(app.nodePath, 'conf/process.conf')
     local filedata = fs.readFileSync(configPath)
     local names = {}
     local count = 0

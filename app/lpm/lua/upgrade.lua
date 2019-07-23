@@ -239,17 +239,31 @@ local function cleanFirmwareFile(newVersion)
 		  return result
 	end
 
-	local nodePath = conf.rootPath;
-	local rootPath = app.rootPath .. '/v4.2.205'
+	-- Current installed version
+	local nodePath = conf.rootPath
+	local rootPath = fs.readlinkSync(nodePath .. '/bin')
+	if (rootPath) then
+		rootPath = path.dirname(rootPath)
+	else 
+		rootPath = app.rootPath
+	end
+	
 	local currentPath = path.basename(rootPath)
+
+	-- The new version to be installed
 	local newPath = 'v' .. newVersion
 
+	print("rootPath: " .. rootPath)
+	print("nodePath: " .. nodePath)
+	print("newPath: " .. newPath)
+	print("currentPath: " .. currentPath)
+
 	local versions = getVersions(nodePath, currentPath, newPath)
-	console.log(nodePath, currentPath, versions)
+	-- console.log(nodePath, currentPath, versions)
 
 	for index, name in ipairs(versions) do
 		local cmdline = 'rm -rf ' .. nodePath .. '/' .. name;
-		console.log(cmdline)
+		print("Remove: " .. cmdline)
 		os.execute(cmdline);
 	end
 
@@ -655,9 +669,13 @@ local function installFirmwareFile(callback)
 			return
 		end
 
-		-- 
-		local binPath = updater.rootPath .. '/bin'
-		os.execute(binPath .. '/lnode ' .. binPath .. '/lpm upgrade switch')
+		local rootPath = updater.rootPath
+		setTimeout(1000, function()
+			-- 
+			local cmdline = rootPath .. '/bin/lnode -d -l lpm/switch > /tmp/switch.log'
+			console.log(cmdline)
+			os.execute(cmdline)
+		end)
 	end)
 
 	return true

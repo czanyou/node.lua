@@ -14,6 +14,7 @@ local exports = {}
 local gateway = {}
 
 gateway.services = {}
+gateway.unlock = false
 
 local cpuInfo = {
     usedTime = 0,
@@ -39,7 +40,8 @@ function shellExecute(cmd, callback, timeout)
     local options = { timeout = (timeout or SHELL_RUN_TIMEOUT), env = process.env }
 
     exec(cmd, options, function(err, stdout, stderr)
-        --console.log(err, stdout, stderr)
+        console.log(cmd, err, stdout, stderr)
+
         if (not stdout) or (stdout == '') then
             stdout = stderr
         end
@@ -47,8 +49,6 @@ function shellExecute(cmd, callback, timeout)
         if (err and err.message) then
             stdout = err.message .. ': \n\n' .. stdout
         end
-
-        os.execute(cmd)
 
         result.output = stdout
         result.environment = shellGetEnvironment()
@@ -225,8 +225,32 @@ local function onDeviceWrite(input, webThing)
     return { code = 0, message = 'write' }
 end
 
+local function onDeviceUnlock(input, webThing)
+    local data = fs.readFileSync(app.nodePath .. '/conf/lnode.key')
+    if (not data) or (not input) then
+        gateway.unlock = false
+        return { code = -1, message = 'bad key or input' }
+    end
+
+    data = data:trim()
+
+    local did = app.get('did')
+    local hash = util.md5string(did .. ':' .. data)
+    console.log(did, data, hash, input)
+    if (hash ~= input) then
+        gateway.unlock = false
+        return { code = -1, message = 'bad input' }
+    end
+
+    gateway.unlock = true
+    return { code = 0, message = 'unlock' }
+end
+
 local function onDeviceExecute(input, webThing)
     -- console.log('onDeviceExecute', input);
+    if (not gateway.unlock) then
+        return { code = -1, message = 'locked' }
+    end
 
     local promise = Promise.new()
 
@@ -270,6 +294,9 @@ local function onDeviceActions(input, webThing)
 
     elseif (input.execute) then
         return onDeviceExecute(input.execute, webThing)
+
+    elseif (input.unlock) then
+        return onDeviceUnlock(input.unlock, webThing)
 
     else
         return { code = 400, error = 'Unsupported methods' }

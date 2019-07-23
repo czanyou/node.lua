@@ -115,7 +115,6 @@ function exports.start()
     
     exports.rtmp()
     exports.rtsp()
-    -- exports.gateway()
     exports.cameras() 
     exports.modbus()
     exports.bluetooth()

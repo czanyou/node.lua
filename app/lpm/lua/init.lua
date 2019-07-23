@@ -334,7 +334,7 @@ function exports.info(...)
 	end	
 
 	print(console.colorful('${string}app.rootPath: ${normal}') .. (app.rootPath or '-'))
-	print(console.colorful('${string}conf.rootPath: ${normal}') .. (conf.rootPath or '-'))	
+	print(console.colorful('${string}app.nodePath: ${normal}') .. (app.nodePath or '-'))	
 	print(console.colorful('${string}app.target:   ${normal}') .. (app.target() or '-'))
 	print(console.colorful('${string}os.arch:      ${normal}') .. os.arch())
 	print(console.colorful('${string}os.time:      ${normal}') .. os.time())

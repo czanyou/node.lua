@@ -57,6 +57,22 @@ local function getRootPath()
 	return exports.rootPath
 end
 
+local function getNodePath()
+    if (exports.nodePath) then
+        return exports.nodePath
+    end
+
+    exports.nodePath = "/usr/local/lnode"
+
+    local osType = os.platform()
+    if (osType == 'win32') then
+        local pathname = path.dirname(process.execPath)
+        exports.nodePath = path.dirname(pathname)
+    end
+
+	return exports.nodePath
+end
+
 local function getAppPath()
 	local rootPath = getRootPath()
 	local appPath = path.join(rootPath, "app")
@@ -135,6 +151,7 @@ setmetatable(exports, exports.meta)
 
 --
 exports.rootPath 		= getRootPath()
+exports.nodePath 		= getNodePath()
 exports.rootURL 		= 'http://iot.beaconice.cn/v2/'
 exports.appPath 		= getAppPath()
 
@@ -251,7 +268,7 @@ end
 -- methods
 
 function updateProcessList(add, remove)
-    local configPath = path.join(getRootPath(), 'conf/process.conf')
+    local configPath = path.join(getNodePath(), 'conf/process.conf')
     local fileData = fs.readFileSync(configPath) or ''
     local tokens = fileData:split(',') or {}
     local set = {}
@@ -518,7 +535,7 @@ function exports.printProcesses(...)
     end
 
     -- process list
-    local configPath = path.join(getRootPath(), 'conf/process.conf')
+    local configPath = path.join(getNodePath(), 'conf/process.conf')
     local fileData = fs.readFileSync(configPath) or ''
     local tokens = fileData:split(',') or {}
     for _, name in ipairs(tokens) do
