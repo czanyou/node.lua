@@ -15,9 +15,7 @@ local function dhcpMonitor()
     local function saveConfig(data)  
         config.load("network",function(ret,profile)
             profile:set("udhcp",data)
-            -- for key,value in pairs (data) do
-            --     profile:set(key,value)
-            -- end
+            profile:set("update","true")
             profile:commit()
         end)
     end

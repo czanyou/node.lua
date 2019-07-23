@@ -1,204 +1,103 @@
-local app       = require('app')
-local wot       = require('wot')
-local express 	= require('express')
-local path 		= require('path')
-local json  	= require('json')
-local util 		= require('util')
-local fs    	= require('fs')
+local path = require("path")
+local fs = require("fs")
+local wot = require("wot")
+local config  = require('app/conf')
+local app   = require('app/init')
+local webConfig = require('./config')
 
-local gateway   = require('./gateway')
-
-local TAG 		= 'gateway'
-local HTTP_PORT = 80
+local SYS_CONFIG = 5
+local SYS_RESET = 8
+local DEFAULT_IP = "192.168.8.2"
 
 local exports = {}
+local pressTime = 0
+local function CheckButtonState()
+    console.log("button check")
+    setInterval( 1000,function()
+            local path = "/sys/class/gpio/gpio62/value"
+            local source = fs.openSync(path, "r", 438)
+            if (not source) then
+                return
+            end
 
--- ----------------------------------------------------------------------------
--- Things
+            local result = fs.readSync(source)
+            fs.closeSync(source)
+            state = tonumber(string.match(result, "(%d)\n"))
+            if (state == 0) then
+                pressTime = pressTime + 1
+                console.log(pressTime)
+            end
 
-local function setThingRoutes(app) 
-	--console.log(server)
-	gateway:expose(app)
+            if (state == 1) then
+                if (pressTime > SYS_CONFIG and pressTime < SYS_RESET) then
+                    console.log("set ip:" .. DEFAULT_IP)
+                    local cmd = "ifconfig eth0 "..DEFAULT_IP
+                    os.execute(cmd)
+                    os.execute("rm /usr/local/lnode/conf/network.conf")
+                   
+                elseif (pressTime > SYS_RESET) then
+                    console.log("sys reset")
+                end
+                pressTime = 0
+            end
 
+            -- console.log(state)
+        end)
 end
 
--- ----------------------------------------------------------------------------
--- Config
+local function CheckNetworkstatus(interval_ms)
+    local profile 
+    local userConfig
+    local udhcpConfig
+    local profile 
+    console.log("network status check")
+    local function readConfig()  
+        console.log("network status check")
+        config.load("network",function(ret,profile)
 
+            userConfig = profile:get('config')
+            udhcpConfig = profile:get('udhcp')
+            local update = profile:get('update')
 
--- 检查客户端是否已经登录 
-local function checkLogin(request, response)
-	local pathname = request.uri.pathname or ''
+            local cmd
+            if(update == "true" and userConfig) then
 
-	if pathname:endsWith('.html') then
-		if (pathname == '/login.html') then
-			return false
-		end
+                if(userConfig.udhcp == "true") then
+                    if(udhcpConfig.ip) then
+                        console.log("set udhcpConfig ip:" .. udhcpConfig.ip)
+                        cmd = "ifconfig eth0 "..udhcpConfig.ip
+                        os.execute(cmd)
+                    end
+                    
+                else
+                    if(userConfig.ip) then
+                        console.log("set userConfig ip:" .. userConfig.ip)
+                        cmd = "ifconfig eth0 "..userConfig.ip
+                        os.execute(cmd)
+                    end
 
-	else
-		return false
-	end
-
-	local session = request:getSession()
-	local userinfo = session and session.userinfo
-	if (userinfo) then
-		return false
-	end
-
-	response:set('Location', '/login.html')
-	response:sendStatus(302)
-	return true
-end
-
-local function apiAccountLogin(request, response)
-	local query = request.body
-
-    local password = query.password
-    local username = query.username
-
-    if (not password) or (#password < 1) then
-        return response:json({ code = 401, error = 'Empty Password' })
-    end   
-
-    local value = app.get('user.password') or "888888"
-    if (value ~= password) then
-        return response:json({ code = 401, error = 'Wrong Password' })
+                end
+                profile:set("update","false")
+                profile:commit()
+            end
+            
+        end)
+            
     end
-
-    local session = request:getSession(true)
-    session['userinfo'] = { username = (username or 'admin') }
-
-    local result = { username = username }
-    response:json(result)
-end
-
-local function apiAccountLogout(request, response)
-	local session = request:getSession(false)
-	if (session and session.userinfo) then
-		session.userinfo = nil
-		return response:json({ message = "logout" })
-    end
-    
-	response:json({ code = 401, error = 'Unauthorized' })
-end
-
-local function apiAccountSelf(request, response)
-	local session = request:getSession(false)
-	local userInfo
-	if (session) then
-		userInfo = session['userinfo']
-	end
-
-	response:json(userInfo or { code = 401, error = 'Unauthorized' })
-end
-
-local function setConfigRoutes(app) 
-	-- checkLogin
-	function app:onRequest(request, response)
-		console.log('onRequest', request.path)
-		return checkLogin(request, response)
-	end
-
-	-- @param pathname
-	function app:getFileName(pathname)
-	    return path.join(self.root, pathname)
-	end
-
-	app:post('/account/login', apiAccountLogin);
-	app:post('/account/logout', apiAccountLogout);
-	app:get('/account/self', apiAccountSelf);
-end
-
--- ----------------------------------------------------------------------------
--- Exports
-
-function exports.scan()
-    local discover = wot.discover()
-    --console.log(discover)
-
-    discover:on('thing', function(thing)
-        console.log('discover', thing)
+    setInterval( interval_ms,function()
+        readConfig()
     end)
 end
+
+
+
+
+
 
 function exports.start()
-    local lockfd = app.tryLock(TAG)
-    if (not lockfd) then
-        print('The application is locked!')
-        return
-    end
-
-	-- listen port
-	local listenPort = port or app:get('port') or HTTP_PORT
-
-	-- document root path
-	local dirname = path.dirname(util.dirname())
-	local root = path.join(dirname, 'www')
-
-	-- app
-    local app = express({ root = root })
-    
-    app:on('error', function(err, code) 
-		print('Express', err)
-		if (code == 'EACCES') then
-			print('Only administrators have permission to use port 80')
-		end
-
-		print('\nusage: lpm lhttpd start [port]\n')
-    end)
-    
-    setThingRoutes(app);
-    setConfigRoutes(app);
-
-	app:listen(listenPort)    
+    CheckButtonState()
+    CheckNetworkstatus(10000)
+    webConfig.config()
 end
-
-function exports.register()
-    --console.log(server)
-    --gateway:expose()
-
-    local gateway = {}
-
-    local url = "http://tour.beaconice.cn/v2/"
-    local client = wot.register(url, gateway)
-    client:on('register', function(ret) 
-        console.log(ret)
-    end)
-
-    setTimeout(1000 * 5, function()
-        
-    end)
-end
-
-function exports.message()
-    --console.log(server)
-    --gateway:expose()
-
-    local url = "http://tour.beaconice.cn/v2/"
-    local client = wot.register(url, gateway)
-    client:on('register', function(ret) 
-        console.log('register', ret)
-
-
-        local message = {
-            type = 'message',
-            did = client.info.did,
-            data = {
-                value = 100
-            }
-        }
-
-        client:sendMessage(message);
-    end)
-
-    client:on('message', function(ret) 
-        console.log('message', ret)
-    end)
-
-    setTimeout(1000 * 5, function()
-
-    end)
-end
-
 
 app(exports)
