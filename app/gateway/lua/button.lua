@@ -2,6 +2,7 @@ local path = require("path")
 local fs = require("fs")
 local wot = require("wot")
 
+
 local SYS_CONFIG = 5
 local SYS_RESET = 8
 local DEFAULT_IP = "192.168.8.2"
@@ -31,6 +32,7 @@ local function CheckButtonState(interval_ms)
                 if (pressTime > SYS_CONFIG and pressTime < SYS_RESET) then
                     console.log("set ip:" .. DEFAULT_IP)
                     io.popen("ifconfig eth0 192.168.8.104")
+                   
                 elseif (pressTime > SYS_RESET) then
                     console.log("sys reset")
                 end

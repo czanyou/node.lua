@@ -2,7 +2,7 @@
 
 PWD=`pwd`
 PROJECT_ROOT="`dirname ${PWD}`"
-BOARD_TYPE="local"
+BOARD_TYPE="hi3516"
 LOCAL_BIN_PATH="/usr/local/bin"
 BUILD_PATH="${PROJECT_ROOT}/build/${BOARD_TYPE}"
 NODE_ROOTPATH="/usr/local/lnode"
@@ -69,6 +69,11 @@ make_install() {
     make_lua_lib_links
 
     chmod 777 ${LOCAL_BIN_PATH}/l*
+
+    rm /usr/bin/lnode
+    rm /usr/bin/lpm
+    ln -s /usr/local/bin/lnode /usr/bin/lnode
+    ln -s /usr/local/bin/lpm /usr/bin/lpm  
 
     echo "Install finish!"
     echo ""
