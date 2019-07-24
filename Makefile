@@ -100,13 +100,13 @@ remove:
 ## shortcuts
 
 sdk:
-	lbuild sdk
+	lpm lbuild sdk
 
 patch:
-	lbuild patch
+	lpm lbuild patch
 
 deb:
-	lbuild deb
+	lpm lbuild deb
 
 tar:
-	lbuild tar
+	lpm lbuild tar

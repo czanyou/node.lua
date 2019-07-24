@@ -530,7 +530,7 @@ function test()
 	os.execute(cmdline)
 end
 
--- Dnowload update files only
+-- Download update files only
 function exports.update(callback)
 	updateFirmwareInfo(callback)
 end

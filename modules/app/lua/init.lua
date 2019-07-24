@@ -418,6 +418,8 @@ function exports.main(handler, action, ...)
 
     if (method) then
         method(...)
+    else
+        print('usage: lpm ' .. exports.name .. ' <name> [<params>...]')
 	end
 end
 

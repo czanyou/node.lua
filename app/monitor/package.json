@@ -1,8 +1,8 @@
 {
 	"depends": [],
-	"description": "wot monitor application",
-	"title": "monitor",
+	"description": "lnode configuration interface application",
+	"title": "lci",
 	"name": "monitor",
-	"tags": ["pusher", "monitor"],
+	"tags": ["settings", "config"],
 	"version": "2.0.0"
 }
