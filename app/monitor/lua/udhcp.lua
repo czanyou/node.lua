@@ -9,7 +9,7 @@ local function onDhcpBound()
     local function saveConfig(data)  
         config.load("network", function(ret, profile)
             profile:set("dhcp", data)
-            profile:set("update", "true")
+            profile:set("updated", Date.now())
             profile:commit()
         end)
     end
@@ -25,7 +25,9 @@ local function onDhcpBound()
     config.domain = os.getenv("domain")
     config.ntpsrv = os.getenv("ntpsrv")
     
-    saveConfig(config)
+    if (config.ip) then
+        saveConfig(config)
+    end
 end
 
 onDhcpBound()

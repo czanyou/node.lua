@@ -1,4 +1,4 @@
-local app = require("app/init")
+local app = require("app")
 local path = require("path")
 local fs = require("fs")
 local uv = require("luv")

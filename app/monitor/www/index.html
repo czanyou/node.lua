@@ -14,7 +14,7 @@
 	<style>
     .form-content { padding: 0 16px; max-width: 600px; margin: 0 auto; }
     .header-brand { line-height: 72px; padding: 0 16px; }
-    .form-footer { margin-top: 16px; }
+    .form-footer { margin-top: 16px; margin-bottom: 16px; }
     .col-form-label { display: inline-block; min-width: 100px; }
 
 	@media screen and (min-width: 480px) {}
@@ -66,7 +66,7 @@
 
         <div class="form-group">
           <label for="message-text" class="col-form-label">DNS Server:</label>
-          <input type="text" name="dns_server" v-model="dns_server" class="form-control" :disabled="ip_mode!='static'">
+          <input type="text" name="dns" v-model="dns" class="form-control" :disabled="ip_mode!='static'">
         </div>
       </form>
     </div>
@@ -93,6 +93,41 @@
         </div>
       </form>
     </div>
+
+    <div class="form-header">
+      <h5 class="form-title" id="exampleModalLabel">Frimware Update</h5>
+    </div>
+
+    <div class="form-body">
+      <form>
+        <div class="form-group" v-if="firmware.version">
+          <label for="recipient-name" class="col-form-label">Version:</label>
+          <input type="text" name="ip" :value="firmware.version" class="form-control" disabled>
+        </div>
+
+        <div class="form-group" v-if="firmware.description">
+          <label for="recipient-name" class="col-form-label">Description:</label>
+          <input type="text" name="ip" :value="firmware.description" class="form-control" disabled>
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">State:</label>
+          <input type="text" name="ip" :value="update.state" class="form-control" disabled>
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">Result:</label>
+          <input type="text" name="ip" :value="update.result" class="form-control" disabled>
+        </div>
+      </form>
+    </div>
+
+    <div class="form-footer">
+      <button type="button" class="btn btn-primary" onclick="onSystemUpdate()">Update</button>
+      <button type="button" class="btn btn-primary" onclick="onSystemUpgrade()">Upgrade</button>
+      <button type="button" class="btn btn-primary" onclick="onSystemReboot()">Reboot</button>
+   
+    </div>
   </div>
 
   <footer id="footer"></footer>
@@ -110,8 +145,10 @@ var $vueData = {
   ip: '192.168.1.12',
   netmask: '255.255.255.0',
   router: '192.168.1.1',
-  dns_server: '8.8.8.8 192.168.1.1',
-  status: {}
+  dns: '8.8.8.8 192.168.1.1',
+  status: {},
+  update: {},
+  firmware: {}
 }
 
 var app = new Vue({
@@ -120,13 +157,15 @@ var app = new Vue({
 })
 
 function onStatusRead() {
-	var url = "/status/read";
+	var url = "/system/read";
 	$.get(url, function(result) {
 		if (!result || result.error) {
 			return;
     }
     
-    $vueData.status = result || {}
+    $vueData.status = result.system || {}
+    $vueData.update = result.update || {}
+    $vueData.firmware = result.firmware || {}
 	});
 
 	return false;
@@ -144,7 +183,7 @@ function onConfigRead() {
     $vueData.ip = config.ip
     $vueData.netmask = config.netmask
     $vueData.router = config.router
-    $vueData.dns_server = config.dns_server
+    $vueData.dns = config.dns
 
 	});
 
@@ -156,7 +195,7 @@ function onConfigWrite(callback) {
 
 	var data = {
     router: $vueData.router,
-    dns_server: $vueData.dns_server,
+    dns: $vueData.dns,
 		netmask: $vueData.netmask,
     ip: $vueData.ip,
 		ip_mode: $vueData.ip_mode
@@ -175,11 +214,79 @@ function onConfigWrite(callback) {
   return false;
 }
 
+function onSystemUpdate() {
+  var url = "/system/write";
+
+	var data = {
+    update: 1
+	}
+
+	console.log(url, data)
+	$.post(url, data, function(result) {
+		if (!result || result.error) {
+      alert('Failed to update. Please try again later');
+
+		} else {
+      alert('Update start');
+		}
+  });
+  
+  return false;
+}
+
+function onSystemUpgrade() {
+  var url = "/system/write";
+
+	var data = {
+    upgrade: "system"
+	}
+
+	console.log(url, data)
+	$.post(url, data, function(result) {
+		if (!result || result.error) {
+      alert('Failed to upgrade. Please try again later');
+
+		} else {
+      alert('Upgrade start');
+		}
+  });
+  
+  return false;
+}
+
+function onSystemReboot() {
+  if (!window.confirm("Are you sure want to reboot the device?")) {
+    return;
+  }
+  
+  var url = "/system/write";
+
+  var data = {
+    reboot: 5
+  }
+
+  console.log(url, data)
+  $.post(url, data, function(result) {
+    if (!result || result.error) {
+      alert('Failed to reboot. Please try again later');
+
+    } else {
+      alert('Reboot start');
+    }
+  });
+
+  return false;
+}
+
 $(document).ready(function () {
 	$('#logout_item').click(OnLogout);
 
   onConfigRead();
+
   onStatusRead();
+  setInterval(function() {
+    onStatusRead();
+  }, 2000)
 });
 
 </script>

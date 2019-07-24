@@ -11,6 +11,41 @@ local config  = require('app/conf')
 
 local exports = {}
 
+
+-- Get the MAC address of localhost 
+local function getMacAddress()
+    local faces = os.networkInterfaces()
+    if (faces == nil) then
+    	return
+    end
+
+	local list = {}
+    for k, v in pairs(faces) do
+        if (k == 'lo') then
+            goto continue
+        end
+
+        for _, item in ipairs(v) do
+            if (item.family == 'inet') then
+                list[#list + 1] = item
+            end
+        end
+
+        ::continue::
+    end
+
+    if (#list <= 0) then
+    	return
+    end
+
+    local item = list[1]
+    if (not item.mac) then
+    	return
+    end
+
+    return util.bin2hex(item.mac)
+end
+
 -- 检查客户端是否已经登录 
 local function checkLogin(request, response)
     local pathname = request.uri.pathname or ''
@@ -80,11 +115,40 @@ local function apiAuthSelf(request, response)
 end
 
 local function apiStatusRead(request, response)
-    local status = {
+    local system = {
         version = process.version,
-        mac = "..."
+        mac = getMacAddress()
     }
+
+    local nodePath = app.nodePath
+
+    local update = fs.readFileSync(nodePath .. '/update/status.json')
+    local firmware = fs.readFileSync(nodePath .. '/update/update.json')
+
+    local status = {
+        system = system,
+        update = json.parse(update),
+        firmware = json.parse(firmware)
+    }
+
     response:json(status)
+end
+
+local function apiStatusWrite(request, response)
+    local query = request.body
+
+    if (query.update) then
+        os.execute("lpm update &")
+
+    elseif (query.upgrade) then
+        os.execute("lpm upgrade " .. query.upgrade .. " &")
+
+    elseif (query.reboot) then
+        os.execute("reboot " .. query.reboot .. " &")
+    end
+
+    local result = { code = 0 }
+    response:json(result)
 end
 
 local function apiConfigRead(request, response)
@@ -104,12 +168,12 @@ local function apiConfigWrite(request, response)
         ip = query.ip,
         netmask = query.netmask,
         router = query.router,
-        dns_server = query.dns_server,
+        dns = query.dns,
     }
 
     config.load("network", function(ret, profile)
         profile:set("static", data)
-        profile:set("update", "true")
+        profile:set("updated", Date.now())
         profile:commit()
 
         local result = { code = 0 }
@@ -136,7 +200,8 @@ local function setConfigRoutes(app)
     app:post('/config/write', apiConfigWrite);
     app:get('/config/read', apiConfigRead);
 
-    app:get('/status/read', apiStatusRead);
+    app:get('/system/read', apiStatusRead);
+    app:post('/system/write', apiStatusWrite);
 end
 
 function exports.start(port)
