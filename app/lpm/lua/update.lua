@@ -255,6 +255,10 @@ local function downloadFirmwareInfo(options, callback)
 		printInfo('Size: ' .. tostring(packageInfo.size))
 		printInfo('MD5: ' ..  tostring(packageInfo.md5sum))
 
+		if (packageInfo.description) then
+			printInfo('Description: ' .. tostring(packageInfo.description))
+		end
+
 		local filename 	= path.join(basePath, 'update.json')
 		local filedata  = fs.readFileSync(filename)
 		if (filedata == response.body) then
