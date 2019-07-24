@@ -5,6 +5,7 @@ local fs 	= require('fs')
 local path 	= require('path')
 local json  = require('json')
 local wot   = require('wot')
+local rpc   = require('app/rpc')
 local express = require('express')
 local ssdpServer = require('ssdp/server')
 
@@ -60,7 +61,34 @@ end
 
 function exports.start()
     exports.ssdp()
+    exports.rpc()
     exports.gateway()
+end
+
+function exports.rpc()
+    local handler = {}
+    local name = 'wotc'
+
+    handler.test = function(...)
+        console.log('test', ...)
+        return 0, 'test result'
+    end
+
+    handler.publish = function(topic, data, qos)
+        -- TODO: 
+    end
+
+    local server = rpc.server(name, handler, function(event, ...)
+        console.log(event, ...)
+    end)
+end
+
+function exports.test()
+    local name = 'wotc'
+    local data = { 100, 200 }
+    rpc.call(name, 'test', data, function(err, result)
+        print('test', err, result)
+    end)
 end
 
 app(exports)

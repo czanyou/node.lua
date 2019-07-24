@@ -6,7 +6,7 @@ local fs 	= require('fs')
 local path 	= require('path')
 local json  = require('json')
 local wot   = require('wot')
-local Promise  = require('wot/promise')
+local Promise = require('wot/promise')
 local exec  = require('child_process').exec
 
 local exports = {}

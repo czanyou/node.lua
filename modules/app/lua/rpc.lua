@@ -132,14 +132,6 @@ function exports.call(url, method, params, callback)
     end)
 end
 
--- send PUBLISH message to mqtt.app
--- @param topic {String} target MQTT topic name
--- @param data {String} MQTT publish message payload
--- @param callback {Function} - function(err, result)
-function exports.publish(topic, data, qos, callback)
-    exports.call(MQTT_PORT, 'publish', { topic, data, qos }, callback)
-end
-
 -- create a IPC server
 -- @param port IPC server listen port
 -- @param callback {Function} - function(event, data)
@@ -215,7 +207,7 @@ function exports.server(port, handler, callback)
 
     if (tonumber(port) == nil) then
         local filename = BASE_SOCKET_NAME .. port .. ".sock"
-         os.remove(filename)
+        os.remove(filename)
 
         server:listen(filename)
         print("RPC server listening at " .. filename)
@@ -228,6 +220,14 @@ function exports.server(port, handler, callback)
     end
 
     return server
+end
+
+-- send PUBLISH message to mqtt.app
+-- @param topic {String} target MQTT topic name
+-- @param data {String} MQTT publish message payload
+-- @param callback {Function} - function(err, result)
+function exports.publish(topic, data, qos, callback)
+    exports.call(MQTT_PORT, 'publish', { topic, data, qos }, callback)
 end
 
 -- Subscribe a topic with mqtt.app

@@ -33,40 +33,11 @@ Node.lua 系统更新程序
 
 这个脚本用于自动在线更新 Node.lua SDK, 包含可执行主程序, 核心库, 以及核心应用等等
 
-0：初始状态
-1：固件更新成功
-2：没有足够的 Flash 空间
-3：没有足够的内存空间
-4：下载过程中连接断开
-5：固件验证失败
-6：不支持的固件类型
-7：无效的 URI
-8：固件更新失败
-9：不支持的通信协议
-
 --]]
 
 -------------------------------------------------------------------------------
 
 local exports = {}
-
--- Update states
-local STATE_INIT = 0
-local STATE_DOWNLOADING = 1
-local STATE_DOWNLOAD_COMPLETED = 2
-local STATE_UPDATING = 3
-
--- Update result code
-local UPDATE_INIT = 0
-local UPDATE_SUCCESSFULLY = 1
-local UPDATE_NOT_ENOUGH_FLASH = 2
-local UPDATE_NOT_ENOUGH_RAM = 3
-local UPDATE_DISCONNECTED = 4
-local UPDATE_VALIDATION_FAILED = 5
-local UPDATE_UNSUPPORTED_FIRMWARE_TYPE = 6
-local UPDATE_INVALID_URI = 7
-local UPDATE_FAILED = 8
-local UPDATE_UNSUPPORTED_PROTOCOL = 9
 
 -------------------------------------------------------------------------------
 
