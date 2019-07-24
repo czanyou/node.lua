@@ -13,7 +13,6 @@
 #include <unistd.h>
 #endif
 #include <assert.h>
-
 #include "modbus-private.h"
 
 #include "modbus-rtu.h"

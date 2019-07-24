@@ -308,6 +308,10 @@ local function onFirmwareRead(input, webThing)
 
     local base = app.get('base') or '';
     local did = app.get('did') or '';
+
+    if (not base:endsWith('/')) then
+        base = base .. '/'
+    end
     local uri = base .. 'device/firmware/file?did=' .. did;
 
     local rootPath = app.rootPath
@@ -338,7 +342,7 @@ local function onFirmwareUpdate(params)
         gateway.updateTimer = nil;
         console.log('updateTimer');
 
-        os.execute('lpm upgrade > /tmp/upgrade.log &')
+        os.execute('lpm upgrade system> /tmp/upgrade.log &')
     end)
 
     return { code = 0 }

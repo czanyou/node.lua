@@ -89,7 +89,7 @@ local function runningStateindex()
         button.ledSwitch("green","toggle")
 
         local ret = wot.isConnected()
-        if ret == 1 then
+        if ret == true then
             button.ledSwitch("yellow","on")
         else
             button.ledSwitch("yellow","off")

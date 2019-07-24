@@ -55,7 +55,9 @@
       <div class="noborder"><h2>Sign In</h2></div>
       <div class="password-text"><label>You are accessing the management, and need to verify the password.</label></div>
       <div class="noborder" style="min-height: 1px;"></div>
-      <div class="form-group"><input class="form-control" id="login_password" name="password" type="password" placeholder="Enter the admin password" size="32" maxlength="32"/>
+      <div class="form-group">
+        <input class="form-control" name="username" type="hidden" size="32" value="admin"/>
+        <input class="form-control" id="login_password" name="password" type="password" placeholder="Enter the admin password" size="32" maxlength="32"/>
         <div id="login_tip">
           <p v-if="error.empty">Please enter the admin password of the device!</p>
           <p v-if="error.invalid">This password is not correct, please make sure to use the corresponding password of the device.</p>

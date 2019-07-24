@@ -33,31 +33,6 @@ function crc16_calculate(data, len)
     return crc16
 end
 
-local test = {
-    0x31,
-    0x32,
-    0x33,
-    0x34,
-    0x35,
-    0x36,
-    0x02,
-    0x01,
-    0x06,
-    0x0E,
-    0xFF,
-    0x0D,
-    0x06,
-    0x11,
-    0x02,
-    0x02,
-    0x20,
-    0x0A,
-    0x03,
-    0x1A,
-    0x04,
-    0x00,
-    0x00
-}
 
 local function array2string(array, len)
     local ret
@@ -175,7 +150,7 @@ local function uart_recevie_callback()
                         end
                     end
                     sensor_info.rssi = rssi
-
+                    -- console.log(app.bluetoothDevices)
                     app.bluetoothDevices[mac]:sendStream(sensor_info)
                     console.log(sensor_info)
 
@@ -208,8 +183,6 @@ local function uart_recevie_callback()
                 boardcast_analysis(analysis_data)
                 
             elseif (channel == 0x00) then
-                -- console.log("channel = 00")
-                -- console.printBuffer(analysis_data)
                 if (code == 0x0a) then
                     if(size <= 4) then
                         setBluetoothConfig(0x01, "scan=,0D0611")
@@ -269,11 +242,7 @@ local function uart_recevie_callback()
                             
                             rowdata_analysis(analysis_data)
                         end
-                        -- console.log("before")
-                        -- console.printBuffer(ret)
-                        ret = string.sub(ret,pos+size+4,#ret)
-                        -- console.log("after")
-                        -- console.printBuffer(ret)
+                            ret = string.sub(ret,pos+size+4,#ret)
                     else
                         break
                     end
@@ -306,7 +275,6 @@ local function setBluetoothConfig(code, data)
     local seq = math.random(0, 255)
 
     local len = #data + 4
-    console.log(len)
     ret =
         string.char(start) ..
         string.char(channel) ..
@@ -319,7 +287,6 @@ local function setBluetoothConfig(code, data)
         temp[i] = string.byte(ret, i)
     end
     local crc = crc16_calculate(temp, len + 2)
-    console.log(crc)
     ret = ret .. string.char(crc & 0xff) .. string.char(crc >> 8)
 
     fs.writeSync(fd, nil, ret)
@@ -380,9 +347,8 @@ local function createBluetoothThing(options)
     if (flag == 0) then
         flag = 1
         initBluetoothUart()
-        setBluetoothConfig(0x01, "scan=,0D0611")
+        setBluetoothConfig(0x01, "scan=BN5003,0D0611")
         setInterval(100*60, function()
-            console.log("test")
             setBluetoothConfig(0x01, "scan")
         end)
     end

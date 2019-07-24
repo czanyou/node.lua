@@ -12,9 +12,14 @@
   <script src="js/vue.min.js?v=100003"></script>
 	<script src="js/common.js?v=100003"></script>
 	<style>
-    .form-content { padding: 0 16px; max-width: 600px; margin: 0 auto; }
     .header-brand { line-height: 72px; padding: 0 16px; }
-    .form-footer { margin-top: 16px; margin-bottom: 16px; }
+
+    .form-content { padding: 0 16px; max-width: 600px; margin: 0 auto; }
+    .form-content .form-control { min-width: 220px; }
+    .form-content h3 { margin: 24px 0 16px; font-weight: normal; }
+
+    .form-footer { margin-top: 16px; margin-bottom: 16px; padding-bottom: 16px;
+      border-bottom: 1px solid #ddd; }
     .col-form-label { display: inline-block; min-width: 100px; }
 
 	@media screen and (min-width: 480px) {}
@@ -26,8 +31,7 @@
   <header id="header" class="header">
     <div class="header-inner">
       <div class="header-right">
-        <a id="logout_item" href="#logout" style="display: none;">Logout</a>
-        <a id="login_item" href="login.html">Login</a>
+        <a id="logout_item" href="#logout">Logout</a>
       </div>
 
       <label class="header-brand" id="header-brand">Settings</label>
@@ -36,7 +40,7 @@
 
   <div class="form-content">
     <div class="form-header">
-      <h5 class="form-title" id="exampleModalLabel">Network Settings</h5>
+      <h3 class="form-title" id="exampleModalLabel">Network Settings</h3>
     </div>
 
     <div class="form-body">
@@ -77,7 +81,7 @@
     </div>
 
     <div class="form-header">
-      <h5 class="form-title" id="exampleModalLabel">System Status</h5>
+      <h3 class="form-title" id="exampleModalLabel">System Status</h3>
     </div>
 
     <div class="form-body">
@@ -95,7 +99,7 @@
     </div>
 
     <div class="form-header">
-      <h5 class="form-title" id="exampleModalLabel">Frimware Update</h5>
+      <h3 class="form-title" id="exampleModalLabel">Frimware Update</h3>
     </div>
 
     <div class="form-body">
