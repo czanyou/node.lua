@@ -65,16 +65,17 @@ local xcopy = copy_files
 local function getMakeBoard()
     -- 只有 linux 下支持交叉编译
 	local target = fs.readFileSync('build/target') or 'local'
-	return target:trim()
+	target = target:trim()
+	return target
 end
 
 local function getMakeTarget()
 	local board = getMakeBoard()
-	if (board ~= "local") then
-		return board .. "-linux"
+	if (board == "local") then
+		board = arch
 	end
 
-	return arch .. "-" .. platform
+	return board .. "-" .. platform
 end
 
 local function getMakeVersion()
@@ -247,6 +248,9 @@ end
 
 function sdk.buildSDK(target, type)
 	local board = getMakeBoard()
+	if (board == 'local') then
+		board = platform
+	end
 
 	--console.log(util.dirname())
 	local dirname = util.dirname()
@@ -254,7 +258,7 @@ function sdk.buildSDK(target, type)
 	-- build sdk filesystem
 	local filename = path.join(cwd, 'package.json')
 	if (not fs.existsSync(filename)) then
-		filename = path.join(dirname, '..', 'targets', platform, board, 'package.json')
+		filename = path.join(dirname, '..', 'targets', board, 'package.json')
 	end
 
 	print('package.json: ' .. filename)
