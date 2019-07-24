@@ -354,13 +354,13 @@ int main(int argc, char* argv[]) {
 	if (has_script) {
 		res = lnode_dofile(L, filename);
 
-		lnode_call_script(L, "runLoop()", "=(C run)");
-		lnode_call_script(L, "process:emit('exit')\n", "=(C exit)");
-
 	} else if (script <= 1) {
 		lnode_print_version();
 		lnode_print_usage();
 	}
+
+	lnode_call_script(L, "runLoop()", "=(C run)");
+	lnode_call_script(L, "process:emit('exit')\n", "=(C exit)");
 
 	lnode_vm_release(L);
 	return res;

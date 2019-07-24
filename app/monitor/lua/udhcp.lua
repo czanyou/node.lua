@@ -28,8 +28,4 @@ local function onDhcpBound()
     saveConfig(config)
 end
 
-console.log("udhcpc test")
-console.log(os.getenv("ip"))
-console.log(os.getenv("subnet"))
-
 onDhcpBound()

@@ -4,7 +4,6 @@ local wot = require("wot")
 local config  = require('app/conf')
 local app   = require('app')
 
-local settings = require('./config')
 local http = require('./http')
 
 local SYS_CONFIG = 5
