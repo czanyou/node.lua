@@ -1,36 +1,35 @@
+#!/usr/bin/env lnode
+
 local config  = require('app/conf')
-
-
-
 
 local exports = {}
 
-
-local udhcpConfig = {}
-
-
-
-local function dhcpMonitor()
+local function onDhcpBound()
     local profile 
     local function saveConfig(data)  
-        config.load("network",function(ret,profile)
-            profile:set("udhcp",data)
-            profile:set("update","true")
+        config.load("network", function(ret, profile)
+            profile:set("dhcp", data)
+            profile:set("update", "true")
             profile:commit()
         end)
     end
 
+    local config = {}
+    config.ip = os.getenv("ip")
+    config.router = os.getenv("router")
+    config.netmask = os.getenv("subnet")
+    config.broadcast = os.getenv("broadcast")
 
-    udhcpConfig.ip = os.getenv("ip")
-    udhcpConfig.router = os.getenv("router")
-    udhcpConfig.mask = os.getenv("subnet")
-
-    saveConfig(udhcpConfig)
-
+    config.interface  = os.getenv("interface")
+    config.dns = os.getenv("dns")
+    config.domain = os.getenv("domain")
+    config.ntpsrv = os.getenv("ntpsrv")
+    
+    saveConfig(config)
 end
 
 console.log("udhcpc test")
 console.log(os.getenv("ip"))
-
 console.log(os.getenv("subnet"))
-dhcpMonitor()
+
+onDhcpBound()

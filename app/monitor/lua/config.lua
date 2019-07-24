@@ -6,8 +6,6 @@ local json  	= require('json')
 local util 		= require('util')
 local fs    	= require('fs')
 
-local gateway   = require('./gateway')
-
 local TAG 		= 'gateway'
 local HTTP_PORT = 80
 
@@ -236,53 +234,6 @@ function exports.config()
     setConfigRoutes(app);
 
 	app:listen(listenPort)    
-end
-
-function exports.register()
-    --console.log(server)
-    --gateway:expose()
-
-    local gateway = {}
-
-    local url = "http://tour.beaconice.cn/v2/"
-    local client = wot.register(url, gateway)
-    client:on('register', function(ret) 
-        console.log(ret)
-    end)
-
-    setTimeout(1000 * 5, function()
-        
-    end)
-end
-
-function exports.message()
-    --console.log(server)
-    --gateway:expose()
-
-    local url = "http://tour.beaconice.cn/v2/"
-    local client = wot.register(url, gateway)
-    client:on('register', function(ret) 
-        console.log('register', ret)
-
-
-        local message = {
-            type = 'message',
-            did = client.info.did,
-            data = {
-                value = 100
-            }
-        }
-
-        client:sendMessage(message);
-    end)
-
-    client:on('message', function(ret) 
-        console.log('message', ret)
-    end)
-
-    setTimeout(1000 * 5, function()
-
-    end)
 end
 
 return exports

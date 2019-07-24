@@ -3,16 +3,13 @@ local util  = require('util')
 local url 	= require('url')
 local fs 	= require('fs')
 local path 	= require('path')
-local http  = require('http')
 local json  = require('json')
 local wot   = require('wot')
 local express = require('express')
-
 local ssdpServer = require('ssdp/server')
 
 local gateway = require('./gateway')
 local log = require('./log')
-local http  = require('./http')
 
 local exports = {}
 
@@ -61,13 +58,8 @@ function exports.gateway()
     log.init(app.gateway)
 end
 
-function exports.http(...)
-    http.start(...)
-end
-
 function exports.start()
     exports.ssdp()
-    exports.http()
     exports.gateway()
 end
 

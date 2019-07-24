@@ -1,0 +1,23 @@
+#!/bin/ash
+
+error_exit() {
+    echo "udhcpc.script: error: $@" >&2; exit 1
+}
+
+handle_bound() {
+    env > /tmp/dhcp_bound.txt
+    lnode -l monitor/udhcp
+}
+
+handle_deconfig() {
+    env > /tmp/dhcp_decofig.txt
+}
+
+case "$1" in
+    bound|renew)
+        handle_bound ;;
+    deconfig)
+        handle_deconfig ;;
+    nak)
+        error_exit $message ;;
+esac

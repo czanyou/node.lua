@@ -7,12 +7,7 @@ local http  = require('http')
 local json  = require('json')
 local wot   = require('wot')
 local express = require('express')
-
-local httpd  = require('wot/bindings/http')
-local ssdpServer = require('ssdp/server')
-
-local gateway = require('./gateway')
-local log = require('./log')
+local config  = require('app/conf')
 
 local exports = {}
 
@@ -84,6 +79,44 @@ local function apiAuthSelf(request, response)
     response:json(userInfo or { code = 401, error = 'Unauthorized' })
 end
 
+local function apiStatusRead(request, response)
+    local status = {
+        version = process.version,
+        mac = "..."
+    }
+    response:json(status)
+end
+
+local function apiConfigRead(request, response)
+    config.load("network", function(ret, profile)
+        local userConfig = profile:get('static')
+        console.log(userConfig)
+
+        response:json(userConfig)
+    end)
+end
+
+local function apiConfigWrite(request, response)
+    local query = request.body
+
+    local data = {
+        ip_mode = query.ip_mode,
+        ip = query.ip,
+        netmask = query.netmask,
+        router = query.router,
+        dns_server = query.dns_server,
+    }
+
+    config.load("network", function(ret, profile)
+        profile:set("static", data)
+        profile:set("update", "true")
+        profile:commit()
+
+        local result = { code = 0 }
+        response:json(result)
+    end)
+end
+
 local function setConfigRoutes(app) 
     -- checkLogin
     function app:onRequest(request, response)
@@ -99,6 +132,11 @@ local function setConfigRoutes(app)
     app:post('/auth/login', apiAuthLogin);
     app:post('/auth/logout', apiAuthLogout);
     app:get('/auth/self', apiAuthSelf);
+
+    app:post('/config/write', apiConfigWrite);
+    app:get('/config/read', apiConfigRead);
+
+    app:get('/status/read', apiStatusRead);
 end
 
 function exports.start(port)

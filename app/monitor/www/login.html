@@ -1,52 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>Gateway</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <link rel="shortcut icon" href="/favicon.ico?v=100003" type="image/x-icon">
-  <link rel="stylesheet" href="css/bootstrap.min.css?v=100003" />
-  <link rel="stylesheet" href="css/font-awesome.min.css?v=100003" />
   <link rel="stylesheet" href="css/style.css?v=100003"/>
   <script src="js/polyfill.js?v=100003"></script>
   <script src="js/jquery.min.js?v=100003"></script>
-  <script src="js/popper.min.js?v=100003"></script>
-	<script src="js/bootstrap.min.js?v=100003"></script>
-	<script src="js/vue.min.js?v=100003"></script>
-	<script src="js/common.js?v=100003"></script>
+  <script src="js/vue.min.js?v=100003"></script>
+  <script src="js/common.js?v=100003"></script>
   <style>
-	@media screen and (max-width: 800px) {
-		#loginForm h2 { font-size: 180%; color: #5CADDB; padding: 32px 0 16px 0; }
+  @media screen and (max-width: 800px) {
+    #loginForm h2 { font-size: 180%; color: #5CADDB; padding: 32px 0 16px 0; }
 
-		fieldset.block input.text { border-color: #d5d5d5; padding: 8px 5px;
-			width: 240px; max-width: 240px; }
-	}
+    fieldset.block input.text { border-color: #d5d5d5; padding: 8px 5px;
+      width: 240px; max-width: 240px; }
+  }
 
-	@media screen and (min-width: 800px) {
-		.login-wrapper { position: relative; }
+  @media screen and (min-width: 800px) {
+    .login-wrapper { position: relative; }
 
-		fieldset.block { padding: 30px 30px; border: none; margin: 0; }
-		fieldset.block input.text { border-color: #d5d5d5; padding: 6px 5px; width: 100%;
-			border: none; border-bottom: 1px solid #ccc; background: none; margin-top: 16px; }
-		fieldset.block input.text:hover { border-bottom: 1px solid #777; }
-		fieldset.block input.text:focus { border-bottom: 1px solid #111; outline: none; }
-		fieldset.block #labels { display: block; text-align: left; font-weight: bold;
-			color: #333; margin: 5px 0; }
-		fieldset.block select { width: 270px; max-width: 270px; }
-		fieldset.block .buttons { text-align: left; }
+    fieldset.block { padding: 30px 30px; border: none; margin: 0; }
+    fieldset.block input.text { border-color: #d5d5d5; padding: 6px 5px; width: 100%;
+      border: none; border-bottom: 1px solid #ccc; background: none; margin-top: 16px; }
+    fieldset.block input.text:hover { border-bottom: 1px solid #777; }
+    fieldset.block input.text:focus { border-bottom: 1px solid #111; outline: none; }
+    fieldset.block #labels { display: block; text-align: left; font-weight: bold;
+      color: #333; margin: 5px 0; }
+    fieldset.block select { width: 270px; max-width: 270px; }
+    fieldset.block .buttons { text-align: left; }
 
-		#loginForm { margin: 0 auto; width: 400px; border: 1px solid #e5e5e5;
-		    border-radius: 3px; box-shadow: 0 0 10px #eee; background: #fff; }
-		#loginForm h2 { font-size: 180%; color: #5CADDB; padding: 10px 0; }
+    #loginForm { margin: 0 auto; width: 400px; border: 1px solid #e5e5e5;
+        border-radius: 3px; box-shadow: 0 0 10px #eee; background: #fff; }
+    #loginForm h2 { font-size: 180%; color: #5CADDB; padding: 10px 0; }
 
-		.login-form-height { height: 100px; font-family: inherit;
-			background-image: linear-gradient(top, #eee, #f8f8f9); }
-		#login_tip { padding: 5px 8px; line-height: 20px; color: #c85305; }
-	}
+    .login-form-height { height: 100px; font-family: inherit;
+      background-image: linear-gradient(top, #eee, #f8f8f9); }
+    #login_tip { padding: 5px 8px; line-height: 20px; color: #c85305; }
+  }
 
-	.header-right .btn-group { margin-top: 10px; margin-right: 10px; }
+  .header-right .btn-group { margin-top: 10px; margin-right: 10px; }
 
-	</style>
+  </style>
 </head>
 <body class="login-body">
 <div id="app">
@@ -85,73 +81,73 @@
 var app = new Vue({
   el: '#app',
   data: {
-		message: 'Gateway',
-		error: {
-			empty: false,
-			invalid: false
-		},
-		showForgotTip: false
+    message: 'Gateway',
+    error: {
+      empty: false,
+      invalid: false
+    },
+    showForgotTip: false
   }
 })
 
 function OnUserLogin(username, password, callback) {
-	var url = "/account/login";
+  var url = "/auth/login";
 
-	var data = {
-		username: username,
-		password: password
-	}
+  var data = {
+    username: username,
+    password: password
+  }
 
-	console.log(url, data)
-	$.post(url, data, function(result) {
-		if (result.error) {
-			callback(result)
+  console.log(url, data)
+  $.post(url, data, function(result) {
+    if (result.error) {
+      callback(result)
 
-		} else {
-			callback(null, result)
-		}
-	});
+    } else {
+      callback(null, result)
+    }
+  });
 }
 
 function OnFormSubmit() {
-	var form     = document.forms[0];
-	var username = 'admin'
-	var password = form.password.value;
+  var form     = document.forms[0];
+  var username = 'admin'
+  var password = form.password.value;
 
-	var loginTip = $("#login_tip")
+  var loginTip = $("#login_tip")
 
-	if (!password) {
-		loginTip.html('Please enter the admin password of the device!').show();
-		return false;
-	}
+  if (!password) {
+    loginTip.html('Please enter the admin password of the device!').show();
+    return false;
+  }
 
-	loginTip.html('Logining').show();
-	form.password.disabled = true;
-	form.login_button.disabled = true;
+  loginTip.html('Logining').show();
+  form.password.disabled = true;
+  form.login_button.disabled = true;
 
-	OnUserLogin(username, password, function(err, result) {
-		if (err) {
-			loginTip.html('This password is not correct, please make sure to use the corresponding password of the device.').show();
-			form.password.disabled = false;
-			form.login_button.disabled = false;
+  OnUserLogin(username, password, function(err, result) {
+    if (err) {
+      loginTip.html('This password is not correct, please make sure to use the corresponding password of the device.').show();
+      form.password.disabled = false;
+      form.login_button.disabled = false;
 
-		} else {
-			location.href = "/?v=" + VISION_VERSION;
-		}
-	})
+    } else {
+      location.href = "/?v=" + VISION_VERSION;
+    }
+  })
 
-	return false;
+  return false;
 }
 
 $(document).ready(function() {
-	if (window.top.location != window.self.location) {
-			window.top.location = window.self.location;
-			return
-	}
+  if (window.top.location != window.self.location) {
+      window.top.location = window.self.location;
+      return
+  }
 
-	$("#forgot-text").click(function() {
-		app.showForgotTip = !app.showForgotTip;
-	})
+  $("#forgot-text").click(function() {
+    app.showForgotTip = !app.showForgotTip;
+  })
 });
 
 </script>

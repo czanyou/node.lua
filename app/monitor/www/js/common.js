@@ -119,7 +119,7 @@ function OnLogout() {
 		return
 	}
 
-	var url = "/account/logout";
+	var url = "/auth/logout";
 	$.post(url, {}, function(result) {
 		location.href = 'login.html'
 	});

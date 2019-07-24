@@ -1,7 +1,26 @@
 ﻿/** layout.css */
 
-html.en body { font-family: 'Segoe UI', Tahoma, Verdana, Arial; }
-html.zh-cn body { font-family: "Microsoft YaHei", "simsun", "Segoe UI", "Verdana", "Arial"; }
+body { font-size: 16px; margin: 0; padding: 0; }
+
+html[lang=en] body { font-family: 'Segoe UI', Tahoma, Verdana, Arial; }
+html[lang=zh-cn] body { font-family: "Microsoft YaHei", "simsun", "Segoe UI", "Verdana", "Arial"; }
+
+.form-control { border: 1px solid #ddd; font-size: 100%; line-height: 200%; 
+	padding: 0 8px; }
+
+select.form-control { padding: 6px 8px; }
+
+
+.form-group { margin-top: 8px; }
+
+.mt-3 { margin-top: 12px; }
+
+.btn { border: 1px solid #ddd; font-size: 100%; padding: 0 16px; line-height: 200%; 
+	background: #eee; border-radius: 3px; }
+.btn:hover { background: #fff; }
+
+.btn-primary { background: #36f; color: #fff; }
+.btn-primary:hover { background: #69f; color: #fff; }
 
 #header { background: white; }
 #header .header-inner { min-width: 200px; height: 72px; 
