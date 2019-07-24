@@ -1,8 +1,7 @@
 local conf      = require('app/conf')
-local ext       = require('app/utils')
 local json      = require('json')
 local fs        = require('fs')
-local utils     = require('util')
+local util     = require('util')
 
 local exports 	= {}
 
@@ -53,7 +52,7 @@ function exports.getMacAddress()
     	return
     end
 
-    return utils.bin2hex(item.mac)
+    return util.bin2hex(item.mac)
 end
 
 function exports.getInterfaces(family)
@@ -71,7 +70,7 @@ function exports.getInterfaces(family)
 
             if (item.family == family) then
                 list[#list + 1] = item
-                item.mac = utils.bin2hex(item.mac)
+                item.mac = util.bin2hex(item.mac)
                 item.name = name
             end
         end
@@ -88,7 +87,6 @@ function exports.getDeviceInfo()
     end
 
     deviceInfo = {}
-    local target = ext.getSystemTarget()
 
     local profile = exports.getSystemInfo()
     local device = profile.device or {}
@@ -107,7 +105,6 @@ function exports.getDeviceInfo()
         deviceInfo.udn          = 'uuid:' .. deviceInfo.serialNumber
     end
 
-    deviceInfo.target       = target
     deviceInfo.version      = process.version
     deviceInfo.arch         = os.arch()
 

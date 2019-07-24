@@ -648,8 +648,13 @@ end
 
 -- 返回当前系统目标平台名称, 一般是开发板的型号或 PC 操作系统的名称
 -- 因为不同平台的可执行二进制文件格式是不一样的, 所有必须严格匹配
-function exports.target()
-	return ext.getSystemTarget()
+function exports.getSystemTarget()
+    local platform = os.platform()
+    local arch = os.arch()
+
+    local target = (arch .. "-" .. platform)
+    target = target:trim()
+    return target
 end
 
 -- 创建文件锁, 防止同时运行多个进程

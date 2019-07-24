@@ -28,11 +28,6 @@ test("test formatFloat", function ()
 
 end)
 
-
-test("test getSystemTarget", function ()
-	console.log('getSystemTarget', utils.getSystemTarget())
-end)
-
 test("test table", function ()
 	local cols = {8, 6, 4}
 	local table = utils.table(cols)

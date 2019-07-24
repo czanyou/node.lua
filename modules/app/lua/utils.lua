@@ -62,15 +62,6 @@ function exports.noop()
 
 end
 
-function exports.getSystemTarget()
-    local platform = os.platform()
-    local arch = os.arch()
-
-    local target = (arch .. "-" .. platform)
-    target = target:trim()
-    return target
-end
-
 -- ┌┬ └┴┐─┘│
 
 function exports.table(cols)

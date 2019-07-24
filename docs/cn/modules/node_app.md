@@ -223,9 +223,9 @@ rpc.call('foo', 'bar', 100)
 
 ```
 
-## app.target
+## app.getSystemTarget
 
-     app.target()
+     app.getSystemTarget()
 
 返回当前目标板的名称
 

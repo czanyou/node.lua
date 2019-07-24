@@ -23,9 +23,7 @@ local miniz     = require('miniz')
 local path      = require('path')
 local url       = require('url')
 local app       = require('app')
-
 local conf   	= require('app/conf')
-local ext   	= require('app/utils')
 
 --[[
 Node.lua 系统更新程序
@@ -40,6 +38,10 @@ Node.lua 系统更新程序
 local exports = {}
 
 -------------------------------------------------------------------------------
+
+local function noop
+
+end
 
 local function getNodePath()
 	return conf.rootPath
@@ -408,7 +410,7 @@ end
 -- checkInfo 会更新的属性:
 --  - faileds 更新失败的文件数
 function BundleUpdater:updateAllFiles(callback)
-	callback = callback or ext.noop
+	callback = callback or noop
 
 	local rootPath = self.rootPath
 	local files = self.list or {}
@@ -441,7 +443,7 @@ function BundleUpdater:updateAllFiles(callback)
 end
 
 function BundleUpdater:parsePackageInfo(callback)
-	callback = callback or ext.noop
+	callback = callback or noop
 
 	local reader = self.reader
 	if (not reader) then
@@ -485,7 +487,7 @@ end
 --  - faileds
 -- 
 function BundleUpdater:upgradeSystemPackage(callback)
-	callback = callback or ext.noop
+	callback = callback or noop
 
 	local filename 	= self.filename
 	if (not filename) or (filename == '') then
@@ -508,7 +510,7 @@ function BundleUpdater:upgradeSystemPackage(callback)
 
     -- 验证安装目标平台是否一致
     if (packageInfo.target) then
-		local target = ext.getSystemTarget()
+		local target = app.getSystemTarget()
 		if (target ~= packageInfo.target) then
 			callback('Mismatched target: local is `' .. target .. 
 				'`, but the update file is `' .. tostring(packageInfo.target) .. '`')

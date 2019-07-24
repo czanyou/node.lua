@@ -2,12 +2,13 @@ local fs        = require('fs')
 local json      = require('json')
 local path      = require('path')
 local url       = require('url')
-local utils     = require('util')
+local util      = require('util')
 
 local request  	= require('http/request')
 local app   	= require('app')
 local conf   	= require('app/conf')
-local ext   	= require('app/utils')
+local rpc       = require('app/rpc')
+
 local upgrade 	= require('./upgrade')
 
 -------------------------------------------------------------------------------
@@ -107,7 +108,7 @@ end
 --  - options.packageInfo
 -- @param {function} callback
 local function downloadFirmwarePackage(options, callback)
-	callback = callback or ext.noop
+	callback = callback or function() end
 	local printInfo = options.printInfo or function() end
 
 	local nodePath  = getNodePath()
@@ -127,7 +128,7 @@ local function downloadFirmwarePackage(options, callback)
 	if (packageInfo and packageInfo.size) then
 		local filedata = fs.readFileSync(filename)
 		if (filedata and #filedata == packageInfo.size) then
-			local md5sum = utils.bin2hex(utils.md5(filedata))
+			local md5sum = util.bin2hex(util.md5(filedata))
 			--print('md5sum', md5sum)
 
 			if (md5sum == packageInfo.md5sum) then
@@ -144,7 +145,7 @@ local function downloadFirmwarePackage(options, callback)
 		return
 	end
 
-	local target 	= ext.getSystemTarget()
+	local target 	= app.getSystemTarget()
 	local version   = process.version or ''
 
 	--console.log(filename)
@@ -163,7 +164,7 @@ local function downloadFirmwarePackage(options, callback)
 		if (percent == 0 and response) then
 			local contentLength = tonumber(response.headers['Content-Length']) or 0
 
-			printInfo('Package Size: (' .. ext.formatBytes(contentLength) .. ').')
+			printInfo('Package Size: (' .. app.formatBytes(contentLength) .. ').')
 		end
 
 		if (percent <= 100) then
@@ -178,7 +179,7 @@ local function downloadFirmwarePackage(options, callback)
 		console.write('\rDownloading: Done        \r\n')
 
 		local filedata = response.body
-		local md5sum = utils.bin2hex(utils.md5(filedata))
+		local md5sum = util.bin2hex(util.md5(filedata))
 		if (md5sum ~= packageInfo.md5sum) then
 			callback({ code = UPDATE_VALIDATION_FAILED, error = 'Invalid firmware md5sum' })
 			return

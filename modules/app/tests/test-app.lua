@@ -9,7 +9,7 @@ test("test all", function ()
 
 	console.log('rootPath', app.rootPath)
 	console.log('appName', app.appName())
-	console.log('target', app.target())
+	console.log('target', app.getSystemTarget())
 end)
 
 test("test lock", function ()
