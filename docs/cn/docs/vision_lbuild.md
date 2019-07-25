@@ -22,7 +22,4 @@ lbuild 是 Node.lua SDK 打包工具
 - app 应用程序
 - lib 扩展 Lua 脚本
 
-### upload
-
-上传打包的文件
 

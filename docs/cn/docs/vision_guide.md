@@ -61,7 +61,7 @@ $ sudo apt install -y cmake
 $ make build
 
 # 安装开发环境, 包括 Node.lua 的可执行文件和目录
-$ make install
+$ sudo make install
 
 # 执行 lpm 命令, 检查安装是否成功
 $ lpm
@@ -92,27 +92,19 @@ $ lpm
 
 将构建后的文件打包成 SDK 包
 
-- patch
-
-只打包 app 等部分文件
-
-- config
-
-通过 CMake 生成编译脚本或项目文件, 但不执行编译
-
-- deconfig
+- load
 
 使用默认的脚本配置项目
 
 ```
-make deconfig t=<BOARD_TYPE>
+make load board=<BOARD_TYPE>
 ```
 
 `BOARD_TYPE` 表示要设置的开发板名称, 可以修改 config.mk 为不同的开发板设置不同的编译选项.
 
 - local
 
-相当于执行: `make deconfig t=local`
+相当于执行: `make load board=local`
 
 ## 编写脚本
 

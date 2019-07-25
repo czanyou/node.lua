@@ -1,7 +1,7 @@
 # Node.lua
 
 > - Author: ChengZhen (anyou@qq.com)
-> - Version: 4.0
+> - Version: 4.2
 
 ## Overview
 
