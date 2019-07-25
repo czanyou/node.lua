@@ -66,11 +66,21 @@ function exports.rpc()
 
     handler.test = function(...)
         console.log('test', ...)
-        return 0, 'test result'
+        return 0
     end
 
-    handler.publish = function(topic, data, qos)
-        -- TODO: 
+    handler.firmware = function(handler, data, qos)
+        console.log('firmware', data)
+
+        local gateway = app.gateway
+        if (gateway) then
+            gateway:emitEvent('firmware', data)
+        end
+    end
+
+    handler.log = function(handler, message)
+        console.warn(message)
+        return 0
     end
 
     local server = rpc.server(name, handler, function(event, ...)
@@ -80,9 +90,9 @@ end
 
 function exports.test()
     local name = 'wotc'
-    local data = { 100, 200 }
-    rpc.call(name, 'test', data, function(err, result)
-        print('test', err, result)
+    local params = {{ at = 100, level = 200 }}
+    rpc.call(name, 'firmware', params, function(err, result)
+        print('firmware', err, result)
     end)
 end
 

@@ -53,6 +53,14 @@ local function getNodePath()
 	return conf.rootPath
 end
 
+local function sendUpdateEvent(status)
+    local name = 'wotc'
+    local params = {status}
+    rpc.call(name, 'firmware', params, function(err, result)
+        print('firmware', err, result)
+    end)
+end
+
 -------------------------------------------------------------------------------
 -- download
 
@@ -87,6 +95,8 @@ local function saveUpdateStatus(status)
 	if (output and output ~= filedata) then
 		fs.writeFileSync(filename, output)
 	end
+
+	sendUpdateEvent(status)
 end
 
 local function readUpdateStatus()
