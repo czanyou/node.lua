@@ -1,12 +1,27 @@
 local util = require('util')
 local app   = require('app')
+local wot   = require('wot')
 local rpc   = require('app/rpc')
 local ssdpServer = require('ssdp/server')
 
 local client = require('./client')
 local log = require('./log')
+local led = require('./led')
 
 local exports = {}
+
+function exports.led()
+    setInterval(500, function()
+        led.setLEDStatus("green", "toggle")
+
+        local ret = wot.isConnected()
+        if ret then
+            led.setLEDStatus("yellow", "on")
+        else
+            led.setLEDStatus("yellow", "off")
+        end
+    end)
+end
 
 function exports.config()
     console.log('gateway', app.get('gateway'))
@@ -55,6 +70,7 @@ function exports.gateway()
 end
 
 function exports.start()
+    exports.led()
     exports.ssdp()
     exports.rpc()
     exports.gateway()

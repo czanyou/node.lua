@@ -163,20 +163,17 @@ exports.table 			= ext.table
 -------------------------------------------------------------------------------
 -- profile
 
-local function loadProfile()
-    if (exports._profile) then
-        return exports._profile
+local function loadDefaultProfile()
+    if (exports._defaultProfile) then
+        return exports._defaultProfile
     end
 
-    local configPath = path.join(getAppPath(), exports.appName(), 'config/config.json')
-    -- console.log(configPath)
-
-	exports._profile = conf.Profile:new(configPath)
-    return exports._profile
+	exports._defaultProfile = conf('default')
+    return exports._defaultProfile
 end
 
-local function loadUserProfile()
-    if (exports._userProfile) then
+local function loadUserProfile(reload)
+    if (exports._userProfile) and (not reload) then
         return exports._userProfile
     end
 
@@ -195,7 +192,7 @@ function exports.unset(key)
         return
     end
 
-	local profile = loadProfile()
+	local profile = loadUserProfile(true)
 	if (profile) and (profile:get(key)) then
 		profile:set(key, nil)
 		profile:commit()
@@ -215,7 +212,7 @@ function exports.get(key)
         return value
     end
 
-	profile = loadProfile()
+	profile = loadDefaultProfile()
     if (profile) then
 		return profile:get(key)
 	end
@@ -229,7 +226,7 @@ function exports.set(key, value)
 		return
 	end
 
-	local profile = loadUserProfile()
+	local profile = loadUserProfile(true)
     if (not profile) then
         return
     end
@@ -267,7 +264,7 @@ end
 -------------------------------------------------------------------------------
 -- methods
 
-function updateProcessList(add, remove)
+local function updateProcessList(add, remove)
     local configPath = path.join(getNodePath(), 'conf/process.conf')
     local fileData = fs.readFileSync(configPath) or ''
     local tokens = fileData:split(',') or {}
@@ -597,7 +594,7 @@ function exports.restart(name, ...)
             print('Restarting ' .. name .. '...')
         end
 
-        exports.kill(name, ...)
+        exports.kill(name)
         exports.start(name, ...)
         print("done")
     end

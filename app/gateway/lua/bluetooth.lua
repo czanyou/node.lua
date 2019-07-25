@@ -5,7 +5,6 @@ local uv = require("luv")
 local wot = require("wot")
 local modbus = require("lmodbus")
 local math = require("math")
-local button = require("./button")
 local json = require("json")
 local exports = {}
 
@@ -75,7 +74,7 @@ local function uart_recevie_callback()
         local mac = string.format("%02x%02x%02x%02x%02x%02x", data[1], data[2], data[3], data[4], data[5], data[6])
         console.log(mac, rssi)
         for  k, v in ipairs(white_list) do
-            if(string.find(v,mac) ~= nill)
+            if(string.find(v,mac) ~= nil)
             then
                 flag = 1
                 break

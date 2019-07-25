@@ -1,6 +1,6 @@
 {
-	"description": "lnode configuration interface application",
-	"title": "lnodeCI",
+	"description": "Node.lua configuration interface application",
+	"title": "lnode config interface",
 	"name": "lci",
 	"version": "2.0.0"
 }

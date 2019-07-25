@@ -17,8 +17,10 @@ local function setLEDStatus(color, state)
 
     if state == "on" then
         value = 0
+
     elseif state == "off" then
         value = 1
+
     elseif state == "toggle" then
         local result = fs.readSync(fd)
         if (tonumber(string.match(result, "(%d)\n")) == 1) then
@@ -29,7 +31,7 @@ local function setLEDStatus(color, state)
     else
         return
     end
-    
+
     fs.write(fd, nil, value, function(err, written)
         fs.closeSync(fd)
     end)

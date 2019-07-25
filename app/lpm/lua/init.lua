@@ -53,12 +53,7 @@ local function getProfile(key)
 		key = key:sub(pos + 1)
 	end
 
-	if (module) then
-		local configPath = path.join(app.rootPath, 'app', module, 'config/config.json')
-		return conf.Profile:new(configPath), key
-	else
-		return conf('user'), key
-	end
+	return conf(module or 'user'), key
 end
 
 -- 打印指定名称的配置参数项的值
@@ -99,7 +94,11 @@ Aliases: c, conf
 end
 
 function config.list(name)
-	local profile = conf('user')
+	if (not name) then
+		name = 'user'
+	end
+
+	local profile = conf(name)
 
 	print(profile.filename .. ': ')
 	console.log(profile.settings)
@@ -120,7 +119,7 @@ function config.set(key, value)
 		profile:commit()
 	end
 
-	print('set `' .. tostring(key) .. '` = `' .. tostring(value) .. '`')
+	print('set `' .. tostring(name) .. '` = `' .. tostring(value) .. '`')
 end
 
 -- 删除指定名称的配置参数项的值
@@ -131,9 +130,9 @@ function config.unset(key)
 		return
 	end
 
-	local profile = conf('user')
-	if (profile:get(key)) then
-		profile:set(key, nil)
+	local profile, name = getProfile(key)
+	if (profile:get(name) ~= nil) then
+		profile:set(name, nil)
 		profile:commit()
 	end
 

@@ -1,8 +1,3 @@
-local util  = require('util')
-local url   = require('url')
-local fs    = require('fs')
-local path  = require('path')
-local json  = require('json')
 local wot   = require('wot')
 local modbus = require('lmodbus')
 
@@ -149,7 +144,7 @@ local function readFromModbus(webThing)
                 -- console.log('mread', register, quantity);
                 -- console.printBuffer(result)
                 local value = getPropertyValue(property, data)
-                if (value ~= null) then
+                if (value ~= nil) then
                     property.value = value
 
                     -- console.log(name, 'value', value);
@@ -291,19 +286,6 @@ local function initModbusProperties(options, webThing)
             webThing:sendStream(result)
         end
     end)
-end
-
-local function processReadAction(input, webThing)
-    local properties = webThing.modbus.properties;
-    local result = {}
-
-    for name, property in pairs(options.properties) do
-        result[name] = property.value or 0
-    end
-
-    console.log(properties, result);
-
-    return result
 end
 
 -- Create a Modbus thing

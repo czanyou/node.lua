@@ -15,6 +15,16 @@ ln -s /usr/local/lnode/bin/lpm /usr/sbin/lpm
 rm -rf /usr/local/bin/
 
 # 
+echo "# telnet password"
+echo "passwd"
+echo ""
+echo "# Device ID (MAC)"
 echo "lpm set did xxxxxx"
+echo ""
+echo "# Web config password"
 echo "lpm set password xxxxxx"
+echo ""
+echo "# Remote config password"
 echo "echo 'xxxxxx' > /usr/local/lnode/conf/lnode.key"
+
+

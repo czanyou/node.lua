@@ -9,7 +9,7 @@ local exports = {}
 local function checkButtonStatus(interval_ms)
     local TIMEOUT_NETWORK_RESET = 4
     local TIMEOUT_SYSTEM_RESET = 10
-    local DEFAULT_IP = "192.168.1.12"
+    local DEFAULT_IP = "192.168.8.12"
 
     local pressTime = 0
     local networkReset = 0
@@ -103,7 +103,7 @@ local function checkNetworkstatus(interval_ms)
             local tokens = config.dns:split(' ')
             local data = ''
             for index, name in ipairs(tokens) do
-                data = data .. 'nameserver ' .. name .. "\r\n"
+                data = data .. 'nameserver ' .. name .. "\n"
             end
 
             console.log(data)

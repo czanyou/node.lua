@@ -1,9 +1,4 @@
 local app   = require('app')
-local util  = require('util')
-local url 	= require('url')
-local fs 	= require('fs')
-local path 	= require('path')
-local http  = require('http')
 local json  = require('json')
 local wot   = require('wot')
 
@@ -13,10 +8,8 @@ local rtmp  = require('./rtmp')
 local rtsp  = require('./rtsp')
 local modbus = require('./modbus')
 local camera  = require('./camera')
-local log = require('./log')
 local bluetooth = require('./bluetooth')
 local button = require('./button')
-local test  = require('./test')
 
 local exports = {}
 
@@ -71,11 +64,22 @@ local function createHttpServer()
     end)
 end
 
+local function runningStateindex()
+    setInterval(1000, function()
+        local ret = bluetooth:dataStatus() or modbus:dataStatus()
+        if ret == 1 then
+            button.setLEDStatus("blue", "on")
+        else
+            button.setLEDStatus("blue", "off")
+        end
+    end)
+end
+
 -- ////////////////////////////////////////////////////////////////////////////
 --
 
 function exports.play(rtmpUrl)
-    local urlString = rtmpUrl or 'rtmp://iot.beaconice.cn:1935/live/test'
+    local urlString = rtmpUrl or 'rtmp://iot.beaconice.cn/live/test'
     local rtmpClient = rtmp.open('test', urlString, { isPlay = true })
 
     rtmpClient:on('startStreaming', function()
@@ -84,35 +88,10 @@ function exports.play(rtmpUrl)
     end)
 end
 
-local function runningStateindex()
-    setInterval(1000,function()
-        button.ledSwitch("green","toggle")
-
-        local ret = wot.isConnected()
-        if ret == true then
-            button.ledSwitch("yellow","on")
-        else
-            button.ledSwitch("yellow","off")
-        end
-
-        ret = bluetooth:dataStatus() or modbus:dataStatus()
-        -- console.log(ret)
-        if ret == 1 then
-            button.ledSwitch("blue","on")
-        else
-            button.ledSwitch("blue","off")
-        end
-    
-    end)
-end
-
 function exports.start()
-
-    console.log("start")
-    
     exports.rtmp()
     exports.rtsp()
-    exports.cameras() 
+    exports.cameras()
     exports.modbus()
     exports.bluetooth()
     exports.http()
@@ -143,7 +122,6 @@ function exports.bluetooth()
     local things = {}
     for index, options in ipairs(list) do
         console.log(index);
-        
 
         options.mqtt = mqtt
         options.secret = secret
@@ -157,10 +135,12 @@ function exports.bluetooth()
     app.bluetoothDevices = things
 end
 
+-- start RTMP push client
 function exports.rtmp()
     rtmp.startRtmpClient()
 end
 
+-- start RTSP client
 function exports.rtsp()
     -- gateway.cameras
     local gateway = app.get('gateway')
@@ -169,11 +149,11 @@ function exports.rtsp()
         return
     end
 
-    -- options
-    -- - `did` Device ID
-    -- - `url` RTSP URL
-    -- - `username` Username
-    -- - `password` Password
+    -- RTSP camera options
+    -- `options.did` Device ID
+    -- `options.url` RTSP URL
+    -- `options.username` Username
+    -- `options.password` Password
     for index, options in ipairs(cameras) do
         rtsp.startRtspClient(rtmp, options)
     end
@@ -183,54 +163,27 @@ function exports.config()
     console.log('gateway', app.get('gateway'))
 end
 
-function exports.gateway()
-    gateway.app = app
-    
-    -- options
-    -- - did
-    -- - mqtt
-    -- - secret
-    local options = {}
-    options.did = app.get('did')
-    options.mqtt = app.get('mqtt')
-    options.secret = app.get('secret')
-    app.gateway = gateway.createThing(options)
-
-    log.init(app.gateway)
-end
-
-function exports.test()
-    test.test()
-end
-
 function exports.modbus()
     modbus.app = app
 
     local gateway = app.get('gateway')
     local list = gateway and gateway.modbus
-    
-    
-    local did = app.get('did')
-    local secret = app.get('secret')
-    local mqtt = app.get('mqtt')
-
-    local peripherals = app.get('peripherals') or {}
-    console.log(peripherals);
     if (not list) then
         return
     end
 
-    console.log(list);
+    local did = app.get('did')
+    local secret = app.get('secret')
+    local mqtt = app.get('mqtt')
+    local peripherals = app.get('peripherals') or {}
+
     local things = {}
     for index, options in ipairs(list) do
-        console.log(index);
-        console.log(options);
         options.gateway = did
         options.mqtt = mqtt
         options.secret = secret
 
         local config = peripherals[options.did]
-        
         if (config) then
             options.properties = config.p
             options.modbus = config.f
@@ -246,22 +199,10 @@ function exports.modbus()
         things[options.did] = thing
     end
 
-    app.modbusDevices = thing
+    app.modbusDevices = things
 end
 
-function exports.server()
-    gateway.app = app
-
-    local options = {}
-    options.did = app.get('did')
-    options.mqtt = app.get('mqtt')
-    options.secret = app.get('secret')
-    app.gateway = gateway.createThing(options)
-
-    createHttpServer()
-end
-
--- 注册 WoT 客户端
+-- Create camera things
 function exports.cameras()
     camera.rtmp = rtmp
     camera.app = app
@@ -274,6 +215,10 @@ function exports.cameras()
         return
     end
 
+    -- Camera thing options
+    -- `options.did` Camera Device ID
+    -- `options.mqtt` MQTT URL
+    -- `options.secret` register secret
     local things = {}
     for index, options in ipairs(cameras) do
         options.mqtt = mqtt
@@ -287,6 +232,7 @@ function exports.cameras()
 
         things[options.did] = thing
     end
+
     app.cameras = things
 end
 

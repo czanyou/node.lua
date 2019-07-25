@@ -1,19 +1,8 @@
-local app   = require('app')
 local rtmp  = require('rtmp')
 local util  = require('util')
-local url 	= require('url')
 local fs 	= require('fs')
-local path 	= require('path')
-local core 	= require('core')
-local rtsp  = require('rtsp')
-local http  = require('http')
-local json  = require('json')
-local wot   = require('wot')
 local request = require('http/request')
 local client  = require('rtmp/client')
-local Promise = require('wot/promise')
-
-local TAG = 'media.rtmp'
 
 local RTMPClient = client.RTMPClient
 

@@ -307,7 +307,7 @@ local function startRtspClient(rtmp, options)
     onRtspTimer()
 
     rtspSession.timeoutTimer = setInterval(1000 * 3600, function()
-        closeRtspClient(did, 'rtsp reset')
+        closeRtspClient(did)
     end)
 
     exports.rtspSessions[did] = rtspSession
