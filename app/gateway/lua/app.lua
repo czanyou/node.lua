@@ -23,7 +23,7 @@ local exports = {}
 -- ////////////////////////////////////////////////////////////////////////////
 -- Web Server
 
-function getThingsStatus()
+local function getThingsStatus()
     local wotClient = wot.client
     local things = wotClient and wotClient.things
     local list = {}
@@ -52,7 +52,7 @@ function getThingsStatus()
     return list
 end
 
-function createHttpServer()
+local function createHttpServer()
     local server = httpd.createServer()
     app.httpServer = server
 
@@ -106,8 +106,6 @@ local function runningStateindex()
     end)
 end
 
-
-
 function exports.start()
 
     console.log("start")
@@ -117,16 +115,13 @@ function exports.start()
     exports.cameras() 
     exports.modbus()
     exports.bluetooth()
-    exports.button()
+    exports.http()
 
-    createHttpServer()
     runningStateindex()
 end
 
-function exports.button()
-    console.log("app check button")
-    button.checkButton(1000)
-
+function exports.http()
+    createHttpServer()
 end
 
 function exports.bluetooth()

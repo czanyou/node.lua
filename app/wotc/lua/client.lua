@@ -10,10 +10,10 @@ local exec  = require('child_process').exec
 
 local exports = {}
 
-local gateway = {}
+local client = {}
 
-gateway.services = {}
-gateway.unlock = false
+client.services = {}
+client.unlock = false
 
 local cpuInfo = {
     usedTime = 0,
@@ -21,22 +21,24 @@ local cpuInfo = {
 }
 
 local SHELL_RUN_TIMEOUT = 2000
-local isWindows = (os.platform() == 'win32')
 
 local function shellGetEnvironment()
     return { path = process.cwd() }
 end
 
-local function shellExecute(cmd, callback, timeout)
-	local result = {}
+local function shellExecute(cmd, callback)
 
+    local isWindows = (os.platform() == 'win32')
     if (not isWindows) then
         -- 重定向 stderr(2) 输出到 stdout(1)
         cmd = cmd .. " 2>&1"
     end
 
     -- [[
-    local options = { timeout = (timeout or SHELL_RUN_TIMEOUT), env = process.env }
+    local options = {
+        timeout = SHELL_RUN_TIMEOUT,
+        env = process.env
+    }
 
     exec(cmd, options, function(err, stdout, stderr)
         console.log(cmd, err, stdout, stderr)
@@ -45,10 +47,16 @@ local function shellExecute(cmd, callback, timeout)
             stdout = stderr
         end
 
-        if (err and err.message) then
-            stdout = err.message .. ': \n\n' .. stdout
+        -- error
+        if (err) then
+            if (err.message) then
+                err = err.message
+            end
+
+            stdout = err .. ': \n\n' .. stdout
         end
 
+        local result = {}
         result.output = stdout
         result.environment = shellGetEnvironment()
 
@@ -60,19 +68,15 @@ end
 local function shellChdir(dir, callback)
     local result = {}
 
-    -- console.log('dir', dir)
-
     if (type(dir) == 'string') and (#dir > 0) then
         local cwd = process.cwd()
         local newPath = dir
         if (not dir:startsWith('/')) then
             newPath = path.join(cwd, dir)
         end
-        --console.log(dir, newPath)
 
         if newPath and (newPath ~= cwd) then
             local ret, err = process.chdir(newPath)
-            --console.log(dir, newPath, ret, err)
             if (not ret) then
                 result.output = err or 'Unable to change directory'
             end
@@ -125,7 +129,7 @@ local function getCpuUsage()
     return cpuUserPercent
 end
 
--- Get the MAC address of localhost 
+-- Get the MAC address of localhost
 local function getMacAddress()
     local faces = os.networkInterfaces()
     if (faces == nil) then
@@ -159,119 +163,136 @@ local function getMacAddress()
     return util.bin2hex(item.mac)
 end
 
--- Read device information
-local function onDeviceRead(input, webThing)
-    local device = {}
-    device.cpuUsage = getCpuUsage()
-    device.currentTime = os.time()
-    device.deviceType = 'gateway'
-    device.errorCode = 0
-    device.firmwareVersion = '1.0'
-    device.hardwareVersion = '1.0'
-    device.manufacturer = 'TDK'
-    device.memoryFree = math.floor(os.freemem() / 1024)
-    device.memoryTotal = math.floor(os.totalmem() / 1024)
-    device.modelNumber = 'DT02'
-    device.powerSources = 0
-    device.powerVoltage = 12000
-    device.serialNumber = getMacAddress()
+local function onDeviceActions(input, webThing)
 
-    return device
-end
+    -- Read device information
+    local function onDeviceRead(input, webThing)
+        local device = {}
+        device.cpuUsage    = getCpuUsage()
+        device.currentTime = os.time()
+        device.deviceType  = 'gateway'
+        device.errorCode   = 0
+        device.firmwareVersion = '1.0'
+        device.hardwareVersion = '1.0'
+        device.manufacturer = 'CD3'
+        device.memoryFree   = math.floor(os.freemem() / 1024)
+        device.memoryTotal  = math.floor(os.totalmem() / 1024)
+        device.modelNumber  = 'DT02'
+        device.powerSources = 0
+        device.powerVoltage = 12000
+        device.serialNumber = getMacAddress()
 
--- Reboot the device
--- @param input {object}
---  - delay {number} 大于 0 表示延时重启，小于等于 0 表示取消重启
-local function onDeviceReboot(input, webThing)
-    local delay = tonumber(input and input.delay)
-
-    if (gateway.rebootTimer) then
-        clearTimeout(gateway.rebootTimer)
+        return device
     end
 
-    if (delay and delay > 0) then
-        if (delay < 5) then
-            delay = 5
+    -- Reboot the device
+    -- @param input {object}
+    --  - delay {number} 大于 0 表示延时重启，小于等于 0 表示取消重启
+    local function onDeviceReboot(input, webThing)
+        local delay = tonumber(input and input.delay)
+
+        local message = nil
+        if (client.rebootTimer) then
+            clearTimeout(client.rebootTimer)
+            message = 'Reboot is canceled'
         end
 
-        gateway.rebootTimer = setTimeout(1000 * delay, function()
-            gateway.rebootTimer = nil;
-            console.log('reboot timeout');
-            process:exit(0);
-        end)
-        return { code = 0, delay = delay, message = 'Device will reboot' }
+        if (not delay) then
+            message = '`delay` parameter is null'
 
-    else 
-        return { code = 0, delay = delay, message = 'reboot is cancel' }
-    end
-end
+        elseif (delay > 0) then
+            if (delay < 3) then
+                delay = 3
 
--- Factory Reset
-local function onDeviceReset(input, webThing)
-    local type = tonumber(input and input.type)
-    return { code = 0, type = type, message = 'device reset' }
-end
+            elseif (delay > 60) then
+                delay = 60
+            end
 
--- Set Date & Time
-local function onDeviceWrite(input, webThing)
-    -- console.log('onDeviceWrite');
-    if (input) then
-        -- currentTime
-        -- UTCOffset
-        -- timezone
-    end
+            client.rebootTimer = setTimeout(1000 * delay, function()
+                client.rebootTimer = nil;
+                console.log('reboot timeout');
+                console.log(os.execute('reboot'));
+            end)
 
-    return { code = 0, message = 'write' }
-end
+            message = 'The system will reboot in ' .. delay .. ' seconds'
 
-local function onDeviceUnlock(input, webThing)
-    local data = fs.readFileSync(app.nodePath .. '/conf/lnode.key')
-    if (not data) or (not input) then
-        gateway.unlock = false
-        return { code = -1, message = 'bad key or input' }
+        else
+            if (not message) then
+                message = 'Nothing is canceled'
+            end
+        end
+
+        return { code = 0, delay = delay, message = message }
     end
 
-    data = data:trim()
+    -- Factory Reset
+    local function onDeviceReset(input, webThing)
+        local type = tonumber(input and input.type)
 
-    local did = app.get('did')
-    local hash = util.md5string(did .. ':' .. data)
-    console.log(did, data, hash, input)
-    if (hash ~= input) then
-        gateway.unlock = false
-        return { code = -1, message = 'bad input' }
+        local message = 'device reset not implemented'
+        return { code = 0, type = type, message = message }
     end
 
-    gateway.unlock = true
-    return { code = 0, message = 'unlock' }
-end
+    -- Set Date & Time
+    local function onDeviceWrite(input, webThing)
+        -- console.log('onDeviceWrite');
+        if (input) then
+            -- currentTime
+            -- UTCOffset
+            -- timezone
+        end
 
-local function onDeviceExecute(input, webThing)
-    -- console.log('onDeviceExecute', input);
-    if (not gateway.unlock) then
-        return { code = -1, message = 'locked' }
+        local message = 'device write not implemented'
+        return { code = 0, message = message }
     end
 
-    local promise = Promise.new()
+    local function onDeviceUnlock(input, webThing)
+        if (not input) then
+            return { code = -1, message = 'Input is null' }
+        end
 
-    if (input and input:startsWith('cd ')) then
-        local dir = input:sub(4)
-        shellChdir(dir, function(result)
-            -- console.log('shellChdir', dir, result)
-            promise:resolve(result)
-        end)
+        local data = fs.readFileSync(app.nodePath .. '/conf/lnode.key')
+        if (not data) then
+            client.unlock = false
+            return { code = -1, message = 'Unlock key is null' }
+        end
 
-    else
-        shellExecute(input, function(result)
-            -- console.log('shellExecute', input, result)
-            promise:resolve(result)
-        end)
+        data = data:trim()
+
+        local did = app.get('did')
+        local hash = util.md5string(did .. ':' .. data)
+        console.log(did, data, hash, input)
+        if (hash ~= input) then
+            client.unlock = false
+            return { code = -1, message = 'Bad input parameter' }
+        end
+
+        client.unlock = true
+        return { code = 0, message = 'Device unlocked' }
     end
 
-    return promise
-end
+    local function onDeviceExecute(input, webThing)
+        -- console.log('onDeviceExecute', input);
+        if (not client.unlock) then
+            return { code = -1, message = 'Device is locked' }
+        end
 
-local function onDeviceActions(input, webThing)
-    -- console.log('onDeviceActions', input);
+        local promise = Promise.new()
+
+        if (input and input:startsWith('cd ')) then
+            local dir = input:sub(4)
+            shellChdir(dir, function(result)
+                promise:resolve(result)
+            end)
+
+        else
+            shellExecute(input, function(result)
+                promise:resolve(result)
+            end)
+        end
+
+        return promise
+    end
 
     if (not input) then
         return { code = 400, error = 'Unsupported methods' }
@@ -302,52 +323,50 @@ local function onDeviceActions(input, webThing)
     end
 end
 
-local function onFirmwareRead(input, webThing)
-    console.error('onFirmwareRead');
-
-    local base = app.get('base') or '';
-    local did = app.get('did') or '';
-
-    if (not base:endsWith('/')) then
-        base = base .. '/'
-    end
-    local uri = base .. 'device/firmware/file?did=' .. did;
-
-    local rootPath = app.rootPath
-    local filename = path.join(rootPath, 'update/status.json')
-    local filedata = fs.readFileSync(filename)
-    local status = {}
-    if (filedata) then
-        status = json.parse(filedata) or {}
-    end
-
-    local firmware = gateway.services.firmware or {}
-    firmware.uri = uri
-    firmware.state = status.state or 0
-    firmware.result = status.result or 0
-    firmware.protocol = 2 -- HTTP
-    firmware.delivery = 0 -- PULL
-    return firmware
-end
-
-local function onFirmwareUpdate(params, webThing)
-    console.warn('onFirmwareUpdate');
-
-    if (gateway.updateTimer) then
-        clearTimeout(gateway.updateTimer)
-    end
-
-    gateway.updateTimer = setTimeout(1000 * 10, function()
-        gateway.updateTimer = nil;
-        console.log('updateTimer');
-
-        os.execute('lpm upgrade system> /tmp/upgrade.log &')
-    end)
-
-    return { code = 0 }
-end
-
 local function onFirmwareActions(input, webThing)
+
+    local function onFirmwareRead(input, webThing)
+        local base = app.get('base') or '';
+        local did = app.get('did') or '';
+
+        if (not base:endsWith('/')) then
+            base = base .. '/'
+        end
+        local uri = base .. 'device/firmware/file?did=' .. did;
+
+        local rootPath = app.rootPath
+        local filename = path.join(rootPath, 'update/status.json')
+        local filedata = fs.readFileSync(filename)
+        local status = {}
+        if (filedata) then
+            status = json.parse(filedata) or {}
+        end
+
+        local firmware = client.services.firmware or {}
+        firmware.uri = uri
+        firmware.state = status.state or 0
+        firmware.result = status.result or 0
+        firmware.protocol = 2 -- HTTP
+        firmware.delivery = 0 -- PULL
+        return firmware
+    end
+
+    local function onFirmwareUpdate(params, webThing)
+
+        if (client.updateTimer) then
+            clearTimeout(client.updateTimer)
+        end
+
+        client.updateTimer = setTimeout(1000 * 10, function()
+            client.updateTimer = nil;
+            console.warn('firmware.update');
+
+            os.execute('lpm upgrade system> /tmp/upgrade.log &')
+        end)
+
+        return { code = 0 }
+    end
+
     if (not input) then
         return { code = 400, error = 'Unsupported methods' }
 
@@ -362,27 +381,30 @@ local function onFirmwareActions(input, webThing)
     end
 end
 
-local function onConfigRead(input, webThing)
-    gateway.services.config = app.get('gateway');
-    local config = gateway.services.config or {}
-
-    return config
-end
-
-local function onConfigWrite(config, webThing)
-    if (not gateway.services.config) then
-        gateway.services.config = {}
-    end
-
-    if (config) then
-        gateway.services.config = config
-        app.set('gateway', config)
-    end
-
-    return { code = 0 }
-end
-
 local function onConfigActions(input, webThing)
+
+    local function onConfigRead(input, webThing)
+        client.services.config = app.get('gateway');
+        local config = client.services.config or {}
+
+        return config
+    end
+
+    local function onConfigWrite(config, webThing)
+        if (not client.services.config) then
+            client.services.config = {}
+        end
+
+        if (config) then
+            console.warn('config.write');
+
+            client.services.config = config
+            app.set('gateway', config)
+        end
+
+        return { code = 0 }
+    end
+
     if (not input) then
         return { code = 400, error = 'Unsupported methods' }
 
@@ -391,32 +413,31 @@ local function onConfigActions(input, webThing)
 
     elseif (input.write) then
         return onConfigWrite(input.write, webThing);
-        
+
     else
         return { code = 400, error = 'Unsupported methods' }
     end
 end
 
-local function onLogRead(input, webThing)
-    local result = {
-        enable = true,
-        level = 1,
-        columns = {"at", "level", "message"},
-        data = {{
-            0, 0, "message"
-        }}
-    }
-    return result
-end
-
-local function onLogWrite(input, webThing)
-    if (input) then
-        
-    end
-    return { code = 0 }
-end
-
 local function onLogActions(input, webThing)
+
+    local function onLogRead(input, webThing)
+        local result = {
+            enable = true,
+            level = 1,
+            columns = {"at", "level", "message"},
+            data = {{
+                0, 0, "message"
+            }}
+        }
+        return result
+    end
+
+    local function onLogWrite(input, webThing)
+
+        return { code = 0 }
+    end
+
     if (not input) then
         return { code = 400, error = 'Unsupported methods' }
 
@@ -425,13 +446,13 @@ local function onLogActions(input, webThing)
 
     elseif (input.write) then
         return onLogWrite(input.write, webThing);
-        
+
     else
         return { code = 400, error = 'Unsupported methods' }
     end
 end
 
-local function createMediaGatewayThing(options)
+local function createThing(options)
     if (not options) then
         return nil, 'need options'
 
@@ -442,11 +463,9 @@ local function createMediaGatewayThing(options)
         return nil, 'need did option'
     end
 
-    local clientId = 'gateway_' .. options.did
-
-    local gateway = { 
-        id = options.did, 
-        clientId = clientId,
+    local gateway = {
+        id = options.did,
+        clientId = options.clientId,
         url = options.mqtt,
         name = 'gateway',
         actions = {},
@@ -495,7 +514,7 @@ local function createMediaGatewayThing(options)
 
         if (not webThing.started) then
             webThing.started = true;
-            console.info('Gateway service restart.')  
+            console.info('Gateway service restart.')
         end
     end)
 
@@ -509,7 +528,7 @@ local function createMediaGatewayThing(options)
     return webThing
 end
 
-exports.createThing = createMediaGatewayThing
+exports.createThing = createThing
 exports.getMacAddress = getMacAddress
 
 return exports

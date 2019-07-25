@@ -1,15 +1,9 @@
+local util = require('util')
 local app   = require('app')
-local util  = require('util')
-local url 	= require('url')
-local fs 	= require('fs')
-local path 	= require('path')
-local json  = require('json')
-local wot   = require('wot')
 local rpc   = require('app/rpc')
-local express = require('express')
 local ssdpServer = require('ssdp/server')
 
-local gateway = require('./gateway')
+local client = require('./client')
 local log = require('./log')
 
 local exports = {}
@@ -20,7 +14,7 @@ end
 
 function exports.ssdp()
     local version = process.version
-    local did = app.get('did') or gateway.getMacAddress();
+    local did = app.get('did') or client.getMacAddress();
     local model = 'DT02/' .. version
     local ssdpSig = "lnode/" .. version .. ", ssdp/" .. ssdpServer.version
     
@@ -48,15 +42,16 @@ function exports.gateway()
     options.did = app.get('did')
     options.mqtt = app.get('mqtt')
     options.secret = app.get('secret')
+    options.clientId = 'wotc_' .. options.did
 
-    local gateway, error = gateway.createThing(options)
+    local webThing, error = client.createThing(options)
     if (error) then
         print('Create thing error:', error)
         return
     end
 
-    app.gateway = gateway
-    log.init(app.gateway)
+    app.gateway = webThing
+    log.init(webThing)
 end
 
 function exports.start()
@@ -89,6 +84,13 @@ function exports.test()
     rpc.call(name, 'test', data, function(err, result)
         print('test', err, result)
     end)
+end
+
+function exports.key(key, did)
+    did = did or app.get('did')
+    key = key or '123456'
+    local hash = did .. ':' .. key
+    print(hash, util.md5string(hash))
 end
 
 app(exports)
