@@ -118,11 +118,11 @@ function exports.bluetooth()
     end
     console.log('start bluetooth')
     console.log(list)
-
+     
     local things = {}
     for index, options in ipairs(list) do
         console.log(index);
-
+        options.clientId = "lnode-" .. did
         options.mqtt = mqtt
         options.secret = secret
 

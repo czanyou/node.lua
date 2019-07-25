@@ -315,8 +315,10 @@ local function createBluetoothThing(options)
     elseif (not options.did) then
         return nil, "need did option"
     end
+
     table.insert(white_list, options.did)
     local bluetooth = {
+        clientId = options.clientId,
         id = options.did,
         url = options.mqtt,
         name = options.name or "bluetooth",
