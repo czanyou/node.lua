@@ -542,14 +542,8 @@ os.setpriority        = uv.os_setpriority
 os.uname              = uv.os_uname -- machine, release, sysname, version
 os.gettimeofday       = uv.gettimeofday
 
-os.printAllHandles        = uv.print_all_handles
-os.printActiveHandles     = uv.print_active_handles
-
-if (not uv.os_setenv) then
-    local env = require('env')
-    os.setenv = env.set or noop
-    os.unsetenv = env.unset or noop
-end
+os.printAllHandles    = uv.print_all_handles
+os.printActiveHandles = uv.print_active_handles
 
 -------------------------------------------------------------------------------
 

@@ -101,7 +101,7 @@ function config.list(name)
 	local profile = conf(name)
 
 	print(profile.filename .. ': ')
-	console.log(profile.settings)
+	console.printr(profile.settings)
 end
 
 -- 设置指定名称的配置参数项的值
@@ -136,7 +136,7 @@ function config.unset(key)
 		profile:commit()
 	end
 
-	print('clears `' .. tostring(key) .. '`')
+	print('unset `' .. tostring(name) .. '`')
 end
 
 function exports.config(action, ...)
@@ -297,7 +297,7 @@ function exports.scan(timeout, serviceType)
 
 	local scanCount = 0
 	local scanTimer = nil
-	local scanMaxCount = timeout or 10
+	local scanMaxCount = tonumber(timeout) or 10
 
 	scanTimer = setInterval(500, function()
 		ssdpClient:search(serviceType)
@@ -461,9 +461,8 @@ ${string}Application Commands:${normal}
 
 ${string}Update Commands:${normal}
 
-- update            ${braces}Retrieve new lists and packages of applications${normal}
-- upgrade           ${braces}Perform an system upgrade${normal}
-
+- update            ${braces}Retrieve new packages of applications${normal}
+- upgrade system    ${braces}Perform an system upgrade${normal}
 
 ${string}Other Commands:${normal}
 

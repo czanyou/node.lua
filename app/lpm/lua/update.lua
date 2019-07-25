@@ -12,6 +12,14 @@ local rpc       = require('app/rpc')
 local upgrade 	= require('./upgrade')
 
 -------------------------------------------------------------------------------
+
+local exports = {}
+
+local function getNodePath()
+	return conf.rootPath
+end
+
+-------------------------------------------------------------------------------
 --[[
 
 0：初始状态
@@ -45,20 +53,71 @@ local UPDATE_INVALID_URI = 7
 local UPDATE_FAILED = 8
 local UPDATE_UNSUPPORTED_PROTOCOL = 9
 
--------------------------------------------------------------------------------
+local function getUpdateResultString(result)
+	local titles = {
+		'init', 'successfully', 'not enough flash', 'not enough ram', 'disconnected',
+		'validation failed', 'unsupported firmware type', 'invalid uri', 'failed', 
+		'unsupported protocol'
+	}
 
-local exports = {}
+	return titles[result] or result
+end
 
-local function getNodePath()
-	return conf.rootPath
+local function getUpdateStateString(state)
+	local states = {
+		'init', 'downloading', 'download completed', 'updating'
+	}
+
+	return states[state] or state
 end
 
 local function sendUpdateEvent(status)
     local name = 'wotc'
-    local params = {status}
+    local params = { status }
     rpc.call(name, 'firmware', params, function(err, result)
-        print('firmware', err, result)
+        -- print('firmware', err, result)
     end)
+end
+
+local function saveUpdateStatus(status)
+	if (not status) then
+		return
+	end
+
+	local nodePath = getNodePath()
+	local basePath = path.join(nodePath, 'update')
+	local ret, err = fs.mkdirpSync(basePath)
+	if (err) then
+		print(err)
+		return
+	end
+
+	status.updated = Date.now()
+
+	local filename = path.join(basePath, 'status.json')
+	local filedata = fs.readFileSync(filename)
+	local output = json.stringify(status)
+	if (output and output ~= filedata) then
+		fs.writeFileSync(filename, output)
+	end
+
+	sendUpdateEvent(status)
+end
+
+local function readUpdateStatus()
+	local nodePath = getNodePath()
+	local filename = path.join(nodePath, 'update/status.json')
+	local filedata = fs.readFileSync(filename)
+	if (filedata) then
+		return json.parse(filedata)
+	end
+end
+
+local function printUpgradeStatus()
+	local status = readUpdateStatus()
+	if (status) then
+		console.printr(status)
+	end
 end
 
 -------------------------------------------------------------------------------
@@ -78,35 +137,6 @@ local function parseVersion(version)
 	return (parseVersionNumber(tokens[1]) * 10000 * 10000) 
 		 + (parseVersionNumber(tokens[2]) * 10000) 
 		 + (parseVersionNumber(tokens[3]))
-end
-
-local function saveUpdateStatus(status)
-	local nodePath = getNodePath()
-	local basePath = path.join(nodePath, 'update')
-	local ret, err = fs.mkdirpSync(basePath)
-	if (err) then
-		print(err)
-		return
-	end
-
-	local filename = path.join(basePath, 'status.json')
-	local filedata = fs.readFileSync(filename)
-	local output = json.stringify(status)
-	if (output and output ~= filedata) then
-		fs.writeFileSync(filename, output)
-	end
-
-	sendUpdateEvent(status)
-end
-
-local function readUpdateStatus()
-	local nodePath = getNodePath()
-	local basePath = path.join(nodePath, 'update')
-	local filename = path.join(basePath, 'status.json')
-	local filedata = fs.readFileSync(filename)
-	if (filedata) then
-		return json.parse(filedata)
-	end
 end
 
 --
@@ -394,7 +424,7 @@ local function updateFirmwareInfo(callback)
 			if (err) then
 				-- error
 				if (err.code) then
-					print("Code: " .. tostring(err.code))
+					print("Error code: " .. tostring(err.code))
 				end
 	
 				if (err.error) then
@@ -403,7 +433,7 @@ local function updateFirmwareInfo(callback)
 					console.log('Error: ', err)
 				end
 			
-				status.result = err.result or 8
+				status.result = err.result or UPDATE_FAILED
 
 			else
 				-- version
@@ -420,7 +450,6 @@ local function updateFirmwareInfo(callback)
 	options.printInfo = function(...) print(...) end
 	
 	downloadFirmwareFile(options, callback)
-
 end
 
 local function installFirmwareFile(filename, callback)
@@ -443,8 +472,8 @@ local function installFirmwareFile(filename, callback)
 
 	-- console.log(source, rootPath)
 	-- console.log("Upgrade path: " .. nodePath, rootPath)
-	status = { state = 0, result = 0 }
 	status.state = STATE_UPDATING -- 3：正在更新
+	status.result = UPDATE_INIT
 	saveUpdateStatus(status)
 
 	upgrade.install(filename, function(err, message)
@@ -454,7 +483,7 @@ local function installFirmwareFile(filename, callback)
 			status.result = UPDATE_SUCCESSFULLY -- 1：固件更新成功
 		end
 
-		status.state = 0
+		status.state = STATE_INIT
 		saveUpdateStatus(status)
 
 		if (callback) then 
@@ -471,7 +500,7 @@ local function upgradeFirmwareFile(callback)
 
 		if (err) then
 			if (err.code) then
-				print("Code: " .. tostring(err.code))
+				print("Error code: " .. tostring(err.code))
 			end
 
 			if (err.error) then
@@ -480,7 +509,7 @@ local function upgradeFirmwareFile(callback)
 				console.log('Error: ', err)
 			end
 
-			status.result = 8
+			status.result = UPDATE_FAILED
 			if (err.result) then
 				status.result = err.result
 			end
@@ -506,59 +535,8 @@ local function upgradeFirmwareFile(callback)
 	end)
 end
 
-local function printUpgradeStatus()
-	local status = readUpdateStatus()
-	if (status) then
-		console.printr(status)
-	end
-end
-
-local function switchFirmwareFile()
-	local rootPath = app.rootPath;
-	local nodePath = conf.rootPath;
-
-	print('Root path:' .. rootPath)
-	print('Node path:' ..  nodePath)
-
-	if (rootPath == nodePath) then
-		print('Error: The same path')
-		return
-	end
-
-	if (not fs.existsSync(rootPath .. '/bin')) then
-		print('Error: Root path not exists ')
-		return
-	end
-
-	-- Check that the link has been established
-	local realPath = fs.readlinkSync(nodePath .. '/bin')
-	if (realPath) then
-		print('Real path:' .. realPath)
-		if (rootPath .. '/bin' == realPath) then
-			print('Skip: The same path')
-			return
-		end
-	end
-
-	-- create a new link
-	local cmdline = 'rm -rf ' .. nodePath .. '/bin'
-	print("Remove: " .. cmdline);
-	os.execute(cmdline);
-
-	cmdline = 'ln -s ' .. rootPath .. '/bin ' .. nodePath .. '/bin'
-	print("Link: " .. cmdline);
-	os.execute(cmdline);
-end
-
 -------------------------------------------------------------------------------
 --
-
-local function test()
-	local binPath = '/usr/local/lnode/v4.2.210/bin'
-	local cmdline = binPath .. '/lnode -d -l lpm/switch > /tmp/switch.log'
-	console.log(cmdline)
-	os.execute(cmdline)
-end
 
 -- Download update files only
 function exports.update(callback)
@@ -575,14 +553,8 @@ function exports.upgrade(applet)
 	elseif (applet == 'status') then
 		printUpgradeStatus()
 
-	elseif (applet == 'switch') then
-		switchFirmwareFile()
-
 	elseif (applet == 'clean') then
 		upgrade.clean(process.version)
-
-	elseif (applet == 'test') then
-		test()
 
 	else
 		printUpgradeStatus()
