@@ -23,6 +23,7 @@ meta.version     = "1.0.0"
 meta.description = "Simplified HTTP client."
 meta.tags        = { "request", "http", "client" }
 
+local fs    = require('fs')
 local http  = require('http')
 local url   = require('url')
 local timer = require('timer')
@@ -288,7 +289,7 @@ function exports.request(urlString, options, callback)
 
     local request = nil
 
-    local timeout = options.timeout or 1000 * 20
+    local timeout = options.timeout or 20000
     local timeoutTimer = nil
 
     timeoutTimer = setTimeout(timeout, function()

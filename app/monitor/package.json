@@ -1,8 +1,0 @@
-{
-	"depends": [],
-	"description": "lnode configuration interface application",
-	"title": "lci",
-	"name": "monitor",
-	"tags": ["settings", "config"],
-	"version": "2.0.0"
-}

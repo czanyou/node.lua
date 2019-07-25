@@ -251,6 +251,8 @@ end
 
 function ExposedThing:readAllProperties()
     local names = {}
+    local instance = self.instance
+    
     for name, property in pairs(instance.properties) do
         names[#names + 1] = name
     end
@@ -498,7 +500,7 @@ function ThingClient:processWriteAction(request, topic)
     end
 
     local properties = request.data and request.data.write;
-    local ret = thing:writeMultipleProperties(properties)
+    local count = thing:writeMultipleProperties(properties)
     local response = {
         did = request.did,
         mid = request.mid,
@@ -521,7 +523,7 @@ function ThingClient:processInvokeAction(name, input, request)
     -- check name
     if (not name) then
         local err = { code = 400, error = 'Invalid action name' }
-        return thingClient:sendResult(nil, err, request)
+        return self:sendResult(nil, err, request)
     end
 
     -- console.log('processInvokeAction', name, input, request, self.things)

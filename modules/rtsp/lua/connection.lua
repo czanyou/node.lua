@@ -452,7 +452,7 @@ function RtspConnection:processNotImplementedRequest(request)
 end
 
 function RtspConnection:processResponse(response)
-	pprint('response', response.statusCode, response.statusMessage)
+	console.log('response', response.statusCode, response.statusMessage)
 end
 
 function RtspConnection:processRtspPacket(packet)

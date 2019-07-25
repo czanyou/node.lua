@@ -1,6 +1,4 @@
-local path = require("path")
 local fs = require("fs")
-local wot = require("wot")
 local config  = require('app/conf')
 local app = require('app')
 
@@ -17,18 +15,18 @@ local function checkButtonStatus(interval_ms)
     local networkReset = 0
     local systemReset = 0
 
-    function onNetworkReset()
+    local function onNetworkReset()
         console.log("network reset")
         local cmd = 'ifconfig eth0 ' .. DEFAULT_IP
         console.log(cmd)
         os.execute(cmd)
     end
 
-    function onSystemReset()
+    local function onSystemReset()
         console.log("system reset")
 
     end
-    
+
     setInterval(interval_ms, function()
         local filename = "/sys/class/gpio/gpio62/value"
         local filedata, err = fs.readFileSync(filename)
@@ -125,7 +123,7 @@ local function checkNetworkstatus(interval_ms)
             if (updated ~= configUpdated and staticConfig) then
                 if (staticConfig.ip_mode == "dhcp") then
                     applyNetworkConfig(dhcpConfig)
-                    
+
                 else
                     applyNetworkConfig(staticConfig)
                 end
@@ -145,7 +143,7 @@ function exports.http(...)
     http.start(...)
 end
 
-function exports.button(...)
+function exports.button(interval)
     checkButtonStatus((interval or 1) * 1000)
 end
 

@@ -75,7 +75,7 @@ local function onGetThingProperties(request, response)
     local thing = getThing(request)
 
     local properties = nil
-    if (thing and name) then
+    if (thing) then
         properties = thing:readAllProperties()
     end
 
@@ -125,7 +125,6 @@ local function onPostThingAction(request, response)
     end
 
     -- next
-    local thingClient = self
     output:next(function(data)
         return response:json(data)
 

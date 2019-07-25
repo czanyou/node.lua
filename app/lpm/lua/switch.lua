@@ -3,12 +3,28 @@ local path      = require('path')
 local app   	= require('app')
 local conf   	= require('app/conf')
 
+local function isDevelopmentPath(rootPath)
+	local filename1 = path.join(rootPath, 'lua/lnode')
+	local filename2 = path.join(rootPath, 'app/lbuild')
+	local filename3 = path.join(rootPath, 'src')
+	if (fs.existsSync(filename1) or fs.existsSync(filename2) or fs.existsSync(filename3)) then
+		print('Warning: The "' .. rootPath .. '" is in development mode.')
+		return true
+	end
+
+	return false
+end
+
 local function switchFirmwareFile()
 	local rootPath = app.rootPath;
 	local nodePath = conf.rootPath;
 
 	print('Root path:' .. rootPath)
 	print('Node path:' ..  nodePath)
+	
+	if (isDevelopmentPath(nodePath)) then
+		return
+	end
 
 	if (rootPath == nodePath) then
 		print('Error: The same path')

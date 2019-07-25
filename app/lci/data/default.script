@@ -1,16 +1,18 @@
-#!/bin/ash
+#!/bin/sh
 
 error_exit() {
     echo "udhcpc.script: error: $@" >&2; exit 1
 }
 
 handle_bound() {
-    env > /tmp/dhcp_bound.txt
-    lnode -l monitor/udhcp
+#    env > /tmp/dhcp_bound.txt
+    echo "bound"
+    lnode -l lci/dhcp
 }
 
 handle_deconfig() {
-    env > /tmp/dhcp_decofig.txt
+    echo "deconfig"
+#    env > /tmp/dhcp_decofig.txt
 }
 
 case "$1" in

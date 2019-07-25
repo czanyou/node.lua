@@ -17,8 +17,10 @@ limitations under the License.
 --]]
 local core  = require('core')
 local utils = require('util')
+local rtspMessage = require('rtsp/message')
 
-local RtspMessage = require('rtsp/message').RtspMessage
+local RtspMessage = rtspMessage.RtspMessage
+local STATUS_CODES = rtspMessage.STATUS_CODES
 
 local meta 		= { }
 local exports 	= { meta = meta }

@@ -413,7 +413,12 @@ local function updateFirmwareInfo(callback)
 
 end
 
-local function installFirmwareFile(callback)
+local function installFirmwareFile(filename, callback)
+	if (type(filename) == 'function') then
+		callback = filename
+		filename = nil
+	end
+
 	if (type(callback) ~= 'function') then
 		callback = function(err)
 			print(err)
@@ -432,7 +437,7 @@ local function installFirmwareFile(callback)
 	status.state = STATE_UPDATING -- 3：正在更新
 	saveUpdateStatus(status)
 
-	upgrade.install(nil, function(err, message)
+	upgrade.install(filename, function(err, message)
 		if (err) then
 			status.result = UPDATE_FAILED -- 8：固件更新失败
 		else
@@ -538,7 +543,7 @@ end
 -------------------------------------------------------------------------------
 --
 
-function test()
+local function test()
 	local binPath = '/usr/local/lnode/v4.2.210/bin'
 	local cmdline = binPath .. '/lnode -d -l lpm/switch > /tmp/switch.log'
 	console.log(cmdline)
@@ -574,8 +579,8 @@ function exports.upgrade(applet)
 	end
 end
 
-function exports.install(callback)
-	installFirmwareFile(callback)
+function exports.install(filename, callback)
+	installFirmwareFile(filename, callback)
 end
 
 return exports

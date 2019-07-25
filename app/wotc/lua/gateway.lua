@@ -1,7 +1,6 @@
 
 local app   = require('app')
 local util  = require('util')
-local url 	= require('url')
 local fs 	= require('fs')
 local path 	= require('path')
 local json  = require('json')
@@ -25,10 +24,10 @@ local SHELL_RUN_TIMEOUT = 2000
 local isWindows = (os.platform() == 'win32')
 
 local function shellGetEnvironment()
-    return { hostname = hostname, path = process.cwd() }
+    return { path = process.cwd() }
 end
 
-function shellExecute(cmd, callback, timeout)
+local function shellExecute(cmd, callback, timeout)
 	local result = {}
 
     if (not isWindows) then
@@ -58,7 +57,7 @@ function shellExecute(cmd, callback, timeout)
     --]]
 end
 
-function shellChdir(dir, callback)
+local function shellChdir(dir, callback)
     local result = {}
 
     -- console.log('dir', dir)
@@ -331,7 +330,7 @@ local function onFirmwareRead(input, webThing)
     return firmware
 end
 
-local function onFirmwareUpdate(params)
+local function onFirmwareUpdate(params, webThing)
     console.warn('onFirmwareUpdate');
 
     if (gateway.updateTimer) then

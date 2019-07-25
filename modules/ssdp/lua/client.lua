@@ -57,8 +57,7 @@ function SsdpClient:initialize(options, socket)
 end
 
 function SsdpClient:_handleNotify(request, remote)
-	-- 
-	self:emit('request', response, remote)
+	self:emit('request', request, remote)
 end
 
 function SsdpClient:_handleResponse(response, remote)

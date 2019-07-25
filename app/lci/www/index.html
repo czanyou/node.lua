@@ -163,6 +163,11 @@ var app = new Vue({
 function onStatusRead() {
 	var url = "/system/read";
 	$.get(url, function(result) {
+    
+    setTimeout(function() {
+      onStatusRead();
+    }, 2000)
+
 		if (!result || result.error) {
 			return;
     }
@@ -288,9 +293,6 @@ $(document).ready(function () {
   onConfigRead();
 
   onStatusRead();
-  setInterval(function() {
-    onStatusRead();
-  }, 2000)
 });
 
 </script>

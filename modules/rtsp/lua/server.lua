@@ -140,7 +140,7 @@ function RtspServer:start(port, callback)
 			return mediaSession
 		end
 
-		print(TAG, 'start', '`_getMediaSession` method not found!')
+		print('start', '`_getMediaSession` method not found!')
 		return nil
 	end
 

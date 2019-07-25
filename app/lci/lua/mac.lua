@@ -1,4 +1,4 @@
-local app   = require('app')
+local app = require('app')
 
 -- local function getMac()
 --     local path = "/sys/class/net/eth0/address"

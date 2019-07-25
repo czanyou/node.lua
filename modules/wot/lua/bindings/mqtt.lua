@@ -22,13 +22,13 @@ function exports.connect(urlString, options)
     return client
 end
 
-function exports.publishMessage(data)
+function exports.publishMessage(clientId, data)
     local client = exports.client
     if (not client) then
         return
     end
 
-    local topic = 'messages/' .. self.clientId
+    local topic = 'messages/' .. clientId
     client:publish(topic, data)
 end
 

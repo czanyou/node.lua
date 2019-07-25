@@ -279,6 +279,8 @@ function exports.handleConnection(socket, onRequest)
     local decoder = nil
     local request, response
 
+    local _onData = nil
+
     local _onFlush = function ()
         request:push()
         request = nil
@@ -362,7 +364,7 @@ function exports.handleConnection(socket, onRequest)
         end
     end)
 
-    local _onData = function (chunk)
+    _onData = function (chunk)
         decoder.decode(chunk)
     end
     --]]
@@ -470,6 +472,8 @@ function ClientRequest:initialize(options, callback)
 
         --console.log('request', self)
 
+        local _onData = nil;
+
         local _onEnd = function ()
             -- Just in case the stream ended and we still had an open response,
             -- end it.
@@ -544,7 +548,7 @@ function ClientRequest:initialize(options, callback)
             end
         end)
 
-        local _onData = function (chunk)
+        _onData = function (chunk)
             decoder.decode(chunk)
         end
         --]]

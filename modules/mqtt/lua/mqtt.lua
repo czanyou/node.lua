@@ -71,11 +71,11 @@ function MQTTSocket:initialize(options)
     self.state              = state
 
     --options.callback        = options.callback  -- function(topic, payload)
-    options.clientId        = options.clientId  or "nodelua-" .. tostring(process.pid)
-    options.connectTimeout  = options.connectTimeout  or 15 * 1000
+    options.clientId        = options.clientId  or ("nodelua-" .. tostring(process.pid))
+    options.connectTimeout  = options.connectTimeout  or 15000
     options.keepalive       = options.keepalive or exports.KEEP_ALIVE_TIME
     options.port            = options.port      or exports.DEFAULT_PORT
-    options.reconnectPeriod = options.reconnectPeriod or 60 * 1000
+    options.reconnectPeriod = options.reconnectPeriod or 60000
     self.options            = options
 end
 

@@ -438,11 +438,11 @@ function RtspClient:open(urlString)
 end
 
 function RtspClient:pause()
-	sendPAUSE()
+	self:sendPAUSE()
 end
 
 function RtspClient:play()
-	sendPLAY()
+	self:sendPLAY()
 end
 
 function RtspClient:processRequest(request)

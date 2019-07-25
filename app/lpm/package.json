@@ -1,8 +1,6 @@
 {
-	"depends": [],
 	"description": "Node.lua package & process manager",
-	"title": "lpm",
+	"title": "lnode package manager",
 	"name": "lpm",
-	"tags": ["lpm", "pm"],
 	"version": "3.0.0"
 }

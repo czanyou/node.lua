@@ -42,7 +42,7 @@ function SsdpServer:initialize(options, socket)
 
 	self.deviceId		= options.udn
 	self.ssdpIp         = options.ssdpIp   	or UPNP_ADDRESS	
-	self.adInterval     = options.adInterval or 1000 * 10
+	self.adInterval     = options.adInterval or 10000
 	self.location		= options.location
 	self.deviceModel	= options.deviceModel
 	self.port           = options.ssdpPort 	or UPNP_PORT

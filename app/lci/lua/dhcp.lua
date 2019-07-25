@@ -1,13 +1,10 @@
 #!/usr/bin/env lnode
 
-local config  = require('app/conf')
-
-local exports = {}
+local conf  = require('app/conf')
 
 local function onDhcpBound()
-    local profile 
     local function saveConfig(data)  
-        config.load("network", function(ret, profile)
+        conf.load("network", function(ret, profile)
             profile:set("dhcp", data)
             profile:set("updated", Date.now())
             profile:commit()

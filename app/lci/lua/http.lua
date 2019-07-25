@@ -1,16 +1,12 @@
 local app   = require('app')
 local util  = require('util')
-local url 	= require('url')
 local fs 	= require('fs')
 local path 	= require('path')
-local http  = require('http')
 local json  = require('json')
-local wot   = require('wot')
 local express = require('express')
 local config  = require('app/conf')
 
 local exports = {}
-
 
 -- Get the MAC address of localhost 
 local function getMacAddress()
@@ -82,7 +78,7 @@ local function apiAuthLogin(request, response)
         return response:json({ code = 401, error = 'Empty Password' })
     end   
 
-    local value = app.get('password') or "888888"
+    local value = app.get('password') or "wot2019"
     if (value ~= password) then
         return response:json({ code = 401, error = 'Wrong Password' })
     end

@@ -250,7 +250,7 @@ function RTMPClient:connect(urlString)
     -- 开始创建 Socket 连接，并设置超时定时器
     socket:connect(port, host, onSocketConnect)
 
-    local timeout = self.options.timeout or 1000 * 5
+    local timeout = self.options.timeout or 5000
     self.connectTimer = setTimeout(timeout, onConnectTimeout)
     self.socket = socket
 end
@@ -444,7 +444,7 @@ end
 
 function RTMPClient:sendDeleteStream()
     local data = { 'deleteStream', 6, null, self.streamId }
-    return self:sendCommandMessage(data, options)
+    return self:sendCommandMessage(data)
 end
 
 function RTMPClient:sendPublish()

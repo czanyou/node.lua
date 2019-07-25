@@ -100,7 +100,7 @@ print('------\n')
 if (osType == 'win32') then
 	-- Add the bin directory under the current directory to the system Path environment variable
 
-	updatePathEnvironment(true)
+	updatePathEnvironment()
 end
 
 print('Install Complete!\n')

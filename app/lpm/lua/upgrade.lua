@@ -21,7 +21,6 @@ local fs        = require('fs')
 local json      = require('json')
 local miniz     = require('miniz')
 local path      = require('path')
-local url       = require('url')
 local app       = require('app')
 local conf   	= require('app/conf')
 
@@ -39,7 +38,7 @@ local exports = {}
 
 -------------------------------------------------------------------------------
 
-local function noop
+local function noop()
 
 end
 
@@ -200,7 +199,7 @@ end
 -- BundleUpdater
 
 local function cleanFirmwareFile(newVersion)
-	function getVersions(nodePath, currentPath, newPath)
+	local function getVersions(nodePath, currentPath, newPath)
 		local result = {}
 		for name,type in fs.scandirSync(nodePath) do
 			if (name == currentPath) or (name == newPath) then
@@ -447,7 +446,7 @@ function BundleUpdater:parsePackageInfo(callback)
 
 	local reader = self.reader
 	if (not reader) then
-		callback('The reader is empty!', filename)
+		callback('The reader is empty!')
 		return nil
 	end
 
@@ -570,7 +569,12 @@ function BundleUpdater:getUpgradeResult()
 	end
 end
 
-local function installFirmwareFile(callback)
+local function installFirmwareFile(filename, callback)
+	if (type(filename) == 'function') then
+		callback = filename
+		filename = nil
+	end
+
 	if (type(callback) ~= 'function') then
 		callback = function(err, message)
 			if (err) then
@@ -589,10 +593,6 @@ local function installFirmwareFile(callback)
 	end
 
 	local nodePath = getNodePath()
-
-	if (isDevelopmentPath(nodePath)) then
-		
-	end
 
 	if (not filename) then
 		filename = path.join(nodePath, 'update/update.zip')

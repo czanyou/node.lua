@@ -1,8 +1,6 @@
 {
-	"depends": [],
-	"description": "wot gateway application",
-	"title": "gateway",
+	"description": "WoT cloud gateway application",
+	"title": "WoT Gateway",
 	"name": "gateway",
-	"tags": ["pusher", "gateway"],
 	"version": "2.0.0"
 }

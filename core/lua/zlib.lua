@@ -169,8 +169,6 @@ function BundleBuilder:getFileInfo(filename)
     }
 end
 
-exports.loadBundleFile = loadBundleFile
-
 -------------------------------------------------------------------------------
 -- ZipBuilder
 

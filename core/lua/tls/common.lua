@@ -299,7 +299,9 @@ function TLSSocket:destroy(err)
       net.Socket.destroy(self, err)
     end
 
-    local shutdown = function()
+    local shutdown = nil
+    
+    shutdown = function()
       timer.active(self)
       if self._shutdown then
         local _, shutdown_err = self.ssl:shutdown()

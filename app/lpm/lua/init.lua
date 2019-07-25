@@ -45,7 +45,7 @@ exports.rootPath = app.rootPath
 
 local config = {}
 
-function getProfile(key)
+local function getProfile(key)
 	local pos = key:find(':')
 	local module = nil
 	if (pos) then
@@ -231,8 +231,8 @@ end
 -------------------------------------------------------------------------------
 -- package & upgrade
 
-function exports.colors(...)
-	console.colors(...)
+function exports.colors()
+	console.colors()
 end
 
 function exports.install(...)
@@ -252,7 +252,7 @@ end
 -- misc
 
 -- Scanning for nearby devices
-function exports.scan(...)
+function exports.scan(timeout, serviceType)
 	local err, client = pcall(require, 'ssdp/client')
 	if (not client) then
 		return
