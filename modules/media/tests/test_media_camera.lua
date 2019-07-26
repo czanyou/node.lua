@@ -44,6 +44,7 @@ end
 
 function test_media_camera_take_picture()
 
+	local filename = nil
 	local options = { filename = filename }
 	local mock = camera.open(camera.CAMERA_MOCK, options)
 

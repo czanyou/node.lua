@@ -48,8 +48,6 @@ local api, ERR, TYPE, AUTH = sqlite.api, sqlite.errors, sqlite.types, sqlite.aut
 
 local getn = table.getn or function(t) return #t end
 
-local unpack = unpack or table.unpack
-
 local Database = { }
 local Statement = { }
 
@@ -176,7 +174,7 @@ local function db_call_user_func(context, func, num_values, values)
   -- Make lua-5.0.2 unpack() happy
   arg.n = num_values
   -- lua-5.1 unpack() style / lua-5.0.2 ignores additional arguments
-  local ok, result = pcall(func, unpack(arg, 1, num_values))  
+  local ok, result = pcall(func, table.unpack(arg, 1, num_values))  
   
   if not ok then
     api.result_error(context, tostring(result))
@@ -449,7 +447,7 @@ function Database.prepare(db, paranames, sql)
         
         if errmsg then
           cleanup(handles)
-          return nil, errmgs
+          return nil, errmsg
         end
         
         local mapping, errmsg = create_mapping(handles, fixed_parameter_names)
@@ -823,7 +821,7 @@ function Statement:first_cols(autoclose)
         return nil, errmsg
     else
         row.n = count     -- Make lua-5.0.2 unpack() happy
-        return unpack(row, 1, count)  -- lua-5.1 style / lua-5.0.2 ignores additional arguments
+        return table.unpack(row, 1, count)  -- lua-5.1 style / lua-5.0.2 ignores additional arguments
     end
 end
 

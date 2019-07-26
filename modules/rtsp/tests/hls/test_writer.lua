@@ -31,13 +31,6 @@ test('test_hls_writer', function()
 	local m3u8file = path.join(rootPath, 'build/output2.m3u8')
 	print('m3u8 filename: ', m3u8file)
 
-	local _flushPlaylist = function(duration)
-		playList:addItem(dest, duration / 1000000)
-		fs.writeFile(m3u8file, playList:toString(), function()
-			console.log('write m3u8 end');
-		end)
-	end
-
 	-- writer
 	local filename = path.join(rootPath, 'build/output2.ts')
 	os.remove(filename)
@@ -45,6 +38,14 @@ test('test_hls_writer', function()
 
 	local writer = tsWriter.StreamWriter:new()
 	local dest = filename
+
+	local _flushPlaylist = function(duration)
+		playList:addItem(dest, duration / 1000000)
+		fs.writeFile(m3u8file, playList:toString(), function()
+			console.log('write m3u8 end');
+		end)
+	end
+
 	local dest_fd = fs.openSync(dest, 'w', 438)
 	print('output fd: ', dest_fd)
 	assert(dest_fd > 0)

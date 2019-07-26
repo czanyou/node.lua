@@ -51,7 +51,7 @@ function test_start_rtsp_client()
 		print('RtspClient', 'state', state)
 
 		if (state == client.STATE_READY) then
-			pprint('RtspClient', rtspClient.mediaTracks)
+			console.log('RtspClient', rtspClient.mediaTracks)
 		end
 	end)
 
@@ -63,7 +63,7 @@ function test_start_rtsp_client()
 		meta.rtpTime = nil
 
 		if (meta.marker) then
-			pprint('ts', offset, #packet, meta)
+			console.log('ts', offset, #packet, meta)
 		end
 	end
 

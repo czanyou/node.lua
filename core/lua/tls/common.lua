@@ -34,6 +34,8 @@ local DEFAULT_CIPHERS = 'ECDHE-RSA-AES128-SHA256:AES128-GCM-SHA256:' .. -- TLS 1
                         'RC4:HIGH:!MD5:!aNULL:!EDH'                     -- TLS 1.0
 exports.DEFAULT_CIPHERS = DEFAULT_CIPHERS
 
+local MBEDTLS_ERR_SSL_WANT_READ   = -0x6900 -- 26800 /**< Connection requires a read call. */
+
 -------------------------------------------------------------------------------
 
 local getSecureOptions = function(protocol, flags)

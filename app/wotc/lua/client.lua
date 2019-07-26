@@ -471,7 +471,10 @@ local function createThing(options)
         actions = {},
         properties = {},
         events = {},
-        version = { instance = '1.0' }
+        version = {
+            instance = '1.0',
+            software = process.version
+        }
     }
 
     gateway['@context'] = 'http://iot.beaconice.cn/schemas'

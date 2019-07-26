@@ -3,6 +3,8 @@ local utils  = require('util')
 local core 	 = require('core')
 local fs 	 = require('fs')
 
+local exec  = require('child_process').exec
+
 local exports = {}
 
 -------------------------------------------------------------------------------

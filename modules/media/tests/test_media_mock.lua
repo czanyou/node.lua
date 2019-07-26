@@ -204,6 +204,8 @@ local function test_hls_reader()
 		duration = pts - lastPts
 		lastPts = pts
 
+		local naluType = nil
+
 		console.log('reader', syncPoint, 'nalu', naluType, 'pts', pts, 'duration', duration, #sampleData)
 
 		_on_hls_writer(sampleData, pts, syncPoint)

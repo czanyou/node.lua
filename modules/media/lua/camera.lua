@@ -145,7 +145,8 @@ function Camera:initialize(cameraId, args, lmedia)
 	end
 
 	-- 创建编码组
-	local videoId = (tonumber(self.cameraId) - 1) or 0
+	local videoId = tonumber(self.cameraId) or 1
+	videoId = (videoId - 1)
 
 	-- 创建一个编码通道
 	local options = {}
@@ -418,6 +419,8 @@ local function _openMockCamera(options)
 		onMediaInit(options, mock)
 	end
 
+	local cameraId = nil
+
 	exports.mockCamera = Camera:new(cameraId, options, mock)
 	return exports.mockCamera
 end
@@ -443,6 +446,8 @@ function exports.open(cameraId, options)
 		if (defaultCamera) then
 			return defaultCamera
 		end
+
+		local args = nil
 
 		local lmedia = require("lmedia")
 		if (not exports.videoInput) then

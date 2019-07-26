@@ -5,17 +5,20 @@ local assert = require('assert')
 local exports = {}
 local flv = rtmp.flv
 
-function loadFlv()
+local function loadFlv()
     local filepath = 'test.flv'
 
     local fileData = fs.readFileSync(filepath)
     console.log('filesize', #fileData)
 
     local index = 1
+    local tag = nil
 
     -- file header
     index = rtmp.flv.parseFileHeader(fileData, index)
     --console.log(index)
+
+    local tagData = nil
 
     -- tags
     local tags = {}
@@ -60,7 +63,7 @@ function loadFlv()
     return tags
 end
 
-function saveFlv(tags)
+local function saveFlv(tags)
     local filePath = 'output.flv'
     os.remove(filePath)
     os.remove('image.jpg')
@@ -110,7 +113,7 @@ function saveFlv(tags)
 end
 
 -- 测试 encodeVideoConfiguration & decodeVideoTag
-function test_flv()
+local function test_flv()
     local sps = 'aaaaaaa'
     local pps = '1111111'
     local data = flv.encodeVideoConfiguration(sps, pps)

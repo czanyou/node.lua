@@ -642,7 +642,7 @@ end
 
 function RtspClient:sendSETUP()
 	if (self.rtspState == exports.STATE_STOPPED) then
-		return 0, 'Invalid State: ' .. state
+		return 0, 'Invalid State: ' .. self.rtspState
 
 	elseif (self.mediaTracks == nil) or (#self.mediaTracks < 1) then
 		self:close('Invalid media tracks')

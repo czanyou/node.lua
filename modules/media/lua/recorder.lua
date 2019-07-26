@@ -27,7 +27,7 @@ local exports = {}
 local MediaRecorder = core.Emitter:extend()
 exports.MediaRecorder = MediaRecorder
 
-function MediaSource:initialize(options)
+function MediaRecorder:initialize(options)
 
     self.totalBytes = 0
     self._writer = 0
@@ -47,7 +47,7 @@ function MediaSource:initialize(options)
     self._writer = writer
 end
 
-function MediaSource:close()
+function MediaRecorder:close()
 	local writer = self._writer
 	self._writer = nil
 
@@ -56,7 +56,10 @@ function MediaSource:close()
 	end
 end
 
-function MediaSource:write(sample)
+function MediaRecorder:write(sample)
+    local writer = self._writer
+    self._writer = nil
+    
 	if (sample.syncPoint) then
         writer:writeSyncInfo(sample.sampleTime)
     end

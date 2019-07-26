@@ -90,8 +90,6 @@ local function start_mpp()
 			write_file(format, table.concat(list))
 		end
 	end)
-
-    return ret
 end
 
 local function stop_mpp()

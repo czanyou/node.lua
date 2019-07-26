@@ -324,7 +324,7 @@ end
 
 local function startMediaSession(cameraDevice, timeout)
 	if (not cameraDevice) then
-		print(TAG, 'camera open failed!')
+		print('camera open failed!')
 		return nil
 	end
 
@@ -342,7 +342,7 @@ local function startMediaSession(cameraDevice, timeout)
 
 	if (timeout) then
 		setTimeout(timeout, function ()
-		  	print(TAG, "camera timeout!", timeout)
+		  	print("camera timeout!", timeout)
 		  	
 		  	if (cameraDevice) then
 		  		cameraDevice:release()

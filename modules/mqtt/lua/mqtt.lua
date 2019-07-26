@@ -70,8 +70,11 @@ function MQTTSocket:initialize(options)
     state.reconnectInterval = 100       -- 当前重连间隔
     self.state              = state
 
+    local clientId = ("lnode_" .. tostring(process.pid))
+
+
     --options.callback        = options.callback  -- function(topic, payload)
-    options.clientId        = options.clientId  or ("nodelua-" .. tostring(process.pid))
+    options.clientId        = options.clientId  or clientId
     options.connectTimeout  = options.connectTimeout  or 15000
     options.keepalive       = options.keepalive or exports.KEEP_ALIVE_TIME
     options.port            = options.port      or exports.DEFAULT_PORT

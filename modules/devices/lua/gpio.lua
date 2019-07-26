@@ -24,14 +24,15 @@ local join = path.join
 local exports = {}
 
 -------------------------------------------------------------------------------
--- 
+--
 
 local function sanitizePinNumber(pinNumber)
-	if (not isnumber(pinNumber)) then
+	pinNumber = tonumber(pinNumber, 10)
+	if (pinNumber == nil) then
 		return nil, ("Pin number isn't valid");
 	end
 
-	return tonumber(pinNumber, 10);
+	return pinNumber;
 end
 
 local function sanitizeDirection(direction)

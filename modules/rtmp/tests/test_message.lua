@@ -1,8 +1,9 @@
 local util = require("util")
 local rtmp = require("rtmp")
 
+local amf0 = rtmp.amf0
 
-function test_parse()
+local function test_parse()
     local message = '020000000000040500000000004c4b40'
     local data = util.hex2bin(message);
     local header, body = rtmp.parseChunk(data)
@@ -50,7 +51,7 @@ function test_parse()
 
 end
 
-function test_encode()
+local function test_encode()
     local list = { 'play', 0, amf0.null, 'test' }
 
     local body = rtmp.amf0.encodeArray(list)
@@ -70,7 +71,7 @@ end
 
 -- test_encode()
 
-function test_push()
+local function test_push()
     local MESSAGE = rtmp.MESSAGE
     console.log(MESSAGE)
 
@@ -134,7 +135,7 @@ end
 
 --test_push()
 
-function test_data()
+local function test_data()
     local data = string.pack('<I4>I4', 1, 1)
     console.log(data);
     console.printBuffer(data);
