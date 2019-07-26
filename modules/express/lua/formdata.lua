@@ -99,9 +99,11 @@ function FormData:processData(data)
 	
 	--console.log('processData', data, '===')
 
+	console.log('processData', #data, startPos, endPos)
+
 	local expandSize  = 0
 
-	for i = startPos,endPos do
+	for i = startPos, endPos do
 		local c = buffer:read(i)
 		--print(string.char(c), c)
 

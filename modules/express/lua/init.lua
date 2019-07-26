@@ -24,6 +24,7 @@ local fs 	= require('fs')
 local path 	= require('path')
 local json  = require('json')
 local mime 	= require('express/mime')
+local formdata = require('express/formdata')
 
 local querystring  = require('querystring')
 
@@ -129,7 +130,62 @@ function IncomingMessage:readBody(callback)
             self.body = querystring.parse(content)
 
         elseif (contentType == 'multipart/form-data') then
-            self.body = querystring.parse(content)
+            local FormData = formdata.FormData
+            local parser = FormData:new(#content)
+
+            local body = {}
+            local files = {}
+
+            local headerName = nil
+            local feilds = {}
+            local fieldName = nil
+
+            parser:on('file', function(data)
+                -- console.log('file', data, headerName, feilds)
+
+                if (feilds.filename) then
+                    local file = { data = data }
+                    file.name = feilds.name
+                    file.filename = feilds.filename
+                    file.mimetype = feilds.mimetype
+
+                    files[#files + 1] = file
+
+                else
+                    body[feilds.name] = data
+                end
+
+                headerName = nil
+                feilds = {}
+            end)
+            
+            parser:on('header-name', function(data)
+                console.log('header-name', data)
+                headerName = data
+                fieldName = nil
+            end)
+            
+            parser:on('header-value', function(data)
+                -- console.log('header-value', data)
+                if (headerName == 'Content-Type') then
+                    feilds['mimetype'] = data
+                end
+            end)
+            
+            parser:on('feild-name', function(data)
+                -- console.log('feild-name', data)
+                fieldName = data
+            end)
+            
+            parser:on('feild-value', function(data)
+                -- console.log('feild-value', fieldName, data)
+                feilds[fieldName] = data
+            end)
+
+            parser:processData(content)
+
+            self.files = files
+            self.body = body
 
         elseif (contentType == 'application/json') then
             self.body = json.parse(content)
@@ -153,7 +209,7 @@ function ServerResponse:checkSessionId()
     local sessionId = self.request:getSessionId()
     if (not sessionId) then
         sessionId = tostring(math.floor(os.uptime() * 1000) + IncomingCounter)
-        cookie = "LSESSIONID=" .. sessionId .. ";path=/"
+        local cookie = "LSESSIONID=" .. sessionId .. ";path=/"
         self:set("Set-Cookie", cookie)
 
         IncomingCounter = (IncomingCounter + 1) % 1000

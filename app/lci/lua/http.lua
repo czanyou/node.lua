@@ -156,6 +156,18 @@ local function apiConfigRead(request, response)
     end)
 end
 
+local function apiFileUpload(request, response)
+    --console.log(request.body)
+    --console.log(request.files)
+
+    local file = request.files and request.files[1]
+    if (file) then
+        fs.writeFileSync('/tmp/upload', file.data);
+    end
+
+    response:json({ code = 0 })
+end
+
 local function apiConfigWrite(request, response)
     local query = request.body
 
@@ -198,6 +210,8 @@ local function setConfigRoutes(app)
 
     app:get('/system/read', apiStatusRead);
     app:post('/system/write', apiStatusWrite);
+    app:post('/upload', apiFileUpload);
+    
 end
 
 function exports.start(port)
