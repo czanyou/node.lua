@@ -36,6 +36,11 @@ echo out > /sys/class/gpio/gpio54/direction
 echo 55 > /sys/class/gpio/export
 echo out > /sys/class/gpio/gpio55/direction
 
+# uart switch
+echo 63 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio63/direction
+echo 1 > /sys/class/gpio/gpio63/value
+
 # device /dev/ttyAMA2
 himm 0x12098000 0xe2
 himm 0x120400c4 0x02

@@ -152,9 +152,11 @@ function exports.network(interval)
 end
 
 function exports.start(...)
-    exports.network()
-    exports.button()
-    exports.http(...)
+    if (app.lock()) then
+        exports.network()
+        exports.button()
+        exports.http(...)
+    end
 end
 
 app(exports)

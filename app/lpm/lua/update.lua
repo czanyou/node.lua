@@ -349,7 +349,7 @@ end
 --  - options.type
 --  - options.did
 -- @param {function} callback
-local function downloadFirmwareFile(options, callback)
+local function downloadFirmwareFiles(options, callback)
 	options = options or {}
 	local printInfo = options.printInfo or function() end
 
@@ -396,18 +396,31 @@ local function downloadFirmwareFile(options, callback)
 end
 
 local function updateFirmwareInfo(callback)
+	-- callback
+	if (type(callback) ~= 'function') then
+		callback = function(err, filename, packageInfo)
+			console.log(err, filename, packageInfo)
+		end
+	end
+
+	if (not app.lock('update')) then
+		callback('lock failed')
+		return
+	end
+
 	-- options
-	local profile = conf('user')
 	local options = { type = 'update' }
-	options.did = profile:get('did')
-	options.base = profile:get('base')
+	options.did = app.get('did')
+	options.base = app.get('base')
 
 	if (not options.base) then
 		print('Missing the required config parameter `base`');
+		callback('Missing required parameter')
 		return;
 
 	elseif (not options.did) then
 		print('Missing the required config parameter `did`');
+		callback('Missing required parameter')
 		return;
 	end
 
@@ -415,41 +428,9 @@ local function updateFirmwareInfo(callback)
 		options.base = options.base .. '/'
 	end
 	
-	-- callback
-	if (type(callback) ~= 'function') then
-		callback = function(err, filename, packageInfo)
-			packageInfo = packageInfo or {}
-
-			local status = { state = 0, result = 0 }
-			if (err) then
-				-- error
-				if (err.code) then
-					print("Error code: " .. tostring(err.code))
-				end
-	
-				if (err.error) then
-					print("Error: " .. tostring(err.error))
-				else
-					console.log('Error: ', err)
-				end
-			
-				status.result = err.result or UPDATE_FAILED
-
-			else
-				-- version
-				local version = packageInfo.version
-				print('At Version: ' .. tostring(version))
-				status.state = STATE_DOWNLOAD_COMPLETED
-				status.version = version
-			end
-
-			saveUpdateStatus(status)
-		end
-	end
-
 	options.printInfo = function(...) print(...) end
 	
-	downloadFirmwareFile(options, callback)
+	downloadFirmwareFiles(options, callback)
 end
 
 local function installFirmwareFile(filename, callback)
@@ -494,42 +475,67 @@ local function installFirmwareFile(filename, callback)
 	return true
 end
 
+-- Download and install the latest firmware
+-- @param callback
 local function upgradeFirmwareFile(callback)
-	updateFirmwareInfo(function(err, filename, packageInfo) 
-		local status = { state = 0, result = 0 }
+	local function onUpdateError(err)
+		local status = { state = 0 }
 
-		if (err) then
-			if (err.code) then
-				print("Error code: " .. tostring(err.code))
-			end
-
-			if (err.error) then
-				print("Message: " .. tostring(err.error))
-			else
-				console.log('Error: ', err)
-			end
-
-			status.result = UPDATE_FAILED
-			if (err.result) then
-				status.result = err.result
-			end
-
-			saveUpdateStatus(status)
-			return
+		if (err.code) then
+			print("Error code: " .. tostring(err.code))
 		end
 
+		if (err.error) then
+			print("Message: " .. tostring(err.error))
+		else
+			console.printr('Error: ', err)
+		end
+
+		status.result = UPDATE_FAILED
+		if (err.result) then
+			status.result = err.result
+		end
+
+		saveUpdateStatus(status)
+	end
+
+	local function onUpdateSuccess(packageInfo)
 		local version = packageInfo.version
+
+		local status = { result = 0 }
 		status.state = STATE_DOWNLOAD_COMPLETED
 		status.version = version
 		saveUpdateStatus(status)
 		print('Latest Version: ' .. tostring(version))
+	end
 
-		exports.install(function(err, message)
+	local function onInstallError(err)
+		print('Error: ' .. tostring(err))
+
+	end
+
+	local function onInstallSuccess(message)
+		if (message) then
+			print(message)
+		end
+
+		os.execute("reboot -d 5 &")
+	end
+
+	updateFirmwareInfo(function(err, filename, packageInfo) 
+		if (err) then
+			onUpdateError(err)
+			return
+		end
+
+		onUpdateSuccess(packageInfo)
+
+		installFirmwareFile(function(err, message)
 			if (err) then
-				print('Error: ' .. tostring(err))
+				onInstallError(err)
 
-			elseif (message) then
-				print(message)
+			else
+				onInstallSuccess(message)
 			end
 		end)
 	end)
@@ -540,6 +546,38 @@ end
 
 -- Download update files only
 function exports.update(callback)
+	-- callback
+	if (type(callback) ~= 'function') then
+		callback = function(err, filename, packageInfo)
+			packageInfo = packageInfo or {}
+
+			local status = { state = 0, result = 0 }
+			if (err) then
+				-- error
+				if (err.code) then
+					print("Error code: " .. tostring(err.code))
+				end
+	
+				if (err.error) then
+					print("Error: " .. tostring(err.error))
+				else
+					console.printr('Error: ', err)
+				end
+			
+				status.result = err.result or UPDATE_FAILED
+
+			else
+				-- version
+				local version = packageInfo.version
+				print('At Version: ' .. tostring(version))
+				status.state = STATE_DOWNLOAD_COMPLETED
+				status.version = version
+			end
+
+			saveUpdateStatus(status)
+		end
+	end
+	
 	updateFirmwareInfo(callback)
 end
 

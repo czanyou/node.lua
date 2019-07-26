@@ -170,10 +170,11 @@ local function onDeviceActions(input, webThing)
         local device = {}
         device.cpuUsage    = getCpuUsage()
         device.currentTime = os.time()
-        device.deviceType  = 'gateway'
+        device.deviceType  = 'Gateway'
         device.errorCode   = 0
         device.firmwareVersion = '1.0'
         device.hardwareVersion = '1.0'
+        device.softwareVersion = process.version
         device.manufacturer = 'CD3'
         device.memoryFree   = math.floor(os.freemem() / 1024)
         device.memoryTotal  = math.floor(os.totalmem() / 1024)

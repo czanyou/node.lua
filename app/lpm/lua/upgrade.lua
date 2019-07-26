@@ -75,10 +75,6 @@ local function upgradeLock()
 	return lockfd
 end
 
-local function upgradeUnlock(lockfd)
-	fs.fileLock(lockfd, 'u')
-end
-
 -------------------------------------------------------------------------------
 -- BundleReader
 
@@ -586,9 +582,8 @@ local function installFirmwareFile(filename, callback)
 		end
 	end
 
-	local lockfd = upgradeLock()
-	if (not lockfd) then
-		callback('Error: Upgrade lock failed')
+	if (not app.lock('install')) then
+		callback('Error: install lock failed')
 		return
 	end
 
@@ -617,7 +612,6 @@ local function installFirmwareFile(filename, callback)
 	end)
 
 	updater:upgradeSystemPackage(function(err)
-		upgradeUnlock(lockfd)
 
 		if (err) then
 			print("Error: ", err)

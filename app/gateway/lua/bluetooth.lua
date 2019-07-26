@@ -117,12 +117,13 @@ local function uart_recevie_callback()
                     local sensor_info = {}
 
                     local sensor_index = 6
+                    -- console.printBuffer(data)
                     while(sensor_index < chunk_size )
                     do
                         sensor_type = data[index+sensor_index]
                         if(sensor_type == 0x01)
                         then
-                            sensor_info.batteryInfo = data[index+sensor_index+1]+data[index+sensor_index+2]/255
+                            sensor_info.batteryVoltage = data[index+sensor_index+1]*255+data[index+sensor_index+2]
                             sensor_index = sensor_index+3
 
                         elseif(sensor_type == 0x02)

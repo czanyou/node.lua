@@ -1,4 +1,6 @@
-local util = require('util')
+local util  = require('util')
+local path  = require('path')
+local fs    = require('fs')
 local app   = require('app')
 local wot   = require('wot')
 local rpc   = require('app/rpc')
@@ -70,10 +72,13 @@ function exports.gateway()
 end
 
 function exports.start()
-    exports.led()
-    exports.ssdp()
-    exports.rpc()
-    exports.gateway()
+    local lock = app.lock()
+    if (lock) then
+        exports.led()
+        exports.ssdp()
+        exports.rpc()
+        exports.gateway()
+    end
 end
 
 function exports.rpc()
@@ -105,11 +110,13 @@ function exports.rpc()
 end
 
 function exports.test()
+    --[[
     local name = 'wotc'
     local params = {{ at = 100, level = 200 }}
-    rpc.call(name, 'firmware', params, function(err, result)
-        print('firmware', err, result)
+    rpc.call(name, 'test', params, function(err, result)
+        print('test', err, result)
     end)
+    --]]
 end
 
 function exports.key(key, did)

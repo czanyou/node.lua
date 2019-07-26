@@ -89,14 +89,16 @@ function exports.play(rtmpUrl)
 end
 
 function exports.start()
-    exports.rtmp()
-    exports.rtsp()
-    exports.cameras()
-    exports.modbus()
-    exports.bluetooth()
-    exports.http()
+    if (app.lock()) then
+        exports.rtmp()
+        exports.rtsp()
+        exports.cameras()
+        exports.modbus()
+        exports.bluetooth()
+        exports.http()
 
-    runningStateindex()
+        runningStateindex()
+    end
 end
 
 function exports.http()

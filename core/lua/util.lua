@@ -176,8 +176,19 @@ end
 -- Indicates the directory where the source file to which the current line
 -- of code belongs
 function exports.dirname()
-    local path = require('path')   
-    return path.dirname(exports.filename(3))
+    local path = require('path')
+
+    local offset = 3
+    local pathname = path.dirname(exports.filename(offset))
+    if (not pathname) then
+        return pathname
+
+    elseif (pathname:startsWith('/')) then
+        return pathname
+
+    else 
+        return path.join(process.cwd(), pathname)
+    end
 end
 
 -- 用来获取当前正在执行的代码源文件的文件名

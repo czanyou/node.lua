@@ -185,6 +185,29 @@ function exports.appName()
 	return exports.name or 'user'
 end
 
+-- 检查是否有另一个进程正在更新系统
+function exports.lock(name)
+	local tmpdir = os.tmpdir or '/tmp'
+
+    local appName = name or exports.appName()
+	local lockname = path.join(tmpdir, '/app_' .. appName .. '.lock')
+	local lockfd = fs.openSync(lockname, 'w+')
+	local ret = fs.fileLock(lockfd, 'w')
+    if (ret == -1) then
+        fs.close(lockfd)
+		print('Error: The ' .. appName .. ' app already locked!')
+		return nil
+    end
+
+	return lockfd
+end
+
+function exports.unlock(lockfd)
+    if (lockfd) then
+        fs.fileLock(lockfd, 'u')
+    end
+end
+
 -- 删除指定名称的配置参数项的值
 -- @param key {String}
 function exports.unset(key)

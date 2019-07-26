@@ -227,9 +227,12 @@ function exports.testAll(dirname)
 
 		local match = string.match(name, "^test%-(.*).lua$")
 		if match then
-				local path = "./test-" .. match
-				tap(match)
-				require(path)
+			local path = dirname .. "/test-" .. match .. ".lua"
+			tap(match)
+
+			console.log(path)
+			local script = loadfile(path)
+			script()
 		end
 	until not name
 end
