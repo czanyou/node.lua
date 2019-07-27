@@ -191,7 +191,12 @@ function exports.lock(name)
 
     local appName = name or exports.appName()
 	local lockname = path.join(tmpdir, '/app_' .. appName .. '.lock')
-	local lockfd = fs.openSync(lockname, 'w+')
+    local lockfd, err = fs.openSync(lockname, 'w+')
+    if (lockfd == nil) then
+        print("Error: ", err)
+        return nil
+    end
+
 	local ret = fs.fileLock(lockfd, 'w')
     if (ret == -1) then
         fs.close(lockfd)
