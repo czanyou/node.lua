@@ -10,92 +10,47 @@ local exec  = require('child_process').exec
 
 local exports = {}
 
-local client = {}
-
-client.services = {}
-client.unlock = false
-
-local cpuInfo = {
-    usedTime = 0,
-    totalTime = 0
-}
+-------------------------------------------------------------------------------
+-- Device shell
 
 local SHELL_RUN_TIMEOUT = 2000
 
-local function shellGetEnvironment()
-    return { path = process.cwd() }
-end
+local deviceShell = {
+    usedTime = 0,
+    timer = nil,
+    totalTime = 0
+}
 
-local function shellExecute(cmd, callback)
-
-    local isWindows = (os.platform() == 'win32')
-    if (not isWindows) then
-        -- 重定向 stderr(2) 输出到 stdout(1)
-        cmd = cmd .. " 2>&1"
+function deviceShell.init()
+    if (deviceShell.timer) then
+        return
     end
 
-    -- [[
-    local options = {
-        timeout = SHELL_RUN_TIMEOUT,
-        env = process.env
-    }
-
-    exec(cmd, options, function(err, stdout, stderr)
-        console.log(cmd, err, stdout, stderr)
-
-        if (not stdout) or (stdout == '') then
-            stdout = stderr
-        end
-
-        -- error
-        if (err) then
-            if (err.message) then
-                err = err.message
-            end
-
-            stdout = err .. ': \n\n' .. stdout
-        end
-
-        local result = {}
-        result.output = stdout
-        result.environment = shellGetEnvironment()
-
-        callback(result)
-    end)
-    --]]
+    deviceShell.timer = setInterval(1000 * 2, function()
+        local cpu = deviceShell.getCpuUsage()
+        local mem = deviceShell.getMemoryUsage()
+        local stat = fs.statfs(app.rootPath)
+        console.log('cpu', cpu, 'mem', mem, stat)
+        -- deviceShell.resetCpuUsage()
+    end);
 end
 
-local function shellChdir(dir, callback)
-    local result = {}
+function deviceShell.resetCpuUsage()
+    deviceShell.usedTime = 0;
+    deviceShell.totalTime = 0;
+end
 
-    if (type(dir) == 'string') and (#dir > 0) then
-        local cwd = process.cwd()
-        local newPath = dir
-        if (not dir:startsWith('/')) then
-            newPath = path.join(cwd, dir)
-        end
-
-        if newPath and (newPath ~= cwd) then
-            local ret, err = process.chdir(newPath)
-            if (not ret) then
-                result.output = err or 'Unable to change directory'
-            end
-        end
+function deviceShell.getMemoryUsage()
+    local free = os.freemem() or 0
+    local total = os.totalmem() or 0
+    if (total == 0) then
+        return 0
     end
 
-    result.environment = shellGetEnvironment()
-
-    setImmediate(function()
-        callback(result)
-    end)
+    return math.floor(free * 100 / total + 0.5)
 end
 
-local function resetCpuUsage()
-    cpuInfo.usedTime = 0;
-    cpuInfo.totalTime = 0;
-end
-
-local function getCpuUsage()
+function deviceShell.getCpuUsage()
     local data = fs.readFileSync('/proc/stat')
     if (not data) then
         return 0
@@ -115,22 +70,25 @@ local function getCpuUsage()
 
     local totalCpuUsedTime = x[1] + x[2] + x[3] + x[6] + x[7] + x[8] + x[9] + x[10]
 
-    local cpuUsedTime = totalCpuUsedTime - cpuInfo.usedTime
-    local cpuTotalTime = totalCpuTime - cpuInfo.totalTime
+    local cpuUsedTime = totalCpuUsedTime - deviceShell.usedTime
+    local cpuTotalTime = totalCpuTime - deviceShell.totalTime
 
-    cpuInfo.usedTime = math.floor(totalCpuUsedTime) --record
-    cpuInfo.totalTime = math.floor(totalCpuTime) --record
+    deviceShell.usedTime = math.floor(totalCpuUsedTime) --record
+    deviceShell.totalTime = math.floor(totalCpuTime) --record
 
     if (cpuTotalTime == 0) then
         return 0
     end
 
-    local cpuUserPercent = math.floor(cpuUsedTime / cpuTotalTime * 100)
-    return cpuUserPercent
+    return math.floor(cpuUsedTime / cpuTotalTime * 100)
+end
+
+function deviceShell.getEnvironment()
+    return { path = process.cwd() }
 end
 
 -- Get the MAC address of localhost
-local function getMacAddress()
+function deviceShell.getMacAddress()
     local faces = os.networkInterfaces()
     if (faces == nil) then
     	return
@@ -163,10 +121,105 @@ local function getMacAddress()
     return util.bin2hex(item.mac)
 end
 
-local function onDeviceActions(input, webThing)
+function deviceShell.shellExecute(cmd, callback)
+
+    local isWindows = (os.platform() == 'win32')
+    if (not isWindows) then
+        -- 重定向 stderr(2) 输出到 stdout(1)
+        cmd = cmd .. " 2>&1"
+    end
+
+    -- [[
+    local options = {
+        timeout = SHELL_RUN_TIMEOUT,
+        env = process.env
+    }
+
+    exec(cmd, options, function(err, stdout, stderr)
+        console.log(cmd, err, stdout, stderr)
+
+        if (not stdout) or (stdout == '') then
+            stdout = stderr
+        end
+
+        -- error
+        if (err) then
+            if (err.message) then
+                err = err.message
+            end
+
+            stdout = err .. ': \n\n' .. stdout
+        end
+
+        local result = {}
+        result.output = stdout
+        result.environment = deviceShell.getEnvironment()
+
+        callback(result)
+    end)
+    --]]
+end
+
+function deviceShell.chdir(dir, callback)
+    local result = {}
+
+    if (type(dir) == 'string') and (#dir > 0) then
+        local cwd = process.cwd()
+        local newPath = dir
+        if (not dir:startsWith('/')) then
+            newPath = path.join(cwd, dir)
+        end
+
+        if newPath and (newPath ~= cwd) then
+            local ret, err = process.chdir(newPath)
+            if (not ret) then
+                result.output = err or 'Unable to change directory'
+            end
+        end
+    end
+
+    result.environment = deviceShell.getEnvironment()
+
+    setImmediate(function()
+        callback(result)
+    end)
+end
+
+-------------------------------------------------------------------------------
+-- Device management
+
+local deviceManagement = {
+    rebootTimer = nil,
+    updateTimer = nil,
+    firmware = nil,
+    config = nil,
+    unlock = false
+}
+
+-- Execute action
+-- @param actions {object} Actions table
+-- @param input {object} Input parameter
+-- @param webThing {object} WoT client
+-- @return {any} Output parameter
+function deviceManagement.onActionExecute(actions, input, webThing)
+    if (type(input) ~= 'table') then
+        return { code = 400, error = 'Invalid input parameter' }
+    end
+
+    local name, value = next(input)
+    local action = actions[name]
+    if (action) then
+        return action(value, webThing)
+    else
+        return { code = 400, error = 'Unsupported methods' }
+    end
+end
+
+function deviceManagement.deviceActions(input, webThing)
+    local actions = {}
 
     -- Read device information
-    local function onDeviceRead(input, webThing)
+    function actions.read(input, webThing)
         local device = {}
         device.cpuUsage    = getCpuUsage()
         device.currentTime = os.time()
@@ -181,7 +234,7 @@ local function onDeviceActions(input, webThing)
         device.modelNumber  = 'DT02'
         device.powerSources = 0
         device.powerVoltage = 12000
-        device.serialNumber = getMacAddress()
+        device.serialNumber = deviceShell.getMacAddress()
 
         return device
     end
@@ -189,12 +242,12 @@ local function onDeviceActions(input, webThing)
     -- Reboot the device
     -- @param input {object}
     --  - delay {number} 大于 0 表示延时重启，小于等于 0 表示取消重启
-    local function onDeviceReboot(input, webThing)
+    function actions.reboot(input, webThing)
         local delay = tonumber(input and input.delay)
 
         local message = nil
-        if (client.rebootTimer) then
-            clearTimeout(client.rebootTimer)
+        if (deviceManagement.rebootTimer) then
+            clearTimeout(deviceManagement.rebootTimer)
             message = 'Reboot is canceled'
         end
 
@@ -209,8 +262,8 @@ local function onDeviceActions(input, webThing)
                 delay = 60
             end
 
-            client.rebootTimer = setTimeout(1000 * delay, function()
-                client.rebootTimer = nil;
+            deviceManagement.rebootTimer = setTimeout(1000 * delay, function()
+                deviceManagement.rebootTimer = nil;
                 console.log('reboot timeout');
                 console.log(os.execute('reboot'));
             end)
@@ -227,7 +280,7 @@ local function onDeviceActions(input, webThing)
     end
 
     -- Factory Reset
-    local function onDeviceReset(input, webThing)
+    function actions.reset(input, webThing)
         local type = tonumber(input and input.type)
 
         local message = 'device reset not implemented'
@@ -235,7 +288,7 @@ local function onDeviceActions(input, webThing)
     end
 
     -- Set Date & Time
-    local function onDeviceWrite(input, webThing)
+    function actions.write(input, webThing)
         -- console.log('onDeviceWrite');
         if (input) then
             -- currentTime
@@ -247,14 +300,14 @@ local function onDeviceActions(input, webThing)
         return { code = 0, message = message }
     end
 
-    local function onDeviceUnlock(input, webThing)
+    function actions.unlock(input, webThing)
         if (not input) then
             return { code = -1, message = 'Input is null' }
         end
 
         local data = fs.readFileSync(app.nodePath .. '/conf/lnode.key')
         if (not data) then
-            client.unlock = false
+            deviceManagement.unlock = false
             return { code = -1, message = 'Unlock key is null' }
         end
 
@@ -264,17 +317,17 @@ local function onDeviceActions(input, webThing)
         local hash = util.md5string(did .. ':' .. data)
         console.log(did, data, hash, input)
         if (hash ~= input) then
-            client.unlock = false
+            deviceManagement.unlock = false
             return { code = -1, message = 'Bad input parameter' }
         end
 
-        client.unlock = true
+        deviceManagement.unlock = true
         return { code = 0, message = 'Device unlocked' }
     end
 
-    local function onDeviceExecute(input, webThing)
+    function actions.execute(input, webThing)
         -- console.log('onDeviceExecute', input);
-        if (not client.unlock) then
+        if (not deviceManagement.unlock) then
             return { code = -1, message = 'Device is locked' }
         end
 
@@ -282,12 +335,12 @@ local function onDeviceActions(input, webThing)
 
         if (input and input:startsWith('cd ')) then
             local dir = input:sub(4)
-            shellChdir(dir, function(result)
+            deviceShell.chdir(dir, function(result)
                 promise:resolve(result)
             end)
 
         else
-            shellExecute(input, function(result)
+            deviceShell.shellExecute(input, function(result)
                 promise:resolve(result)
             end)
         end
@@ -295,38 +348,13 @@ local function onDeviceActions(input, webThing)
         return promise
     end
 
-    if (not input) then
-        return { code = 400, error = 'Unsupported methods' }
-
-    elseif (input.reboot) then
-        return onDeviceReboot(input.reboot, webThing);
-
-    elseif (input.reset) then
-        return onDeviceReset(input.reset, webThing)
-
-    elseif (input.factoryReset) then
-        return onDeviceReset(input.factoryReset, webThing)
-
-    elseif (input.read) then
-        return onDeviceRead(input.read, webThing)
-
-    elseif (input.write) then
-        return onDeviceWrite(input.write, webThing)
-
-    elseif (input.execute) then
-        return onDeviceExecute(input.execute, webThing)
-
-    elseif (input.unlock) then
-        return onDeviceUnlock(input.unlock, webThing)
-
-    else
-        return { code = 400, error = 'Unsupported methods' }
-    end
+    return deviceManagement.onActionExecute(actions, input, webThing)
 end
 
-local function onFirmwareActions(input, webThing)
+function deviceManagement.firmwareActions(input, webThing)
+    local actions = {}
 
-    local function onFirmwareRead(input, webThing)
+    function actions.read(input, webThing)
         local base = app.get('base') or '';
         local did = app.get('did') or '';
 
@@ -343,7 +371,7 @@ local function onFirmwareActions(input, webThing)
             status = json.parse(filedata) or {}
         end
 
-        local firmware = client.services.firmware or {}
+        local firmware = deviceManagement.firmware or {}
         firmware.uri = uri
         firmware.state = status.state or 0
         firmware.result = status.result or 0
@@ -352,14 +380,14 @@ local function onFirmwareActions(input, webThing)
         return firmware
     end
 
-    local function onFirmwareUpdate(params, webThing)
+    function actions.update(params, webThing)
 
-        if (client.updateTimer) then
-            clearTimeout(client.updateTimer)
+        if (deviceManagement.updateTimer) then
+            clearTimeout(deviceManagement.updateTimer)
         end
 
-        client.updateTimer = setTimeout(1000 * 10, function()
-            client.updateTimer = nil;
+        deviceManagement.updateTimer = setTimeout(1000 * 10, function()
+            deviceManagement.updateTimer = nil;
             console.warn('firmware.update');
 
             os.execute('lpm upgrade system> /tmp/upgrade.log &')
@@ -368,61 +396,46 @@ local function onFirmwareActions(input, webThing)
         return { code = 0 }
     end
 
-    if (not input) then
-        return { code = 400, error = 'Unsupported methods' }
-
-    elseif (input.update) then
-        return onFirmwareUpdate(input.update, webThing);
-
-    elseif (input.read) then
-        return onFirmwareRead(input.read, webThing)
-
-    else
-        return { code = 400, error = 'Unsupported methods' }
-    end
+    return deviceManagement.onActionExecute(actions, input, webThing)
 end
 
-local function onConfigActions(input, webThing)
+function deviceManagement.configActions(input, webThing)
+    local actions = {}
 
-    local function onConfigRead(input, webThing)
-        client.services.config = app.get('gateway');
-        local config = client.services.config or {}
+    function actions.read(input, webThing)
+        deviceManagement.config = app.get('gateway');
+        local config = deviceManagement.config or {}
 
         return config
     end
 
-    local function onConfigWrite(config, webThing)
-        if (not client.services.config) then
-            client.services.config = {}
+    function actions.write(config, webThing)
+        if (not deviceManagement.config) then
+            deviceManagement.config = {}
         end
 
         if (config) then
             console.warn('config.write');
 
-            client.services.config = config
+            deviceManagement.config = config
             app.set('gateway', config)
         end
 
         return { code = 0 }
     end
 
-    if (not input) then
-        return { code = 400, error = 'Unsupported methods' }
-
-    elseif (input.read) then
-        return onConfigRead(input.read, webThing)
-
-    elseif (input.write) then
-        return onConfigWrite(input.write, webThing);
-
-    else
-        return { code = 400, error = 'Unsupported methods' }
-    end
+    return deviceManagement.onActionExecute(actions, input, webThing)
 end
 
-local function onLogActions(input, webThing)
+-- device log actions (read, write)
+-- @param input {any} Input parameters
+-- @param webThing {thing} wot client
+-- @return {any} Output parameters
+function deviceManagement.logActions(input, webThing)
+    local actions = {}
 
-    local function onLogRead(input, webThing)
+    -- Read device logs
+    function actions.read(input, webThing)
         local result = {
             enable = true,
             level = 1,
@@ -434,25 +447,43 @@ local function onLogActions(input, webThing)
         return result
     end
 
-    local function onLogWrite(input, webThing)
+    -- Write device log settings
+    function actions.write(input, webThing)
 
         return { code = 0 }
     end
 
-    if (not input) then
-        return { code = 400, error = 'Unsupported methods' }
-
-    elseif (input.read) then
-        return onLogRead(input.read, webThing)
-
-    elseif (input.write) then
-        return onLogWrite(input.write, webThing);
-
-    else
-        return { code = 400, error = 'Unsupported methods' }
-    end
+    return deviceManagement.onActionExecute(actions, input, webThing)
 end
 
+-- Standard device management action interfaces:
+-- device, firmware, config and log
+function deviceManagement.setActions(webThing)
+    webThing:setActionHandler('device', function(input)
+        return deviceManagement.deviceActions(input, webThing)
+    end)
+
+    webThing:setActionHandler('firmware', function(input)
+        return deviceManagement.firmwareActions(input, webThing)
+    end)
+
+    webThing:setActionHandler('config', function(input)
+        return deviceManagement.configActions(input, webThing)
+    end)
+
+    webThing:setActionHandler('log', function(input)
+        return deviceManagement.logActions(input, webThing)
+    end)
+end
+
+-------------------------------------------------------------------------------
+-- Gateway thing
+
+-- Create and expose the WoT gateway thing
+-- @param options {object} options
+--  - mqtt {string} MQTT server URL (ex: mqtt://iot.text.com)
+--  - did {string} Device ID
+--  - secret {string} Device secret
 local function createThing(options)
     if (not options) then
         return nil, 'need options'
@@ -464,7 +495,8 @@ local function createThing(options)
         return nil, 'need did option'
     end
 
-    local gateway = {
+    -- Gateway thing description
+    local gatewayDescription = {
         id = options.did,
         clientId = options.clientId,
         url = options.mqtt,
@@ -478,41 +510,25 @@ local function createThing(options)
         }
     }
 
-    gateway['@context'] = 'http://iot.beaconice.cn/schemas'
-    gateway['@type'] = 'Gateway'
+    gatewayDescription['@context'] = 'http://iot.beaconice.cn/schemas'
+    gatewayDescription['@type'] = 'Gateway'
 
-    local webThing = wot.produce(gateway)
-    webThing.secret = options.secret
-
-    -- device actions
-    webThing:setActionHandler('device', function(input)
-        return onDeviceActions(input, webThing)
-    end)
-
-    -- firmware actions
-    webThing:setActionHandler('firmware', function(input)
-        return onFirmwareActions(input, webThing)
-    end)
-
-    -- config actions
-    webThing:setActionHandler('config', function(input)
-        return onConfigActions(input, webThing)
-    end)
-
-    -- log actions
-    webThing:setActionHandler('log', function(input)
-        return onLogActions(input, webThing)
-    end)
+    local webThing = wot.produce(gatewayDescription)
+    deviceManagement.setActions(webThing)
 
     -- register
-    webThing:expose()
 
+    -- register options
+    webThing.secret = options.secret
+    webThing:expose()
     webThing:on('register', function(response)
         local result = response and response.result
         if (result and result.code and result.error) then
             console.log('register', 'error', response.did, result)
 
         elseif (result.token) then
+            -- access token
+            webThing.token = result.token
             console.log('register', response.did, result.token)
         end
 
@@ -522,17 +538,13 @@ local function createThing(options)
         end
     end)
 
-    if (not cpuInfo.timer) then
-        cpuInfo.timer = setInterval(1000 * 5, function()
-            -- console.log('resetCpuUsage')
-            resetCpuUsage()
-        end);
-    end
+    -- Gateway status timer
+    deviceShell.init()
 
     return webThing
 end
 
 exports.createThing = createThing
-exports.getMacAddress = getMacAddress
+exports.getMacAddress = deviceShell.getMacAddress
 
 return exports

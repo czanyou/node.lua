@@ -13,6 +13,11 @@ local led = require('./led')
 local exports = {}
 
 function exports.led()
+    if (not led.isSupport()) then
+        print('Warn: Current device not support LED')
+        return
+    end
+
     setInterval(500, function()
         led.setLEDStatus("green", "toggle")
 
@@ -117,6 +122,16 @@ function exports.test()
         print('test', err, result)
     end)
     --]]
+
+    local test = {
+        read = 100,
+        write = 100
+    }
+
+    console.log(type(test))
+    console.log(next(test))
+    console.log(next(test, "write"))
+    console.log(next(test, "read"))
 end
 
 function exports.key(key, did)
