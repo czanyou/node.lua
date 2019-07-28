@@ -18,7 +18,8 @@ local SHELL_RUN_TIMEOUT = 2000
 local deviceShell = {
     usedTime = 0,
     timer = nil,
-    totalTime = 0
+    totalTime = 0,
+    lastStatus = {}
 }
 
 function deviceShell.init()
@@ -27,11 +28,26 @@ function deviceShell.init()
     end
 
     deviceShell.timer = setInterval(1000 * 2, function()
-        local cpu = deviceShell.getCpuUsage()
-        local mem = deviceShell.getMemoryUsage()
-        local stat = fs.statfs(app.rootPath)
-        console.log('cpu', cpu, 'mem', mem, stat)
-        -- deviceShell.resetCpuUsage()
+        local cpuUsage = deviceShell.getCpuUsage()
+        local memoryUsage, freeMemory = deviceShell.getMemoryUsage()
+        local stat = deviceShell.getStorageInfo()
+        -- console.log('cpu', cpuUsage, 'mem', memoryUsage, stat)
+
+        local lastStatus = deviceShell.lastStatus
+        local updated = lastStatus.updated or 0
+        local span = Date.now() - updated
+        -- console.log(span)
+        if (span > 10) then
+            lastStatus.updated = Date.now()
+            lastStatus.cpuUsage = cpuUsage
+            lastStatus.freeMemory = freeMemory
+
+            if (stat) then
+                lastStatus.freeStorage = stat.free
+            end
+
+            console.log(lastStatus)
+        end
     end);
 end
 
@@ -47,7 +63,20 @@ function deviceShell.getMemoryUsage()
         return 0
     end
 
-    return math.floor(free * 100 / total + 0.5)
+    return math.floor(free * 100 / total + 0.5), math.floor(free / 1024)
+end
+
+function deviceShell.getStorageInfo()
+    local stat = fs.statfs(app.rootPath)
+    if (stat == nil) then
+        return
+    end
+
+    local result = {}
+    result.type = stat.type
+    result.total = stat.blocks * (stat.bsize / 1024)
+    result.free = stat.bfree * (stat.bsize / 1024)
+    return result
 end
 
 function deviceShell.getCpuUsage()
@@ -495,6 +524,9 @@ local function createThing(options)
         return nil, 'need did option'
     end
 
+    -- Gateway status timer
+    deviceShell.init()
+
     -- Gateway thing description
     local gatewayDescription = {
         id = options.did,
@@ -537,9 +569,6 @@ local function createThing(options)
             console.info('Gateway service restart.')
         end
     end)
-
-    -- Gateway status timer
-    deviceShell.init()
 
     return webThing
 end

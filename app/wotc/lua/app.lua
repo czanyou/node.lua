@@ -12,6 +12,7 @@ local led = require('./led')
 
 local exports = {}
 
+-- LED service
 function exports.led()
     if (not led.isSupport()) then
         print('Warn: Current device not support LED')
@@ -19,8 +20,10 @@ function exports.led()
     end
 
     setInterval(500, function()
+        -- Work status LED
         led.setLEDStatus("green", "toggle")
 
+        -- Network status LED
         local ret = wot.isConnected()
         if ret then
             led.setLEDStatus("yellow", "on")
@@ -30,10 +33,7 @@ function exports.led()
     end)
 end
 
-function exports.config()
-    console.log('gateway', app.get('gateway'))
-end
-
+-- SSDP service
 function exports.ssdp()
     local version = process.version
     local did = app.get('did') or client.getMacAddress();
@@ -45,6 +45,7 @@ function exports.ssdp()
         ssdpSig = ssdpSig, 
         deviceModel = model 
     }
+    
     -- console.log(options, did)
     local server, error = ssdpServer(options)
     if (error) then
@@ -55,6 +56,7 @@ function exports.ssdp()
     exports.ssdpServer = server
 end
 
+-- Gateway service
 function exports.gateway()
     -- options
     -- - did
@@ -76,16 +78,7 @@ function exports.gateway()
     log.init(webThing)
 end
 
-function exports.start()
-    local lock = app.lock()
-    if (lock) then
-        exports.led()
-        exports.ssdp()
-        exports.rpc()
-        exports.gateway()
-    end
-end
-
+-- RPC service
 function exports.rpc()
     local handler = {}
     local name = 'wotc'
@@ -134,11 +127,25 @@ function exports.test()
     console.log(next(test, "read"))
 end
 
+function exports.config()
+    console.log('gateway', app.get('gateway'))
+end
+
 function exports.key(key, did)
     did = did or app.get('did')
     key = key or '123456'
     local hash = did .. ':' .. key
     print(hash, util.md5string(hash))
+end
+
+function exports.start()
+    local lock = app.lock()
+    if (lock) then
+        exports.led()
+        exports.ssdp()
+        exports.rpc()
+        exports.gateway()
+    end
 end
 
 app(exports)
