@@ -128,7 +128,15 @@ function exports.test()
 end
 
 function exports.config()
-    console.log('gateway', app.get('gateway'))
+    console.printr('gateway', app.get('gateway'))
+end
+
+function exports.device()
+    console.printr(client.getDevice())
+end
+
+function exports.firmware()
+    console.printr(client.getFirmware())
 end
 
 function exports.key(key, did)

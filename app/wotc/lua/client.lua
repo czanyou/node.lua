@@ -222,6 +222,7 @@ local deviceManagement = {
     updateTimer = nil,
     firmware = nil,
     config = nil,
+    errorCode = 0,
     unlock = false
 }
 
@@ -244,26 +245,74 @@ function deviceManagement.onActionExecute(actions, input, webThing)
     end
 end
 
+function deviceManagement.getDevice()
+    local device = deviceManagement.device
+    if (not device) then
+        device = {}
+        deviceManagement.device = device
+
+        local config = nil
+
+        local filename = app.nodePath .. '/conf/device.conf'
+        local filedata = fs.readFileSync(filename)
+        if (filedata) then
+            config = json.parse(filedata)
+        end
+
+        if (not config) then
+            config = {}
+        end
+
+        device.deviceType  = config.deviceType or 'Gateway'
+        device.firmwareVersion = config.firmwareVersion or '1.0'
+        device.hardwareVersion = config.hardwareVersion or '1.0'
+        device.softwareVersion = process.version
+        device.manufacturer = config.manufacturer or 'CD3'
+        device.modelNumber  = config.modelNumber or nil -- 'DT02'
+        device.powerSources = config.powerSources or nil -- 0
+        device.powerVoltage = config.powerVoltage or nil -- 12000
+        device.serialNumber = config.serialNumber or deviceShell.getMacAddress()
+    end
+
+    device.currentTime  = os.time()
+    device.errorCode    = deviceManagement.errorCode or 0
+    device.memoryFree   = math.floor(os.freemem() / 1024)
+    device.memoryTotal  = math.floor(os.totalmem() / 1024)
+    return device
+end
+
+function deviceManagement.getFirmware()
+    local base = app.get('base') or '';
+    local did = app.get('did') or '';
+
+    if (not base:endsWith('/')) then
+        base = base .. '/'
+    end
+    local uri = base .. 'device/firmware/file?did=' .. did;
+
+    local rootPath = app.rootPath
+    local filename = path.join(rootPath, 'update/status.json')
+    local filedata = fs.readFileSync(filename)
+    local status = {}
+    if (filedata) then
+        status = json.parse(filedata) or {}
+    end
+
+    local firmware = deviceManagement.firmware or {}
+    firmware.uri = uri
+    firmware.state = status.state or 0
+    firmware.result = status.result or 0
+    firmware.protocol = 2 -- HTTP
+    firmware.delivery = 0 -- PULL
+    return firmware
+end
+
 function deviceManagement.deviceActions(input, webThing)
     local actions = {}
 
     -- Read device information
     function actions.read(input, webThing)
-        local device = {}
-        device.cpuUsage    = getCpuUsage()
-        device.currentTime = os.time()
-        device.deviceType  = 'Gateway'
-        device.errorCode   = 0
-        device.firmwareVersion = '1.0'
-        device.hardwareVersion = '1.0'
-        device.softwareVersion = process.version
-        device.manufacturer = 'CD3'
-        device.memoryFree   = math.floor(os.freemem() / 1024)
-        device.memoryTotal  = math.floor(os.totalmem() / 1024)
-        device.modelNumber  = 'DT02'
-        device.powerSources = 0
-        device.powerVoltage = 12000
-        device.serialNumber = deviceShell.getMacAddress()
+        local device = deviceManagement.getDevice()
 
         return device
     end
@@ -309,7 +358,7 @@ function deviceManagement.deviceActions(input, webThing)
     end
 
     -- Factory Reset
-    function actions.reset(input, webThing)
+    function actions.factoryReset(input, webThing)
         local type = tonumber(input and input.type)
 
         local message = 'device reset not implemented'
@@ -377,6 +426,10 @@ function deviceManagement.deviceActions(input, webThing)
         return promise
     end
 
+    function actions.errorReset(input, webThing)
+        deviceManagement.errorCode = 0
+    end
+
     return deviceManagement.onActionExecute(actions, input, webThing)
 end
 
@@ -384,29 +437,7 @@ function deviceManagement.firmwareActions(input, webThing)
     local actions = {}
 
     function actions.read(input, webThing)
-        local base = app.get('base') or '';
-        local did = app.get('did') or '';
-
-        if (not base:endsWith('/')) then
-            base = base .. '/'
-        end
-        local uri = base .. 'device/firmware/file?did=' .. did;
-
-        local rootPath = app.rootPath
-        local filename = path.join(rootPath, 'update/status.json')
-        local filedata = fs.readFileSync(filename)
-        local status = {}
-        if (filedata) then
-            status = json.parse(filedata) or {}
-        end
-
-        local firmware = deviceManagement.firmware or {}
-        firmware.uri = uri
-        firmware.state = status.state or 0
-        firmware.result = status.result or 0
-        firmware.protocol = 2 -- HTTP
-        firmware.delivery = 0 -- PULL
-        return firmware
+        return deviceManagement.getFirmware()
     end
 
     function actions.update(params, webThing)
@@ -575,5 +606,7 @@ end
 
 exports.createThing = createThing
 exports.getMacAddress = deviceShell.getMacAddress
+exports.getDevice = deviceManagement.getDevice
+exports.getFirmware = deviceManagement.getFirmware
 
 return exports
