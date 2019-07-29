@@ -37,10 +37,13 @@
 
     .login-form-height { height: 100px; font-family: inherit;
       background-image: linear-gradient(top, #eee, #f8f8f9); }
-    #login_tip { padding: 5px 8px; line-height: 20px; color: #c85305; }
   }
 
   .header-right .btn-group { margin-top: 10px; margin-right: 10px; }
+  .form-control { margin-bottom: 8px; border-radius: 3px; }
+  .form-group { margin-bottom: 8px; }
+  .login_tip { padding: 8px 8px; line-height: 20px; color: #c85305; 
+    background: #fee; margin: 8px 0; border-radius: 5px; }
 
   </style>
 </head>
@@ -56,16 +59,17 @@
       <div class="password-text"><label>You are accessing the management, and need to verify the password.</label></div>
       <div class="noborder" style="min-height: 1px;"></div>
       <div class="form-group">
-        <input class="form-control" name="username" type="hidden" size="32" value="admin"/>
+        <input class="form-control" name="username" type="text" size="32" value="admin" readonly/>
         <input class="form-control" id="login_password" name="password" type="password" placeholder="Enter the admin password" size="32" maxlength="32"/>
-        <div id="login_tip">
-          <p v-if="error.empty">Please enter the admin password of the device!</p>
-          <p v-if="error.invalid">This password is not correct, please make sure to use the corresponding password of the device.</p>
+        <div>
+          <p v-if="error.loadding">Loadding...</p>
+          <p v-if="error.empty" class="login_tip">Please enter the admin password of the device!</p>
+          <p v-if="error.invalid" class="login_tip">This password is not correct, please make sure to use the corresponding password of the device.</p>
         </div>
       </div>
         
-      <div><a id="forgot-text" href="javascript:">Forgot your password?</a></div>
-      <div><label id="forgot-desc" v-if="showForgotTip">Restore factory settings if you forget your password: hold the `reset` button for more than 5 seconds when the device is
+      <div><a href="#" @click="showForgotTip=!showForgotTip">Forgot your password?</a></div>
+      <div v-show="showForgotTip" style="display:none;"><label class="login_tip">Restore factory settings if you forget your password: hold the `reset` button for more than 5 seconds when the device is
       powered on.</label></div>
 
       <div class="buttons mt-3">
@@ -80,16 +84,18 @@
 <footer id="footer"></footer>
 </div>
 <script>
-var app = new Vue({
-  el: '#app',
-  data: {
-    message: 'Gateway',
+var $vueData = {
+  message: 'Gateway',
     error: {
       empty: false,
       invalid: false
     },
     showForgotTip: false
-  }
+}
+
+var app = new Vue({
+  el: '#app',
+  data: $vueData
 })
 
 function OnUserLogin(username, password, callback) {
@@ -116,41 +122,29 @@ function OnFormSubmit() {
   var username = 'admin'
   var password = form.password.value;
 
-  var loginTip = $("#login_tip")
-
+  $vueData.error = { loadding: true }
   if (!password) {
-    loginTip.html('Please enter the admin password of the device!').show();
+    $vueData.error = { empty: true }
     return false;
   }
 
-  loginTip.html('Logining').show();
   form.password.disabled = true;
   form.login_button.disabled = true;
 
   OnUserLogin(username, password, function(err, result) {
     if (err) {
-      loginTip.html('This password is not correct, please make sure to use the corresponding password of the device.').show();
+      $vueData.error = { invalid: true }
       form.password.disabled = false;
       form.login_button.disabled = false;
 
     } else {
+      $vueData.error = {}
       location.href = "/?v=" + VISION_VERSION;
     }
   })
 
   return false;
 }
-
-$(document).ready(function() {
-  if (window.top.location != window.self.location) {
-      window.top.location = window.self.location;
-      return
-  }
-
-  $("#forgot-text").click(function() {
-    app.showForgotTip = !app.showForgotTip;
-  })
-});
 
 </script>
 </body>

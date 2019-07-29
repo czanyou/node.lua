@@ -24,13 +24,12 @@ local function getThingsStatus()
         return list
     end
 
-    for did, thing in pairs(things) do 
+    for did, thing in pairs(things) do
         local data = {}
         data.id = thing.id
         data.name = thing.name
         data.token = thing.token
         data.deviceId = thing.deviceId
-        data.instance = thing.instance
 
         data.register = {}
         data.register.expires = thing.registerExpires

@@ -16,14 +16,16 @@ define make_build
 endef
 
 define make_load_config
-	@echo "BOARD_TYPE: ${board}";
+	@echo "-- Load: BOARD_TYPE=${board}";
 	@echo "${board}" > build/target;
-	@echo "Next, you can type 'make build' to build the SDK";
+	@cmake -H. -Bbuild/${board} -DBOARD_TYPE=${board}
+	@echo ""
+	@echo "Next step, you can type 'make build' to build the SDK";
 endef
 
 define make_load_help
 	@echo "Usage: make load board=<BOARD_TYPE>"
-	@echo "Available boards:"
+	@echo "Available BOARD_TYPE:"
 	@echo ""
 	@ $(foreach name, ${BOARDS}, echo " -" $(basename ${name});)
 	@echo ""
@@ -41,7 +43,7 @@ include script/install.mk
 
 ## ------------------------------------------------------------
 
-.PHONY: all build config clean load help install local remove sdk patch tar deb
+.PHONY: all build config clean load help install local remove sdk
 
 ## ------------------------------------------------------------
 
@@ -56,7 +58,6 @@ help:
 	@echo ""
 
 	@echo '  sdk     Build the SDK package'
-	@echo '  patch   Build the PATCH package'
 	@echo '  clean   Clean all build output files'
 
 	@echo ""
@@ -81,32 +82,22 @@ build:
 clean:
 	rm -rf build
 
-config:
-	cmake -H. -Bbuild/${BOARD_TYPE} -DBOARD_TYPE=${BOARD_TYPE}
-
 local:
-	@make load board=local
+	@make load board=$@
+	@make build
+
+hi3516:
+	@make load board=$@
+	@make build
 
 ## ------------------------------------------------------------
 ## SDK
+
+sdk:
+	lpm lbuild sdk
 
 install:
 	$(call sdk_install)
 
 remove:
 	$(call sdk_remove)
-
-## ------------------------------------------------------------
-## shortcuts
-
-sdk:
-	lpm lbuild sdk
-
-patch:
-	lpm lbuild patch
-
-deb:
-	lpm lbuild deb
-
-tar:
-	lpm lbuild tar

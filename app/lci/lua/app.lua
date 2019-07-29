@@ -7,6 +7,11 @@ local http = require('./http')
 local exports = {}
 
 local function checkButtonStatus(interval_ms)
+    if (not fs.existsSync('/sys/class/gpio/')) then
+        print('Error: gpio not exists')
+        return
+    end
+
     local TIMEOUT_NETWORK_RESET = 4
     local TIMEOUT_SYSTEM_RESET = 10
     local DEFAULT_IP = "192.168.8.12"

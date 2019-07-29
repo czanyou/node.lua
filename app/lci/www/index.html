@@ -12,11 +12,16 @@
   <script src="js/vue.min.js?v=100003"></script>
 	<script src="js/common.js?v=100003"></script>
 	<style>
-    .header-brand { line-height: 72px; padding: 0 16px; }
+    header#header { background: #0063B1; }
+    .header-brand { line-height: 64px; padding: 0 16px; color: #fff; font-weight: 500;
+      margin: 0; }
 
     .form-content { padding: 0 16px; max-width: 600px; margin: 0 auto; }
-    .form-content .form-control { min-width: 220px; }
-    .form-content h3 { margin: 24px 0 16px; font-weight: normal; }
+    .form-content .form-control { min-width: 220px; display: inline-block;
+      border-radius: 3px; font-size: 100%; line-height: 36px; }
+    .form-content .form-file { padding: 0; width: 220px; background: #eee; }
+    .form-content h3 { margin: 24px 0 24px; font-size: 110%; color: #333; 
+      font-weight: 500; }
 
     .form-footer { margin-top: 16px; margin-bottom: 16px; padding-bottom: 16px;
       border-bottom: 1px solid #ddd; }
@@ -77,7 +82,7 @@
 
     <div class="form-footer">
       <label for="recipient-name" class="col-form-label">&nbsp;</label>
-      <button type="button" class="btn btn-secondary">Reset</button>
+      <button type="button" class="btn btn-secondary" onclick="onConfigReset()">Reset</button>
       <button type="button" class="btn btn-primary" onclick="onConfigWrite()">Submit</button>
     </div>
 
@@ -127,14 +132,17 @@
 
         <div class="form-group">
           <label for="recipient-name" class="col-form-label">File:</label>
-          <input type="file" name="file" class="form-control">
-        </div>
-
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">&nbsp;</label>
-          <button type="button" class="btn btn-primary" onclick="onSystemUpload()">Upload</button>
+          <input type="file" name="file" class="form-control form-file">
         </div>
       </form>
+    </div>
+
+    <div class="form-footer">
+      <div class="form-group">
+        <label for="recipient-name" class="col-form-label">&nbsp;</label>
+        <button type="button" class="btn btn-primary" onclick="onSystemUpdate()">Update</button>
+        <button type="button" class="btn btn-primary" onclick="onSystemUpload()">Upload</button>
+      </div>
     </div>
 
     <div class="form-header">
@@ -142,7 +150,7 @@
     </div>   
 
     <div class="form-footer">
-      <button type="button" class="btn btn-primary" onclick="onSystemUpdate()">Update</button>
+      <label for="recipient-name" class="col-form-label">&nbsp;</label>
       <button type="button" class="btn btn-primary" onclick="onSystemUpgrade()">Upgrade</button>
       <button type="button" class="btn btn-primary" onclick="onSystemReboot()">Reboot</button>
    
@@ -168,6 +176,10 @@ var $vueData = {
   status: {},
   update: {},
   firmware: {}
+}
+
+var config = {
+
 }
 
 var app = new Vue({
@@ -202,16 +214,26 @@ function onConfigRead() {
 			return;
     }
     
-    var config = result;
-    $vueData.ip_mode = config.ip_mode
-    $vueData.ip = config.ip
-    $vueData.netmask = config.netmask
-    $vueData.router = config.router
-    $vueData.dns = config.dns
+    $vueData.ip_mode = result.ip_mode
+    $vueData.ip = result.ip
+    $vueData.netmask = result.netmask
+    $vueData.router = result.router
+    $vueData.dns = result.dns
 
+    config.network = result
 	});
 
 	return false;
+}
+
+function onConfigReset() {
+  var result = config.network || {}
+
+  $vueData.ip_mode = result.ip_mode
+  $vueData.ip = result.ip
+  $vueData.netmask = result.netmask
+  $vueData.router = result.router
+  $vueData.dns = result.dns
 }
 
 function onConfigWrite(callback) {
@@ -270,7 +292,7 @@ function onSystemUpdate() {
       alert('Failed to update. Please try again later');
 
 		} else {
-      alert('Update start');
+      alert('Device will download the lastest firmware file from cloud');
 		}
   });
   
@@ -278,6 +300,10 @@ function onSystemUpdate() {
 }
 
 function onSystemUpgrade() {
+  if (!window.confirm("Are you sure want to upgrade the device?")) {
+    return;
+  }
+
   var url = "/system/write";
 
 	var data = {
@@ -290,7 +316,7 @@ function onSystemUpgrade() {
       alert('Failed to upgrade. Please try again later');
 
 		} else {
-      alert('Upgrade start');
+      alert('Upgrade will start in 5 seconds');
 		}
   });
   
@@ -314,7 +340,7 @@ function onSystemReboot() {
       alert('Failed to reboot. Please try again later');
 
     } else {
-      alert('Reboot start');
+      alert('Device will reboot in 5 seconds');
     }
   });
 

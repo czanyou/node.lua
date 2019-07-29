@@ -1,9 +1,6 @@
 local json     = require('json')
-local path 	   = require('path')
-local ssdp     = require('ssdp/ssdp')
 local util     = require('util')
 local core     = require('core')
-local request  = require('http/request')
 
 local Promise  = require('wot/promise')
 local mqtt     = require('wot/bindings/mqtt')

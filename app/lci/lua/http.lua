@@ -215,26 +215,23 @@ local function setConfigRoutes(app)
 end
 
 function exports.start(port)
- 
     -- document root path
     local dirname = path.dirname(util.dirname())
     local root = path.join(dirname, 'www')
 
-    console.log(root)
-
     -- app
-    local app = express({ root = root })
+    local httpd = express({ root = root })
 
-    app:on('error', function(err, code) 
-        print('Express', err)
+    httpd:on('error', function(err, code) 
+        print('Error: ', err)
         if (code == 'EACCES') then
-            print('Only administrators have permission to use port 80')
+            print('Error: Only administrators have permission to use port 80')
         end
     end)
 
-    setConfigRoutes(app)
+    setConfigRoutes(httpd)
 
-    app:listen(port or 80)
+    httpd:listen(port or 80)
 end
 
 return exports
