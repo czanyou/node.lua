@@ -45,8 +45,7 @@ end
 -- 检查客户端是否已经登录 
 local function checkLogin(request, response)
     local pathname = request.uri.pathname or ''
-
-    console.log(pathname)
+    -- console.log(pathname)
 
     if pathname:endsWith('.html') then
         if (pathname == '/login.html') then
@@ -192,7 +191,7 @@ end
 local function setConfigRoutes(app) 
     -- checkLogin
     function app:onRequest(request, response)
-        console.log('onRequest', request.path)
+        -- console.log('onRequest', request.path)
         return checkLogin(request, response)
     end
 
