@@ -16,13 +16,12 @@
  */
 #include "lutils.h"
 #include "md5.h"
+#include "sha1.h"
  
 #include "buffer_lua.c"
 #include "os.c"
 
-//#include "message.c"
-
- typedef unsigned char uint8_t;
+typedef unsigned char uint8_t;
 
 /**
  *  Hash function. Returns a hash for a given string.
@@ -33,8 +32,25 @@ static int luv_md5(lua_State *L) {
   char buff[16];
   size_t l;
   const char *message = luaL_checklstring(L, 1, &l);
-  md5(message, l, buff);
-  lua_pushlstring(L, buff, 16L);
+  if (message) {
+    md5(message, l, buff);
+    lua_pushlstring(L, buff, 16L);
+  } else {
+    lua_pushnil(L);
+  }
+  return 1;
+}
+
+static int luv_sha1(lua_State *L) {
+  char buff[21];
+  size_t l;
+  const char *message = luaL_checklstring(L, 1, &l);
+  if (message) {
+    SHA1(buff, message, l);
+    lua_pushlstring(L, buff, 20L);
+  } else {
+    lua_pushnil(L);
+  }
   return 1;
 }
 
@@ -173,12 +189,9 @@ static const luaL_Reg lutils_functions[] = {
   { "os_platform",      luv_os_platform },
   { "os_statfs",        luv_os_statfs },
   
-#ifndef _WIN32
-  { "os_uart_set",      luv_os_uart_set },
-#endif
-
   // misc
   { "md5",              luv_md5 },
+  { "sha1",             luv_sha1 },
   { "base64_encode",    luv_base64_encode },
   { "base64_decode",    luv_base64_decode },
   { "hex_encode",       luv_hex_encode },

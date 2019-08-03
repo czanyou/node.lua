@@ -11,8 +11,8 @@ set(SOURCES
   ${LUAUTILSDIR}/src/hex.c
   ${LUAUTILSDIR}/src/lenv.c
   ${LUAUTILSDIR}/src/md5.c
+  ${LUAUTILSDIR}/src/sha1.c
   ${LUAUTILSDIR}/src/lutils.c
-
 )
 
 add_library(luautils STATIC ${SOURCES})

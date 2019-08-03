@@ -73,6 +73,14 @@ test(
 )
 
 test(
+	"test utils.sha1",
+	function(expect)
+		local ret = utils.sha1("test.com")
+		assert.equal(utils.bin2hex(ret), "5f543afdb6ba8aeef955c6c951d3bd70c1de8361")
+	end
+)
+
+test(
 	"utils.bind",
 	function(expect)
 		local BindHelper = Object:extend()

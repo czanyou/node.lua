@@ -19,8 +19,6 @@
 #ifndef _LUV_OS
 #define _LUV_OS
 
-#include "uart.c"
-
 ///////////////////////////////////////////////////////////////////////////////
 // platform function
 
@@ -204,16 +202,6 @@ static int luv_os_statfs(lua_State* L) {
 #endif
 
 	return 0;
-}
-
-static int luv_os_uart_set(lua_State* L) {
-	lua_Integer fd = luaL_optinteger(L, 1, -1);
-	lua_Integer baudRate = luaL_optinteger(L, 2, 9600);
-	lua_Integer dataBits = luaL_optinteger(L, 3, 8);
-
-	int ret = lnode_uart_set(fd, baudRate, dataBits);
-	lua_pushinteger(L, ret);
-	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
