@@ -29,7 +29,7 @@ if (BUILD_MEDIA_TS)
     include(modules/media/make.cmake)
 endif ()
 
-# TLS
+# MBEDTLS
 if (BUILD_MBEDTLS)
     include(modules/mbedtls/make.cmake)
 endif ()
@@ -39,6 +39,7 @@ if (BUILD_MESSAGE)
     include(modules/message/make.cmake)
 endif ()
 
+# Modbus
 if (BUILD_MODBUS)
     include(modules/modbus/make.cmake)
 endif ()

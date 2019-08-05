@@ -29,7 +29,7 @@ test("test pass async between threads", function(p, p, expect, uv)
 	--console.log('async', async)
 
 	local args = { 500, 'string', nil, false, 5, "helloworld", async }
-	local unpack = unpack or table.unpack
+	local unpack = table.unpack
 
 	local thread_func = function(num, s, null, bool, five, hw, async)
 		local uv = require('luv')
@@ -45,7 +45,7 @@ test("test pass async between threads", function(p, p, expect, uv)
 		--console.log('thread async', type(async), async)
 
 		-- 必须将 uv 添加到 package.loaded 中
-		assert(type(async)=='userdata')
+		assert(type(async) == 'userdata')
 		uv.sleep(1200)
 
 		assert(uv.async_send(async, 'a', true, 250) == 0)
