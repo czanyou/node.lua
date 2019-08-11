@@ -432,7 +432,7 @@ function exports.list()
 end
 
 function exports.main(handler, action, ...)
-    local method = handler[action]
+    local method = handler[action or 'init']
     if (not method) then
         method = handler.help
     end
@@ -710,46 +710,6 @@ end
 -- 释放文件锁
 function exports.unlock(lockfd)
     fs.fileLock(lockfd, 'u')
-end
-
--- 解析 exports 的 package.json 文件, 并显示相关的使用说明信息.
-function exports.usage(dirname)
-    local fs    = require('fs')
-    local json  = require('json')
-
-    local data      = fs.readFileSync(dirname .. '/package.json')
-    local package   = json.parse(data) or {}
-
-    local color  = console.color
-	local quotes = color('quotes')
-	local desc 	 = color('braces')
-	local normal = color()
-
-    -- Name
-    print(quotes, '\nusage: lpm ' .. tostring(package.name) .. ' <command> [args]\n', normal)
-
-    -- Description
-    if (package.description) then
-        print(package.description, '\n')
-    end
-
-	local printList = function(name, list)
-		if (not list) then
-			return
-		end
-
-        print(name .. ':\n')
-		for _, item in ipairs(list) do
-			print('- ' ..  string.padRight(item.name, 24),
-				desc .. tostring(item.desc), normal)
-		end
-
-		print('')
-	end
-
-    printList('Settings', 			package.settings)
-    printList('IPC command', 		package.rpc)
-    printList('available command', 	package.commands)
 end
 
 exports.meta.__call = function(self, handler)

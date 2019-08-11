@@ -1,5 +1,5 @@
 --
--- 在 Windows 系统下安装 Node.lua 运行环境，包括可执行文件及相关的 Lua 模块
+-- 用于在 Windows 系统下安装 Node.lua 运行环境，包括可执行文件及相关的 Lua 模块
 -- Install the Node.lua runtime environment.
 -- Include executables and related Lua module.
 --

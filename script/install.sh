@@ -1,13 +1,21 @@
 #!/bin/sh
 
-PWD=`pwd`
-PROJECT_ROOT="`dirname ${PWD}`"
-BOARD_TYPE="hi3516"
-LOCAL_BIN_PATH="/usr/local/bin"
-BUILD_PATH="${PROJECT_ROOT}/build/${BOARD_TYPE}"
-NODE_ROOTPATH="/usr/local/lnode"
+# 用于在开发板上安装运行环境
+# 用法:
+#
+# 在 hi3516 开发板上安装运行环境
+# $ ./install.sh hi3516
+#
+# 删除安装的文件或者链接
+# $ ./install.sh uninstall
+#
 
-MODULES=`ls ${PROJECT_ROOT}/modules`
+PROJECT_ROOT=`pwd`
+PROJECT_ROOT="`dirname ${PROJECT_ROOT}`"
+
+BOARD_TYPE="hi3516"
+LOCAL_BIN_PATH="/usr/bin"
+NODE_ROOTPATH="/usr/local/lnode"
 
 make_link() {
     # echo $1 $2
@@ -20,13 +28,9 @@ make_link() {
     fi
 }
 
+# Create link for bin file
 make_module_bin_link() {
 	make_link "${NODE_ROOTPATH}/app/$1/bin/$1" "${LOCAL_BIN_PATH}/$1"
-}
-
-# Create link for bin module
-make_bin_link() {
-	make_link "${BUILD_PATH}/$1" "${NODE_ROOTPATH}/bin/$1"
 }
 
 # Create link for lua module
@@ -36,6 +40,7 @@ make_lib_link() {
 
 # Create links for all lua modules
 make_lua_lib_links() {
+    MODULES=`ls ${PROJECT_ROOT}/modules`
     for name in ${MODULES} 
     do
         # echo $name
@@ -43,58 +48,68 @@ make_lua_lib_links() {
     done
 }
 
-make_install() {
-    echo "Install the files '$BUILD_PATH' into ${NODE_ROOTPATH}"
+sdk_install() {
+    echo "Install the files '$PROJECT_ROOT' into '${NODE_ROOTPATH}'"
 
     mkdir -p ${LOCAL_BIN_PATH}
-
-    rm -rf ${NODE_ROOTPATH}/app
-    rm -rf ${NODE_ROOTPATH}/bin
-    rm -rf ${NODE_ROOTPATH}/lib
-    rm -rf ${NODE_ROOTPATH}/lua
-
     mkdir -p ${NODE_ROOTPATH}/lib
     mkdir -p ${NODE_ROOTPATH}/conf
 
-    make_link "${PROJECT_ROOT}/core/lua" "${NODE_ROOTPATH}/lua"
     make_link "${PROJECT_ROOT}/app" "${NODE_ROOTPATH}/app"
-    make_link "${BUILD_PATH}" "${NODE_ROOTPATH}/bin"
-    make_link "${NODE_ROOTPATH}/bin/lnode" "${LOCAL_BIN_PATH}/lnode"
-    make_link "${NODE_ROOTPATH}/bin/lua" "${LOCAL_BIN_PATH}/lua"
-
-    make_module_bin_link "lpm"
-    make_module_bin_link "lbuild"
+    make_link "${PROJECT_ROOT}/build/${BOARD_TYPE}" "${NODE_ROOTPATH}/bin"
+    make_link "${PROJECT_ROOT}/core/lua" "${NODE_ROOTPATH}/lua"
 
     make_lua_lib_links
 
-    chmod 777 ${LOCAL_BIN_PATH}/l*
+    # bin
+    make_link "${NODE_ROOTPATH}/bin/lnode" "${LOCAL_BIN_PATH}/lnode"
+    make_module_bin_link "lpm"
 
-    rm /usr/bin/lnode
-    rm /usr/bin/lpm
+    chmod 777 ${LOCAL_BIN_PATH}/lnode
+    chmod 777 ${LOCAL_BIN_PATH}/lpm
 
-    ln -s /usr/local/lnode/bin/lnode /usr/bin/lnode
-    ln -s /usr/local/lnode/bin/lpm /usr/bin/lpm  
-
-    echo "Install finish!"
+    echo "Finish!"
     echo ""
 }
 
-make_uninstall() {
-    echo "uninstall..."
-
-    rm -rf ${NODE_ROOTPATH}/bin
+# 清除安装的文件或链接
+sdk_clean() {
     rm -rf ${NODE_ROOTPATH}/app
+    rm -rf ${NODE_ROOTPATH}/bin
     rm -rf ${NODE_ROOTPATH}/lib
     rm -rf ${NODE_ROOTPATH}/lua
 
-    echo ""
+    rm -rf ${LOCAL_BIN_PATH}/lnode
+    rm -rf ${LOCAL_BIN_PATH}/lpm
+
+    rm -rf /usr/local/bin/lnode
+    rm -rf /usr/local/bin/lpm
+    rm -rf /usr/bin/lnode
+    rm -rf /usr/bin/lpm
 }
 
 if [ -z $1 ]
 then
-    make_install
+    echo "Usage: '$0 <board type>'' or '$0 clean'"
+    echo ""
+    echo "ex:"
+    echo "$ $0 hi3516"
+    echo ""
 
-elif [ $1 = "uninstall" ]
+elif [ $1 = "clean" ]
 then
-    make_uninstall  
+    echo "Clean ($NODE_ROOTPATH) ..."
+    sdk_clean
+    echo "Done."
+
+else
+    BOARD_TYPE=$1
+
+    if [ $BOARD_TYPE = "local" ]
+    then
+        LOCAL_BIN_PATH="/usr/local/bin"
+    fi
+
+    sdk_clean
+    sdk_install $1
 fi

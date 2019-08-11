@@ -1,3 +1,6 @@
+# 用于在工作主机上安装运行环境
+# 请在在项目根目录下执行 'make install' 来调用这个脚本
+
 LOCAL_BIN_PATH  ?= /usr/local/bin
 BUILD_PATH 		?= ${PWD}/build/${BOARD_TYPE}
 NODE_ROOTPATH   ?= /usr/local/lnode

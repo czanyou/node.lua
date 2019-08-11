@@ -107,7 +107,7 @@ function exports.rpc()
     end)
 end
 
-function exports.test()
+function exports.ipc()
     --[[
     local name = 'wotc'
     local params = {{ at = 100, level = 200 }}
@@ -154,6 +154,15 @@ function exports.start()
         exports.rpc()
         exports.gateway()
     end
+end
+
+function exports.test()
+    local test = require('./test')
+    test.start()
+end
+
+function exports.init()
+    print("test init")
 end
 
 app(exports)
