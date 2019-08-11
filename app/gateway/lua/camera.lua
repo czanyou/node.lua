@@ -13,7 +13,7 @@ local exports = {}
 
 exports.services = {}
 
-local function onDeviceRead()
+local function onDeviceRead(input, webThing)
     local device = {}
     device.deviceType = 'camera'
     device.errorCode = 0

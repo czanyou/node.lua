@@ -1,15 +1,21 @@
-#!/usr/bin/env lnode
-
 --
--- 安装 Node.lua 运行环境，包括可执行文件及相关的 Lua 模块
+-- 在 Windows 系统下安装 Node.lua 运行环境，包括可执行文件及相关的 Lua 模块
 -- Install the Node.lua runtime environment.
 -- Include executables and related Lua module.
 --
 
-local uv     = require('luv')
+local luv    = require('luv')
 local lutils = require('lutils')
 
-local cwd    = uv.cwd()
+local function updatePackagePath()
+	local cwd = luv.cwd()
+
+	local path = package.path
+	path = path .. ';' .. cwd .. '\\core\\lua\\?.lua;' .. cwd .. '\\core\\lua\\?\\init.lua'
+	package.path = path
+
+	-- print(path)
+end
 
 local function printPathList(title, pathList)
 	local tokens = pathList:split(';')
@@ -23,8 +29,11 @@ end
 
 -- Update current user 'Path' environment variable (Windows Only)
 local function updatePathEnvironment()
+	local init  = require('init')
 	local path  = require('path')
 	local fs    = require('fs')
+
+	local cwd    = luv.cwd()
 
 	local pathname = path.join(cwd, 'bin')
 	if (not fs.existsSync(pathname)) then
@@ -39,6 +48,8 @@ local function updatePathEnvironment()
 		if (result) then
 			tokens = result:split('\n') or {}
 		end
+
+		io.close(file)
 	end
 
 	if (not tokens) then
@@ -55,11 +66,11 @@ local function updatePathEnvironment()
 
 	-- KEY TYPE VALUE
 	local line = tokens[pos] or ""
-	_, offset, key, mode, value = line:find("[ ]+([^ ]+)[ ]+([^ ]+)[ ]+([^\n]+)")
+	local _, offset, key, mode, oldPath = line:find("[ ]+([^ ]+)[ ]+([^ ]+)[ ]+([^\n]+)")
 
 	local items = {}
-	if (value) then
-		items = value:split(';') or {}
+	if (oldPath) then
+		items = oldPath:split(';') or {}
 	end
 
 	-- tokens
@@ -77,18 +88,18 @@ local function updatePathEnvironment()
 	table.insert(paths, pathname)
 
 	-- update PATH
-	local BIN_PATH = table.concat(paths, ";")
-	if (oldPath ~= BIN_PATH) then
-		os.execute('SETX PATH "' .. BIN_PATH .. '"')
-		printPathList("SET BIN_PATH=", BIN_PATH)
+	local newPath = table.concat(paths, ";")
+	if (oldPath ~= newPath) then
+		os.execute('SETX PATH "' .. newPath .. '"')
+		printPathList("SETX PATH=", newPath)
 	end
-
 end
 
 -------------------------------------------------------------------------------
 
 local osType = lutils.os_platform()
 local osArch = lutils.os_arch()
+local cwd    = luv.cwd()
 
 print('')
 print('------ Install Node.lua Runtime -------')
@@ -97,13 +108,15 @@ print('Arch:   [' .. osArch .. ']')
 print('Work:   [' .. cwd .. ']')
 print('------\n')
 
-if (osType == 'win32') then
-	-- Add the bin directory under the current directory to the system Path environment variable
+if (osType ~= 'win32') then
+	print('Error: Current system is not Windows.')
 
+else
+	-- Add the bin directory under the current directory to the system Path environment variable
+	updatePackagePath()
 	updatePathEnvironment()
+	print('Install Complete!\n')
 end
 
-print('Install Complete!\n')
-
-uv.run()
-uv.loop_close()
+luv.run()
+luv.loop_close()

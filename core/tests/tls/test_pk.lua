@@ -1,5 +1,5 @@
-local ret, pk   = pcall(require, 'lmbedtls.pk')
-local ret, rng  = pcall(require, 'lmbedtls.rng')
+local _, pk   = pcall(require, 'lmbedtls.pk')
+local _, rng  = pcall(require, 'lmbedtls.rng')
 
 local utils 	= require('util')
 local assert 	= require('assert')
