@@ -4,14 +4,14 @@ local util = require("util")
 
 local exports = {}
 
-function exports.xml2table(xmlBody)
-    if (not xmlBody) then
+function exports.xml2table(element)
+    if (not element) then
         return
     end
 
-    local name = xmlBody:name()
-    local properties = xmlBody:properties();
-    local children = xmlBody:children();
+    local name = element:name()
+    local properties = element:properties();
+    local children = element:children();
 
     local pos = string.find(name, ':')
     if (pos and pos > 0) then
@@ -19,6 +19,7 @@ function exports.xml2table(xmlBody)
     end
 
     if (children and #children > 0) then
+        -- children
         local item = {}
 
         if (#children >= 2) and (children[1]:name() == children[2]:name()) then
@@ -37,23 +38,24 @@ function exports.xml2table(xmlBody)
         return name, item
 
     else
+        -- properties
         if (properties and #properties > 0) then
             -- console.log(name, properties)
             local item = {}
             for _, property in ipairs(properties) do
-                local value = xmlBody['@' .. property.name]
+                local value = element['@' .. property.name]
                 -- console.log(name, property, value)
 
                 item['@' .. property.name] = value
             end
 
-            item.value = xmlBody:value()
+            item.value = element:value()
 
             -- console.log(name, item)
             return name, item
 
         else
-            return name, xmlBody:value()
+            return name, element:value()
         end
     end
 end
@@ -84,19 +86,6 @@ function exports.post(options, callback)
         local _, result = exports.xml2table(xmlBody)
         callback(nil, result)
     end)
-end
-
-function exports.getSystemDateAndTime(options, callback)
-    local message = [[
-<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope">
-    <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <GetSystemDateAndTime xmlns="http://www.onvif.org/ver10/device/wsdl"/>
-    </s:Body>
-</s:Envelope>
-]]
-    options.path = '/onvif/device_service'
-    options.data = message
-    exports.post(options, callback)
 end
 
 function exports.getUsernameToken(options)
@@ -142,6 +131,19 @@ function exports.getMessage(options, body)
     <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">]] ..
     body .. '</s:Body></s:Envelope>'
     return message
+end
+
+function exports.getSystemDateAndTime(options, callback)
+    local message = [[
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope">
+    <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+        <GetSystemDateAndTime xmlns="http://www.onvif.org/ver10/device/wsdl"/>
+    </s:Body>
+</s:Envelope>
+]]
+    options.path = '/onvif/device_service'
+    options.data = message
+    exports.post(options, callback)
 end
 
 function exports.getCapabilities(options, callback)
