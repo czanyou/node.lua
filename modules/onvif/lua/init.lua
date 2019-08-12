@@ -1,7 +1,62 @@
 local request = require('http/request')
 local xml = require("onvif/xml")
+local util = require("util")
 
 local exports = {}
+
+function exports.xml2table(xmlBody)
+    if (not xmlBody) then
+        return
+    end
+
+    local name = xmlBody:name()
+    local properties = xmlBody:properties();
+    local children = xmlBody:children();
+
+    local pos = string.find(name, ':')
+    if (pos and pos > 0) then
+        name = string.sub(name, pos + 1)
+    end
+
+    if (children and #children > 0) then
+        local item = {}
+
+        if (#children >= 2) and (children[1]:name() == children[2]:name()) then
+            for index, value in ipairs(children) do
+                local key, ret = exports.xml2table(value)
+                item[key .. '.' .. index] = ret
+            end
+
+        else
+            for _, value in ipairs(children) do
+                local key, ret = exports.xml2table(value)
+                item[key] = ret
+            end
+        end
+
+        return name, item
+
+    else
+        if (properties and #properties > 0) then
+            -- console.log(name, properties)
+            local item = {}
+            for _, property in ipairs(properties) do
+                local value = xmlBody['@' .. property.name]
+                -- console.log(name, property, value)
+
+                item['@' .. property.name] = value
+            end
+
+            item.value = xmlBody:value()
+
+            -- console.log(name, item)
+            return name, item
+
+        else
+            return name, xmlBody:value()
+        end
+    end
+end
 
 function exports.post(options, callback)
     local url = 'http://' .. options.host
@@ -12,7 +67,7 @@ function exports.post(options, callback)
     url = url .. (options.path or '/')
 
     request.post(url, options, function(err, response, body)
-        console.log(err, response.statusCode, body)
+        -- console.log(err, response.statusCode, body)
         if (err or not body) then
             callback(err or 'error')
             return
@@ -20,13 +75,14 @@ function exports.post(options, callback)
 
         local parser = xml.newParser()
         local data = parser:ParseXmlText(body)
-        local root = data['env:Envelope']
-        console.log(root:name())
+        local root = data and data['env:Envelope']
+        -- console.log(root:name())
 
-        local xmlBody = root['env:Body']
-        console.log(xmlBody:name())
+        local xmlBody = root and root['env:Body']
+        -- console.log(xmlBody:name())
 
-        callback(nil, xmlBody)
+        local _, result = exports.xml2table(xmlBody)
+        callback(nil, result)
     end)
 end
 
@@ -43,41 +99,162 @@ function exports.getSystemDateAndTime(options, callback)
     exports.post(options, callback)
 end
 
-local function test()
-    local options = {
-        host = '192.168.1.64',
-        username = 'admin', 
-        password = 'admin123456'
+function exports.getUsernameToken(options)
+    local timestamp = '2019-08-03T03:21:33.001Z'
+    local nonce = util.base64Decode('SNMfYjdAJzZzDk0SY8Xdhw==')
+    local data = nonce .. timestamp .. options.password
+    local digest = util.sha1(data)
+    digest = util.base64Encode(digest);
+
+    return {
+        timestamp = timestamp,
+        nonce = util.base64Encode(nonce),
+        digest = digest
     }
-
-    exports.getSystemDateAndTime(options, function(err, body) 
-        console.log(err, body)
-    end)
 end
 
-local function test3()
-    local message = [[
-<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope">
-    <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <GetSystemDateAndTime xmlns="http://www.onvif.org/ver10/device/wsdl"/>
-    </s:Body>
-</s:Envelope>
-]]
-    local parser = xml.newParser()
-    local data = parser:ParseXmlText(message)
-    local root = data['s:Envelope']
-    console.log(root:name())
+function exports.getHeader(options)
+    if (not options.username) or (not options.password) then
+        return ''
+    end
 
-    local body = root['s:Body']
-    console.log(body:name())
+    local result = exports.getUsernameToken(options)
 
-    local element = body.GetSystemDateAndTime
-    console.log(element:name())
-    console.log(element:properties())
-    console.log(element['@xmlns'])
+    local header = [[    
+    <s:Header>
+        <Security s:mustUnderstand="1" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <UsernameToken>
+                <Username>]] .. options.username .. [[</Username>
+                <Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">]] .. result.digest .. [[</Password>
+                <Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">]] .. result.nonce .. [[</Nonce>
+                <Created xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">]] .. result.timestamp .. [[</Created>
+            </UsernameToken>
+        </Security>
+    </s:Header>
+    ]]
 
+    return header;
 end
 
-test()
+function exports.getMessage(options, body)
+    local message = '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing">' ..
+    exports.getHeader(options) .. [[
+    <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">]] ..
+    body .. '</s:Body></s:Envelope>'
+    return message
+end
+
+function exports.getCapabilities(options, callback)
+    local message = exports.getMessage(options, [[
+        <GetCapabilities xmlns="http://www.onvif.org/ver10/device/wsdl">
+            <Category>All</Category>
+        </GetCapabilities>]])
+    options.path = '/onvif/device_service'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function exports.getDeviceInformation(options, callback)
+    local message = exports.getMessage(options, [[
+        <GetDeviceInformation xmlns="http://www.onvif.org/ver10/device/wsdl">
+        </GetDeviceInformation>]])
+    options.path = '/onvif/device_service'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function exports.getServices(options, callback)
+    local message = exports.getMessage(options, [[
+        <GetServices xmlns="http://www.onvif.org/ver10/device/wsdl">
+            <IncludeCapability>true</IncludeCapability>
+        </GetServices>]])
+
+    options.path = '/onvif/device_service'
+    options.data = message
+    exports.post(options, callback)
+end
+
+local media = {}
+
+function media.getProfiles(options, callback)
+    local message = exports.getMessage(options, [[<GetProfiles xmlns="http://www.onvif.org/ver10/media/wsdl"/>]])
+    options.path = '/onvif/Media'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function media.getVideoSources(options, callback)
+    local message = exports.getMessage(options, [[<GetVideoSources xmlns="http://www.onvif.org/ver10/media/wsdl"/>]])
+    options.path = '/onvif/Media'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function media.getStreamUri(options, callback)
+    local message = exports.getMessage(options, [[
+        <GetStreamUri xmlns="http://www.onvif.org/ver10/media/wsdl">
+            <StreamSetup>
+                <Stream xmlns="http://www.onvif.org/ver10/schema">RTP-Unicast</Stream>
+                <Transport xmlns="http://www.onvif.org/ver10/schema">
+                    <Protocol>RTSP</Protocol>
+                </Transport>
+            </StreamSetup>
+            <ProfileToken>]] .. options.profile .. [[</ProfileToken>
+        </GetStreamUri>]])
+
+    options.path = '/onvif/Media'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function media.getStreamUri(options, callback)
+    local message = exports.getMessage(options, [[
+        <GetSnapshotUri xmlns="http://www.onvif.org/ver10/media/wsdl">
+            <ProfileToken>]] .. options.profile .. [[</ProfileToken>
+        </GetSnapshotUri>]])
+
+    options.path = '/onvif/Media'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function media.getOSDs(options, callback)
+    local message = exports.getMessage(options, [[
+        <GetOSDs xmlns="http://www.onvif.org/ver10/media/wsdl">
+        </GetOSDs>]])
+    options.path = '/onvif/Media'
+    options.data = message
+    exports.post(options, callback)
+end
+
+exports.media = media
+
+local ptz = {}
+
+function ptz.GetPresets(options, callback)
+    local message = exports.getMessage(options, [[
+        <GetPresets xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+            <ProfileToken>]] .. options.profile .. [[</ProfileToken>
+        </GetPresets>]])
+    options.path = '/onvif/ptz'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function ptz.GetPresets(options, callback)
+    local message = exports.getMessage(options, [[
+        <ContinuousMove xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+            <ProfileToken>]] .. options.profile .. [[</ProfileToken>
+            <Velocity>
+                <PanTilt x="0" y="1" xmlns="http://www.onvif.org/ver10/schema"/>
+                <Zoom x="0" xmlns="http://www.onvif.org/ver10/schema"/>
+            </Velocity>
+        </ContinuousMove>]])
+    options.path = '/onvif/ptz'
+    options.data = message
+    exports.post(options, callback)
+end
+
+exports.ptz = ptz
 
 return exports
