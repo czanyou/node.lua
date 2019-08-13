@@ -1,8 +1,12 @@
 local request = require('http/request')
 local xml = require("onvif/xml")
 local util = require("util")
+local core 	 = require('core')
 
 local exports = {}
+
+-------------------------------------------------------------------------------
+-- Common
 
 function exports.xml2table(element)
     if (not element) then
@@ -133,6 +137,9 @@ function exports.getMessage(options, body)
     return message
 end
 
+-------------------------------------------------------------------------------
+-- Device
+
 function exports.getSystemDateAndTime(options, callback)
     local message = [[
 <s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope">
@@ -176,6 +183,9 @@ function exports.getServices(options, callback)
     exports.post(options, callback)
 end
 
+-------------------------------------------------------------------------------
+-- Media
+
 local media = {}
 
 function media.getProfiles(options, callback)
@@ -193,6 +203,8 @@ function media.getVideoSources(options, callback)
 end
 
 function media.getStreamUri(options, callback)
+    local profile = options.profile or 'Profile_1'
+
     local message = exports.getMessage(options, [[
         <GetStreamUri xmlns="http://www.onvif.org/ver10/media/wsdl">
             <StreamSetup>
@@ -201,7 +213,7 @@ function media.getStreamUri(options, callback)
                     <Protocol>RTSP</Protocol>
                 </Transport>
             </StreamSetup>
-            <ProfileToken>]] .. options.profile .. [[</ProfileToken>
+            <ProfileToken>]] .. profile .. [[</ProfileToken>
         </GetStreamUri>]])
 
     options.path = '/onvif/Media'
@@ -209,10 +221,12 @@ function media.getStreamUri(options, callback)
     exports.post(options, callback)
 end
 
-function media.getStreamUri(options, callback)
+function media.getSnapshotUri(options, callback)
+    local profile = options.profile or 'Profile_1'
+
     local message = exports.getMessage(options, [[
         <GetSnapshotUri xmlns="http://www.onvif.org/ver10/media/wsdl">
-            <ProfileToken>]] .. options.profile .. [[</ProfileToken>
+            <ProfileToken>]] .. profile .. [[</ProfileToken>
         </GetSnapshotUri>]])
 
     options.path = '/onvif/Media'
@@ -230,6 +244,9 @@ function media.getOSDs(options, callback)
 end
 
 exports.media = media
+
+-------------------------------------------------------------------------------
+-- PTZ
 
 local ptz = {}
 
@@ -314,5 +331,111 @@ function ptz.removePreset(options, callback)
 end
 
 exports.ptz = ptz
+
+-------------------------------------------------------------------------------
+-- OnvifCamera
+
+local OnvifCamera = core.Emitter:extend()
+
+function OnvifCamera:initialize(options)
+    self.options = options
+    self.deviceInformation = nil
+end
+
+function OnvifCamera:getPresets(callback)
+    local options = {}
+    options.profile = 'Profile_1'
+    ptz.getPresets(options, function(err, body)
+        callback(body)
+    end)
+end
+
+function OnvifCamera:removePreset(preset, callback)
+    local options = {}
+    options.profile = 'Profile_1'
+    options.preset = preset
+    ptz.removePreset(options, function(err, body)
+        callback(body)
+    end)
+end
+
+function OnvifCamera:gotoPreset(preset, callback)
+    local options = {}
+    options.profile = 'Profile_1'
+    options.preset = preset
+    ptz.gotoPreset(options, function(err, body)
+        callback(body)
+    end)
+end
+
+function OnvifCamera:setPreset(preset, callback)
+    local options = {}
+    options.profile = 'Profile_1'
+    options.preset = preset
+    ptz.setPreset(options, function(err, body)
+        callback(body)
+    end)
+end
+
+function OnvifCamera:stopMove(callback)
+    local options = {}
+    options.profile = 'Profile_1'
+    ptz.stop(options, function(err, body)
+        callback(body)
+    end)
+end
+
+function OnvifCamera:continuousMove(x, y, z, callback)
+    local options = {}
+    options.profile = 'Profile_1'
+    options.x = x;
+    options.y = y;
+    options.z = z;
+    ptz.continuousMove(options, function(err, body)
+        callback(body)
+    end)
+end
+
+function OnvifCamera:getDeviceInformation(callback)
+    if (self.deviceInformation) then
+        return callback(self.deviceInformation)
+    end
+
+    local options = self.options
+
+    exports.getDeviceInformation(options, function(err, body) 
+        if (err) then
+            return callback(nil, err)
+        end
+
+        local response = body and body.GetDeviceInformationResponse
+        if (response) then
+            self.deviceInformation = response
+        end
+
+        return callback(response)
+    end)
+end
+
+function OnvifCamera:getVideoUri(profile)
+    local host = self.options.host
+    -- rtsp://192.168.1.104:554/Streaming/Channels/101?transportmode=unicast&profile=Profile_1
+    local path = '/Streaming/Channels/10' .. (profile or 1)
+    local query = 'transportmode=unicast&profile=Profile_'  .. (profile or 1)
+    return 'rtsp://' .. host .. '' .. path .. '?' .. query
+end
+
+function OnvifCamera:getImageUri(profile)
+    -- http://192.168.1.104/onvif-http/snapshot?Profile_1
+
+    local host = self.options.host
+    local path = '/onvif-http/snapshot'
+    local query = 'Profile_'  .. (profile or 1)
+    return 'http://' .. host .. '' .. path .. '?' .. query
+end
+
+function exports.camera(options)
+    return OnvifCamera:new(options)
+end
 
 return exports

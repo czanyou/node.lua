@@ -49,6 +49,18 @@ local function testGetVideoSourcess()
     end)
 end
 
+local function testGetStreamUri()
+    onvif.media.getStreamUri(options, function(err, body)
+        console.log(err, json.stringify(body))
+    end)
+end
+
+local function testGetSnapshotUri()
+    onvif.media.getSnapshotUri(options, function(err, body)
+        console.log(err, json.stringify(body))
+    end)
+end
+
 local function testContinuousMove()
     options.profile = 'Profile_1'
     options.x = 1;
@@ -82,4 +94,15 @@ local function testXml()
 
 end
 
-testContinuousMove()
+local function testCamera()
+    local camera = onvif.camera(options)
+
+    camera:getDeviceInformation(function(result)
+        console.log(result)
+    end)
+
+    console.log(camera:getVideoUri())
+    console.log(camera:getImageUri())
+end
+
+testCamera()

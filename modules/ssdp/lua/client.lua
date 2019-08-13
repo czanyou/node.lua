@@ -15,14 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local json   = require('json')
-local path 	 = require('path')
 local ssdp   = require('ssdp/ssdp')
-local utils  = require('util')
 
 local exports = {}
-
-local TAG = 'SsdpClient'
 
 local INET_ADDR_ANY  = ssdp.INET_ADDR_ANY
 

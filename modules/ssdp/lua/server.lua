@@ -15,14 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local json   = require('json')
-local path 	 = require('path')
 local ssdp   = require('ssdp/ssdp')
-local utils  = require('util')
 
 local exports = {}
-
-local TAG = 'SsdpServer'
 
 local UPNP_ADDRESS 		= ssdp.UPNP_ADDRESS
 local UPNP_PORT 		= ssdp.UPNP_PORT

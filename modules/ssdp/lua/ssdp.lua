@@ -19,11 +19,6 @@ local codec  = require('http/codec')
 local core 	 = require('core')
 local dgram  = require('dgram')
 local http   = require('http')
-local json   = require('json')
-local path 	 = require('path')
-local utils  = require('util')
-
-local TAG = 'SsdpObject'
 
 local exports = {}
 
@@ -116,12 +111,10 @@ function SsdpObject:_createSocket(host, localPort)
 		if (err == 'EINVAL: invalid argument') then
 			return
 		end
-	  	console.log(TAG, '_onError', err, ...)
+	  	console.log('SSDP error:', err, ...)
 	end
 
 	_onListening = function ()
-	  	--console.log(TAG, '_onListening')
-
 		socket:setBroadcast(true)
 		socket:addMembership(UPNP_ADDRESS)
 		socket:setMulticastTTL(1)

@@ -11,20 +11,22 @@ local Promise = require('wot/promise')
 
 local exports = {}
 
-exports.services = {}
-
-local function onDeviceRead(input, webThing)
-    local device = {}
-    device.deviceType = 'camera'
-    device.errorCode = 0
-    return device
-end
-
 local function onDeviceActions(input, webThing)
+    
+    local function onDeviceRead(input, webThing)
+        local device = {}
+        device.deviceType = 'camera'
+        device.errorCode = 0
+        return device
+    end
+
     if (not input) then
         return { code = 400, error = 'Unsupported methods' }
    
     elseif (input.reset) then
+        return { code = 0 }
+
+    elseif (input.reboot) then
         return { code = 0 }
 
     elseif (input.read) then
@@ -35,24 +37,25 @@ local function onDeviceActions(input, webThing)
     end
 end
 
-local function onConfigRead(input, webThing)
-    local config = exports.app.get('peripherals');
-    config = config and config[webThing.id]
+local function onConfigActions(input, webThing)
 
-    return config
-end
+    local function onConfigRead(input, webThing)
+        local config = exports.app.get('peripherals');
+        config = config and config[webThing.id]
 
-local function onConfigWrite(input, webThing)
-    local config = exports.app.get('peripherals') or {}
-    if (input) then
-        config[webThing.id] = input
-        exports.app.set('peripherals', config)
+        return config
     end
 
-    return { code = 0 }
-end
+    local function onConfigWrite(input, webThing)
+        local config = exports.app.get('peripherals') or {}
+        if (input) then
+            config[webThing.id] = input
+            exports.app.set('peripherals', config)
+        end
 
-local function onConfigActions(input, webThing)
+        return { code = 0 }
+    end
+
     if (not input) then
         return { code = 400, error = 'Unsupported methods' }
 
@@ -67,15 +70,16 @@ local function onConfigActions(input, webThing)
     end
 end
 
-local function onPtzStart(direction, speed)
-    return { code = 0 }
-end
-
-local function onPtzStop()
-    return { code = 0 }
-end
-
 local function onPtzActions(input, webThing)
+
+    local function onPtzStart(direction, speed)
+        return { code = 0 }
+    end
+    
+    local function onPtzStop()
+        return { code = 0 }
+    end
+
     if (input.start) then
         local direction = tonumber(input.start.direction)
         local speed = input.start.speed or 1
@@ -182,6 +186,33 @@ local function onStopAction(input, webThing)
     return promise
 end
 
+local function onSetActionHandlers(webThing)
+    webThing:setActionHandler('play', function(input)
+        return onPlayAction(input, webThing)
+    end)
+
+    webThing:setActionHandler('stop', function(input)
+        return onStopAction(input, webThing)
+    end)
+
+    webThing:setActionHandler('ptz', function(input)
+        return onPtzActions(input, webThing)
+    end)
+
+    webThing:setActionHandler('preset', function(input)
+        return onPresetActions(input, webThing)
+    end)
+
+    webThing:setActionHandler('device', function(input)
+        return onDeviceActions(input, webThing)
+    end)
+
+    webThing:setActionHandler('config', function(input)
+        return onConfigActions(input, webThing)
+    end)
+
+end
+
 local function createCameraThing(options)
     if (not options) then
         return nil, 'need options'
@@ -192,6 +223,9 @@ local function createCameraThing(options)
     elseif (not options.did) then
         return nil, 'need did option'
     end
+
+    -----------------------------------------------------------
+    -- description
 
     local camera = { 
         ['@context'] = "https://iot.beaconice.cn/schemas",
@@ -213,39 +247,12 @@ local function createCameraThing(options)
     local webThing = wot.produce(camera)
     webThing.secret = options.secret
 
-    -- play action
-    webThing:setActionHandler('play', function(input)
-        return onPlayAction(input, webThing)
-    end)
+    onSetActionHandlers(webThing)
 
-    -- stop action
-    webThing:setActionHandler('stop', function(input)
-        return onStopAction(input, webThing)
-    end)
-
-    -- ptz action
-    webThing:setActionHandler('ptz', function(input)
-        return onPtzActions(input, webThing)
-    end)
-
-    -- preset action
-    webThing:setActionHandler('preset', function(input)
-        return onPresetActions(input, webThing)
-    end)
-
-    -- device actions
-    webThing:setActionHandler('device', function(input)
-        return onDeviceActions(input, webThing)
-    end)
-
-    -- config actions
-    webThing:setActionHandler('config', function(input)
-        return onConfigActions(input, webThing)
-    end)
-
+    -----------------------------------------------------------
     -- register
-    webThing:expose()
 
+    webThing:expose()
     webThing:on('register', function(response)
         local result = response and response.result
         if (result and result.code and result.error) then
