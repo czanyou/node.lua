@@ -233,25 +233,81 @@ exports.media = media
 
 local ptz = {}
 
-function ptz.GetPresets(options, callback)
+function ptz.getPresets(options, callback)
+    local profile = options.profile or 'Profile_1'
     local message = exports.getMessage(options, [[
         <GetPresets xmlns="http://www.onvif.org/ver20/ptz/wsdl">
-            <ProfileToken>]] .. options.profile .. [[</ProfileToken>
+            <ProfileToken>]] .. profile .. [[</ProfileToken>
         </GetPresets>]])
     options.path = '/onvif/ptz'
     options.data = message
     exports.post(options, callback)
 end
 
-function ptz.GetPresets(options, callback)
+function ptz.continuousMove(options, callback)
+    local x = options.x or 0
+    local y = options.y or 0
+    local z = options.z or 0
+    local profile = options.profile or 'Profile_1'
+
     local message = exports.getMessage(options, [[
         <ContinuousMove xmlns="http://www.onvif.org/ver20/ptz/wsdl">
-            <ProfileToken>]] .. options.profile .. [[</ProfileToken>
+            <ProfileToken>]] .. profile .. [[</ProfileToken>
             <Velocity>
-                <PanTilt x="0" y="1" xmlns="http://www.onvif.org/ver10/schema"/>
-                <Zoom x="0" xmlns="http://www.onvif.org/ver10/schema"/>
+                <PanTilt x="]] .. x .. [[" y="]] .. y .. [[" xmlns="http://www.onvif.org/ver10/schema"/>
+                <Zoom x="]] .. z .. [[" xmlns="http://www.onvif.org/ver10/schema"/>
             </Velocity>
         </ContinuousMove>]])
+    options.path = '/onvif/ptz'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function ptz.stop(options, callback)
+    local profile = options.profile or 'Profile_1'
+    local message = exports.getMessage(options, [[
+        <Stop xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+            <ProfileToken>]] .. profile .. [[</ProfileToken>
+        </Stop>]])
+    options.path = '/onvif/ptz'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function ptz.setPreset(options, callback)
+    local profile = options.profile or 'Profile_1'
+    local preset = options.preset or 0
+    local message = exports.getMessage(options, [[
+        <SetPreset xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+            <ProfileToken>]] .. profile .. [[</ProfileToken>
+            <PresetToken>]] .. preset .. [[</PresetToken>
+        </SetPreset>]])
+    options.path = '/onvif/ptz'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function ptz.gotoPreset(options, callback)
+    local profile = options.profile or 'Profile_1'
+    local preset = options.preset or 0
+    local message = exports.getMessage(options, [[
+        <GotoPreset xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+            <ProfileToken>]] .. profile .. [[</ProfileToken>
+            <PresetToken>]] .. preset .. [[</PresetToken>
+        </GotoPreset>]])
+    options.path = '/onvif/ptz'
+    options.data = message
+    exports.post(options, callback)
+end
+
+function ptz.removePreset(options, callback)
+    local profile = options.profile or 'Profile_1'
+    local preset = options.preset or 0
+    local message = exports.getMessage(options, [[
+        <RemovePreset xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+            <ProfileToken>]] .. profile .. [[</ProfileToken>
+            <PresetToken>]] .. preset .. [[</PresetToken>
+        </RemovePreset>]])
     options.path = '/onvif/ptz'
     options.data = message
     exports.post(options, callback)

@@ -8,6 +8,12 @@ local options = {
     password = 'admin123456'
 }
 
+options = {
+    host = '192.168.1.104',
+    username = 'admin',
+    password = 'abcdefg123456'
+}
+
 local function testGetSystemDateAndTime()
     onvif.getSystemDateAndTime(options, function(err, body) 
         console.log(err, body)
@@ -43,6 +49,16 @@ local function testGetVideoSourcess()
     end)
 end
 
+local function testContinuousMove()
+    options.profile = 'Profile_1'
+    options.x = 1;
+    -- options.y = -1;
+    options.z = 0;
+    onvif.ptz.continuousMove(options, function(err, body)
+        console.log(err, json.stringify(body))
+    end)
+end
+
 local function testXml()
     local message = [[
 <s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope">
@@ -66,4 +82,4 @@ local function testXml()
 
 end
 
-testGetDeviceInformation()
+testContinuousMove()
