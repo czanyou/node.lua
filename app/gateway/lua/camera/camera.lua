@@ -8,6 +8,7 @@ local Promise = require('wot/promise')
 
 local exports = {}
 
+-- Camera device actions
 local function onDeviceActions(input, webThing)
 
     local function onDeviceRead(input, webThing)
@@ -31,10 +32,10 @@ local function onDeviceActions(input, webThing)
         return { code = 400, error = 'Unsupported methods' }
    
     elseif (input.reset) then
-        return { code = 0 }
+        return { code = 400, error = 'Unsupported methods' }
 
     elseif (input.reboot) then
-        return { code = 0 }
+        return { code = 400, error = 'Unsupported methods' }
 
     elseif (input.read) then
         return onDeviceRead(input.read, webThing)
@@ -44,8 +45,10 @@ local function onDeviceActions(input, webThing)
     end
 end
 
+-- Camera config actions
 local function onConfigActions(input, webThing)
 
+    -- read config
     local function onConfigRead(input, webThing)
         local config = exports.app.get('peripherals');
         config = config and config[webThing.id]
@@ -53,6 +56,7 @@ local function onConfigActions(input, webThing)
         return config
     end
 
+    -- save config
     local function onConfigWrite(input, webThing)
         local config = exports.app.get('peripherals') or {}
         if (input) then
@@ -77,9 +81,11 @@ local function onConfigActions(input, webThing)
     end
 end
 
+-- Camera PTZ actions
 local function onPtzActions(input, webThing)
     local onvifClient = webThing.onvif
 
+    -- start move
     local function onPtzStart(direction, speed)
         local x = 0
         local y = 0
@@ -119,6 +125,7 @@ local function onPtzActions(input, webThing)
         return { code = 0 }
     end
     
+    -- stop move
     local function onPtzStop()
         onvifClient:stopMove()
         return { code = 0 }
@@ -142,6 +149,7 @@ local function onPtzActions(input, webThing)
     end
 end
 
+-- Camera preset actions
 local function onPresetActions(input, webThing)
     local did = webThing.id;
 
@@ -189,8 +197,12 @@ local function onPresetActions(input, webThing)
     end
 end
 
+-- Start RTSP client
 local function startRtspClient(webThing)
     if (webThing.rtsp) then
+        return
+
+    elseif (not webThing.streamUri1) then
         return
     end
 
@@ -207,7 +219,7 @@ local function startRtspClient(webThing)
     end
     
     rtspActions.setRtmpMediaInfo = function (did, mediaInfo)
-        console.log('setRtmpMediaInfo', did, mediaInfo)
+        -- console.log('setRtmpMediaInfo', did, mediaInfo)
         rtmp.setRtmpMediaInfo(did, mediaInfo)
     end
     
@@ -219,6 +231,9 @@ local function startRtspClient(webThing)
     webThing.rtsp = rtsp.startRtspClient(rtspActions, options)
 end
 
+-- Camera play action
+-- - Pull stream from camera
+-- - Push stream to RTMP media server
 local function onPlayAction(input, webThing)
     local url = input and input.url
     local did = webThing.id;
@@ -252,11 +267,12 @@ local function onPlayAction(input, webThing)
     return promise
 end
 
+-- Camera stop action
+-- - Stop push stream to RTMP media server
 local function onStopAction(input, webThing)
     console.log('stop', input);
 
     local did = webThing.id;
-
     local rtmp = webThing.rtmp;
     if (rtmp) then
         rtmp.stopRtmpClient(did, 'stoped');
@@ -271,6 +287,7 @@ local function onStopAction(input, webThing)
     return promise
 end
 
+-- All camera actions
 local function onSetActionHandlers(webThing)
     webThing:setActionHandler('play', function(input)
         return onPlayAction(input, webThing)
@@ -298,6 +315,7 @@ local function onSetActionHandlers(webThing)
 
 end
 
+-- Expose and register the camera thing
 local function exposeThing(webThing)
     console.log('register')
     onSetActionHandlers(webThing)
@@ -316,84 +334,96 @@ local function exposeThing(webThing)
             webThing.registerToken = result.token
         end
     end)
-
 end
 
+-- Load the all camera informations (device and media) via ONVIF protocol
 local function loadCameraInformation(webThing, options)
-    local function getStreamUriResponse1(streamUri)
-        if (streamUri) then
-            console.log(streamUri)
-            webThing.streamUri1 = streamUri
 
-            startRtspClient(webThing)
-        end
-    end
-
-    local function getSnapshotUriResponse1(snapshotUri)
-        if (snapshotUri) then
-            console.log(snapshotUri)
-            webThing.snapshotUri1 = snapshotUri
-        end
-    end
-
-    local function getStreamUriResponse2(streamUri)
-        if (streamUri) then
-            console.log(streamUri)
-            webThing.streamUri2 = streamUri
-        end
-    end
-
-    local function getSnapshotUriResponse2(snapshotUri)
-        if (snapshotUri) then
-            console.log(snapshotUri)
-            webThing.snapshotUri2 = snapshotUri
-        end
-    end
-
-    local function getProfilesResponse(profiles)
-        local profile1 = profiles and profiles[1]
-        local profile2 = profiles and profiles[2]
-        local name1 = profile1 and profile1.Name
-        local name2 = profile1 and profile2.Name
-
-        webThing.profileName1 = name1
-        webThing.profileName2 = name2
-
+    -- Load stream & snapshot uri address
+    local function loadStreamUri(profiles, index)
         local onvifClient = webThing.onvif
-        onvifClient:getStreamUri(1, getStreamUriResponse1)
-        onvifClient:getSnapshotUri(1, getSnapshotUriResponse1)
 
-        onvifClient:getStreamUri(2, getStreamUriResponse2)
-        onvifClient:getSnapshotUri(2, getSnapshotUriResponse2)
+        local function getStreamUriResponse(streamUri)
+            if (streamUri) then
+                console.log(streamUri)
+                webThing['streamUri' .. index] = streamUri
+    
+                startRtspClient(webThing)
+            end
+        end
+    
+        local function getSnapshotUriResponse(snapshotUri)
+            if (snapshotUri) then
+                console.log(snapshotUri)
+                webThing['snapshotUri' .. index] = snapshotUri
+            end
+        end
+
+        local profile = profiles and profiles[index]
+        webThing['profileName' .. index] = profile and profile.Name
+        onvifClient:getStreamUri(index, getStreamUriResponse)
+        onvifClient:getSnapshotUri(index, getSnapshotUriResponse)
     end
 
-    local function getDeviceInformationResponse(response)
+    -- Load media profiles of the ONVIF device
+    local function getProfilesResponse(profiles)
+        loadStreamUri(profiles, 1)
+        loadStreamUri(profiles, 2)
+    end
+
+    -- Load ONVIF device information
+    local function getDeviceInformationResponse(response, error)
         if (not response) then
+            if (error) then
+                console.log('GetDeviceInformation Error:', error)
+            end
             return
         end
 
         webThing.deviceInformation = response
         -- console.log(response)
 
+        -- load profile information
         local onvifClient = webThing.onvif
         onvifClient:getProfiles(getProfilesResponse)
 
         -- console.log(webThing.instance)
+        -- update firmware version
         local instance = webThing.instance
         local version = instance and instance.version
-        if (version) then
-            version.firmware = response.FirmwareVersion
+        local firmwareVersion = response.FirmwareVersion
+        if (version and firmwareVersion) then
+            local pos = string.find(firmwareVersion, ' ')
+            if (pos and pos > 1) then
+                firmwareVersion = string.sub(firmwareVersion, 1, pos - 1)
+            end
+
+            version.firmware = firmwareVersion
         end
 
+        -- start register
         if (not webThing.registerTimer) then
             exposeThing(webThing)
         end
     end
 
-    local onvifClient = webThing.onvif
-    onvifClient:getDeviceInformation(getDeviceInformationResponse)
+    local function onStartReadInformations()
+        if (webThing.streamUri1) then
+            return
+        end
+
+        local onvifClient = webThing.onvif
+        onvifClient:getDeviceInformation(getDeviceInformationResponse)
+    end
+
+    setInterval(1000 * 30, function()
+        onStartReadInformations()
+    end)
+
+    onStartReadInformations()
 end
 
+-- Create a camera WebThing
 local function createCameraThing(options)
     if (not options) then
         return nil, 'need options'
@@ -441,6 +471,13 @@ end
 
 exports.rtsp = function()
     
+end
+
+exports.getStatus = function()
+    local result = {}
+    result.rtmp = rtmp.getRtmpStatus()
+    result.rtsp = rtsp.getRtspStatus()
+    return result
 end
 
 exports.createThing = createCameraThing

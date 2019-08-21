@@ -49,8 +49,7 @@ local function createHttpServer()
         -- console.log(req.url, req.method)
 
         local result = {}
-        -- result.rtmp = rtmp.getRtmpStatus()
-        -- result.rtsp = rtsp.getRtspStatus()
+        result.cameras = camera.getStatus()
         result.things = getThingsStatus()
 
         local body = json.stringify(result)

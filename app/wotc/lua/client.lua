@@ -27,7 +27,7 @@ function deviceShell.init()
         return
     end
 
-    deviceShell.timer = setInterval(1000 * 2, function()
+    deviceShell.timer = setInterval(1000 * 5, function()
         local cpuUsage = deviceShell.getCpuUsage()
         local memoryUsage, freeMemory = deviceShell.getMemoryUsage()
         local stat = deviceShell.getStorageInfo()
@@ -40,13 +40,18 @@ function deviceShell.init()
         if (span > 10) then
             lastStatus.updated = Date.now()
             lastStatus.cpuUsage = cpuUsage
-            lastStatus.freeMemory = freeMemory
+            lastStatus.memoryFree = freeMemory
 
             if (stat) then
-                lastStatus.freeStorage = stat.free
+                lastStatus.storageFree = stat.free
             end
 
-            console.log(lastStatus)
+            -- console.log(lastStatus)
+
+            local webThing = exports.gateway
+            if (webThing) then
+                webThing:sendStream(lastStatus)
+            end
         end
     end);
 end
@@ -600,6 +605,8 @@ local function createThing(options)
             console.info('Gateway service restart.')
         end
     end)
+
+    exports.gateway = webThing
 
     return webThing
 end
