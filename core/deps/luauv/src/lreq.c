@@ -26,7 +26,7 @@ static int luv_check_continuation(lua_State* L, int index) {
 
 // Store a lua callback in a luv_req for the continuation.
 // The uv_req_t is assumed to be at the top of the stack
-static luv_req_t* luv_setup_req(lua_State* L, int callback_ref) {
+static luv_req_t* luv_setup_req(lua_State* L, luv_ctx_t* ctx, int cb_ref) {
   luv_req_t* data;
 
   luaL_checktype(L, -1, LUA_TUSERDATA);
@@ -39,8 +39,9 @@ static luv_req_t* luv_setup_req(lua_State* L, int callback_ref) {
 
   lua_pushvalue(L, -1);
   data->req_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-  data->callback_ref = callback_ref;
+  data->callback_ref = cb_ref;
   data->data_ref = LUA_NOREF;
+  data->ctx = ctx;
   data->data = NULL;
 
   return data;
@@ -58,7 +59,7 @@ static void luv_fulfill_req(lua_State* L, luv_req_t* data, int nargs) {
     if (nargs) {
       lua_insert(L, -1 - nargs);
     }
-    lua_call(L, nargs, 0);
+    data->ctx->pcall(L, nargs, 0, 0);
   }
 }
 

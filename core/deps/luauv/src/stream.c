@@ -40,7 +40,8 @@ static uv_stream_t* luv_check_stream(lua_State* L, int index) {
 }
 
 static void luv_shutdown_cb(uv_shutdown_t* req, int status) {
-  lua_State* L = luv_state(req->handle->loop);
+  luv_req_t* data = (luv_req_t*)req->data;
+  lua_State* L = data->ctx->L;
   luv_status(L, status);
   luv_fulfill_req(L, (luv_req_t*)req->data, 1);
   luv_cleanup_req(L, (luv_req_t*)req->data);
@@ -48,11 +49,12 @@ static void luv_shutdown_cb(uv_shutdown_t* req, int status) {
 }
 
 static int luv_shutdown(lua_State* L) {
+  luv_ctx_t* ctx = luv_context(L);
   uv_stream_t* handle = luv_check_stream(L, 1);
   int ref = luv_check_continuation(L, 2);
   uv_shutdown_t* req = (uv_shutdown_t*)lua_newuserdata(L, sizeof(*req));
   int ret;
-  req->data = luv_setup_req(L, ref);
+  req->data = luv_setup_req(L, ctx, ref);
   ret = uv_shutdown(req, handle, luv_shutdown_cb);
   if (ret < 0) {
     luv_cleanup_req(L, (luv_req_t*)req->data);
@@ -63,7 +65,8 @@ static int luv_shutdown(lua_State* L) {
 }
 
 static void luv_connection_cb(uv_stream_t* handle, int status) {
-  lua_State* L = luv_state(handle->loop);
+  luv_handle_t* data = (luv_handle_t*)handle->data;
+  lua_State* L = data->ctx->L;
   luv_status(L, status);
   luv_call_callback(L, (luv_handle_t*)handle->data, LUV_CONNECTION, 1);
 }
@@ -96,7 +99,8 @@ static void luv_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* b
 }
 
 static void luv_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf) {
-  lua_State* L = luv_state(handle->loop);
+  luv_handle_t* data = (luv_handle_t*)handle->data;
+  lua_State* L = data->ctx->L;
   int nargs;
 
   if (nread > 0) {
@@ -138,7 +142,8 @@ static int luv_read_stop(lua_State* L) {
 }
 
 static void luv_write_cb(uv_write_t* req, int status) {
-  lua_State* L = luv_state(req->handle->loop);
+  luv_req_t* data = (luv_req_t*)req->data;
+  lua_State* L = data->ctx->L;
   luv_status(L, status);
   luv_fulfill_req(L, (luv_req_t*)req->data, 1);
   luv_cleanup_req(L, (luv_req_t*)req->data);
@@ -159,12 +164,13 @@ static uv_buf_t* luv_prep_bufs(lua_State* L, int index, size_t *count) {
 }
 
 static int luv_write(lua_State* L) {
+  luv_ctx_t* ctx = luv_context(L);
   uv_stream_t* handle = luv_check_stream(L, 1);
   uv_write_t* req;
   int ret, ref;
   ref = luv_check_continuation(L, 3);
   req = (uv_write_t *)lua_newuserdata(L, sizeof(*req));
-  req->data = (luv_req_t*)luv_setup_req(L, ref);
+  req->data = (luv_req_t*)luv_setup_req(L, ctx, ref);
   if (lua_istable(L, 2)) {
     size_t count;
     uv_buf_t *bufs = luv_prep_bufs(L, 2, &count);
@@ -190,6 +196,7 @@ static int luv_write(lua_State* L) {
 }
 
 static int luv_write2(lua_State* L) {
+  luv_ctx_t* ctx = luv_context(L);
   uv_stream_t* handle = luv_check_stream(L, 1);
   uv_write_t* req;
   int ret, ref;
@@ -197,7 +204,7 @@ static int luv_write2(lua_State* L) {
   send_handle = luv_check_stream(L, 3);
   ref = luv_check_continuation(L, 4);
   req = (uv_write_t *)lua_newuserdata(L, sizeof(*req));
-  req->data = luv_setup_req(L, ref);
+  req->data = luv_setup_req(L, ctx, ref);
   if (lua_istable(L, 2)) {
     size_t count;
     uv_buf_t *bufs = luv_prep_bufs(L, 2, &count);

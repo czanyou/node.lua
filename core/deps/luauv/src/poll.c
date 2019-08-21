@@ -23,26 +23,28 @@ static uv_poll_t* luv_check_poll(lua_State* L, int index) {
 }
 
 static int luv_new_poll(lua_State* L) {
+  luv_ctx_t* ctx = luv_context(L);
   int fd = luaL_checkinteger(L, 1);
   uv_poll_t* handle = (uv_poll_t*)luv_newuserdata(L, sizeof(*handle));
-  int ret = uv_poll_init(luv_loop(L), handle, fd);
+  int ret = uv_poll_init(ctx->loop, handle, fd);
   if (ret < 0) {
     lua_pop(L, 1);
     return luv_error(L, ret);
   }
-  handle->data = luv_setup_handle(L);
+  handle->data = luv_setup_handle(L, ctx);
   return 1;
 }
 
 static int luv_new_socket_poll(lua_State* L) {
+  luv_ctx_t* ctx = luv_context(L);
   int fd = luaL_checkinteger(L, 1);
   uv_poll_t* handle = (uv_poll_t*)luv_newuserdata(L, sizeof(*handle));
-  int ret = uv_poll_init_socket(luv_loop(L), handle, fd);
+  int ret = uv_poll_init_socket(ctx->loop, handle, fd);
   if (ret < 0) {
     lua_pop(L, 1);
     return luv_error(L, ret);
   }
-  handle->data = luv_setup_handle(L);
+  handle->data = luv_setup_handle(L, ctx);
   return 1;
 }
 
@@ -53,8 +55,8 @@ static const char *const luv_pollevents[] = {
 };
 
 static void luv_poll_cb(uv_poll_t* handle, int status, int events) {
-  lua_State* L = luv_state(handle->loop);
   luv_handle_t* data = (luv_handle_t*)handle->data;
+  lua_State* L = data->ctx->L;
   const char* evtstr;
 
   if (status < 0) {

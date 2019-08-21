@@ -30,15 +30,16 @@ static uv_process_t* luv_check_process(lua_State* L, int index) {
 }
 
 static void exit_cb(uv_process_t* handle, int64_t exit_status, int term_signal) {
-  lua_State* L = luv_state(handle->loop);
   luv_handle_t* data = (luv_handle_t*)handle->data;
+  lua_State* L = data->ctx->L;
   lua_pushinteger(L, exit_status);
   lua_pushinteger(L, term_signal);
   luv_call_callback(L, data, LUV_EXIT, 2);
 }
 
 static void luv_spawn_close_cb(uv_handle_t* handle) {
-  lua_State *L = luv_state(handle->loop);
+  luv_handle_t* data = (luv_handle_t*)handle->data;
+  lua_State* L = data->ctx->L;
   luv_unref_handle(L, (luv_handle_t*)handle->data);
 }
 
@@ -76,6 +77,7 @@ static int luv_spawn(lua_State* L) {
   uv_process_options_t options;
   size_t i, len = 0;
   int ret;
+  luv_ctx_t* ctx = luv_context(L);
 
   memset(&options, 0, sizeof(options));
   options.exit_cb = exit_cb;
@@ -238,16 +240,28 @@ static int luv_spawn(lua_State* L) {
     options.flags |= UV_PROCESS_WINDOWS_HIDE;
   }
   lua_pop(L, 1);
+#if LUV_UV_VERSION_GEQ(1, 24, 0)
+  lua_getfield(L, 2, "hide_console");
+  if (lua_toboolean(L, -1)) {
+    options.flags |= UV_PROCESS_WINDOWS_HIDE_CONSOLE;
+  }
+  lua_pop(L, 1);
+  lua_getfield(L, 2, "hide_gui");
+  if (lua_toboolean(L, -1)) {
+    options.flags |= UV_PROCESS_WINDOWS_HIDE_GUI;
+  }
+  lua_pop(L, 1);
+#endif
 
   handle = (uv_process_t*)luv_newuserdata(L, sizeof(*handle));
   handle->type = UV_PROCESS;
-  handle->data = luv_setup_handle(L);
+  handle->data = luv_setup_handle(L, ctx);
 
   if (!lua_isnoneornil(L, 3)) {
     luv_check_callback(L, (luv_handle_t*)handle->data, LUV_EXIT, 3);
   }
 
-  ret = uv_spawn(luv_loop(L), handle, &options);
+  ret = uv_spawn(ctx->loop, handle, &options);
 
   luv_clean_options(&options);
   if (ret < 0) {
