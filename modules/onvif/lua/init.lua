@@ -23,19 +23,28 @@ function exports.xml2table(element)
     end
 
     if (children and #children > 0) then
-        -- children
         local item = {}
 
-        if (#children >= 2) and (children[1]:name() == children[2]:name()) then
-            for index, value in ipairs(children) do
-                local key, ret = exports.xml2table(value)
-                item[key .. '.' .. index] = ret
-            end
-
-        else
-            for _, value in ipairs(children) do
-                local key, ret = exports.xml2table(value)
+        -- children
+        for _, value in ipairs(children) do
+            local key, ret = exports.xml2table(value)
+            local lastValue = item[key]
+            if (lastValue == nil) then
                 item[key] = ret
+
+            elseif (type(lastValue) == 'table') and (lastValue[1]) then
+                table.insert(lastValue, ret)
+
+            else
+                item[key] = { lastValue, ret }
+            end
+        end
+  
+        -- properties
+        if (properties and #properties > 0) then
+            for _, property in ipairs(properties) do
+                local value = element['@' .. property.name]
+                item['@' .. property.name] = value
             end
         end
 
@@ -360,8 +369,7 @@ end
 function OnvifCamera:getPresets(callback)
     if (not callback) then callback = function() end end
 
-    local options = self:getOptions()
-    options.profile = 'Profile_1'
+    local options = self:getOptions(1)
     ptz.getPresets(options, function(err, body)
         callback(body)
     end)
@@ -370,8 +378,7 @@ end
 function OnvifCamera:removePreset(preset, callback)
     if (not callback) then callback = function() end end
 
-    local options = self:getOptions()
-    options.profile = 'Profile_1'
+    local options = self:getOptions(1)
     options.preset = preset
     ptz.removePreset(options, function(err, body)
         callback(body)
@@ -381,8 +388,7 @@ end
 function OnvifCamera:gotoPreset(preset, callback)
     if (not callback) then callback = function() end end
 
-    local options = self:getOptions()
-    options.profile = 'Profile_1'
+    local options = self:getOptions(1)
     options.preset = preset
     ptz.gotoPreset(options, function(err, body)
         callback(body)
@@ -392,8 +398,7 @@ end
 function OnvifCamera:setPreset(preset, callback)
     if (not callback) then callback = function() end end
 
-    local options = self:getOptions()
-    options.profile = 'Profile_1'
+    local options = self:getOptions(1)
     options.preset = preset
     ptz.setPreset(options, function(err, body)
         callback(body)
@@ -403,8 +408,7 @@ end
 function OnvifCamera:stopMove(callback)
     if (not callback) then callback = function() end end
 
-    local options = self:getOptions()
-    options.profile = 'Profile_1'
+    local options = self:getOptions(1)
     ptz.stop(options, function(err, body)
         callback(body)
     end)
@@ -413,8 +417,7 @@ end
 function OnvifCamera:continuousMove(x, y, z, callback)
     if (not callback) then callback = function() end end
 
-    local options = self:getOptions()
-    options.profile = 'Profile_1'
+    local options = self:getOptions(1)
     options.x = x;
     options.y = y;
     options.z = z;
@@ -465,13 +468,7 @@ function OnvifCamera:getProfiles(callback)
             return callback(nil)
         end
 
-        local profile1 = response and response['Profiles.1']
-        local profile2 = response and response['Profiles.2']
-
-        self.profiles = {}
-        table.insert(self.profiles, profile1)
-        table.insert(self.profiles, profile2)
-
+        self.profiles = response and response.Profiles
         return callback(self.profiles)
     end)
 end
@@ -482,7 +479,7 @@ function OnvifCamera:getOptions(index)
     local profile = nil
     if (index) then
         profile = self.profiles and self.profiles[index]
-        profile = profile and profile.Name
+        profile = profile and (profile['@token'] or profile.Name)
     end
 
     return {
@@ -515,7 +512,7 @@ function OnvifCamera:getStreamUri(index, callback)
         response = response and response.MediaUri
         local streamUri = response and response.Uri
         if (not streamUri) then
-            return callback(nil)
+            return callback(nil, body)
         end
 
         -- console.log('streamUri', streamUri)
@@ -547,7 +544,7 @@ function OnvifCamera:getSnapshotUri(index, callback)
         response = response and response.MediaUri
         local snapshotUri = response and response.Uri
         if (not snapshotUri) then
-            return callback(nil)
+            return callback(nil, body)
         end
 
         -- console.log('snapshotUri', snapshotUri)

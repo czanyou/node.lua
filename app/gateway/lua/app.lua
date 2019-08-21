@@ -140,6 +140,10 @@ function exports.rtsp()
     camera.rtsp()
 end
 
+function exports.onvif(...)
+    camera.onvif(...)
+end
+
 function exports.config()
     console.log('gateway', app.get('gateway'))
 end

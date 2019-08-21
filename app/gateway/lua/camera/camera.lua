@@ -317,6 +317,10 @@ end
 
 -- Expose and register the camera thing
 local function exposeThing(webThing)
+    if (not webThing) or (not webThing.instance) then
+        return
+    end
+
     console.log('register')
     onSetActionHandlers(webThing)
 
@@ -343,30 +347,44 @@ local function loadCameraInformation(webThing, options)
     local function loadStreamUri(profiles, index)
         local onvifClient = webThing.onvif
 
-        local function getStreamUriResponse(streamUri)
-            if (streamUri) then
-                console.log(streamUri)
-                webThing['streamUri' .. index] = streamUri
-    
-                startRtspClient(webThing)
+        local function getStreamUriResponse(streamUri, error)
+            if (not streamUri) then
+                console.log('Invalid stream Uri', error)
+                return 
             end
+
+            console.log(streamUri)
+            webThing['streamUri' .. index] = streamUri
+
+            startRtspClient(webThing)
         end
-    
-        local function getSnapshotUriResponse(snapshotUri)
-            if (snapshotUri) then
-                console.log(snapshotUri)
-                webThing['snapshotUri' .. index] = snapshotUri
+
+        local function getSnapshotUriResponse(snapshotUri, error)
+            if (not snapshotUri) then
+                console.log('Invalid snapshot Uri', error)
+                return
             end
+
+            console.log(snapshotUri)
+            webThing['snapshotUri' .. index] = snapshotUri
         end
 
         local profile = profiles and profiles[index]
-        webThing['profileName' .. index] = profile and profile.Name
+        local profileName = profile and (profile['@token'] or profile.Name)
+        console.log('profileName', profileName)
+
+        webThing['profileName' .. index] = profileName
         onvifClient:getStreamUri(index, getStreamUriResponse)
         onvifClient:getSnapshotUri(index, getSnapshotUriResponse)
     end
 
     -- Load media profiles of the ONVIF device
     local function getProfilesResponse(profiles)
+        if (not profiles) then
+            console.log('Invalid Profiles')
+            return
+        end
+
         loadStreamUri(profiles, 1)
         loadStreamUri(profiles, 2)
     end
@@ -381,7 +399,7 @@ local function loadCameraInformation(webThing, options)
         end
 
         webThing.deviceInformation = response
-        -- console.log(response)
+        console.log(response)
 
         -- load profile information
         local onvifClient = webThing.onvif
@@ -470,7 +488,34 @@ exports.rtmp = function()
 end
 
 exports.rtsp = function()
-    
+    local options = {
+        ip = '192.168.1.64',
+        username = 'admin',
+        password = 'admin123456',
+        url = 'rtsp://192.168.1.64'
+    }
+
+    local webThing = {
+        options = options
+    }
+
+    startRtspClient(webThing)
+end
+
+exports.onvif = function(...)
+    local options = {
+        did = '123456',
+        ip = '192.168.1.64',
+        username = 'admin',
+        password = 'admin123456'
+    }
+
+    local webThing = {
+        options = options
+    }
+
+    webThing.onvif = onvif.camera(options)
+    loadCameraInformation(webThing, options)
 end
 
 exports.getStatus = function()
