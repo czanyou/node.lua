@@ -14,6 +14,12 @@ options = {
     password = 'abcdefg123456'
 }
 
+options = {
+    host = '192.168.1.10',
+    username = 'admin',
+    password = '123456'
+}
+
 local function testGetSystemDateAndTime()
     onvif.getSystemDateAndTime(options, function(err, body) 
         console.log(err, body)
@@ -105,4 +111,5 @@ local function testCamera()
     console.log(camera:getImageUri())
 end
 
+testGetSystemDateAndTime()
 testCamera()
