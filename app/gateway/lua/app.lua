@@ -207,7 +207,10 @@ function exports.cameras()
     local things = {}
     for index, options in ipairs(cameras) do
         options.mqtt = mqtt
-        options.secret = secret
+
+        if (not options.secret) then
+            options.secret = secret
+        end
 
         -- console.log('cameras', options)
         local thing, err = camera.createThing(options)

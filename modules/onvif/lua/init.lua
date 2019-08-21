@@ -74,7 +74,12 @@ function exports.xml2table(element)
 end
 
 function exports.post(options, callback)
-    local url = 'http://' .. (options.host or options.ip)
+    local host = options.host or options.ip
+    if (not host) then
+        return callback('Invalid host')
+    end
+
+    local url = 'http://' .. host
     if (options.port) then
         url = url .. ':' .. options.port
     end
