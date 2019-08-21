@@ -263,7 +263,7 @@ function RtspClient:onRtpPacket(packet, offset, size)
 
 	else
 		local sample = self.rtpSession:decode(packet, offset)
-		--console.log(sample)
+		-- console.log(sample)
 
 		if (not sample) then
 			return

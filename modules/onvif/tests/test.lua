@@ -43,9 +43,16 @@ local function testGetUsernameToken()
     console.log(data)
 end
 
-local function testGetProfiles()
+local function testGetProfiles(callback)
     onvif.media.getProfiles(options, function(err, body)
-        console.log(err, json.stringify(body))
+        local response = body and body.GetProfilesResponse
+        local profile1 = response and response['Profiles.1']
+        local profile2 = response and response['Profiles.2']
+        local name1 = profile1 and profile1.Name
+        local name2 = profile1 and profile2.Name
+        console.log(err, name1, name2)
+
+        callback(name1, name2);
     end)
 end
 
@@ -55,15 +62,16 @@ local function testGetVideoSourcess()
     end)
 end
 
-local function testGetStreamUri()
+local function testGetStreamUri(name)
+    options.profile = name
     onvif.media.getStreamUri(options, function(err, body)
-        console.log(err, json.stringify(body))
+        console.log(err, body)
     end)
 end
 
 local function testGetSnapshotUri()
     onvif.media.getSnapshotUri(options, function(err, body)
-        console.log(err, json.stringify(body))
+        console.log(err, body)
     end)
 end
 
@@ -111,5 +119,12 @@ local function testCamera()
     console.log(camera:getImageUri())
 end
 
+
+-- testCamera()
 testGetSystemDateAndTime()
-testCamera()
+testGetDeviceInformation()
+testGetProfiles(function(name1, name2)
+    testGetStreamUri(name1)
+    testGetSnapshotUri(name2)
+end)
+

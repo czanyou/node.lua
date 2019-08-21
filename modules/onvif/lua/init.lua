@@ -65,7 +65,7 @@ function exports.xml2table(element)
 end
 
 function exports.post(options, callback)
-    local url = 'http://' .. options.host
+    local url = 'http://' .. (options.host or options.ip)
     if (options.port) then
         url = url .. ':' .. options.port
     end
@@ -81,11 +81,26 @@ function exports.post(options, callback)
 
         local parser = xml.newParser()
         local data = parser:ParseXmlText(body)
-        local root = data and data['env:Envelope']
-        -- console.log(root:name())
 
-        local xmlBody = root and root['env:Body']
-        -- console.log(xmlBody:name())
+        -- Envelope
+        local children = data:children();
+        -- console.log(data:name(), #children)
+
+        local root = children and children[1] -- and data['env:Envelope']
+        if (not children) then
+            return callback('Envelope element not found')
+        end
+
+        -- console.log(root and root:name())
+
+        -- Body
+        children = root and root:children();
+        local xmlBody = children and children[#children] -- and root['env:Body']
+        if (not children) then
+            return callback('Body element not found')
+        end
+
+        -- console.log(xmlBody:name(), #children)
 
         local _, result = exports.xml2table(xmlBody)
         callback(nil, result)
@@ -343,7 +358,9 @@ function OnvifCamera:initialize(options)
 end
 
 function OnvifCamera:getPresets(callback)
-    local options = {}
+    if (not callback) then callback = function() end end
+
+    local options = self:getOptions()
     options.profile = 'Profile_1'
     ptz.getPresets(options, function(err, body)
         callback(body)
@@ -351,7 +368,9 @@ function OnvifCamera:getPresets(callback)
 end
 
 function OnvifCamera:removePreset(preset, callback)
-    local options = {}
+    if (not callback) then callback = function() end end
+
+    local options = self:getOptions()
     options.profile = 'Profile_1'
     options.preset = preset
     ptz.removePreset(options, function(err, body)
@@ -360,7 +379,9 @@ function OnvifCamera:removePreset(preset, callback)
 end
 
 function OnvifCamera:gotoPreset(preset, callback)
-    local options = {}
+    if (not callback) then callback = function() end end
+
+    local options = self:getOptions()
     options.profile = 'Profile_1'
     options.preset = preset
     ptz.gotoPreset(options, function(err, body)
@@ -369,7 +390,9 @@ function OnvifCamera:gotoPreset(preset, callback)
 end
 
 function OnvifCamera:setPreset(preset, callback)
-    local options = {}
+    if (not callback) then callback = function() end end
+
+    local options = self:getOptions()
     options.profile = 'Profile_1'
     options.preset = preset
     ptz.setPreset(options, function(err, body)
@@ -378,7 +401,9 @@ function OnvifCamera:setPreset(preset, callback)
 end
 
 function OnvifCamera:stopMove(callback)
-    local options = {}
+    if (not callback) then callback = function() end end
+
+    local options = self:getOptions()
     options.profile = 'Profile_1'
     ptz.stop(options, function(err, body)
         callback(body)
@@ -386,7 +411,9 @@ function OnvifCamera:stopMove(callback)
 end
 
 function OnvifCamera:continuousMove(x, y, z, callback)
-    local options = {}
+    if (not callback) then callback = function() end end
+
+    local options = self:getOptions()
     options.profile = 'Profile_1'
     options.x = x;
     options.y = y;
@@ -397,11 +424,13 @@ function OnvifCamera:continuousMove(x, y, z, callback)
 end
 
 function OnvifCamera:getDeviceInformation(callback)
+    if (not callback) then callback = function() end end
+
     if (self.deviceInformation) then
         return callback(self.deviceInformation)
     end
 
-    local options = self.options
+    local options = self:getOptions()
 
     exports.getDeviceInformation(options, function(err, body) 
         if (err) then
@@ -414,6 +443,116 @@ function OnvifCamera:getDeviceInformation(callback)
         end
 
         return callback(response)
+    end)
+end
+
+function OnvifCamera:getProfiles(callback)
+    if (not callback) then callback = function() end end
+
+    if (self.profiles) then
+        return callback(self.profiles)
+    end
+
+    local options = self:getOptions()
+
+    exports.media.getProfiles(options, function(err, body) 
+        if (err) then
+            return callback(nil, err)
+        end
+
+        local response = body and body.GetProfilesResponse
+        if (not response) then
+            return callback(nil)
+        end
+
+        local profile1 = response and response['Profiles.1']
+        local profile2 = response and response['Profiles.2']
+
+        self.profiles = {}
+        table.insert(self.profiles, profile1)
+        table.insert(self.profiles, profile2)
+
+        return callback(self.profiles)
+    end)
+end
+
+function OnvifCamera:getOptions(index)
+    local options = self.options or {}
+
+    local profile = nil
+    if (index) then
+        profile = self.profiles and self.profiles[index]
+        profile = profile and profile.Name
+    end
+
+    return {
+        ip = options.ip,
+        profile = profile,
+        username = options.username,
+        password = options.password
+    }
+end
+
+function OnvifCamera:getStreamUri(index, callback)
+    if (not callback) then callback = function() end end
+
+    local profile = self.profiles and self.profiles[index]
+    if (not profile) then
+        return callback(nil)
+    end
+
+    if (profile.streamUri) then
+        return profile.streamUri
+    end
+
+    local options = self:getOptions(index)
+    exports.media.getStreamUri(options, function(err, body) 
+        if (err) then
+            return callback(nil, err)
+        end
+
+        local response = body and body.GetStreamUriResponse
+        response = response and response.MediaUri
+        local streamUri = response and response.Uri
+        if (not streamUri) then
+            return callback(nil)
+        end
+
+        -- console.log('streamUri', streamUri)
+        profile.streamUri = streamUri
+        return callback(streamUri)
+    end)
+end
+
+function OnvifCamera:getSnapshotUri(index, callback)
+    if (not callback) then callback = function() end end
+    
+    local profile = self.profiles and self.profiles[index]
+    if (not profile) then
+        return callback(nil)
+    end
+
+    if (profile.snapshotUri) then
+        return profile.snapshotUri
+    end
+
+    local options = self:getOptions(index)
+    exports.media.getSnapshotUri(options, function(err, body) 
+        if (err) then
+            return callback(nil, err)
+        end
+
+        -- console.log('body', body)
+        local response = body and body.GetSnapshotUriResponse
+        response = response and response.MediaUri
+        local snapshotUri = response and response.Uri
+        if (not snapshotUri) then
+            return callback(nil)
+        end
+
+        -- console.log('snapshotUri', snapshotUri)
+        profile.snapshotUri = snapshotUri
+        callback(snapshotUri)
     end)
 end
 

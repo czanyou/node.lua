@@ -1,12 +1,4 @@
-local app   = require('app')
 local util  = require('util')
-local url 	= require('url')
-local fs 	= require('fs')
-local path 	= require('path')
-local http  = require('http')
-local json  = require('json')
-local wot   = require('wot')
-
 local rtsp 	= require('rtsp')
 local rtmp  = require('rtmp')
 
@@ -185,7 +177,7 @@ local function createRtspClient(rtspSession)
         local naluData = table.concat(lastSample)
         local naluType = naluData:byte(1) & 0x1f
 
-        --console.log('naluData', #naluData)
+        -- console.log('naluData', #naluData, sample.isFragment, sample.isEnd)
         lastSample = nil
 
         -- console.log('naluType', naluType)
@@ -195,9 +187,9 @@ local function createRtspClient(rtspSession)
             --console.printBuffer(naluData)
 
         elseif (naluType == NALU_TYPE_PPS) then
-            --console.log('naluType', naluType, #naluData)
+            -- console.log('naluType', naluType, #naluData)
             rtspClient.pps = naluData
-            --console.printBuffer(naluData)
+            -- console.printBuffer(naluData)
 
         elseif (naluType == NALU_TYPE_I) then
             -- console.log('naluType', naluType, #naluData, timestamp)

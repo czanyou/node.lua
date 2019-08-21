@@ -314,7 +314,7 @@ local function getRtmpSessionStatus(did)
     return status
 end
 
-function onRtmpSessionTimer(did)
+local function onRtmpSessionTimer(did)
     local rtmpSession = getRtmpSession(did)
 
     local now = process.now()
@@ -371,7 +371,7 @@ local function startRtmpClient()
             onRtmpSessionTimer(did, rtmpSession);
         end
     end
-    
+
     exports.rtmpTimer = setInterval(1000 * 5, onRtmpTimer)
     onRtmpTimer()
 
@@ -380,6 +380,8 @@ local function startRtmpClient()
             closeRtmpClient(did, 'rtmp reset')
         end
     end)
+
+    return exports
 end
 
 local function setRtmpMediaInfo(did, mediaInfo)

@@ -1,13 +1,10 @@
 local app   = require('app')
 local json  = require('json')
 local wot   = require('wot')
+local httpd = require('wot/bindings/http')
 
-local httpd   = require('wot/bindings/http')
-
-local rtmp  = require('./rtmp')
-local rtsp  = require('./rtsp')
 local modbus = require('./modbus')
-local camera  = require('./camera')
+local camera  = require('./camera/camera')
 local bluetooth = require('./bluetooth')
 local button = require('./button')
 
@@ -52,8 +49,8 @@ local function createHttpServer()
         -- console.log(req.url, req.method)
 
         local result = {}
-        result.rtmp = rtmp.getRtmpStatus()
-        result.rtsp = rtsp.getRtspStatus()
+        -- result.rtmp = rtmp.getRtmpStatus()
+        -- result.rtsp = rtsp.getRtspStatus()
         result.things = getThingsStatus()
 
         local body = json.stringify(result)
@@ -89,8 +86,6 @@ end
 
 function exports.start()
     if (app.lock()) then
-        exports.rtmp()
-        exports.rtsp()
         exports.cameras()
         exports.modbus()
         exports.bluetooth()
@@ -138,26 +133,12 @@ end
 
 -- start RTMP push client
 function exports.rtmp()
-    rtmp.startRtmpClient()
+    camera.rtmp()
 end
 
 -- start RTSP client
 function exports.rtsp()
-    -- gateway.cameras
-    local gateway = app.get('gateway')
-    local cameras = gateway and gateway.cameras
-    if (not cameras) then
-        return
-    end
-
-    -- RTSP camera options
-    -- `options.did` Device ID
-    -- `options.url` RTSP URL
-    -- `options.username` Username
-    -- `options.password` Password
-    for index, options in ipairs(cameras) do
-        rtsp.startRtspClient(rtmp, options)
-    end
+    camera.rtsp()
 end
 
 function exports.config()

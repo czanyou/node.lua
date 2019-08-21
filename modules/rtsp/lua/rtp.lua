@@ -26,7 +26,7 @@ exports.RTP_PACKET_HEAD	= 0x80
 -- 返回指定的布尔值;不执行任何实际的转换。
 -- 如下的值会被认为是 false:
 -- nil 值, 数值中的 0, 空字符串
-local function toboolean(value)
+local function toBoolean(value)
 	if (value == nil) or (value == false) then
 		return false
 
@@ -64,7 +64,7 @@ function RtpSession:decode(packet, offset)
 	end
 
 	-- parse packet data
-	offset = offset + 12
+	offset = offset + 12 -- RTP header size == 12
 	local data = {}
 
 	if (total >= offset + 1) then
@@ -74,8 +74,8 @@ function RtpSession:decode(packet, offset)
 		if (nalType == 28) then -- fragment unit mode
 			offset = offset + 2 -- skip fu header
 			sample.isFragment 	= true
-			sample.isStart  	= toboolean(fu2 & 0x80)
-			sample.isEnd    	= toboolean(fu2 & 0x40)
+			sample.isStart  	= toBoolean(fu2 & 0x80)
+			sample.isEnd    	= toBoolean(fu2 & 0x40)
 
 			if (sample.isStart) then
 				local nalHeader = (fu1 & 0x60) | (fu2 & 0x1f)
@@ -124,10 +124,11 @@ function RtpSession:decodeHeader(packet, offset)
 
 	local buffer = {}
 	buffer.payload 		= payload & 0x7F
-	buffer.marker  		= toboolean(payload & 0x80)
+	buffer.marker  		= toBoolean(payload & 0x80)
 	buffer.sequence 	= sequence
 	buffer.rtpTime  	= rtpTime
 	buffer.sampleTime  	= math.floor(rtpTime / 90)
+	buffer.padding      = toBoolean(head & 0x20)
 	
 	return buffer
 end
