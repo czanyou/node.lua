@@ -4,7 +4,7 @@ project(Node.lua)  # Project Name
 
 # Project Version Code
 set(LNODE_MAJOR_VERSION 4)
-set(LNODE_MINOR_VERSION 3)
+set(LNODE_MINOR_VERSION 4)
 
 set(LNODE_VERSION ${LNODE_MAJOR_VERSION}.${LNODE_MINOR_VERSION})
 add_definitions(-DLNODE_MAJOR_VERSION=${LNODE_MAJOR_VERSION})
