@@ -109,10 +109,10 @@ local function onPtzActions(input, webThing)
             y = -1
 
         elseif (direction == 6) then
-            x = 1
+            x = -1
 
         elseif (direction == 7) then
-            x = -1
+            x = 1
 
         elseif (direction == 8) then
             z = 1
@@ -173,7 +173,9 @@ local function onPresetActions(input, webThing)
     elseif (input['goto']) then
         local index = getIndex(input, 'goto')
         if index then
-            onvifClient:gotoPreset(index)
+            onvifClient:gotoPreset(index, function (...)
+                console.log('gotoPreset', ...)
+            end)
             return { code = 0 }
         else
             return { code = 400, error = "Invalid preset index" }
@@ -331,7 +333,7 @@ local function exposeThing(webThing)
         return
     end
 
-    console.log('register')
+    -- console.log('register')
     onSetActionHandlers(webThing)
 
     -----------------------------------------------------------
@@ -363,7 +365,7 @@ local function loadCameraInformation(webThing, options)
                 return 
             end
 
-            console.log(streamUri)
+            -- console.log(streamUri)
             webThing.profiles[index].streamUri = streamUri
             -- startRtspClient(webThing)
         end
@@ -374,7 +376,7 @@ local function loadCameraInformation(webThing, options)
                 return
             end
 
-            console.log(snapshotUri)
+            -- console.log(snapshotUri)
             webThing.profiles[index].snapshotUri = snapshotUri
         end
 
@@ -414,7 +416,7 @@ local function loadCameraInformation(webThing, options)
         end
 
         webThing.deviceInformation = response
-        console.log(response)
+        -- console.log(response)
 
         -- load profile information
         local onvifClient = webThing.onvif

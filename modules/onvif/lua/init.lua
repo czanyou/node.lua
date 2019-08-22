@@ -8,6 +8,8 @@ local exports = {}
 -------------------------------------------------------------------------------
 -- Common
 
+local noop = function() end
+
 function exports.xml2table(element)
     if (not element) then
         return
@@ -74,6 +76,10 @@ function exports.xml2table(element)
 end
 
 function exports.post(options, callback)
+    if (type(callback) ~= 'function') then
+        callback = noop
+    end
+
     local host = options.host or options.ip
     if (not host) then
         return callback('Invalid host')
@@ -85,9 +91,11 @@ function exports.post(options, callback)
     end
 
     url = url .. (options.path or '/')
+    -- console.log(url, options)
 
     request.post(url, options, function(err, response, body)
-        -- console.log(err, response.statusCode, body)
+        -- console.log(err, response, body)
+        
         if (err or not body) then
             callback(err or 'error')
             return
@@ -142,26 +150,26 @@ function exports.getHeader(options)
 
     local result = exports.getUsernameToken(options)
 
-    local header = [[    
-    <s:Header>
-        <Security s:mustUnderstand="1" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
-            <UsernameToken>
-                <Username>]] .. options.username .. [[</Username>
-                <Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">]] .. result.digest .. [[</Password>
-                <Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">]] .. result.nonce .. [[</Nonce>
-                <Created xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">]] .. result.timestamp .. [[</Created>
-            </UsernameToken>
-        </Security>
-    </s:Header>
-    ]]
+    local header = [[
+<s:Header>
+<Security s:mustUnderstand="1" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+<UsernameToken>
+<Username>]] .. options.username .. [[</Username>
+<Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">]] .. result.digest .. [[</Password>
+<Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">]] .. result.nonce .. [[</Nonce>
+<Created xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">]] .. result.timestamp .. [[</Created>
+</UsernameToken>
+</Security>
+</s:Header>
+]]
 
     return header;
 end
 
 function exports.getMessage(options, body)
     local message = '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing">' ..
-    exports.getHeader(options) .. [[
-    <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">]] ..
+    exports.getHeader(options) .. 
+    [[<s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">]] ..
     body .. '</s:Body></s:Envelope>'
     return message
 end
@@ -172,9 +180,9 @@ end
 function exports.getSystemDateAndTime(options, callback)
     local message = [[
 <s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope">
-    <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <GetSystemDateAndTime xmlns="http://www.onvif.org/ver10/device/wsdl"/>
-    </s:Body>
+<s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<GetSystemDateAndTime xmlns="http://www.onvif.org/ver10/device/wsdl"/>
+</s:Body>
 </s:Envelope>
 ]]
     options.path = '/onvif/device_service'
@@ -184,9 +192,9 @@ end
 
 function exports.getCapabilities(options, callback)
     local message = exports.getMessage(options, [[
-        <GetCapabilities xmlns="http://www.onvif.org/ver10/device/wsdl">
-            <Category>All</Category>
-        </GetCapabilities>]])
+<GetCapabilities xmlns="http://www.onvif.org/ver10/device/wsdl">
+<Category>All</Category>
+</GetCapabilities>]])
     options.path = '/onvif/device_service'
     options.data = message
     exports.post(options, callback)
@@ -194,8 +202,8 @@ end
 
 function exports.getDeviceInformation(options, callback)
     local message = exports.getMessage(options, [[
-        <GetDeviceInformation xmlns="http://www.onvif.org/ver10/device/wsdl">
-        </GetDeviceInformation>]])
+<GetDeviceInformation xmlns="http://www.onvif.org/ver10/device/wsdl">
+</GetDeviceInformation>]])
     options.path = '/onvif/device_service'
     options.data = message
     exports.post(options, callback)
@@ -203,9 +211,9 @@ end
 
 function exports.getServices(options, callback)
     local message = exports.getMessage(options, [[
-        <GetServices xmlns="http://www.onvif.org/ver10/device/wsdl">
-            <IncludeCapability>true</IncludeCapability>
-        </GetServices>]])
+<GetServices xmlns="http://www.onvif.org/ver10/device/wsdl">
+<IncludeCapability>true</IncludeCapability>
+</GetServices>]])
 
     options.path = '/onvif/device_service'
     options.data = message
@@ -235,15 +243,15 @@ function media.getStreamUri(options, callback)
     local profile = options.profile or 'Profile_1'
 
     local message = exports.getMessage(options, [[
-        <GetStreamUri xmlns="http://www.onvif.org/ver10/media/wsdl">
-            <StreamSetup>
-                <Stream xmlns="http://www.onvif.org/ver10/schema">RTP-Unicast</Stream>
-                <Transport xmlns="http://www.onvif.org/ver10/schema">
-                    <Protocol>RTSP</Protocol>
-                </Transport>
-            </StreamSetup>
-            <ProfileToken>]] .. profile .. [[</ProfileToken>
-        </GetStreamUri>]])
+<GetStreamUri xmlns="http://www.onvif.org/ver10/media/wsdl">
+<StreamSetup>
+<Stream xmlns="http://www.onvif.org/ver10/schema">RTP-Unicast</Stream>
+<Transport xmlns="http://www.onvif.org/ver10/schema">
+<Protocol>RTSP</Protocol>
+</Transport>
+</StreamSetup>
+<ProfileToken>]] .. profile .. [[</ProfileToken>
+</GetStreamUri>]])
 
     options.path = '/onvif/Media'
     options.data = message
@@ -254,9 +262,9 @@ function media.getSnapshotUri(options, callback)
     local profile = options.profile or 'Profile_1'
 
     local message = exports.getMessage(options, [[
-        <GetSnapshotUri xmlns="http://www.onvif.org/ver10/media/wsdl">
-            <ProfileToken>]] .. profile .. [[</ProfileToken>
-        </GetSnapshotUri>]])
+<GetSnapshotUri xmlns="http://www.onvif.org/ver10/media/wsdl">
+<ProfileToken>]] .. profile .. [[</ProfileToken>
+</GetSnapshotUri>]])
 
     options.path = '/onvif/Media'
     options.data = message
@@ -265,8 +273,8 @@ end
 
 function media.getOSDs(options, callback)
     local message = exports.getMessage(options, [[
-        <GetOSDs xmlns="http://www.onvif.org/ver10/media/wsdl">
-        </GetOSDs>]])
+<GetOSDs xmlns="http://www.onvif.org/ver10/media/wsdl">
+</GetOSDs>]])
     options.path = '/onvif/Media'
     options.data = message
     exports.post(options, callback)
@@ -282,9 +290,9 @@ local ptz = {}
 function ptz.getPresets(options, callback)
     local profile = options.profile or 'Profile_1'
     local message = exports.getMessage(options, [[
-        <GetPresets xmlns="http://www.onvif.org/ver20/ptz/wsdl">
-            <ProfileToken>]] .. profile .. [[</ProfileToken>
-        </GetPresets>]])
+<GetPresets xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+<ProfileToken>]] .. profile .. [[</ProfileToken>
+</GetPresets>]])
     options.path = '/onvif/ptz'
     options.data = message
     exports.post(options, callback)
@@ -297,13 +305,13 @@ function ptz.continuousMove(options, callback)
     local profile = options.profile or 'Profile_1'
 
     local message = exports.getMessage(options, [[
-        <ContinuousMove xmlns="http://www.onvif.org/ver20/ptz/wsdl">
-            <ProfileToken>]] .. profile .. [[</ProfileToken>
-            <Velocity>
-                <PanTilt x="]] .. x .. [[" y="]] .. y .. [[" xmlns="http://www.onvif.org/ver10/schema"/>
-                <Zoom x="]] .. z .. [[" xmlns="http://www.onvif.org/ver10/schema"/>
-            </Velocity>
-        </ContinuousMove>]])
+<ContinuousMove xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+<ProfileToken>]] .. profile .. [[</ProfileToken>
+<Velocity>
+<PanTilt x="]] .. x .. [[" y="]] .. y .. [[" xmlns="http://www.onvif.org/ver10/schema"/>
+<Zoom x="]] .. z .. [[" xmlns="http://www.onvif.org/ver10/schema"/>
+</Velocity>
+</ContinuousMove>]])
     options.path = '/onvif/ptz'
     options.data = message
     exports.post(options, callback)
@@ -312,9 +320,9 @@ end
 function ptz.stop(options, callback)
     local profile = options.profile or 'Profile_1'
     local message = exports.getMessage(options, [[
-        <Stop xmlns="http://www.onvif.org/ver20/ptz/wsdl">
-            <ProfileToken>]] .. profile .. [[</ProfileToken>
-        </Stop>]])
+<Stop xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+<ProfileToken>]] .. profile .. [[</ProfileToken>
+</Stop>]])
     options.path = '/onvif/ptz'
     options.data = message
     exports.post(options, callback)
@@ -324,10 +332,10 @@ function ptz.setPreset(options, callback)
     local profile = options.profile or 'Profile_1'
     local preset = options.preset or 0
     local message = exports.getMessage(options, [[
-        <SetPreset xmlns="http://www.onvif.org/ver20/ptz/wsdl">
-            <ProfileToken>]] .. profile .. [[</ProfileToken>
-            <PresetToken>]] .. preset .. [[</PresetToken>
-        </SetPreset>]])
+<SetPreset xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+<ProfileToken>]] .. profile .. [[</ProfileToken>
+<PresetToken>]] .. preset .. [[</PresetToken>
+</SetPreset>]])
     options.path = '/onvif/ptz'
     options.data = message
     exports.post(options, callback)
@@ -337,10 +345,10 @@ function ptz.gotoPreset(options, callback)
     local profile = options.profile or 'Profile_1'
     local preset = options.preset or 0
     local message = exports.getMessage(options, [[
-        <GotoPreset xmlns="http://www.onvif.org/ver20/ptz/wsdl">
-            <ProfileToken>]] .. profile .. [[</ProfileToken>
-            <PresetToken>]] .. preset .. [[</PresetToken>
-        </GotoPreset>]])
+<GotoPreset xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+<ProfileToken>]] .. profile .. [[</ProfileToken>
+<PresetToken>]] .. preset .. [[</PresetToken>
+</GotoPreset>]])
     options.path = '/onvif/ptz'
     options.data = message
     exports.post(options, callback)
@@ -350,10 +358,10 @@ function ptz.removePreset(options, callback)
     local profile = options.profile or 'Profile_1'
     local preset = options.preset or 0
     local message = exports.getMessage(options, [[
-        <RemovePreset xmlns="http://www.onvif.org/ver20/ptz/wsdl">
-            <ProfileToken>]] .. profile .. [[</ProfileToken>
-            <PresetToken>]] .. preset .. [[</PresetToken>
-        </RemovePreset>]])
+<RemovePreset xmlns="http://www.onvif.org/ver20/ptz/wsdl">
+<ProfileToken>]] .. profile .. [[</ProfileToken>
+<PresetToken>]] .. preset .. [[</PresetToken>
+</RemovePreset>]])
     options.path = '/onvif/ptz'
     options.data = message
     exports.post(options, callback)
@@ -372,63 +380,37 @@ function OnvifCamera:initialize(options)
 end
 
 function OnvifCamera:getPresets(callback)
-    if (not callback) then callback = function() end end
-
-    local options = self:getOptions(1)
-    ptz.getPresets(options, function(err, body)
-        callback(body)
-    end)
+    local options = self:getPresetOptions(1)
+    ptz.getPresets(options, callback)
 end
 
 function OnvifCamera:removePreset(preset, callback)
-    if (not callback) then callback = function() end end
+    local options = self:getPresetOptions(1, preset)
 
-    local options = self:getOptions(1)
-    options.preset = preset
-    ptz.removePreset(options, function(err, body)
-        callback(body)
-    end)
+    ptz.removePreset(options, callback)
 end
 
 function OnvifCamera:gotoPreset(preset, callback)
-    if (not callback) then callback = function() end end
-
-    local options = self:getOptions(1)
-    options.preset = preset
-    ptz.gotoPreset(options, function(err, body)
-        callback(body)
-    end)
+    local options = self:getPresetOptions(1, preset)
+    ptz.gotoPreset(options, callback)
 end
 
 function OnvifCamera:setPreset(preset, callback)
-    if (not callback) then callback = function() end end
-
-    local options = self:getOptions(1)
-    options.preset = preset
-    ptz.setPreset(options, function(err, body)
-        callback(body)
-    end)
+    local options = self:getPresetOptions(1, preset)
+    ptz.setPreset(options, callback)
 end
 
 function OnvifCamera:stopMove(callback)
-    if (not callback) then callback = function() end end
-
     local options = self:getOptions(1)
-    ptz.stop(options, function(err, body)
-        callback(body)
-    end)
+    ptz.stop(options, callback)
 end
 
 function OnvifCamera:continuousMove(x, y, z, callback)
-    if (not callback) then callback = function() end end
-
     local options = self:getOptions(1)
     options.x = x;
     options.y = y;
     options.z = z;
-    ptz.continuousMove(options, function(err, body)
-        callback(body)
-    end)
+    ptz.continuousMove(options, callback)
 end
 
 function OnvifCamera:getDeviceInformation(callback)
@@ -493,6 +475,19 @@ function OnvifCamera:getOptions(index)
         username = options.username,
         password = options.password
     }
+end
+
+function OnvifCamera:getPresetOptions(index, preset)
+    local options = self:getOptions(index)
+    options.preset = preset
+
+    if (options.profile == 'MainStream') then
+        -- options.profile = nil
+        if (preset == 1) then
+            options.preset = 201
+        end
+    end
+    return options
 end
 
 function OnvifCamera:getStreamUri(index, callback)
