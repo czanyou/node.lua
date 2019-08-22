@@ -474,8 +474,9 @@ local function createCameraThing(options)
     local camera = { 
         ['@context'] = "https://iot.beaconice.cn/schemas",
         ['@type'] = 'Camera',
-        id = options.did, 
+        id = options.did,
         url = options.mqtt,
+        clientId = 'camera_' .. options.did,
         name = 'camera',
         actions = {
             play = { ['@type'] = 'play' },
