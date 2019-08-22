@@ -108,7 +108,7 @@ static void dir_write()
     char *write_cmd = "1";
     fwrite(write_cmd,1,strlen(write_cmd),dir_fp);
     fflush(dir_fp);
-    usleep(500000);  
+    usleep(50);  
 }
 
 /* Define the slave ID of the remote device to talk in master mode or set the

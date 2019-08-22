@@ -60,6 +60,11 @@ end
 
 local timer
 
+local bluetoothRdady = 0
+
+local deviceStatusTimer
+
+
 local function uart_recevie_callback()
     local function boardcast_analysis(packet_data)
         local packet_type = 0x00
@@ -69,10 +74,11 @@ local function uart_recevie_callback()
         local flag = 0
         for i = 1, size do
             data[i] = string.byte(packet_data, i)
+
         end
         local rssi = data[size] - 256
         local mac = string.format("%02x%02x%02x%02x%02x%02x", data[1], data[2], data[3], data[4], data[5], data[6])
-        console.log(mac, rssi)
+      
         for  k, v in ipairs(white_list) do
             if(string.find(v,mac) ~= nil)
             then
@@ -83,6 +89,7 @@ local function uart_recevie_callback()
 
         if(flag == 1 and size > 0)
         then
+            console.log(mac, rssi)
             if(timer) then
                 clearTimeout(timer)
             end
@@ -115,38 +122,120 @@ local function uart_recevie_callback()
                 if(chunk_type == 0xff and frame_type == 0x02 and packet_type == 0x01)
                 then
                     local sensor_info = {}
-
                     local sensor_index = 6
+                    local sensor_class = 0x00
+
+                    sensor_type = data[index+sensor_index]
+                    if(sensor_type == 0xff) then
+                        sensor_class =  data[index+sensor_index+1]
+                        sensor_index = sensor_index+2
+                    end
+
                     -- console.printBuffer(data)
+
                     while(sensor_index < chunk_size )
                     do
                         sensor_type = data[index+sensor_index]
-                        if(sensor_type == 0x01)
-                        then
-                            sensor_info.batteryVoltage = data[index+sensor_index+1]*255+data[index+sensor_index+2]
-                            sensor_index = sensor_index+3
+                        if (sensor_class == 0x00) then 
+                            if(sensor_type == 0x01) then
+                                sensor_info.batteryVoltage = data[index+sensor_index+1]*255+data[index+sensor_index+2]
+                                sensor_index = sensor_index+3
 
-                        elseif(sensor_type == 0x02)
-                        then
+                            elseif(sensor_type == 0x02) then
 
-                            sensor_info.temperature = data[index+sensor_index+1]+data[index+sensor_index+2]/255
-                            sensor_index = sensor_index+3
+                                sensor_info.temperature = data[index+sensor_index+1]+data[index+sensor_index+2]/255
+                                sensor_index = sensor_index+3
 
-                        elseif(sensor_type == 0x03)
-                        then
+                            elseif(sensor_type == 0x03) then
 
-                            sensor_info.humidity = data[index+sensor_index+1]
-                            sensor_index = sensor_index+2
+                                sensor_info.humidity = data[index+sensor_index+1]
+                                sensor_index = sensor_index+2
 
-                        elseif(sensor_type == 0x04)
-                        then
+                            elseif(sensor_type == 0x04) then
 
-                            sensor_info.pressure = (data[index+sensor_index+1]*65536 +data[index+sensor_index+2]*256+data[index+sensor_index+3])/100
-                            sensor_index = sensor_index+4
+                                sensor_info.pressure = (data[index+sensor_index+1]*65536 +data[index+sensor_index+2]*256+data[index+sensor_index+3])/100
+                                sensor_index = sensor_index+4
 
-                        else
-                            console.log(string.format("null:%02x",sensor_type))
-                            break
+                            elseif(sensor_type == 0x07) then
+
+                                sensor_info.so2 =  data[index+sensor_index+1]+data[index+sensor_index+2]/255
+                                sensor_index = sensor_index+3
+
+                                
+                            elseif(sensor_type == 0x08) then
+
+                                sensor_info.nh3 =  data[index+sensor_index+1]+data[index+sensor_index+2]/255
+                                sensor_index = sensor_index+3
+
+                                
+                            elseif(sensor_type == 0x09) then
+
+                                sensor_info.h2s =  data[index+sensor_index+1]+data[index+sensor_index+2]/255
+                                sensor_index = sensor_index+3
+
+                            elseif(sensor_type == 0x0a) then
+
+                                sensor_info.co2 =  data[index+sensor_index+1]+data[index+sensor_index+2]/255
+                                sensor_index = sensor_index+3
+
+                            elseif(sensor_type == 0x0b) then
+
+                                sensor_info.ch2o =  data[index+sensor_index+1]+data[index+sensor_index+2]/255
+                                sensor_index = sensor_index+3
+
+                            elseif(sensor_type == 0x0c) then
+
+                                sensor_info.pm25 =  data[index+sensor_index+1]+data[index+sensor_index+2]/255
+                                sensor_index = sensor_index+3
+                            else
+                                console.log(string.format("null:%02x",sensor_type))
+                                break
+                            end
+                        elseif (sensor_class == 0x01) then 
+                            
+                            if(sensor_type == 0x01) then
+                                sensor_info.batteryVoltage = data[index+sensor_index+1]*255+data[index+sensor_index+2]
+                                sensor_index = sensor_index+3
+
+                            elseif(sensor_type == 0x02) then
+
+                                sensor_info.temperature = data[index+sensor_index+1]+data[index+sensor_index+2]/255
+                                sensor_index = sensor_index+3
+
+                            elseif(sensor_type == 0x03) then
+
+                                sensor_info.humidity = data[index+sensor_index+1]
+                                sensor_index = sensor_index+2
+                            end
+                        elseif (sensor_class == 0x02) then 
+
+                        elseif (sensor_class == 0x03) then 
+                     
+                        elseif (sensor_class == 0x04) then
+
+                        elseif (sensor_class == 0x05) then 
+                            if(sensor_type == 0x06) then
+                                if(data[index+sensor_index+1] == 0x00) then
+                                    sensor_info.open =  false
+                                else
+                                    sensor_info.open =  true 
+                                end
+                                sensor_index = sensor_index+2
+                            else
+                                break
+                            end
+
+                        elseif (sensor_class == 0x06) then 
+                            if(sensor_type == 0x05) then
+                                if(data[index+sensor_index+1] == 0x00) then
+                                    sensor_info.alarm =  false
+                                else
+                                    sensor_info.alarm =  true 
+                                end
+                                sensor_index = sensor_index+2
+                            else
+                                break
+                            end
                         end
                     end
                     sensor_info.rssi = rssi
@@ -183,10 +272,23 @@ local function uart_recevie_callback()
                 boardcast_analysis(analysis_data)
                 
             elseif (channel == 0x00) then
+                -- console.log(analysis_data)
                 if (code == 0x0a) then
-                    if(size <= 4) then
-                        setBluetoothConfig(0x01, "scan=,0D0611")
+              
+                    if (string.find(analysis_data,'ok') ~= nil ) then
+                        bluetoothRdady = 1
                     end
+
+                    -- if(deviceStatusTimer) then
+                    --     clearTimeout(deviceStatusTimer)
+                    -- end
+                    -- deviceStatusTimer = setTimeout(5000,function()
+                    --     bluetoothStatus = 0
+
+
+                    -- if(size <= 4) then
+                    --     setBluetoothConfig(0x01, "scan=,0D0611")
+                    -- end
                     
                 else
                     config_analysis(analysis_data)
@@ -327,7 +429,7 @@ local function createBluetoothThing(options)
         properties = {},
         events = {}
     }
-    console.log(bluetooth)
+    -- console.log(bluetooth)
     webThing = wot.produce(bluetooth)
     webThing.secret = options.secret
 
@@ -345,22 +447,48 @@ local function createBluetoothThing(options)
         end
     )
 
-    console.log(white_list)
+    -- console.log(white_list)
     if (flag == 0) then
         flag = 1
         initBluetoothUart()
+     
         setBluetoothConfig(0x01, "scan=BN5003,0D0611")
         setInterval(100*60, function()
             setBluetoothConfig(0x01, "scan")
+
+        end)
+
+        setInterval(10000, function()
+            bluetoothRdady = 0
+            setBluetoothConfig(0x01, "test")
         end)
     end
     return webThing
 end
 
+
+
+-- local function bluetoothTest()
+--     bluetoothStatus = 0
+--     setBluetoothConfig(0x01, "test")
+--     if(deviceStatusTimer) then
+--         clearTimeout(deviceStatusTimer)
+--     end
+--     deviceStatusTimer = setTimeout(5000,function()
+--         bluetoothStatus = 0
+--     end)
+--     console.log("bluetoothTest")
+-- end
+
+
 function exports.dataStatus()
     return dataReady
 end
 
-exports.createBluetooth = createBluetoothThing
 
+function exports.bluetoothStatus()
+    return bluetoothRdady
+end
+
+exports.createBluetooth = createBluetoothThing
 return exports

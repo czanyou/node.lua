@@ -1,7 +1,7 @@
 local app   = require('app')
 local json  = require('json')
 local wot   = require('wot')
-local httpd = require('wot/bindings/http')
+local http  = require('wot/bindings/http')
 
 local modbus = require('./modbus')
 local camera  = require('./camera/camera')
@@ -13,6 +13,7 @@ local exports = {}
 -- ////////////////////////////////////////////////////////////////////////////
 -- Web Server
 
+-- Things status
 local function getThingsStatus()
     local wotClient = wot.client
     local things = wotClient and wotClient.things
@@ -41,32 +42,30 @@ local function getThingsStatus()
     return list
 end
 
-local function createHttpServer()
-    local server = httpd.createServer()
-    app.httpServer = server
+-- Client status
+local function getStatus(req, res)
+    -- console.log(req.url, req.method)
 
-    server:get('/status/', function(req, res)
-        -- console.log(req.url, req.method)
+    local result = {}
+    result.cameras = camera.getStatus()
+    result.things = getThingsStatus()
 
-        local result = {}
-        result.cameras = camera.getStatus()
-        result.things = getThingsStatus()
-
-        local body = json.stringify(result)
-        res:set("Content-Type", "application/json")
-        res:set("Content-Length", #body)
-        res:finish(body)
-    end)
+    local body = json.stringify(result)
+    res:set("Content-Type", "application/json")
+    res:set("Content-Length", #body)
+    res:finish(body)
 end
 
-local function runningStateindex()
+-- Data LED light state timer
+local function startLedTimer()
     setInterval(1000, function()
+        local state = 'off'
         local ret = bluetooth:dataStatus() or modbus:dataStatus()
         if ret == 1 then
-            button.setLEDStatus("blue", "on")
-        else
-            button.setLEDStatus("blue", "off")
+            state = 'on'
         end
+
+        button.setLEDStatus("blue", state)
     end)
 end
 
@@ -80,62 +79,43 @@ function exports.start()
         exports.bluetooth()
         exports.http()
 
-        runningStateindex()
+        startLedTimer()
     end
 end
 
 function exports.http()
-    createHttpServer()
+    local server = http.createServer()
+    app.httpServer = server
+
+    server:get('/status/', getStatus)
 end
 
 function exports.bluetooth()
-    bluetooth.app =app
-    -- local options = {}
+    bluetooth.app = app
+
     local did = app.get('did')
     local secret = app.get('secret')
     local mqtt = app.get('mqtt')
 
     local gateway = app.get('gateway')
-    console.log('start bluetooth')
     local list = gateway and gateway.bluetooth
     if (not list) then
         return
     end
-    console.log('start bluetooth')
-    console.log(list)
-     
+
     local things = {}
-    for index, options in ipairs(list) do
-        console.log(index);
+    for _, options in ipairs(list) do
         options.clientId = "lnode-" .. did
         options.mqtt = mqtt
         options.secret = secret
 
-        console.log(options);
+        -- console.log(options);
         local thing = bluetooth.createBluetooth(options)
 
         things[options.did] = thing
     end
 
     app.bluetoothDevices = things
-end
-
--- start RTMP push client
-function exports.rtmp()
-    camera.rtmp()
-end
-
--- start RTSP client
-function exports.rtsp()
-    camera.rtsp()
-end
-
-function exports.onvif(...)
-    camera.onvif(...)
-end
-
-function exports.config()
-    console.log('gateway', app.get('gateway'))
 end
 
 function exports.modbus()
@@ -153,7 +133,7 @@ function exports.modbus()
     local peripherals = app.get('peripherals') or {}
 
     local things = {}
-    for index, options in ipairs(list) do
+    for _, options in ipairs(list) do
         options.gateway = did
         options.mqtt = mqtt
         options.secret = secret
@@ -194,7 +174,7 @@ function exports.cameras()
     -- `options.mqtt` MQTT URL
     -- `options.secret` register secret
     local things = {}
-    for index, options in ipairs(cameras) do
+    for _, options in ipairs(cameras) do
         options.mqtt = mqtt
 
         if (not options.secret) then
@@ -211,6 +191,22 @@ function exports.cameras()
     end
 
     app.cameras = things
+end
+
+function exports.test(type, ...)
+    if (type == 'onvif') then
+        camera.onvif(...)
+
+    elseif (type == 'config') then
+        console.log('gateway', app.get('gateway'))
+    end
+end
+
+function exports.init()
+    print('WoT Cloud Gateway')
+    print('Usage: ')
+    print('  lpm gateway start')
+    print('  lpm gateway test ...')
 end
 
 app(exports)

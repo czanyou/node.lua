@@ -13,6 +13,11 @@
 #include <modbus.h>
 #include "modbus-private.h"
 
+
+#include "luv.h"
+
+#include "lthreadpool.h"
+
 #define LUV_MODBUS "modbus"
 
 enum {
@@ -26,6 +31,7 @@ typedef struct l_modbus_t
     modbus_mapping_t *mb_mapping;
     int use_backend;
     int fd;
+    uv_mutex_t lock;
 } l_modbus_t;
 
 static void l_pushtable(lua_State *L, int key, void *value, char *vtype)
@@ -74,7 +80,6 @@ static int l_init(lua_State *L)
     int data_bit = (int)luaL_optinteger(L, 4, 8);
     int stop_bit = (int)luaL_optinteger(L, 5, 1);
 
-    printf("init: %s, %d, %d, %d, %d", host, port, parity, data_bit, stop_bit);
     lua_pop(L, 2);
 
     l_modbus_t *self;
@@ -110,7 +115,7 @@ static int l_init(lua_State *L)
         fprintf(stderr, "Modbus init error: %s\n", modbus_strerror(errno));
         return -1;
     }
-    
+    uv_mutex_init(&self->lock);
     return 1;
 }
 
@@ -227,7 +232,7 @@ static int l_close(lua_State *L)
     if (self->modbus) {
         modbus_close(self->modbus);
         modbus_free(self->modbus);
-
+        uv_mutex_destroy(&self->lock);
         self->modbus = NULL;
     }
 
@@ -298,10 +303,14 @@ static int l_read_registers(lua_State *L)
     }
 
     uint16_t buffer[MODBUS_MAX_ADU_LENGTH];
+    uv_mutex_lock(&self->lock);
+
     if (modbus_read_registers(self->modbus, address, count, buffer) == -1)
     {
+        uv_mutex_unlock(&self->lock);
         return l_modbus_error(L, errno);
     }
+    uv_mutex_unlock(&self->lock);
 
     if (buffer == NULL)
     {
@@ -328,30 +337,6 @@ static int l_write_register(lua_State *L)
     return 1;
 }
 
-
-static int l_uart_write(lua_State *L)
-{
-    size_t len;
-    
-    l_modbus_t *self = l_check_modbus(L, 1);
-    const char *reg = lua_tolstring(L, 2, &len);
-    modbus_t *modbus = self->modbus;
-    if(modbus == NULL)
-    {
-        lua_pushinteger(L, -1);
-        return 1;
-    }
-
-    const modbus_backend_t * backend = modbus->backend;
-    size_t ret = backend->send(modbus, ( const uint8_t *)reg, len);
-    
-
-    lua_pushinteger(L, ret);
-    return 1;
-
-}
-
-
 static int l_get_fd(lua_State *L)
 {
     l_modbus_t *self = l_check_modbus(L, 1);
@@ -365,40 +350,6 @@ static int l_get_fd(lua_State *L)
     lua_pushinteger(L, fd);
     return 1;
 }
-
-
-static int l_uart_read(lua_State *L)
-{
-    uint8_t query[MODBUS_TCP_MAX_ADU_LENGTH];
-    size_t len = lua_tointeger(L, 2);;
-    if(len > MODBUS_TCP_MAX_ADU_LENGTH)
-        len = MODBUS_TCP_MAX_ADU_LENGTH;
-    
-    l_modbus_t *self = l_check_modbus(L, 1);
-    modbus_t *modbus = self->modbus;
-    if(modbus == NULL)
-    {
-        lua_pushinteger(L, -1);
-        return 1;
-    }
-    
-    const modbus_backend_t * backend = modbus->backend;
-    size_t ret = backend->recv(modbus, query,len);
-
-    lua_pushinteger(L, ret);
-    if(ret > 0)
-    {
-        lua_pushlstring(L, query, ret);
-        return 2;
-    }  
-    return 1;
-
-}
-
-
-
-
-
 
 static int l_write(lua_State *L)
 {
@@ -453,6 +404,53 @@ static int l_write(lua_State *L)
 }
 
 
+static int l_read_bits(lua_State *L)
+{
+    l_modbus_t *self = l_check_modbus(L, 1);
+    int address = lua_tointeger(L, 2);
+    int count = lua_tointeger(L, 3);
+
+
+    if (count > MODBUS_MAX_READ_REGISTERS) 
+    {
+        count = MODBUS_MAX_READ_REGISTERS;
+    }
+
+    uint8_t buffer[MODBUS_MAX_ADU_LENGTH];
+    uv_mutex_lock(&self->lock);
+    if (modbus_read_bits(self->modbus, address, count, buffer) == -1)
+    {
+        uv_mutex_unlock(&self->lock);
+        return l_modbus_error(L, errno);
+    }
+    uv_mutex_unlock(&self->lock);
+
+    if (buffer == NULL)
+    {
+        return l_modbus_error(L, errno);
+    }
+
+    lua_pushlstring(L, (const char *)buffer, count);
+    return 1;
+}
+
+static int l_write_bit(lua_State *L)
+{
+    l_modbus_t *self = l_check_modbus(L, 1);
+
+    int address = lua_tointeger(L, 2);
+    int value = lua_tointeger(L, 3);
+    uv_mutex_lock(&self->lock);
+    if (modbus_write_bit(self->modbus, address, value) == -1)
+    {
+        uv_mutex_unlock(&self->lock);
+        return l_modbus_error(L, errno);
+    }
+    uv_mutex_unlock(&self->lock);
+    lua_pushinteger(L, 0);
+    return 1;
+}
+
 
 static const struct luaL_Reg modbus_func[] = {
     {"close", l_close},
@@ -466,9 +464,9 @@ static const struct luaL_Reg modbus_func[] = {
     {"set_value", l_set_mapping},
     {"slave", l_set_slave},
     {"write", l_write},
-    {"uart_write", l_uart_write},
-    {"uart_read", l_uart_read},
     {"uart_fd",l_get_fd},
+    {"write_bit",l_write_bit},
+    {"read_bits",l_read_bits},
 
     
     {NULL, NULL},
