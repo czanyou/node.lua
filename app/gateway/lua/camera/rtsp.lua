@@ -85,12 +85,17 @@ end
 
 local function createRtspClient(rtspSession)
     -- console.log(rtspSession)
-    
-    local lastState = 0
+
     local lastSample = nil
     local rtspUrl = rtspSession.rtspUrl
     local options = rtspSession.options
     local did = rtspSession.did
+
+    if (not rtspUrl) then
+        return
+    end
+
+    console.log('createRtspClient', did, rtspUrl)
 
     local rtspClient = rtsp.openURL(rtspUrl)
     rtspClient.username = options.username or 'admin';
@@ -125,7 +130,6 @@ local function createRtspClient(rtspSession)
             end
 		end
 
-		lastState = state
     end)
 
     rtspClient:on('sample', function(sample)
@@ -235,6 +239,16 @@ local function onRtspSessionTimer(rtspSession)
         return
     end
 
+    local playSpan = now - (rtspSession.lastPlayTime or 0)
+    if (playSpan >= 1000 * 60) then
+        if (rtspClient) then
+            rtspClient:close()
+            rtspSession.rtspClient = nil
+        end
+
+        return
+    end
+
     if (not rtspClient) then
         rtspSession.rtspClient = createRtspClient(rtspSession)
         rtspSession.rtspLastActiveTime = now
@@ -278,7 +292,10 @@ local function startRtspClient(rtmp, options)
 
     local did = options.did
     if (not did) then
-        console.log('Empty did')
+        return console.log('Empty did')
+
+    elseif (not options.url) then
+        return console.log('Empty url')
     end
 
     exports.rtmp = rtmp
@@ -301,6 +318,11 @@ local function startRtspClient(rtmp, options)
     rtspSession.timeoutTimer = setInterval(1000 * 3600, function()
         closeRtspClient(did)
     end)
+
+    rtspSession.play = function (did)
+        rtspSession.lastPlayTime = process.hrtime() / 1000000
+        onRtspTimer()
+    end
 
     exports.rtspSessions[did] = rtspSession
     return rtspSession

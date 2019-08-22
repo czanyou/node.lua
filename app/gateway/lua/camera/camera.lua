@@ -202,7 +202,7 @@ local function startRtspClient(webThing)
     if (webThing.rtsp) then
         return
 
-    elseif (not webThing.streamUri1) then
+    elseif (not webThing.profiles) then
         return
     end
 
@@ -222,12 +222,17 @@ local function startRtspClient(webThing)
         -- console.log('setRtmpMediaInfo', did, mediaInfo)
         rtmp.setRtmpMediaInfo(did, mediaInfo)
     end
+
+    local profile = webThing.profiles and webThing.profiles[1]
+    if (not profile) or (not profile.streamUri) then
+        return
+    end
     
     local options = {}
     options.did = webThing.options.did
     options.username = webThing.options.username
     options.password = webThing.options.password
-    options.url = webThing.streamUri1
+    options.url = profile.streamUri
     webThing.rtsp = rtsp.startRtspClient(rtspActions, options)
 end
 
@@ -238,13 +243,24 @@ local function onPlayAction(input, webThing)
     local url = input and input.url
     local did = webThing.id;
 
+    -- rtmp
     if (not webThing.rtmp) then
         webThing.rtmp = rtmp.startRtmpClient()
     end
 
-    startRtspClient(webThing)
+    local rtmp = webThing.rtmp;
+    if (rtmp) then
+        rtmp.publishRtmpUrl(did, url);
+    end
 
-    console.log('play', did, url)
+    -- rtsp
+    if (webThing.rtsp) then
+        webThing.rtsp.play(did)
+    else
+        startRtspClient(webThing)
+    end
+
+    -- console.log('play', did, url)
 
     local promise = Promise.new()
     if (not url) then
@@ -252,11 +268,6 @@ local function onPlayAction(input, webThing)
             promise:resolve({ code = 400, error = "Invalid RTMP URL" })
         end)
         return promise
-    end
-
-    local rtmp = webThing.rtmp;
-    if (rtmp) then
-        rtmp.publishRtmpUrl(did, url);
     end
 
     -- promise
@@ -354,9 +365,8 @@ local function loadCameraInformation(webThing, options)
             end
 
             console.log(streamUri)
-            webThing['streamUri' .. index] = streamUri
-
-            startRtspClient(webThing)
+            webThing.profiles[index].streamUri = streamUri
+            -- startRtspClient(webThing)
         end
 
         local function getSnapshotUriResponse(snapshotUri, error)
@@ -366,14 +376,18 @@ local function loadCameraInformation(webThing, options)
             end
 
             console.log(snapshotUri)
-            webThing['snapshotUri' .. index] = snapshotUri
+            webThing.profiles[index].snapshotUri = snapshotUri
         end
 
         local profile = profiles and profiles[index]
-        local profileName = profile and (profile['@token'] or profile.Name)
-        console.log('profileName', profileName)
+        if (not profile) then
+            return
+        end
 
-        webThing['profileName' .. index] = profileName
+        webThing.profiles[index] = {}
+        webThing.profiles[index].token = profile['@token']
+        webThing.profiles[index].name = profile.Name
+        
         onvifClient:getStreamUri(index, getStreamUriResponse)
         onvifClient:getSnapshotUri(index, getSnapshotUriResponse)
     end
@@ -384,6 +398,8 @@ local function loadCameraInformation(webThing, options)
             console.log('Invalid Profiles')
             return
         end
+
+        webThing.profiles = {}
 
         loadStreamUri(profiles, 1)
         loadStreamUri(profiles, 2)
@@ -426,7 +442,7 @@ local function loadCameraInformation(webThing, options)
     end
 
     local function onStartReadInformations()
-        if (webThing.streamUri1) then
+        if (webThing.profiles) then
             return
         end
 
@@ -478,6 +494,20 @@ local function createCameraThing(options)
     webThing.options = options
     webThing.onvif = onvif.camera(options)
 
+    local function getOnvifStatus(webThing)
+        return {
+            profiles = webThing.profiles
+        }
+    end
+
+    webThing.getStatus = function(self)
+        return {
+            options = self.options,
+            deviceInformation = webThing.deviceInformation,
+            media = getOnvifStatus(webThing)
+        }
+    end
+
     loadCameraInformation(webThing, options)
 
     return webThing
@@ -525,7 +555,6 @@ exports.getStatus = function()
     return result
 end
 
-
 function exports.play(rtmpUrl)
     local urlString = rtmpUrl or 'rtmp://iot.beaconice.cn/live/test'
     local rtmpClient = rtmp.open('test', urlString, { isPlay = true })
@@ -535,7 +564,6 @@ function exports.play(rtmpUrl)
         console.log('startStreaming')
     end)
 end
-
 
 exports.createThing = createCameraThing
 

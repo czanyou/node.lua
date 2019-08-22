@@ -36,6 +36,10 @@ local function getThingsStatus()
         data.register.time = thing.registerTime
         data.register.updated = thing.registerUpdated
 
+        if (thing.getStatus) then
+            thing.status = thing:getStatus()
+        end
+
         list[did] = data
     end
     
@@ -47,8 +51,15 @@ local function getStatus(req, res)
     -- console.log(req.url, req.method)
 
     local result = {}
-    result.cameras = camera.getStatus()
+    result.media = camera.getStatus()
     result.things = getThingsStatus()
+
+    if (app.cameras) then
+        result.cameras = {}
+        for did, thing in pairs(app.cameras) do
+            result.cameras[did] = thing:getStatus()
+        end
+    end
 
     local body = json.stringify(result)
     res:set("Content-Type", "application/json")

@@ -283,7 +283,10 @@ local function getRtmpSessionStatus(did)
 
     status.lastNotifyTime = rtmpSession.lastNotifyTime
     status.mediaInfo = rtmpSession.rtmpMediaInfo
-    status.videoConfiguration = util.bin2hex(rtmpSession.videoConfiguration)
+    
+    if (rtmpSession.videoConfiguration) then
+        status.videoConfiguration = util.bin2hex(rtmpSession.videoConfiguration)
+    end
 
     local rtmpClient = rtmpSession.rtmpClient
     if (not rtmpClient) then
