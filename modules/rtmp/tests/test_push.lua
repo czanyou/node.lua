@@ -8,7 +8,7 @@ local core  = require('core')
 local videStreamIndex = 1
 local tags = {}
 
-function loadFlv()
+local function loadFlv()
 
     local filepath = 'test.flv'
 
@@ -62,14 +62,14 @@ local RTMPClient = client.RTMPClient
 local rtmpClient = RTMPClient:new()
 rtmpClient:connect(urlString)
 
-function sendMetadataMessage(metadata)
+local function sendMetadataMessage(metadata)
     local array = { '@setDataFrame', 'onMetaData', metadata }
     local options = { fmt = 0x00, chunkStreamId = 0x04 }
     local message = rtmp.encodeDataMessage(array, options)
     rtmpClient:sendData(message)
 end
 
-function sendVideStream(timestamp)
+local function sendVideStream(timestamp)
     local body = tags[videStreamIndex]
 
     if (videStreamIndex == 1) then
@@ -78,7 +78,7 @@ function sendVideStream(timestamp)
 
     elseif (videStreamIndex <= 100) then
         local options = { fmt = 0x00, chunkStreamId = 0x04, timestamp = timestamp }
-        message = rtmp.encodeVideoMessage(body, options)
+        local message = rtmp.encodeVideoMessage(body, options)
 
         rtmpClient:sendData(message)
         console.log('sendVideStream', #message)

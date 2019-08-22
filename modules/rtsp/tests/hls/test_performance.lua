@@ -13,7 +13,7 @@ local lmedia 	= require('lmedia')
 local basePath = utils.dirname()
 console.log(basePath)
 
-function test_ts_writer()
+local function test_ts_writer()
 	local hls = require('hls/writer')
 	local StreamWriter = hls.StreamWriter
 

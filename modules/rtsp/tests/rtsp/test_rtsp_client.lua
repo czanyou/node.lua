@@ -86,7 +86,7 @@ end
 -------------------------------------------------------------------------------
 -- test_rtsp_client
 
-function test_rtsp_client()
+local function test_rtsp_client()
 	rtspClient = RtspClient:new()
 
 	rtspClient:on('close', function(err)

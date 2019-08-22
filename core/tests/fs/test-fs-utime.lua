@@ -33,7 +33,7 @@ test('fs utime', function()
 	local tests_ok = 0
 	local tests_run = 0
 
-	function stat_resource(resource)
+	local function stat_resource(resource)
 	  if type(resource) == 'string' then
 		return fs.statSync(resource)
 	  else
@@ -43,7 +43,7 @@ test('fs utime', function()
 	  end
 	end
 
-	function check_mtime(resource, mtime)
+	local function check_mtime(resource, mtime)
 	  local stats = stat_resource(resource)
 	  local real_mtime = stats.mtime
 	  -- check up to single-second precision
@@ -51,7 +51,7 @@ test('fs utime', function()
 	  return math.floor(mtime) == math.floor(real_mtime.sec)
 	end
 
-	function expect_errno(syscall, resource, err, errno)
+	local function expect_errno(syscall, resource, err, errno)
 	  if err and (err.code == errno or err.code == 'ENOSYS') then
 		tests_ok = tests_ok + 1
 	  else
@@ -59,7 +59,7 @@ test('fs utime', function()
 	  end
 	end
 
-	function expect_ok(syscall, resource, err, atime, mtime)
+	local function expect_ok(syscall, resource, err, atime, mtime)
 	  if not err and check_mtime(resource, mtime) or
 		  err and err.code == 'ENOSYS' then
 		tests_ok = tests_ok + 1
@@ -71,15 +71,15 @@ test('fs utime', function()
 	-- the tests assume that __filename belongs to the user running the tests
 	-- this should be a fairly safe assumption testing against a temp file
 	-- would be even better though (node doesn't have such functionality yet)
-	function runTest(atime, mtime, callback)
+	local function runTest(atime, mtime, callback)
 
 	  local fd, err
 	  --
 	  -- test synchronized code paths, these functions throw on failure
 	  --
-	  function syncTests()
+	  local function syncTests()
 		fs.utimeSync(__filename, atime, mtime)
-		expect_ok('utimeSync', __filename, undefined, atime, mtime)
+		expect_ok('utimeSync', __filename, _, atime, mtime)
 		tests_run = tests_run + 1
 
 		-- some systems don't have futime
@@ -88,7 +88,7 @@ test('fs utime', function()
 		ok, err = pcall(function()
 		  tests_run = tests_run + 1
 		  fs.futimeSync(fd, atime, mtime)
-		  expect_ok('futimeSync', fd, undefined, atime, mtime)
+		  expect_ok('futimeSync', fd, _, atime, mtime)
 		end)
 		if not ok then
 		  expect_errno('futimeSync', fd, err, 'ENOSYS')
@@ -144,7 +144,7 @@ test('fs utime', function()
 
 	local stats = fs.statSync(module.path)
 
-	function newDate(dateStr)
+	local function newDate(dateStr)
 	  if dateStr == nil then
 		return os.time()
 	  end

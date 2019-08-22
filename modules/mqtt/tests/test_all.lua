@@ -47,13 +47,13 @@ local function onServerConnection(client)
     client:on("end", onEnd)
 end
 
-function startServer()
+local function startServer()
     server = net.createServer(onServerConnection)
     server:listen(PORT, HOST)
 end
 
 
-function startMqtt()
+local function startMqtt()
     local url = 'mqtt://127.0.0.1:10089'
     local client = mqtt.connect(url)
 

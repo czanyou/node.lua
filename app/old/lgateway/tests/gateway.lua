@@ -253,7 +253,7 @@ local statusEvent = {
 
 -- ----------------------------------------------------------------------------
 
-function onLabelDisplayTask(params)
+local function onLabelDisplayTask(params)
     local mac = params.did or '';
     local name = params.name or '';
     local filename = "/usr/local/display/"
@@ -283,7 +283,7 @@ function onLabelDisplayTask(params)
     end);
 end
 
-function onLabelDisplayReport(did, params)
+local function onLabelDisplayReport(did, params)
     local devices = gateway.devices or {}
     local device = devices[did]
     if (not device) then

@@ -9,7 +9,7 @@ console.log('basePath', basePath)
 --local source = path.dirname(debug.getinfo(1).short_src or '')
 --basePath = path.join(process.cwd(), source)
 
-function test_hls_writer()
+local function test_hls_writer()
 	local dest = path.join(basePath, '../../bin/output.ts')
 	os.remove(dest)
 
@@ -113,7 +113,7 @@ function test_hls_writer()
 	setTimeout(100, function() end)
 end
 
-function test_hls2()
+local function test_hls2()
 	console.log('basePath', basePath)
 
 	local lmedia  = require('lmedia')

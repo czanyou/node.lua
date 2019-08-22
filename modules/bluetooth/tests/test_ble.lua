@@ -2,7 +2,7 @@ local ble 		= require('lbluetooth')
 local fs  		= require('fs')
 local thread 	= require('thread')
 
-function start_le_scan()
+local function start_le_scan()
 	local ble 		= require('lbluetooth')
 	local fs  		= require('fs')
 

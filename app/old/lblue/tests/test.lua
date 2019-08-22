@@ -126,7 +126,7 @@ local ibeacon25  = {
 }
 
 
-function putIBeaconAdvance(ibeacon)
+local function putIBeaconAdvance(ibeacon)
     -- body
     local flag = false
     if(#IBeaconsList ~= 0)then

@@ -12,7 +12,7 @@ local rtspClient = nil
 local TAG = 'RTSPC'
 local color = console.color
 
-function test_rtsp_client()
+local function test_rtsp_client()
     rtspClient = RtspClient:new()
 
 	rtspClient:on('close', function(err)

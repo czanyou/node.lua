@@ -18,7 +18,7 @@ require('ext/tap')(function(test)
     server:listen(PORT, function()
       local req = http.request(options, function(res) end)
 
-      function destroy()
+      local function destroy()
         print('timeout!')
         server:close()
         req:destroy()

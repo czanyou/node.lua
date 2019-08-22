@@ -1,7 +1,6 @@
 local conf   = require('app/conf')
 local json   = require('json')
 local path   = require('path')
-local utils  = require('util')
 local fs     = require('fs')
 local querystring = require('querystring')
 
@@ -108,7 +107,7 @@ local function on_display(request, response)
     --console.log(request.query);
     --console.log(request.body);
 
-    local cmdline = 'test display ' .. 
+    local cmdline = 'test display '
 
 end
 
@@ -120,7 +119,7 @@ methods['/display'] = on_display
 
 methods['@noauth'] = { ['/login'] = true, ['/'] = true }
 
-function isLogin(request)
+local function isLogin(request)
 	if (request == nil) then
 		return true
 	end
@@ -136,7 +135,7 @@ end
 
 
 -- call API methods
-function dispatchMethod(methods, request, response, flags)
+local function dispatchMethod(methods, request, response, flags)
 	request.params  = querystring.parse(request.uri.query) or {}
 	request.api     = request.params['api']
 

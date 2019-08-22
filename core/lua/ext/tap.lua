@@ -110,7 +110,7 @@ local function _run_tests()
 		-- Flush out any more opened handles
 		uv.stop()
 		uv.walk(function (handle)
-			if handle == stdout then return end
+			if handle == _G.stdout then return end
 			--if not uv.is_closing(handle) then uv.close(handle) end
 		end)
 		uv.run()

@@ -178,7 +178,7 @@ function TLSSocket:_init()
 
     local lastdata = ''
 
-    function onWrite(err)
+    local function onWrite(err)
         --console.log("write")
         --assert(err == nil)
     end
@@ -213,7 +213,7 @@ function TLSSocket:_init()
     self.ssl = tls.new()
     self.ssl:config(hostname, 0, callback)
 
-    function onData(err, data)
+    local function onData(err, data)
         if (not data) then
             return
         end

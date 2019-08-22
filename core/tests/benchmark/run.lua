@@ -7,7 +7,7 @@ local fs = require('fs')
 
 local lasttotal, lastused
 
-function stat()
+local function stat()
 	local filedata = fs.readFileSync('/proc/stat')
 	--console.log(filedata)
 
@@ -35,7 +35,7 @@ function stat()
 	lastused = current_used
 end
 
-function stat2()
+local function stat2()
 	local filedata = fs.readFileSync('/proc/net/dev')
 	console.log(filedata)
 

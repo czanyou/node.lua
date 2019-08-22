@@ -525,6 +525,18 @@ exports.getStatus = function()
     return result
 end
 
+
+function exports.play(rtmpUrl)
+    local urlString = rtmpUrl or 'rtmp://iot.beaconice.cn/live/test'
+    local rtmpClient = rtmp.open('test', urlString, { isPlay = true })
+
+    rtmpClient:on('startStreaming', function()
+        rtmpClient.isStartStreaming = true
+        console.log('startStreaming')
+    end)
+end
+
+
 exports.createThing = createCameraThing
 
 return exports

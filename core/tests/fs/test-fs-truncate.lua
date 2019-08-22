@@ -31,7 +31,7 @@ local data = string.rep('x', 1024 * 16)
 
 test('fs truncate', function()
     local stat
-    _, err = fs.statSync(dir)
+    local _, err = fs.statSync(dir)
     if err then fs.mkdirpSync(dir, "0755") end
 
     -- truncateSync
@@ -64,7 +64,7 @@ test('fs truncate', function()
 
     fs.closeSync(fd)
 
-    function testTruncate(cb)
+    local function testTruncate(cb)
       fs.writeFile(filename, data, function(er)
         if er then
           return cb(er)
@@ -104,7 +104,7 @@ test('fs truncate', function()
     end
 
 
-    function testFtruncate(cb)
+    local function testFtruncate(cb)
       fs.writeFile(filename, data, function(er)
         if er then
           return cb(er)

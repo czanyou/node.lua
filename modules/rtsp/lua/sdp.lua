@@ -55,10 +55,9 @@ function SdpMedia:getFramesize(payload)
     end
     
     local framesize = {}
-    local key, value
 
     -- payload
-    _, offset, value = attribute:find("^([^ ]+) ?", offset)
+    local _, offset, value = attribute:find("^([^ ]+) ?")
     framesize.payload = tonumber(value)
 
     -- parameters
@@ -119,7 +118,7 @@ function SdpMedia:getFmtp(payload)
     while (value) do
         _, offset, value = attribute:find("^([^;]+) ?", offset + 2)
         if (value) then
-            _, _, k, v = value:find("^([^=]+)=([^;]+) ?")
+            local _, _, k, v = value:find("^([^=]+)=([^;]+) ?")
             k = string.trim(k)
             if (k) then
                 fmtp[k] = v

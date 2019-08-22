@@ -59,7 +59,7 @@ end
 -------------------------------------------------------------------------------
 -- test_rtsp_pusher
 
-function test_rtsp_pusher()
+local function test_rtsp_pusher()
 	rtspPusher = push.RtspPusher:new()
 	local socket = MockClientSocket:new()
 

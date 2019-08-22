@@ -47,7 +47,7 @@ console.log('config', ssl:config("cn.bing.com", 1, callback))
 
 local function onConnect()
 	console.log('connect')
-	tls_handshake()
+	-- tls_handshake()
 end
 
 local HOST = "cn.bing.com"
@@ -58,7 +58,7 @@ local ret = ssl:handshake()
 console.log('handshake', string.format("%d", ret)) -- 0x7200
 
 
-function sendRequest(ssl)
+local function sendRequest(ssl)
 	local message = "GET / HTTP/1.0\r\nHost: cn.bing.com\r\n\r\n"
 	console.log('write', ssl:write(message))
 

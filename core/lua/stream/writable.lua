@@ -76,6 +76,29 @@ function _writeEndWritable(stream, callback)
     stream:emit('end')
 end
 
+local function _writeOnWrite(stream, writev, len, chunk, callback)
+    local state = stream._writableState
+
+    state.writelen      = len
+    state.writeCallback = callback
+    state.writing       = true
+    state.sync          = true
+
+    -- the callback that's passed to _write(chunk, callback)
+    --
+    local onwrite = function(err)
+        _writeOnWriteCompleted(stream, err)
+    end
+
+    if writev then
+        stream:_writev(chunk, onwrite)
+    else
+        stream:_write (chunk, onwrite)
+    end
+
+    state.sync     = false
+end
+
 --[[
 -- if there's something in the buffer waiting, then process it
 --]]
@@ -172,29 +195,6 @@ function _writeIsValidChunk(stream, state, chunk, callback)
         valid = false
     end
     return valid
-end
-
-function _writeOnWrite(stream, writev, len, chunk, callback)
-    local state = stream._writableState
-
-    state.writelen      = len
-    state.writeCallback = callback
-    state.writing       = true
-    state.sync          = true
-
-    -- the callback that's passed to _write(chunk, callback)
-    --
-    local onwrite = function(err)
-        _writeOnWriteCompleted(stream, err)
-    end
-
-    if writev then
-        stream:_writev(chunk, onwrite)
-    else
-        stream:_write (chunk, onwrite)
-    end
-
-    state.sync     = false
 end
 
 function _writeOnWriteCompleted(stream, err)

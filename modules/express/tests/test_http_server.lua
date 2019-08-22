@@ -6,7 +6,7 @@ local conf  	= require('app/conf')
 
 local interval 	= 100
 
-function http_loop()
+local function http_loop()
 	local cwd = process.cwd()
 
 	local root = path.join(cwd, "../lua/www")
@@ -21,7 +21,7 @@ function http_loop()
 	--runLoop()
 end
 
-function main()
+local function main()
 	print('starting...')
 	
 	local isRunning = true

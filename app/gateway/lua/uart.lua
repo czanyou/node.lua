@@ -12,7 +12,7 @@ local exports = {}
 
 
 
-function crc16_calculate(data, len)
+local function crc16_calculate(data, len)
     local crc16 = 0xffff
     local temp, i, j
     for i = 1, len do
@@ -79,8 +79,8 @@ end
 local function initBluetoothUart()
     local dev = modbus.new("/dev/ttyAMA2", 9600, 78, 8, 1) -- N: 78, O: 79, E: 69
     dev:connect()
-    fd = dev:uart_fd()
-    uart = uv.new_poll(fd)
+    local fd = dev:uart_fd()
+    local uart = uv.new_poll(fd)
     uv.poll_start(uart, "r", uart_recevie_callback)
     setInterval(100*60, function()
         setBluetoothConfig(0x01, "scan")

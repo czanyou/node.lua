@@ -11,7 +11,7 @@ local lwriter 	= require("lmedia.ts.writer")
 
 local basePath  = utils.dirname()
 
-function loadMediaStream()
+local function loadMediaStream()
 	local filename = path.join(basePath, '../../app/camera/examples/hd.ts')
 	local fileData = fs.readFileSync(filename)
 	local fileSize = #fileData

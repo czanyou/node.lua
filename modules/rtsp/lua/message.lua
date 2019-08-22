@@ -109,7 +109,7 @@ exports.nonce           = "66bb9f0bf5ac93a909ac8e88877ae727"
 
 -------------------------------------------------------------------------------
 
-function _hash(token1, token2, token3)
+local function _hash(token1, token2, token3)
     local sb = StringBuffer:new()
     sb:append(token1)
 
@@ -126,7 +126,7 @@ function _hash(token1, token2, token3)
     return utils.bin2hex(utils.md5(sb:toString())):lower()
 end
 
-function _parseQString(value)
+local function _parseQString(value)
     if (type(value)  ~= 'string') then
         return ""
     end

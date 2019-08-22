@@ -54,7 +54,7 @@ local function test_rtsp_push()
 	end)
 end
 
-function test_rtsp_push_delay()
+local function test_rtsp_push_delay()
 	timer.setTimeout(500, test_rtsp_push)
 end
 

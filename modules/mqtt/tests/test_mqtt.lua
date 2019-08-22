@@ -11,7 +11,7 @@ local Packet = packet.Packet
 tap(function(test)
 
 test('test_mqtt_publish', function()
-	function onMessage(topic, payload)
+	local function onMessage(topic, payload)
 		print('message', topic)
 		--console.printBuffer(payload)
 	end
@@ -58,7 +58,7 @@ test('test_mqtt_subscribe', function()
 	client.connected 	= true
 
 	-- subscribe
-	function onSubscribeACK(message)
+	local function onSubscribeACK(message)
 		console.log('onSubscribeACK', message.messageId)
 	end
 
@@ -77,7 +77,7 @@ test('test_mqtt_subscribe', function()
 	client:_handleSubscribeACK(message)
 
 	-- unsubscribe
-	function onUnsubscribeACK()
+	local function onUnsubscribeACK()
 		console.log('onUnsubscribeACK')
 	end
 
@@ -96,7 +96,7 @@ end)
 
 
 test('test_mqtt_publish_qos1', function()
-	function onMessage(topic, payload)
+	local function onMessage(topic, payload)
 		print('message', topic)
 	end
 

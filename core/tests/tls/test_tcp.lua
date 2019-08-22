@@ -32,7 +32,7 @@ test("socket timeout", function(expect)
 
     local lastdata = ''
 
-    function onWrite(err)
+    local function onWrite(err)
         --console.log("write")
         --assert(err == nil)
     end
@@ -63,7 +63,7 @@ test("socket timeout", function(expect)
 
     local canRead = false
 
-    function onConnect()
+    local function onConnect()
 		console.log('connect')
 		local onData, onWrite
 

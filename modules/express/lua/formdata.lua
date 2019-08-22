@@ -366,7 +366,7 @@ function FormData:processData(data)
 	buffer:skip(expandSize)
 end
 
-function test()
+local function test()
 	local form = FormData:new()
 	form:on('file', function(data) 
 		console.log('file', data)

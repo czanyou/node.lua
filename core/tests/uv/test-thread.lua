@@ -18,7 +18,7 @@ end)
 test("test thread create with arguments", function(print, p, expect, uv)
 	local before = uv.uptime()
 	local args = { 500, 'string', nil, false, 5, "helloworld" }
-	local unpack = unpack or table.unpack
+
 	uv.new_thread(function(num,s,null,bool,five,hw)
 		assert(type(num) == "number")
 		assert(type(s) == "string")

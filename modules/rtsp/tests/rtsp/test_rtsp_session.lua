@@ -17,7 +17,7 @@ test('test_rtsp_session', function()
 	--console.log(mediaSession)
 	--console.log(mediaSession:getSdpString())
 
-	function _onWriteRtpPacket(packet, offset) 
+	local function _onWriteRtpPacket(packet, offset) 
 		console.log('_onWriteRtpPacket', #packet)
 
 		local data = rtpSession:decodeHeader(packet, 1)

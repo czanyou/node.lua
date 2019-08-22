@@ -56,7 +56,7 @@ test('test_rtsp_queue1', function()
 
 end)
 
-function test_rtsp_queue2()
+local function test_rtsp_queue2()
 
 	local data = "dsfjasdfklsdjfklsjgskdfjlaskjf;lksjdflksjadfkl"
 

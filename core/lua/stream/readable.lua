@@ -330,7 +330,7 @@ function _stateRoundUpToNextPowerOf2(n)
 
     else
         n = n - 1
-        p = 1
+        local p = 1
         while p < 32 do
             --n = bit.bor(n, bit.rshift(n, p))
             --p = bit.lshift(p, 1)

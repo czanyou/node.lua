@@ -13,7 +13,7 @@ local camera 	= require('media/camera')
 模拟从摄像头采集视频流或者抓拍图片
 
 --]]
-function test_media_camera_preview()
+local function test_media_camera_preview()
 	local filename = path.join(basePath, "/../../examples/641.ts")
 
 	local options = { filename = filename }
@@ -42,7 +42,7 @@ function test_media_camera_preview()
 	end)
 end
 
-function test_media_camera_take_picture()
+local function test_media_camera_take_picture()
 
 	local filename = nil
 	local options = { filename = filename }

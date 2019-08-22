@@ -6,7 +6,7 @@ console.log(amf0)
 
 print(amf0.null)
 
-function test_parse()
+local function test_parse()
     local data = {
         123,
         123.5,

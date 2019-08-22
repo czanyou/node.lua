@@ -2,7 +2,7 @@ local utils = require('util')
 
 local source = require('media/source')
 
-function test_media_source1()
+local function test_media_source1()
 	local options = {}
 	local mediaSource = source.newMediaSource(options)
 
@@ -27,7 +27,7 @@ function test_media_source1()
 	assert(#mediaSource.mediaSessions == 0)
 end
 
-function test_media_source2()
+local function test_media_source2()
 	local options = {}
 	local mediaSource = source.newMediaSource(options)
 	local mediaSession = mediaSource:newMediaSession()

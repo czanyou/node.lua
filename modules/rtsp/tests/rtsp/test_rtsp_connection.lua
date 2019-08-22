@@ -62,7 +62,7 @@ end
 -------------------------------------------------------------------------------
 -- test_rtsp_connection_server
 
-function test_rtsp_connection_server()
+local function test_rtsp_connection_server()
 	--console.log(connection.RtspConnection)
 	local socket = MockRtspSocket:new()
 
@@ -111,7 +111,7 @@ end
 -------------------------------------------------------------------------------
 -- test_rtsp_connection_push
 
-function test_rtsp_connection_push()
+local function test_rtsp_connection_push()
 	--console.log(connection.RtspConnection)
 	local socket = MockRtspSocket:new()
 

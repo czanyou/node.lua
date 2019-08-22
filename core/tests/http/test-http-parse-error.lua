@@ -29,7 +29,8 @@ require('ext/tap')(function (test)
   local gotParseError = false
 
   test("tls http parse error", function()
-    local server = net.createServer(function(client)
+    local server = nil
+    server = net.createServer(function(client)
       client:write('test\n\n',function(...)
         client:setTimeout(100,function()
           client:destroy()
@@ -56,7 +57,7 @@ require('ext/tap')(function (test)
       end)
 
       req:on("error", function(err)
-        msg = tostring(err)
+        local msg = tostring(err)
 
         caughtErrors = caughtErrors + 1
 

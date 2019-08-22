@@ -17,7 +17,7 @@ local mediaSession = session.startCameraSession(filename, 6000)
 -------------------------------------------------------------------------------
 --- test_rtsp_server
 
-function test_rtsp_server(port, timeout)
+local function test_rtsp_server(port, timeout)
 	local listPort   = port or 9554
 
 	print('Start RTSP server at ('.. listPort .. ') ...')
@@ -41,7 +41,7 @@ end
 -------------------------------------------------------------------------------
 --- test_rtsp_client
 
-function test_start_rtsp_client()
+local function test_start_rtsp_client()
 	local rtspClient = client.RtspClient:new()
 
 	rtspClient.username = 'admin'
@@ -71,7 +71,7 @@ function test_start_rtsp_client()
 	rtspClient:open(url)
 end
 
-function test_rtsp_client()
+local function test_rtsp_client()
 	timer.setTimeout(1000, test_start_rtsp_client)
 end
 
