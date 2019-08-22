@@ -97,10 +97,10 @@ local function onPtzActions(input, webThing)
             y = -1
 
         elseif (direction == 2) then
-            x = 1
+            x = -1
 
         elseif (direction == 3) then
-            x = -1
+            x = 1
 
         elseif (direction == 4) then
             y = 1
@@ -151,7 +151,6 @@ end
 
 -- Camera preset actions
 local function onPresetActions(input, webThing)
-    local did = webThing.id;
 
     local getIndex = function(input, name)
         local index = math.floor(tonumber(input[name].index))
