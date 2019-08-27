@@ -1,7 +1,5 @@
 # 定时器 (timers)
 
-
-
 通过 require('timer') 调用
 
 ## clearImmediate
@@ -23,14 +21,6 @@
     clearTimeout(timeoutObject)
 
 阻止一个 timeout 被触发。
-
-
-## ref 
-
-     ref() 
-
-如果您之前 unref() 了一个定时器，您可以调用 ref() 来明确要求定时器让程序保持运行。
-如果定时器已被 ref 那么再次调用 ref 不会产生其它影响。
 
 
 ## setImmediate
@@ -60,19 +50,6 @@ immediate 的回调以它们创建的顺序被加入队列。整个回调队列�
 调度 delay 毫秒后的一次 callback 执行。返回一个可能被 clearTimeout() 用到的 timeoutId。
 可选地，您还能给回调传入参数。
 
-
 请务必注意，您的回调有可能不会在准确的 delay 毫秒后被调用。Node
 不保证回调被触发的精确时间和顺序。回调会在尽可能接近所指定时间上被调用。
-
-
-## unref
-
-    unref()
-
-setTimeout 和 setInterval 所返回的值同时具有 timer.unref() 方法，允许您创建一个活动的、
-但当它是事件循环中仅剩的项目时不会保持程序运行的定时器。如果定时器已被 unref，再次调用 
-unref 不会产生其它影响。
-
-在 setTimeout 的情景中当您 unref 您会创建另一个定时器，并唤醒事件循环。
-创建太多这种定时器可能会影响事件循环的性能，慎用。
 

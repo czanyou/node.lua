@@ -1,7 +1,5 @@
 # Request
 
-
-
 一个简单易用的 HTTP 客户端请求工具。
 
 可以通过 `require('http/request')` 引入这个模块。

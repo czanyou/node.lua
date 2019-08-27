@@ -1,7 +1,5 @@
 # 工具类 (util)
 
-
-
 util 提供一些便利的方法, 模块主要用于支持 Node.lua 内部开发, 也可以用于应用程序和模块开发者.
 
 可通过 `require('util')` 调用
@@ -139,15 +137,27 @@ test(100, util.bind(object.onTest, object))
 ```
 
 
-## util.bin2hex
+## util.hexEncode
 
-    util.bin2hex(data)
+    util.hexEncode(data)
 
 将二进位字符串转成十六进位字符串。
 
 - data {String} 二进位字符串
 
 返回编码后的字符串
+
+## util.hexDecode
+
+```
+util.hexDecode(data)
+```
+
+将十六进位字符串转成二进位字符串。
+
+- data {String} 十六进位字符串
+
+返回解码后的字符串
 
 
 ## util.dirname
@@ -166,55 +176,49 @@ test(100, util.bind(object.onTest, object))
 - index 调用堆栈索引
 
 
-## util.hex2bin
-
-    util.hex2bin(data)
-
-将十六进位字符串转成二进位字符串。
-
-- data {String} 十六进位字符串
-
-返回解码后的字符串
-
-
 ## util.md5
 
     util.md5(data)
 
-计算字符串的 MD5 哈稀。
+计算字符串的 MD5 哈稀值。
 
 - data {String} 字符串
 
 返回 MD5 哈稀二进制字符串，未经 HEX 编码。
 
-
-## 类 util.StringBuffer
-
-StringBuffer 用于高效地连接字符串
-
-
-### sb:append
-
-    sb:append(value)
-
-该方法的作用是追加内容到当前 StringBuffer 对象的末尾，类似于字符串的连接。
-
-
-### sb:toString
-
-    sb:toString()
-
-返回连接后的字符串
-
-```lua
-
-local sb = StringBuffer:new()
-sb:append('test1')
-sb:append('test2')
-sb:append('test3')
-
-local text = sb:toString() -- returl 'test1test2test3'
+## util.md5String
 
 ```
+util.md5String(data)
+```
 
+计算字符串的 MD5 哈稀值。
+
+- data {String} 字符串
+
+返回 MD5 哈稀字符串，经 HEX 编码。
+
+## util.sha1
+
+```
+util.sha1(data)
+```
+
+计算字符串的 SHA1 哈稀值。
+
+- data {String} 字符串
+
+返回 SHA1 哈稀二进制字符串，未经 HEX 编码。
+
+## util.sha1String
+
+```
+util.sha1String(data)
+```
+
+计算字符串的 SHA1 哈稀值。
+
+- data {String} 字符串
+
+返回 SHA1 哈稀值字符串，经 HEX 编码。
 

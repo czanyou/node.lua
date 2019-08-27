@@ -1,7 +1,5 @@
 # JSON
 
-
-
 通过 require('json') 调用
 
 JSON：JavaScript 对象表示法（JavaScript Object Notation）。

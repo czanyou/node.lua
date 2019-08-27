@@ -1,7 +1,5 @@
 # 断言 (Assertion Testing)
 
-
-
 该模块提供一些简单的断言测试方法可用于编写单元测试用例，通过 `require('assert')` 调用。
 
 ## assert

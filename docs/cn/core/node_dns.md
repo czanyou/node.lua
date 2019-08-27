@@ -1,7 +1,5 @@
 # DNS
 
-
-
 显示原文其他翻译纠错
 使用 require('dns') 引入此模块。dns 模块中的所有方法都使用了 C-Ares，除了 dns.lookup 使用了线程池中的 getaddrinfo(3)。C-Ares 比 getaddrinfo 要快得多，但系统解析器相对于其它程序的操作要更固定。当一个用户使用 net.connect(80, 'google.com') 或 http.get({ host: 'google.com' }) 时会使用 dns.lookup 方法。如果用户需要进行大量的快速查询，则最好使用 C-Ares 提供的方法。
 

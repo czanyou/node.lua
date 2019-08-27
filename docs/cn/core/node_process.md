@@ -1,7 +1,5 @@
 # 进程 (process)
 
-
-
 process 对象是一个全局对象，可以在任何地方访问到它。它是 EventEmitter 的一个实例。
 
 ## 事件: 'exit'

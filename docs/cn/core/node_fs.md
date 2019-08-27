@@ -1,7 +1,5 @@
 # 文件系统 (file system)
 
-
-
 文件系统模块是一个简单包装的标准 POSIX 文件 I/O 操作方法集。您可以通过调用 require('fs')来获取该模块。文件系统模块中的所有方法均有异步和同步版本。
 
 文件系统模块中的异步方法需要一个完成时的回调函数作为最后一个传入形参. 回调函数的构成由您调用的异步方法所决定, 通常情况下回调函数的第一个形参为返回的错误信息. 如果异步操作执行正确并返回, 该错误形参则为null或者undefined。
@@ -140,7 +138,7 @@ fs.appendFile 的同步版本。
 异步版 close(2). 完成时的回调函数(callback)只接受一个参数: 可能出现的异常信息.
 
 ## fs.closeSync
- 
+
      fs.closeSync(fd)
 
 同步版的 close(2).
@@ -454,7 +452,7 @@ realpath(2) 的同步版本。返回解析出的路径。
 异步版的 stat(2). 回调函数（callback） 接收两个参数： (err, stats) , 其中 stats 是一个 fs.Stats 对象. 详情请参考 fs.Stats
 
 ## fs.statSync
- 
+
     fs.statSync(path)
 
 同步版的 stat(2). 返回一个 fs.Stats 实例。

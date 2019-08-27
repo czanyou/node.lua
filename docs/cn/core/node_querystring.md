@@ -1,7 +1,5 @@
 # 查询字符串 (query string)
 
-
-
 这个模块提供一些解析或者格式化 URL query 字符串的工具。可通过如下的方式访问：
 
     local querystring = require('querystring')

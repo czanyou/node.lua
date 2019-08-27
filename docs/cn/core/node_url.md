@@ -1,7 +1,5 @@
 # URL
 
-
-
 该模块包含用于 URL 解析的实用函数。 使用 `require('url')` 来调用该模块。
 
 ## URL Parsing

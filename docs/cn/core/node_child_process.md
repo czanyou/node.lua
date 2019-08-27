@@ -1,7 +1,5 @@
 # 子进程 (child process)
 
-
-
 Node 通过 child_process 模块提供了类似 popen(3) 的处理三向数据流 (stdin/stdout/stderr) 的功能. 
 
 通过 require('child_process') 调用

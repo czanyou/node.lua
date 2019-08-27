@@ -1,7 +1,5 @@
 # 核心 (Core)
 
-
-
 ## core.instanceof(obj, class)
 
 判断指定的对象是否是指定的类的实例

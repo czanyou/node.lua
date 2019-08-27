@@ -1,7 +1,5 @@
 # 超文本传输协议 (HTTP)
 
-
-
 要使用 HTTP 服务器或客户端功能，需引用此模块 `require('http')`.
 
 The HTTP interfaces in Node are designed to support many features of the protocol which have been traditionally difficult to use. In particular, large, possibly chunk-encoded, messages. The interface is careful to never buffer entire requests or responses--the user is able to stream data. 

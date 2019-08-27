@@ -1,7 +1,5 @@
 # 数据报套接字 (UDP)
 
-
-
 数据报套接字通过 require('dgram') 提供。
 
 ## dgram.createSocket

@@ -1,12 +1,10 @@
 # 线程 (thread)
 
-
-
-## 多线程
+## 线程
 
 Node.lua 支持多线程, 但是各个线程是属于不同的虚拟机, 变量不能相互访问, 但可以通过消息等相互通信.
 
-通过 require('thread') 调用
+通过` require('thread') `调用
 
 ### thread.equals
 

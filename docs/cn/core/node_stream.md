@@ -1,7 +1,5 @@
 # 流 (stream)
 
-
-
 流是一个抽象接口，被 Node 中的很多对象所实现。比如对一个 HTTP 服务器的请求是一个流，stdout 是一个流。流是可读、可写或兼具两者的。所有流都是 EventEmitter 的实例。
 
 您可以通过 `require('stream')` 加载 Stream 基类，其中包括了 Readable 流、Writable 流、Duplex 流和 Transform 流的基类。

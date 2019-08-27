@@ -1,7 +1,5 @@
 # 控制台 (console)
 
-
-
 用于向 stdout 和 stderr 打印字符。类似于大部分 Web 浏览器提供的 console 对象，在这里则是输出到 stdout 或 stderr。
 
 这是一个全局的模块, 可以直接调用.

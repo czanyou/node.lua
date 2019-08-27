@@ -250,10 +250,12 @@ _G.StringBuffer = StringBuffer
 
 exports.base64Decode    = lutils.base64_decode
 exports.base64Encode    = lutils.base64_encode
+exports.hexDecode       = lutils.hex_encode
+exports.hexEncode       = lutils.hex_decode
 exports.bin2hex         = lutils.hex_encode
 exports.hex2bin         = lutils.hex_decode
 exports.md5             = lutils.md5
-exports.sha1             = lutils.sha1
+exports.sha1            = lutils.sha1
 
 exports.md5string = function(data)
     return lutils.hex_encode(lutils.md5(data))
