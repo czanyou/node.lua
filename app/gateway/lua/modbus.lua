@@ -191,6 +191,9 @@ function readRegister(modbusWebThing,openC,closeC,cb)
 
                             if (property.code == 0x03 and register >= 0 and quantity >= 1) then
                                
+                                if(modbusOptions.type == 0x01) then
+                                    register = register * 256 + modbusOptions.switch -1
+                                end
                                 data = modbusDevice:mread(register, quantity)
                                 if(data ~= nil) then
                                     local value = getPropertyValue(property, data)
@@ -201,9 +204,10 @@ function readRegister(modbusWebThing,openC,closeC,cb)
                                     end
                                 end
                             elseif (property.code == 0x01) then
+
                                 data = modbusDevice:read_bits(register, quantity)
                                 if(data ~= nil) then
-                        
+                                    console.log(data)
                                     local value = string.byte(data)
                                     if (value== 0x01) then
                                         property.value = ture
@@ -295,7 +299,6 @@ local function onConfigWrite(config, webThing)
         end
         
         newPeripherals[webThing.id] = config
-        console.log(webThing.id);
         exports.app.set('peripherals', newPeripherals)
     end
 
@@ -324,26 +327,31 @@ local function initModbusProperties(options, webThing)
         modbusInfos.webThing = webThing
         modbusInfos.modbus = {}
         modbusInfos.modbus.properties = {}
+        modbusInfos.modbus.type = webThing.modbus.type
+        modbusInfos.modbus.switch = webThing.modbus.switch
   
         local interval = webThing.modbus.interval * 1000
         for name, value in pairs(webThing.modbus.properties or {}) do
 
             if(value.flag and  value.flag == 1) then
-                console.log("special property")
                 local modbusInfo = {} 
                 modbusInfo.webThing = webThing
                 modbusInfo.modbus = {}
-                console.log(value)
                 modbusInfo.modbus.slave = webThing.modbus.slave
                 modbusInfo.modbus.device = webThing.modbus.device 
                 modbusInfo.modbus.baudrate =webThing.modbus.baudrate
                 modbusInfo.modbus.interval =value.interval
                 modbusInfo.modbus.properties = {}
                 modbusInfo.modbus.properties[name] = value
+                modbusInfos.modbus.switch = webThing.modbus.switch
 
                 setInterval(modbusInfo.modbus.interval*1000, function()
+                    console.log("push")
                     List.pushright(list, modbusInfo)
-                    setImmediate(modbusHandle.read)
+                    
+                    -- setImmediate(modbusHandle.read)
+                    -- modbusHandle.read()
+                    setTimeout(10,modbusHandle.read)
 
                 end)
             else
@@ -356,8 +364,12 @@ local function initModbusProperties(options, webThing)
         modbusInfos.modbus.interval =webThing.modbus.interval
 
         setInterval(interval, function()
+            console.log("push")
             List.pushright(list, modbusInfos)
-            setImmediate(modbusHandle.read)
+            -- -- console.log("push")
+            -- setImmediate(modbusHandle.read)
+            -- modbusHandle.read()
+            setTimeout(10,modbusHandle.read)
 
         end)
 
@@ -379,19 +391,12 @@ local function initModbusProperties(options, webThing)
     local properties = webThing.modbus.properties;
 
     for name, value in pairs(options.properties or {}) do
-        console.log(name)
         local property = {}
       
         property.address = value.d or common.d or 0
         property.interval = value.i or common.i or 60
         property.timeout = value.t or common.t or 500
-        if(webThing.modbus.type == 1) then
-            property.register =  (value.a or 0)* 256+ webThing.modbus.switch-1
-        else
-            property.register = value.a or 0
-        end
-
-        console.log(property.register)
+        property.register = value.a or 0
         property.quantity = value.q or 1
         property.scale = value.s or 1
         property.offset = value.o or 0
@@ -401,7 +406,7 @@ local function initModbusProperties(options, webThing)
         property.fixed = value.x or 0
         property.value = 0
 
-        if(value.code ~= nil or (value.i ~= nil and value.i ~= webThing.modbus.interval)) then
+        if (value.code ~= nil or (value.i ~= nil and value.i ~= webThing.modbus.interval)) then
             property.flag = 1
         end
         properties[name] = property
@@ -419,24 +424,29 @@ function modbusHandle.read()
     end
  
     console.time("read") 
-    if(list[list.first] ~= nil) then
-        local function readRegCallback(count,resultString,modbusWebThing)
-            if(resultString ~= nil) then 
-                local result = cjson.decode(resultString)
-                modbusHandle.readFlag = 0
-                setImmediate(modbusHandle.read)
-                modbusWebThing.webThing:sendStream(result)
-                console.timeEnd("read")
-                console.log(result)
-            end
-        end
-        console.time("read") 
-        modbusHandle.readFlag = 1
-        local modbusWebThing = List.popright(list, webThingList)
-        print("read slave  " ..modbusWebThing.modbus.slave)
-        readRegister(modbusWebThing,openCount,closeCount,readRegCallback)
-        
+    if(list[list.first] == nil) then
+        -- console.log("empty list")
+        return
     end
+    local function readRegCallback(count,resultString,modbusWebThing)
+        if(resultString ~= nil) then 
+            local result = cjson.decode(resultString)
+            modbusHandle.readFlag = 0
+            -- setImmediate(modbusHandle.read)
+            setTimeout(10,modbusHandle.read)
+            modbusHandle.read()
+            modbusWebThing.webThing:sendStream(result)
+            console.timeEnd("read")
+            console.log(result)
+        end
+    end
+    console.time("read") 
+    modbusHandle.readFlag = 1
+    local modbusWebThing = List.popright(list)
+    print("read slave  " ..modbusWebThing.modbus.slave)
+    readRegister(modbusWebThing,openCount,closeCount,readRegCallback)
+        
+ 
 end
 
 
@@ -455,7 +465,6 @@ local function onSetOnActions(input, webThing)
 
     property.timeout = 500
     property.register = webThing.modbus.switch - 1
-    console.log(webThing.modbus.switch)
     property.quantity = 1
     property.code = 0x05
 
@@ -528,7 +537,7 @@ local function createModbusThing(options)
     
     local webThing = wot.produce(gateway)
     webThing.secret = options.secret
-    -- console.log(options)
+
     initModbusProperties(options, webThing)
 
     setInterval(100,function()

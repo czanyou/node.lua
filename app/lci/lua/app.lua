@@ -12,7 +12,7 @@ local function checkButtonStatus(interval_ms)
         return
     end
 
-    local TIMEOUT_NETWORK_RESET = 4
+    local TIMEOUT_NETWORK_RESET = 5
     local TIMEOUT_SYSTEM_RESET = 10
     local DEFAULT_IP = "192.168.8.12"
 
@@ -22,9 +22,15 @@ local function checkButtonStatus(interval_ms)
 
     local function onNetworkReset()
         console.log("network reset")
-        local cmd = 'ifconfig eth0 ' .. DEFAULT_IP
-        console.log(cmd)
+        -- local cmd = 'ifconfig eth0 ' .. DEFAULT_IP
+        -- os.execute(cmd)
+        local cmd = 'rm /usr/local/lnode/conf/network.conf'
         os.execute(cmd)
+        local cmd = 'cp /usr/local/lnode/conf/network.deault.conf /usr/local/lnode/conf/network.conf'
+        os.execute(cmd)
+        setTimeout(1000,function()
+            os.execute('reboot')
+        end)
     end
 
     local function onSystemReset()

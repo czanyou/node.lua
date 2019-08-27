@@ -42,12 +42,12 @@ local function getThingsStatus()
 
         list[did] = data
     end
-    
+
     return list
 end
 
 -- Client status
-local function getStatus(req, res)
+local function getAllStatus(req, res)
     -- console.log(req.url, req.method)
 
     local result = {}
@@ -98,7 +98,7 @@ function exports.http()
     local server = http.createServer()
     app.httpServer = server
 
-    server:get('/status/', getStatus)
+    server:get('/status/', getAllStatus)
 end
 
 function exports.bluetooth()
@@ -171,7 +171,7 @@ end
 -- Create camera things
 function exports.cameras()
     camera.app = app
-    
+
     local mqtt = app.get('mqtt')
     local secret = app.get('secret')
     local gateway = app.get('gateway')
@@ -205,7 +205,33 @@ function exports.cameras()
 end
 
 function exports.test(type, ...)
-    if (type == 'onvif') then
+    local test = require('./test')
+
+    if (not type) then
+        print("Available tests: version")
+
+    elseif (type == 'version') then
+        test.version()
+
+    elseif (type == 'led') then
+        test.led()
+
+    elseif (type == 'button') then
+        test.button()
+
+    elseif (type == 'bluetooth') then
+        test.bluetooth()
+
+    elseif (type == 'update') then
+        test.update()
+
+    elseif (type == 'register') then
+        test.register()
+
+    elseif (type == 'dhcp') then
+        test.dhcp()
+
+    elseif (type == 'onvif') then
         camera.onvif(...)
 
     elseif (type == 'config') then

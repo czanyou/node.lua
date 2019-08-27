@@ -10,3 +10,7 @@
 - [MQTT - MQTT 客户端](vision_mqtt.md)
 - [WoT - Web of Things 客户端](vision_wot.md)
 
+## 设备通信
+
+- [Modbus - 工业总线](vision_modbus.md)
+- [Bluetooth - 蓝牙](vision_bluetooth.md)

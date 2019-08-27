@@ -17,8 +17,10 @@ local function setLEDStatus(color, state)
 
     if state == "on" then
         value = 0
+
     elseif state == "off" then
         value = 1
+
     elseif state == "toggle" then
         local result = fs.readSync(fd)
         if (tonumber(string.match(result, "(%d)\n")) == 1) then
@@ -29,12 +31,32 @@ local function setLEDStatus(color, state)
     else
         return
     end
-    
+
     fs.write(fd, nil, value, function(err, written)
         fs.closeSync(fd)
     end)
 end
 
+local function getButtonState(type)
+    local filename = "/sys/class/gpio/gpio62/value"
+    local filedata, err = fs.readFileSync(filename)
+    if (not filedata) then
+        console.log('checkButtonStatus', err)
+        return
+    end
+
+    local state = tonumber(filedata)
+    return state
+end
+
+-- Indicate whether the current device supports leds
+local function isSupport()
+    local filename = '/sys/class/gpio/'
+    return fs.existsSync(filename)
+end
+
 exports.setLEDStatus = setLEDStatus
+exports.getButtonState = getButtonState
+exports.isSupport = isSupport
 
 return exports

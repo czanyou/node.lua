@@ -1,12 +1,5 @@
-local app   = require('app')
-local util  = require('util')
-local url 	= require('url')
 local fs 	= require('fs')
-local path 	= require('path')
 local luv 	= require('luv')
-
-local json  = require('json')
-local wot   = require('wot')
 
 local modbus = require('lmodbus')
 
@@ -109,6 +102,31 @@ end
 
 function exports.test()
     initUart()
+end
+
+function exports.version()
+    print("software: ", process.version)
+    print("firmware: ", process.version)
+end
+
+function exports.button()
+
+end
+
+function exports.led()
+
+end
+
+function exports.dhcp()
+
+end
+
+function exports.register()
+
+end
+
+function exports.bluetooth()
+
 end
 
 return exports

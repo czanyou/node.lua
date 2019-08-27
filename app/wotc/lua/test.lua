@@ -2,35 +2,65 @@ local app = require('app')
 local fs = require('fs')
 
 local exports = {}
-local failds = 0
+local failures = 0
 local total = 0
 
-local function assert(value, message)
-    total = total + 1
-    if (not value) then
-        print(message)
-        failds = failds + 1
-    end
-end
-
 exports.start = function()
-    local did = app.get('did')
-    assert(did, '没有设置 did 参数')
+    local errors = {}
 
-    local base = app.get('base')
-    assert(base, '没有设置 base 参数')
+    local function assert(value, message)
+        total = total + 1
+        if (not value) then
+            failures = failures + 1
+            table.insert(errors, message)
+        end
+    end
 
-    local mqtt = app.get('mqtt')
-    assert(mqtt, '没有设置 mqtt 参数')
+    local function checkConfig(name)
+        local value = app.get(name)
+        if (value) then
+            total = total + 1
+            print(name .. ': ' .. value)
+        else 
+            failures = failures + 1
+            table.insert(errors, '系统设置参数 ' .. name .. ' 为空')
+        end
+    end
 
-    local filename = '/usr/local/lnode/conf/default.conf'
-    assert(fs.existsSync(filename), '"default.conf" 文件不存在')
+    local function checkFile(basePath, name)
+        local filename = basePath .. name
 
-    filename = '/usr/local/lnode/conf/lnode.key'
-    assert(fs.existsSync(filename), '"lnode.key" 文件不存在')
+        print("");
+        print('Check: ' .. filename .. '\n------')
+        if (fs.existsSync(filename)) then
+            total = total + 1
+            local data = fs.readFileSync(filename)
+            print(data)
+
+        else
+            failures = failures + 1
+            table.insert(errors, '`' .. name .. '` 文件不存在')
+        end
+    end
+
+    print("Check config: \n======")
+    checkConfig('did')
+    checkConfig('base')
+    checkConfig('mqtt')
+    checkConfig('secret')
+    print("");
+
+    print("Check files: \n======")
+    checkFile('/usr/local/lnode/conf/', 'default.conf');
+    checkFile('/usr/local/lnode/conf/', 'lnode.key');
+    checkFile('/etc/init.d/', 'S88lnode');
+    checkFile('/usr/share/udhcpc/', 'default.script');
+    print("");
 
     print('total: ' .. total)
-    print('failds: ' .. failds)
+    print('failds: ' .. failures)
+
+    console.printr(errors)
 end
 
 return exports
