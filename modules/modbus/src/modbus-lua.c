@@ -259,6 +259,7 @@ static int l_read(lua_State *L)
     int addresses[256];
     uint16_t buffer[MODBUS_MAX_ADU_LENGTH];
 
+    // 历遍表格
     int i = 0;
     lua_pushnil(L);
     while (lua_next(L, -2))
@@ -367,15 +368,16 @@ static int l_write(lua_State *L)
 
     lua_pop(L, 1);
 
-    int addr[256];
+    int address[256];
     int value[256];
 
+    // 历遍表格
     int i = 0;
     lua_pushnil(L);
     while (lua_next(L, -2))
     {
         lua_pushvalue(L, -2);
-        addr[i] = lua_tointeger(L, -1);
+        address[i] = lua_tointeger(L, -1);
         value[i] = lua_tointeger(L, -2);
         lua_pop(L, 2);
         i++;
@@ -387,7 +389,7 @@ static int l_write(lua_State *L)
     int res = 0;
     for (i = 0; i < count; i++)
     {
-        if (modbus_write_register(self->modbus, addr[i], value[i]) == -1)
+        if (modbus_write_register(self->modbus, address[i], value[i]) == -1)
         {
             res = 0;
         }
@@ -396,7 +398,7 @@ static int l_write(lua_State *L)
             res = 1;
         }
 
-        l_pushtable(L, addr[i], &res, "boolean");
+        l_pushtable(L, address[i], &res, "boolean");
     }
 
     lua_pushinteger(L, 0);

@@ -31,6 +31,8 @@ end)
 
 ##### advertisementreceived
 
+> function(event)
+
 - event
   - device {BluetoothDevice} 相关的蓝牙设备
   - manufacturerData {string} 制造商数据
@@ -42,10 +44,14 @@ end)
 
 ##### gattserverdisconnected 
 
+> function(event)
+
 - event
   - device {BluetoothDevice} 相关的蓝牙设备
 
 ##### characteristicvaluechanged
+
+> function(event)
 
 - event
   - characteristic {BluetoothGATTCharacteristic} 发生改变的特征值
@@ -73,7 +79,7 @@ end)
 
 停止侦听广播
 
-### 远程 GATT 服务器
+### GATT 服务器
 
 `BluetoothRemoteGATTServer` 接口代表远程设备上的 GATT 服务器。
 
