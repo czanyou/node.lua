@@ -1,7 +1,5 @@
 # SSDP 简单服务发现协议
 
-
-
 这个模块用于发现网络中的设备, SSDP 通过简单的 UDP 广播和组播消息机制和发现局域网的 SSDP 设备。通常设备会在指定 UDP 端口侦听搜索请求广播消息。当收到搜索请求消息时，向发送消息的地址发送一个应答消息。这样就可以主动发现局域网内的 SSDP 设备了。
 
 通过 `require('ssdp')` 调用。
@@ -72,7 +70,7 @@ end)
 client:search('ssdp:all')
 
 -- search for a service type 
-client:search('urn:schemas-upnp-org:service:cmpp-iot')
+client:search('urn:schemas-webofthings-org:device')
 
 ```
 
@@ -118,7 +116,7 @@ local SsdpServer = require("ssdp/server").SsdpServer
 local server = SsdpServer:new()
 
 ssdpServer:addUSN('upnp:rootdevice');
-ssdpServer:addUSN('urn:schemas-upnp-org:service:cmpp-iot');
+ssdpServer:addUSN('urn:schemas-webofthings-org:device');
 
 ssdpServer:start()
 
@@ -128,7 +126,5 @@ end)
 
 
 ```
-
-
 
 

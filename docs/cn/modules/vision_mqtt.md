@@ -1,4 +1,4 @@
-# MQTT
+# MQTT 客户端
 
 `mqtt` 是一个 MQTT 协议的客户端模块, 由纯 Lua 语言实现.
 

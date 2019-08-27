@@ -18,11 +18,8 @@ limitations under the License.
 
 local fs 		= require('fs')
 local path  	= require('path')
-local timer 	= require('timer')
-local utils 	= require('util')
 local core   	= require('core')
 
-local camera 	 = require('media/camera')
 local hls_reader = require('hls/reader')
 
 local TAG = 'Mock'

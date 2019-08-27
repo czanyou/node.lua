@@ -1,7 +1,5 @@
 # Bluetooth 低功耗蓝牙
 
-
-
 扫描或接收低功耗蓝牙设备广播
 
 通过 `require('device/bluetooth')` 调用。

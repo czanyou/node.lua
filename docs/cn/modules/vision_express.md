@@ -1,7 +1,5 @@
 # Express 嵌入式 WEB 服务器
 
-
-
 基于 Node.Lua 平台，快速、开放、极简的 web 开发框架。
 
 这个模块是 Node.js Express 项目的简化版，为了在嵌入系统上运行只实现了最核心的基本功能。
@@ -55,7 +53,8 @@
 - application/json
 - application/x-www-form-urlencoded
 - multipart/form-data (暂未完成)
-   
+  
+
 如果是其他未知类型则 body 为请求消息原始内容 
 
 ### 属性: request.hostname

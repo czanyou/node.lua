@@ -16,11 +16,9 @@ limitations under the License.
 
 --]]
 
-local core		= require('core')
 local fs		= require('fs')
 local json		= require('json')
 local path		= require('path')
-local util		= require('util')
 local conf		= require('app/conf')
 local app		= require('app')
 
@@ -78,7 +76,7 @@ function config.help()
 
 Manage the lpm configuration files
 
-Usage: 
+Usage:
   lpm config get <key>         - Get value for <key>.
   lpm config list              - List all config files
   lpm config set <key> <value> - Sets the specified config <key> <value>.
@@ -291,7 +289,8 @@ function exports.scan(timeout, serviceType)
 		grid.cell(rinfo.ip, item.usn, model)
 	end)
 
-	-- search for a service type 
+	-- search for a service type
+	-- urn:schemas-webofthings-org:device
 	serviceType = serviceType or 'urn:schemas-upnp-org:service:cmpp-iot'
 	ssdpClient:search(serviceType)
 
@@ -330,10 +329,10 @@ function exports.info(...)
 	local list = path:split(';')
 	for i = 1, #list do
 		print(list[i])
-	end	
+	end
 
 	print(console.colorful('${string}app.rootPath: ${normal}') .. (app.rootPath or '-'))
-	print(console.colorful('${string}app.nodePath: ${normal}') .. (app.nodePath or '-'))	
+	print(console.colorful('${string}app.nodePath: ${normal}') .. (app.nodePath or '-'))
 	print(console.colorful('${string}app.target:   ${normal}') .. (app.getSystemTarget() or '-'))
 	print(console.colorful('${string}os.arch:      ${normal}') .. os.arch())
 	print(console.colorful('${string}os.time:      ${normal}') .. os.time())
@@ -344,8 +343,8 @@ end
 
 -- Display the version information
 function exports.version()
-	local printVersion = function(name, version) 
-		print(" - " .. (name or '') .. console.color('braces') .. 
+	local printVersion = function(name, version)
+		print(" - " .. (name or '') .. console.color('braces') ..
 			" v" .. (version or ''), console.color('normal'))
 	end
 
@@ -362,22 +361,22 @@ function exports.version()
 	local ret = nil
 
 	ret, info = pcall(require, 'lmbedtls.md')
-	if (info and info._VERSION) then	
+	if (info and info._VERSION) then
 		printVersion("mbedtls", info.VERSION)
 	end
 
 	ret, info = pcall(require, 'lsqlite')
-	if (info and info.VERSION) then	
+	if (info and info.VERSION) then
 		printVersion("sqlite", info.VERSION)
 	end
 
 	ret, info = pcall(require, 'miniz')
-	if (info and info.VERSION) then	
+	if (info and info.VERSION) then
 		printVersion("miniz", info.VERSION)
 	end
 
 	ret, info = pcall(require, 'lmedia')
-	if (info and info.version) then	
+	if (info and info.version) then
 		printVersion("lmedia", info.version())
 	end
 
@@ -407,14 +406,14 @@ Usage: ${highlight}lpm <command> [args]${normal}
 ${braces}
 where <command> is one of:
 	c, config, get, set, unset
-	l, list, ps, restart, start, stop, 
+	l, list, ps, restart, start, stop,
 	update, upgrade
 	help, info, root, scan, version ${normal}
 
 
    or: ${highlight}lpm <name> <command> [args]${normal}
 ${braces}
-where <name> is the name of the application, located in 
+where <name> is the name of the application, located in
 	']] .. appPath .. [[', the supported values of <command>
 	depend on the invoked application.${normal}
 
@@ -436,8 +435,8 @@ function exports.help()
 
 lpm - lnode package manager.
 
-${braces}This is the CLI for Node.lua, Node.lua is a 'universal' platform work across 
-many different systems, enabling install, configure, running and remove 
+${braces}This is the CLI for Node.lua, Node.lua is a 'universal' platform work across
+many different systems, enabling install, configure, running and remove
 applications and utilities for Internet of Things.${normal}
 
 ${highlight}usage: lpm <command> [args]${normal}

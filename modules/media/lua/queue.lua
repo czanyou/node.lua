@@ -16,7 +16,6 @@ limitations under the License.
 
 --]]
 local core 	= require('core')
-local utils = require('util')
 
 local meta 		= { }
 local exports 	= { meta = meta }

@@ -105,7 +105,8 @@ end
 function SsdpServer:_handleSearch(request, remote)
 	local st  = request.headers['st'] or UPNP_ROOT_DEVICE
 	--print('st', st)
-	if (st ~= 'urn:schemas-upnp-org:service:cmpp-iot') then
+	if (st ~= 'urn:schemas-upnp-org:service:cmpp-iot')
+		and (st ~= 'urn:schemas-webofthings-org:device') then
 		return
 	end
 

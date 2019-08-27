@@ -1,7 +1,6 @@
 local fs        = require('fs')
 local json      = require('json')
 local path      = require('path')
-local url       = require('url')
 local util      = require('util')
 
 local request  	= require('http/request')

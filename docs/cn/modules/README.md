@@ -14,3 +14,5 @@
 
 - [Modbus - 工业总线](vision_modbus.md)
 - [Bluetooth - 蓝牙](vision_bluetooth.md)
+- [SSDP - 简单服务发现协议](vision_ssdp.md)
+

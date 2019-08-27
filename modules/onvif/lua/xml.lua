@@ -110,7 +110,7 @@ function exports.newParser()
         local ni, c, label, xarg, empty
         local i, j = 1, 1
         while true do
-            ni, j, c, label, xarg, empty = string.find(xmlText, "<(%/?)([%w_:]+)(.-)(%/?)>", i)
+            ni, j, c, label, xarg, empty = string.find(xmlText, "<(%/?)([%w%-_:]+)(.-)(%/?)>", i)
             if not ni then break end
             local text = string.sub(xmlText, i, ni - 1);
             if not string.find(text, "^%s*$") then

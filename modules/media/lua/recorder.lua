@@ -17,8 +17,6 @@ limitations under the License.
 --]]
 
 local core  	= require('core')
-local utils 	= require('util')
-local uv    	= require('luv')
 local lwriter 	= require('lts.writer')
 local fs    	= require('fs')
 

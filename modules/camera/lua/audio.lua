@@ -16,15 +16,10 @@ limitations under the License.
 
 --]]
 
-local core  	= require('core')
-local utils 	= require('util')
-local uv    	= require('luv')
 local lmedia 	= require('lmedia')
 
 local laudioin  = lmedia.audio_in
 local laudioout = lmedia.audio_out
-
-local TAG = "Camera"
 
 local exports = {}
 

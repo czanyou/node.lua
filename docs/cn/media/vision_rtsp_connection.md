@@ -1,26 +1,26 @@
-# RTSP 会话
+# RTSP 连接
 
-## RTSP 连接
+通过 `require('rtsp/connection')` 调用。
 
-### 类 RtspConnection
+## 类 RtspConnection
 
 代表一个 RTSP 服务端连接，和 RTSP 客户端是一对一的关系.
 
 这个连接既可以发送客户端请求的媒体流，也可以接收客户端推送的媒体流
 
-#### 属性 RtspConnection.isStreaming
+### 属性 RtspConnection.isStreaming
 
 {Boolean} 指出是否正在发送媒体流
 
-#### 属性 RtspConnection.rtspState
+### 属性 RtspConnection.rtspState
 
 {String} 这个连接当前 RTSP 状态
 
-#### 属性 RtspConnection.sessionId
+### 属性 RtspConnection.sessionId
 
 {String} 这个连接相关的 RTSP 会话的 ID
 
-#### RtspConnection:close
+### RtspConnection:close
 
     RtspConnection:close(errInfo)
 
@@ -28,7 +28,7 @@
 
 - errInfo {String} 如果是因为发生错误而关闭连接
 
-#### RtspConnection:getSdpString
+### RtspConnection:getSdpString
 
     RtspConnection:getSdpString(urlString)
 
@@ -36,7 +36,7 @@
 
 - urlString {String} RTSP 服务器上可供播放的媒体流的路径
 
-#### RtspConnection:processMessage
+### RtspConnection:processMessage
 
     RtspConnection:processMessage(message)
 
@@ -46,7 +46,7 @@
 
 - message {RtspMessage Object} 收到的由客户端发来的 RTSP 消息
 
-#### RtspConnection:sendResponse
+### RtspConnection:sendResponse
 
     RtspConnection:sendResponse(response)
 
@@ -56,13 +56,13 @@
 
 - response {RtspMessage Object} 要发送给客户端的应答
 
-#### RtspConnection:start
+### RtspConnection:start
 
     RtspConnection:start()
 
 开始这个连接，即开始侦听客户端发来的数据
 
-#### RtspConnection:startStreaming
+### RtspConnection:startStreaming
 
     RtspConnection:startStreaming()
 
@@ -70,7 +70,7 @@
 
 必须在已经创建了相关的媒体会话之后才能调用这个方法.
 
-#### RtspConnection:stopStreaming
+### RtspConnection:stopStreaming
 
     RtspConnection:stopStreaming()
 

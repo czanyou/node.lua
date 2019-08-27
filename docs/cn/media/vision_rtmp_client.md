@@ -1,5 +1,9 @@
 # RTMP Client
 
+RTMP 客户端模块
+
+可以通过 `require('rtmp/client')` 调用这个模块
+
 ## client
 
 ### 状态
@@ -59,7 +63,7 @@
   - body 消息体
   - raw 原始数据
 
-#### RTMPClient:new
+#### new
 
 创建一个新的 RTMPClient 类实例
 
@@ -69,7 +73,7 @@ options 选项:
 
 - timeout 连接超时，默认为 5 秒
 
-#### RTMPClient:close
+#### close
 
 关闭客户端
 
@@ -77,7 +81,7 @@ options 选项:
 
 - error 关闭客户端的错误原因 (如果存在的话)
 
-#### RTMPClient:connect
+#### connect
 
 开始连接到指定的服务器
 
@@ -85,7 +89,7 @@ options 选项:
 
 - urlString 服务器 URL 地址
 
-#### RTMPClient:getStateString
+#### getStateString
 
 返回代表指定的 RTMP 状态的字符串
 
@@ -93,7 +97,7 @@ options 选项:
 
 - state RTMP 状态
 
-#### RTMPClient:sendVideo
+#### sendVideo
 
 发送视频流, 即推流
 

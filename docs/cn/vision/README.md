@@ -2,10 +2,6 @@
 
 - [Sqlite - 嵌入式数据库](vision_sqlite.md)
 
-# 网络
-
-- [SSDP - 简单服务发现协议](vision_ssdp.md)
-
 # 外围设备访问
 
 - [BLE - 低功耗蓝牙](vision_bluetooth.md)

@@ -16,9 +16,6 @@ limitations under the License.
 
 --]]
 local core 		= require('core')
-local fs 		= require('fs')
-local path  	= require('path')
-local utils 	= require('util')
 
 local session 	= require('media/session')
 

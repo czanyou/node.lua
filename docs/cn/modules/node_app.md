@@ -1,7 +1,5 @@
 # Node.lua 应用
 
-
-
 > 未稳定: 这个模块的方法还在随时调整中
 
 
@@ -237,3 +235,4 @@ rpc.call('foo', 'bar', 100)
 这个方法能够根据 package.json 的描述打印当前 APP 的使用方法等信息.
 
 - dirname {String} 当前 APP 所在目录
+

@@ -1,5 +1,9 @@
 # RTMP
 
+RTMP 实时消息协议
+
+通过 `require('rtmp')` 调用。
+
 ## amf0
 
 ### amf0.null

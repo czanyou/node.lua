@@ -553,23 +553,6 @@ function OnvifCamera:getSnapshotUri(index, callback)
     end)
 end
 
-function OnvifCamera:getVideoUri(profile)
-    local host = self.options.host
-    -- rtsp://192.168.1.104:554/Streaming/Channels/101?transportmode=unicast&profile=Profile_1
-    local path = '/Streaming/Channels/10' .. (profile or 1)
-    local query = 'transportmode=unicast&profile=Profile_'  .. (profile or 1)
-    return 'rtsp://' .. host .. '' .. path .. '?' .. query
-end
-
-function OnvifCamera:getImageUri(profile)
-    -- http://192.168.1.104/onvif-http/snapshot?Profile_1
-
-    local host = self.options.host
-    local path = '/onvif-http/snapshot'
-    local query = 'Profile_'  .. (profile or 1)
-    return 'http://' .. host .. '' .. path .. '?' .. query
-end
-
 function exports.camera(options)
     return OnvifCamera:new(options)
 end

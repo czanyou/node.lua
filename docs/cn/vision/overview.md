@@ -1,9 +1,5 @@
 # Vision 框架
 
-
-
-Vision 主要包括 mp4, p2p, rtsp, hls, mqtt, upnp, media 等基础库
-
 ## 数据库
 
 Node.lua 内置支持 sqlite3, sqlite3 是一个小巧的, 适合嵌入的小型文件数据库引擎.

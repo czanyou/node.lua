@@ -1,6 +1,4 @@
 local util  = require('util')
-local path  = require('path')
-local fs    = require('fs')
 local app   = require('app')
 local wot   = require('wot')
 local rpc   = require('app/rpc')
@@ -39,13 +37,13 @@ function exports.ssdp()
     local did = app.get('did') or client.getMacAddress();
     local model = 'DT02/' .. version
     local ssdpSig = "lnode/" .. version .. ", ssdp/" .. ssdpServer.version
-    
+
     local options = {
-        udn = 'uuid:' .. did, 
-        ssdpSig = ssdpSig, 
-        deviceModel = model 
+        udn = 'uuid:' .. did,
+        ssdpSig = ssdpSig,
+        deviceModel = model
     }
-    
+
     -- console.log(options, did)
     local server, error = ssdpServer(options)
     if (error) then

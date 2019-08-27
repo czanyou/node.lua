@@ -1,9 +1,6 @@
 local app       = require('app')
-local utils     = require('util')
 local path      = require('path')
 local fs        = require('fs')
-local rpc       = require('app/rpc')
-local conf       = require('app/conf')
 
 -------------------------------------------------------------------------------
 -- exports
