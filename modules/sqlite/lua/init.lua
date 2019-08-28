@@ -365,7 +365,7 @@ function Database.prepare(db, paranames, sql)
       invers[name] = index
     end
     
-    local readRegisters = { }
+    local mapping = { }
     
     for _, handle in ipairs(handles) do
       for index = 1, api.bind_parameter_count(handle) do
@@ -375,11 +375,11 @@ function Database.prepare(db, paranames, sql)
           cleanup(handles)
           return nil, "db:prepare: Unknown parameter name '" .. parameter_name .. "'in statement."
         end
-        table.insert(readRegisters, pos)
+        table.insert(mapping, pos)
       end
     end
     
-    return readRegisters
+    return mapping
   end
   
   local collect_parameter_names = function(handles)
@@ -439,7 +439,7 @@ function Database.prepare(db, paranames, sql)
       
     elseif named_parameters(handles) then	-- All parameters are named (":foobar" & "$foobar")
       
-      if paranames then				-- Fixed readRegisters of parameter names
+      if paranames then				-- Fixed mapping of parameter names
         
         check_table(paranames, "db:prepare: Names of parameters expected as strings")
         
@@ -450,7 +450,7 @@ function Database.prepare(db, paranames, sql)
           return nil, errmsg
         end
         
-        local readRegisters, errmsg = create_mapping(handles, fixed_parameter_names)
+        local mapping, errmsg = create_mapping(handles, fixed_parameter_names)
         
         if errmsg then
           cleanup(handles)
@@ -458,17 +458,17 @@ function Database.prepare(db, paranames, sql)
         end
         
         local stmt = create_stmt(db, handles, getn(fixed_parameter_names))
-        stmt.readRegisters = readRegisters
+        stmt.mapping = mapping
         stmt.paranames = fixed_parameter_names
         
         return stmt
         
-      else					-- Automatic readRegisters of paramter names
+      else					-- Automatic mapping of paramter names
         
         local parameter_names = collect_parameter_names(handles)
-        local readRegisters = create_mapping(handles, parameter_names)
+        local mapping = create_mapping(handles, parameter_names)
         local stmt = create_stmt(db, handles, getn(parameter_names))
-        stmt.readRegisters = readRegisters
+        stmt.mapping = mapping
         stmt.paranames = parameter_names
         
         return stmt
@@ -664,11 +664,11 @@ function Statement:bind(...)
     local arg = {...}  arg.n = select("#", ...)
 
     local _bind_with_mapping = function(parameters)
-        local readRegisters = self.readRegisters
+        local mapping = self.mapping
         local map_index = 1
         for _, handle in ipairs(self.handles) do
             for index = 1, api.bind_parameter_count(handle) do
-                local status = api.bind(handle, index, parameters[readRegisters[map_index]])
+                local status = api.bind(handle, index, parameters[mapping[map_index]])
                 if is_error(status) then
                     return nil, errmsg(self.db.handle)
                 end
@@ -692,10 +692,10 @@ function Statement:bind(...)
     
     local _bind_by_names = function (parameters)
         local parameter_names = self.paranames
-        local readRegisters = self.readRegisters
+        local mapping = self.mapping
         for _, handle in ipairs(self.handles) do
             for index = 1, api.bind_parameter_count(handle) do
-                local status = api.bind(handle, index, parameters[parameter_names[readRegisters[index]]])
+                local status = api.bind(handle, index, parameters[parameter_names[mapping[index]]])
                 if is_error(status) then
                     return nil, errmsg(self.db.handle)
                 end
@@ -708,7 +708,7 @@ function Statement:bind(...)
         error("stmt:bind: statement contains no parameters.") 
     end
     
-    if type(arg[1]) == "table" and arg.n == 1 and self.readRegisters and self.paranames then
+    if type(arg[1]) == "table" and arg.n == 1 and self.mapping and self.paranames then
         _bind_by_names(arg[1])
         return self
     end
@@ -722,7 +722,7 @@ function Statement:bind(...)
         error("stmt:bind: to many parameters.") 
     end
     
-    if self.readRegisters then
+    if self.mapping then
         _bind_with_mapping(arg)
     else
         _bind_without_mapping(arg)
@@ -752,7 +752,7 @@ function Statement:close()
     
     self.db	      = nil
     self.handles	= nil
-    self.readRegisters	= nil
+    self.mapping	= nil
     self.__gc	    = nil
     
     return self
