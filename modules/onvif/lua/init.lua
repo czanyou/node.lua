@@ -139,13 +139,16 @@ function exports.post(options, callback)
         
         -- response
         children = body and body:children();
-        local response = children and children[#children];
+        local response = children and children[#children]; -- body['Response']
+        if (not children) then
+            return callback('Response element not found')
+        end
 
         local name = getXmlNodeName(response:name())
-        console.log(name, #children)
+        -- console.log(name, #children)
 
+        -- result
         local _, result = exports.xmlToTable(response)
-
         if (name == 'Fault') then
             callback(result)
         else
@@ -495,6 +498,7 @@ function OnvifCamera:getOptions(index)
 
     return {
         ip = options.ip,
+        host = options.host,
         profile = profile,
         username = options.username,
         password = options.password
@@ -520,7 +524,7 @@ function OnvifCamera:getStreamUri(index, callback)
 
     local profile = self.profiles and self.profiles[index]
     if (not profile) then
-        return callback(nil)
+        return callback(nil, 'Invalid profiles')
     end
 
     if (profile.streamUri) then

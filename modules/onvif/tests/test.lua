@@ -44,10 +44,9 @@ local function testGetUsernameToken()
 end
 
 local function testGetProfiles(callback)
-    onvif.media.getProfiles(options, function(err, body)
-        local response = body and body.GetProfilesResponse
-        local profile1 = response and response['Profiles.1']
-        local profile2 = response and response['Profiles.2']
+    onvif.media.getProfiles(options, function(err, response)
+        local profile1 = response.Profiles and response.Profiles[1]
+        local profile2 = response.Profiles and response.Profiles[2]
         local name1 = profile1 and profile1.Name
         local name2 = profile1 and profile2.Name
         console.log(err, name1, name2)
@@ -109,22 +108,51 @@ local function testXml()
 end
 
 local function testCamera()
+    local function printProfile(profile)
+        if (not profile) then
+            return
+        end
+
+        local result = {}
+        result.token = profile['@token']
+        result.Name = profile.Name
+
+        local encoder = profile.VideoEncoderConfiguration
+        result.Encoding = encoder.Encoding
+        result.Resolution = encoder.Resolution
+        result.RateControl = encoder.RateControl
+        result.Quality = encoder.Quality
+        result.H264 = encoder.H264
+
+        console.log(result)
+    end
+
     local camera = onvif.camera(options)
 
-    camera:getDeviceInformation(function(result)
-        console.log(result)
+    camera:getDeviceInformation(function(result, err)
+        console.log(result, err)
     end)
 
-    console.log(camera:getVideoUri())
-    console.log(camera:getImageUri())
+    camera:getCapabilities(function(result, err)
+        console.log(result, err)
+    end)
+
+    camera:getServices(function(result, err)
+        console.log(result, err)
+    end)
+
+    camera:getProfiles(function(result, err)
+        printProfile(result.Profiles[1])
+        printProfile(result.Profiles[2])
+
+        camera:getStreamUri(1, function(result, err)
+            console.log(result, err)
+        end)
+    end)
 end
 
+-- testGetSystemDateAndTime()
+-- testGetDeviceInformation()
 
--- testCamera()
-testGetSystemDateAndTime()
-testGetDeviceInformation()
-testGetProfiles(function(name1, name2)
-    testGetStreamUri(name1)
-    testGetSnapshotUri(name2)
-end)
+testCamera()
 
