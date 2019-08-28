@@ -71,7 +71,7 @@ end
 local function startLedTimer()
     setInterval(1000, function()
         local state = 'off'
-        local ret = bluetooth:dataStatus() or modbus:dataStatus()
+        local ret = bluetooth:dataStatus() or modbus:isDataReady()
         if ret == 1 then
             state = 'on'
         end
