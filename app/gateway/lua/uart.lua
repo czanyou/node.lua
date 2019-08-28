@@ -79,7 +79,7 @@ end
 local function initBluetoothUart()
     local dev = modbus.new("/dev/ttyAMA2", 9600, 78, 8, 1) -- N: 78, O: 79, E: 69
     dev:connect()
-    local fd = dev:uart_fd()
+    local fd = dev:getFD()
     local uart = uv.new_poll(fd)
     uv.poll_start(uart, "r", uart_recevie_callback)
     setInterval(100*60, function()

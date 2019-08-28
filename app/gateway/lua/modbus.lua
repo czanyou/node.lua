@@ -87,7 +87,7 @@ function readRegister(modbusWebThing,openC,closeC,cb)
                 if (dev) then
 
                     dev:connect()
-                    dev:slave(options.slave or 1)
+                    dev:setSlave(options.slave or 1)
                 end
                 return dev
             end
@@ -194,7 +194,7 @@ function readRegister(modbusWebThing,openC,closeC,cb)
                                 if(modbusOptions.type == 0x01) then
                                     register = register * 256 + modbusOptions.switch -1
                                 end
-                                data = modbusDevice:mread(register, quantity)
+                                data = modbusDevice:readRegisters(register, quantity)
                                 if(data ~= nil) then
                                     local value = getPropertyValue(property, data)
                                     if (value ~= nil) then
@@ -205,7 +205,7 @@ function readRegister(modbusWebThing,openC,closeC,cb)
                                 end
                             elseif (property.code == 0x01) then
 
-                                data = modbusDevice:read_bits(register, quantity)
+                                data = modbusDevice:readBits(register, quantity)
                                 if(data ~= nil) then
                                     console.log(data)
                                     local value = string.byte(data)
@@ -219,7 +219,7 @@ function readRegister(modbusWebThing,openC,closeC,cb)
                                     count = count + 1
                                 end
                             elseif (property.code == 0x05) then
-                                data = modbusDevice:write_bit(register, quantity)
+                                data = modbusDevice:writeBit(register, quantity)
                                 -- if(data ~= nil) then
                                 --     local value = data[1] & 0x01
                                 --     if (value == 1) then

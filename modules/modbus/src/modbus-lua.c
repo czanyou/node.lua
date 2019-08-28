@@ -13,7 +13,6 @@
 #include <modbus.h>
 #include "modbus-private.h"
 
-
 #include "luv.h"
 
 #include "lthreadpool.h"
@@ -457,20 +456,19 @@ static int l_write_bit(lua_State *L)
 static const struct luaL_Reg modbus_func[] = {
     {"close", l_close},
     {"connect", l_connect},
+    {"getFD",l_get_fd},
     {"listen", l_listen},
-    {"mapping", l_new_mapping},
-    {"mread", l_read_registers},
-    {"mwrite", l_write_register},
+    {"newMapping", l_new_mapping},
     {"read", l_read},
+    {"readBits",l_read_bits},
+    {"readRegisters", l_read_registers},
     {"receive", l_receive},
-    {"set_value", l_set_mapping},
-    {"slave", l_set_slave},
+    {"setMappingValue", l_set_mapping},
+    {"setSlave", l_set_slave},
     {"write", l_write},
-    {"uart_fd",l_get_fd},
-    {"write_bit",l_write_bit},
-    {"read_bits",l_read_bits},
+    {"writeBit",l_write_bit},
+    {"writeRegister", l_write_register},
 
-    
     {NULL, NULL},
 };
 

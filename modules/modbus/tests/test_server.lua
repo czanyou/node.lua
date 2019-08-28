@@ -9,12 +9,12 @@ console.log(dev)
 local ret = dev:connect()
 console.log('connect', ret)
 
-dev:slave(2)
+dev:setSlave(2)
 
-dev:mapping(0, 100);
-dev:set_value(2, 0, 1);
-dev:set_value(2, 1, 2);
-dev:set_value(2, 2, 3);
+dev:newMapping(0, 100);
+dev:setMappingValue(2, 0, 1);
+dev:setMappingValue(2, 1, 2);
+dev:setMappingValue(2, 2, 3);
 
 while (true) do
     ret = dev:receive()

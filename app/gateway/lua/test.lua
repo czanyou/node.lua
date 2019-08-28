@@ -90,7 +90,7 @@ local function initUart()
     local uart = modbus.new(filename, 9600, 78, 8, 1) -- N: 78, O: 79, E: 69
     uart:connect()
 
-    uart_fd = uart:uart_fd()
+    uart_fd = uart:getFD()
     print("fd", uart_fd)
 
     uart_poll = luv.new_poll(uart_fd)

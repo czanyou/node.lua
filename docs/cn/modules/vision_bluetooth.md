@@ -10,7 +10,7 @@
 
 这个方法用于请求一个蓝牙设备对象, 以使后续和蓝牙模块以及远程的蓝牙设备进行交互
 
-- `options` {object} 选项
+- options `{object}` 选项
 
 ```lua
 
@@ -34,36 +34,36 @@ end)
 > function(event)
 
 - event
-  - device {BluetoothDevice} 相关的蓝牙设备
-  - manufacturerData {string} 制造商数据
-  - serviceData {string} 服务数据
-  - rssi {number} 接收信号强度，单位为 dBm
-  - txPower {number} 发射功率强度，单位为 dBm
-  - name {string} 从机名称
-  - appearance {number} 从机外观参数
+  - device `{BluetoothDevice}` 相关的蓝牙设备
+  - manufacturerData `{string}` 制造商数据
+  - serviceData `{string}` 服务数据
+  - rssi `{number}` 接收信号强度，单位为 dBm
+  - txPower `{number}` 发射功率强度，单位为 dBm
+  - name `{string}` 从机名称
+  - appearance `{number}` 从机外观参数
 
 ##### gattserverdisconnected 
 
 > function(event)
 
 - event
-  - device {BluetoothDevice} 相关的蓝牙设备
+  - device `{BluetoothDevice}` 相关的蓝牙设备
 
 ##### characteristicvaluechanged
 
 > function(event)
 
 - event
-  - characteristic {BluetoothGATTCharacteristic} 发生改变的特征值
-    - value {string} 发生改变后的值
+  - characteristic `{BluetoothGATTCharacteristic}` 发生改变的特征值
+    - value `{string}` 发生改变后的值
 
 
 #### 属性
 
-- id {string} 一个设备的唯一 ID
-- name {string} 设备的人类可读的名称
-- gatt {BluetoothRemoteGATTServer} GATT 服务器的引用
-- watchingAdvertisements {boolean} 如果正在侦听广播
+- id `{string}` 一个设备的唯一 ID
+- name `{string}` 设备的人类可读的名称
+- gatt `{BluetoothRemoteGATTServer}` GATT 服务器的引用
+- watchingAdvertisements `{boolean}` 如果正在侦听广播
 
 #### watchAdvertisements 方法
 
@@ -71,7 +71,7 @@ end)
 
 开始侦听广播
 
-- callback {function()}
+- callback `{function()}`
 
 #### unwatchAdvertisements 方法
 
@@ -85,8 +85,8 @@ end)
 
 #### 属性
 
-- connected {boolean} 指出是否已连接到远程服务器
-- device {BluetoothDevice} 所属的蓝牙设备
+- connected `{boolean}` 指出是否已连接到远程服务器
+- device `{BluetoothDevice}` 所属的蓝牙设备
 
 #### connect 方法
 
@@ -94,8 +94,8 @@ end)
 
 请求连接指定的远程设备
 
-- callback {function(server)}
-    - server {BluetoothRemoteGATTServer} GATT 服务器
+- callback `{function(server)}`
+    - server `{BluetoothRemoteGATTServer}` GATT 服务器
 
 #### disconnect 方法
 
@@ -109,9 +109,9 @@ end)
 
 返回指定的 UUID 的 GATT 服务
 
-- uuid {string} 服务的 UUID
-- callback {function(service)}
-  - service {BluetoothRemoteGATTService} GATT 服务
+- uuid `{string}` 服务的 UUID
+- callback `{function(service)}`
+  - service `{BluetoothRemoteGATTService}` GATT 服务
 
 #### getPrimaryServices 方法
 
@@ -119,9 +119,9 @@ end)
 
 返回所有的 GATT 服务
 
-- uuid {string} 服务的 UUID
-- callback {function(services)}
-  - services {array of BluetoothRemoteGATTService} GATT 服务
+- uuid `{string}` 服务的 UUID
+- callback `{function(services)}`
+  - services `{array of BluetoothRemoteGATTService}` GATT 服务
 
 ### GATT 服务
 
@@ -132,14 +132,14 @@ end)
 ##### characteristicvaluechanged
 
 - event
-  - characteristic {BluetoothGATTCharacteristic} 发生改变的特征值
-    - value {string} 发生改变后的值
+  - characteristic `{BluetoothGATTCharacteristic}` 发生改变的特征值
+    - value `{string}` 发生改变后的值
 
 #### 服务属性
 
-- device {BluetoothDevice} 所属的蓝牙设备的信息
-- isPrimary {boolean} 指出是否是 primary 服务
-- uuid {string} 这个服务的 UUID
+- device `{BluetoothDevice}` 所属的蓝牙设备的信息
+- isPrimary `{boolean}` 指出是否是 primary 服务
+- uuid `{string}` 这个服务的 UUID
 
 #### getCharacteristic 方法
 
@@ -147,9 +147,9 @@ end)
 
 返回指定 UUID 的特征值
 
-- uuid {string} 特征值 UUID
-- callback {function(characteristic)}
-  - characteristic {BluetoothGATTCharacteristic} 特征值
+- uuid `{string}` 特征值 UUID
+- callback `{function(characteristic)}`
+  - characteristic `{BluetoothGATTCharacteristic}` 特征值
 
 #### getCharacteristics 方法
 
@@ -157,9 +157,9 @@ end)
 
 返回所有的特征值
 
-- uuid {string} 可选, 特征值 UUID
-- callback {function(characteristics)}
-  - characteristics {array of BluetoothGATTCharacteristic} 特征值
+- uuid `{string}` 可选, 特征值 UUID
+- callback `{function(characteristics)}`
+  - characteristics `{array of BluetoothGATTCharacteristic}` 特征值
 
 ### GATT 特征值
 
@@ -167,17 +167,17 @@ end)
 
 #### 特征值属性
 
-- service {BluetoothRemoteGATTService} 所属的 BluetoothGATTService
-- uuid {UUID string} 这个特征值的 UUID 字符串
-- properties {object} 这个特征值的属性
-  - broadcast {boolean} Broadcast
-  - read {boolean} Read
-  - writeWithoutResponse {boolean} Write Without Response
-  - write {boolean}	Write
-  - notify {boolean} Notify
-  - indicate {boolean} Indicate
-  - authenticatedSignedWrites {boolean} Authenticated Signed Writes
-- value {string} 当前缓存的特征值的值
+- service `{BluetoothRemoteGATTService}` 所属的 BluetoothGATTService
+- uuid `{UUID string}` 这个特征值的 UUID 字符串
+- properties `{object}` 这个特征值的属性
+  - broadcast `{boolean}` Broadcast
+  - read `{boolean}` Read
+  - writeWithoutResponse `{boolean}` Write Without Response
+  - write `{boolean}`	Write
+  - notify `{boolean}` Notify
+  - indicate `{boolean}` Indicate
+  - authenticatedSignedWrites `{boolean}` Authenticated Signed Writes
+- value `{string}` 当前缓存的特征值的值
 
 #### getDescriptor 方法
 
@@ -185,9 +185,9 @@ end)
 
 返回指定 UUID 的描述符
 
-- uuid {string} 描述符 UUID
-- callback {function(descriptor)}
-  - descriptor {BluetoothRemoteGATTDescriptor} 描述符
+- uuid `{string}` 描述符 UUID
+- callback `{function(descriptor)}`
+  - descriptor `{BluetoothRemoteGATTDescriptor}` 描述符
 
 #### getDescriptors 方法
 
@@ -195,9 +195,9 @@ end)
 
 返回所有描述符
 
-- uuid {string} 可选，描述符 UUID
-- callback {function(descriptors)}
-  - descriptors {array of BluetoothRemoteGATTDescriptor} 描述符
+- uuid `{string}` 可选，描述符 UUID
+- callback `{function(descriptors)}`
+  - descriptors `{array of BluetoothRemoteGATTDescriptor}` 描述符
 
 #### readValue 方法
 
@@ -205,8 +205,8 @@ end)
 
 读取特征值的值
 
-- callback {function(value)}
-  - value {string} 读到的值
+- callback `{function(value)}`
+  - value `{string}` 读到的值
 
 #### writeValue 方法
 
@@ -214,8 +214,8 @@ end)
 
 读入特征值的值
 
-- value {string} 要写入的值
-- callback {function()}
+- value `{string}` 要写入的值
+- callback `{function()}`
 
 #### startNotifications 方法
 
@@ -223,7 +223,7 @@ end)
 
 开始接收通知
 
-- callback {function()}
+- callback `{function()}`
 
 #### stopNotifications 方法
 
@@ -231,7 +231,7 @@ end)
 
 停止接收通知
 
-- callback {function()}
+- callback `{function()}`
 
 
 ### GATT 描述符
@@ -240,9 +240,9 @@ end)
 
 #### 描述符属性
 
-- characteristic {BluetoothGATTCharacteristic} 所属的 BluetoothGATTCharacteristic
-- uuid {string} 这个描述符的 UUID
-- value {string} 当前缓存的描述符值, 这个值在执行读操作后会被更新
+- characteristic `{BluetoothGATTCharacteristic}` 所属的 BluetoothGATTCharacteristic
+- uuid `{string}` 这个描述符的 UUID
+- value `{string}` 当前缓存的描述符值, 这个值在执行读操作后会被更新
 
 #### readValue 方法
 
@@ -250,8 +250,8 @@ end)
 
 读取描述符值
 
-- callback {function(value)}
-  - value {string} 读到的描述符值
+- callback `{function(value)}`
+  - value `{string}` 读到的描述符值
 
 #### writeValue 方法
 
@@ -259,6 +259,6 @@ end)
 
 写入描述符值
 
-- value {string}
-- callback {function(value)}
-  - value {string} 要写入的值
+- value `{string}`
+- callback `{function(value)}`
+  - value `{string}` 要写入的值

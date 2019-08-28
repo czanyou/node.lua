@@ -10,19 +10,19 @@
 
 创建一个新的 OnvifCamera 类实例
 
-- options {object} 选项
-  - ip {string} 摄像机 IP 地址
-  - username {string} 用户名
-  - password {string} 密码
+- options `{object}` 选项
+  - ip `{string}` 摄像机 IP 地址
+  - username `{string}` 用户名
+  - password `{string}` 密码
 
-- camera {OnvifCamera} 返回创建的实例
+- camera `{OnvifCamera}` 返回创建的实例
 
 ## 类 OnvifCamera
 
 ### 属性
 
-- options {object} 选项
-- deviceInformation {object} 设备信息
+- options `{object}` 选项
+- deviceInformation `{object}` 设备信息
 
 ### initialize
 
@@ -40,7 +40,7 @@
 
 callback `{function(capabilities)}`
 
-- capabilities` {object}`
+- capabilities `{object}`
 
 #### getServices
 
@@ -50,7 +50,7 @@ callback `{function(capabilities)}`
 
 callback `{function(services)}`
 
-- services` {object}`
+- services `{object}`
 
 #### getDeviceInformation
 
@@ -60,7 +60,7 @@ callback `{function(services)}`
 
 callback `{function(deviceInformation)}`
 
-- deviceInformation` {object}`
+- deviceInformation `{object}`
 
 ### 云台操作
 
@@ -172,7 +172,7 @@ callback `{function(deviceInformation)}`
 
 创建一个新的 XML 解析器
 
-- parser {XmlParser} 返回创建的解析器
+- parser `{XmlParser}` 返回创建的解析器
 
 ### 类 XmlParser
 
@@ -182,7 +182,7 @@ callback `{function(deviceInformation)}`
 
 编码 XML 字符串，将字符串中的特殊符号转码成 XML 可以接受的格式
 
-- value {string} 要编码的字符串
+- value `{string}` 要编码的字符串
 
 #### FromXmlString
 
@@ -190,7 +190,7 @@ callback `{function(deviceInformation)}`
 
 解析 XML 字符串，将编码过的字符串还原成原始的格式
 
-- value {string} 要解析的字符串
+- value `{string}` 要解析的字符串
 
 #### ParseArgs
 
@@ -198,8 +198,8 @@ callback `{function(deviceInformation)}`
 
 解析 XML 节点属性
 
-- node {XmlNode} 要解析的节点
-- s {string} 要解析的字符串
+- node `{XmlNode}` 要解析的节点
+- s `{string}` 要解析的字符串
 
 #### ParseXmlText
 
@@ -207,7 +207,7 @@ callback `{function(deviceInformation)}`
 
 解析 XML 文档
 
-- xmlText {string} 要解析的 XML 文档
+- xmlText `{string}` 要解析的 XML 文档
 
 ### 类 XmlNode
 
@@ -223,7 +223,7 @@ callback `{function(deviceInformation)}`
 
 设置 XML 节点的值
 
-- value {string} 节点值
+- value `{string}` 节点值
 
 #### name
 
@@ -237,7 +237,7 @@ callback `{function(deviceInformation)}`
 
 设置 XML 节点的名称
 
-- name {string} 节点名称
+- name `{string}` 节点名称
 
 #### children
 
@@ -275,5 +275,5 @@ callback `{function(deviceInformation)}`
 
 添加一个新的属性
 
-- name {string} 属性名
-- value {string} 属性值
+- name `{string}` 属性名
+- value `{string}` 属性值

@@ -8,7 +8,7 @@ local dev=modbus.new("/dev/ttyUSB0", 9600)
 console.log(dev)
 
 dev:connect()
-dev:slave(2)
+dev:setSlave(2)
 
 --[[
 addr={}
@@ -30,24 +30,24 @@ dev:write(msg)
 --]]
 --query address 7 and 8
 
-local data = dev:mread(0,1)
+local data = dev:readRegisters(0,1)
 console.printBuffer(data)
 local value = string.unpack('<I2', data)
 console.log(value * 0.1)
 
-local data = dev:mread(1,1)
+local data = dev:readRegisters(1,1)
 console.printBuffer(data)
 local value = string.unpack('<i2', data)
 console.log(value * 0.1)
 
-local data = dev:mread(6,1)
+local data = dev:readRegisters(6,1)
 console.printBuffer(data)
 local value = string.unpack('<I2', data)
 console.log(value)
 
 --[[
 --write value 0 in address 9
-dev:mwrite('mwrite', 9,0)
+dev:writeRegister('writeRegister', 9,0)
 --]]
 
 dev:close()
