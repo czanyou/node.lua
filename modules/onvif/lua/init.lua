@@ -1,7 +1,8 @@
+local core = require('core')
+local util = require("util")
+
 local request = require('http/request')
 local xml = require("onvif/xml")
-local util = require("util")
-local core 	 = require('core')
 
 local exports = {}
 
@@ -10,26 +11,36 @@ local exports = {}
 
 local noop = function() end
 
-function exports.xml2table(element)
-    if (not element) then
-        return
+local function getXmlNodeName(name)
+    if (type(name) ~= 'string') then
+        return name
     end
-
-    local name = element:name()
-    local properties = element:properties();
-    local children = element:children();
 
     local pos = string.find(name, ':')
     if (pos and pos > 0) then
         name = string.sub(name, pos + 1)
     end
 
+    return name
+end
+
+-- 将 XML 节点转换为 Lua 表格
+-- @param element {XmlNode}
+function exports.xmlToTable(element)
+    if (not element) then
+        return
+    end
+
+    local name = getXmlNodeName(element:name())
+    local properties = element:properties();
+    local children = element:children();
+
     if (children and #children > 0) then
         local item = {}
 
         -- children
         for _, value in ipairs(children) do
-            local key, ret = exports.xml2table(value)
+            local key, ret = exports.xmlToTable(value)
             local lastValue = item[key]
             if (lastValue == nil) then
                 item[key] = ret
@@ -75,6 +86,9 @@ function exports.xml2table(element)
     end
 end
 
+-- 发送 POST 请求
+-- @param options {object}
+-- @param callback {function}
 function exports.post(options, callback)
     if (type(callback) ~= 'function') then
         callback = noop
@@ -117,18 +131,30 @@ function exports.post(options, callback)
 
         -- Body
         children = root and root:children();
-        local xmlBody = children and children[#children] -- and root['env:Body']
         if (not children) then
             return callback('Body element not found')
         end
 
-        -- console.log(xmlBody:name(), #children)
+        local body = children and children[#children] -- and root['env:Body']
+        
+        -- response
+        children = body and body:children();
+        local response = children and children[#children];
 
-        local _, result = exports.xml2table(xmlBody)
-        callback(nil, result)
+        local name = getXmlNodeName(response:name())
+        console.log(name, #children)
+
+        local _, result = exports.xmlToTable(response)
+
+        if (name == 'Fault') then
+            callback(result)
+        else
+            callback(nil, result)
+        end
     end)
 end
 
+-- 实现 ONVIF 认证
 function exports.getUsernameToken(options)
     local timestamp = '2019-08-03T03:21:33.001Z'
     local nonce = util.base64Decode('SNMfYjdAJzZzDk0SY8Xdhw==')
@@ -143,6 +169,7 @@ function exports.getUsernameToken(options)
     }
 end
 
+-- 生成 SOAP 消息头
 function exports.getHeader(options)
     if (not options.username) or (not options.password) then
         return ''
@@ -166,6 +193,7 @@ function exports.getHeader(options)
     return header;
 end
 
+-- 生成 SOAP 消息
 function exports.getMessage(options, body)
     local message = '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing">' ..
     exports.getHeader(options) .. 
@@ -374,9 +402,16 @@ exports.ptz = ptz
 
 local OnvifCamera = core.Emitter:extend()
 
+-- options
+-- - ip {string} IP 地址
+-- - username {string} 用户名
+-- - password {string} 密码
 function OnvifCamera:initialize(options)
     self.options = options
     self.deviceInformation = nil
+    self.profiles = nil
+    self.services = nil
+    self.capabilities = nil
 end
 
 function OnvifCamera:getPresets(callback)
@@ -386,7 +421,6 @@ end
 
 function OnvifCamera:removePreset(preset, callback)
     local options = self:getPresetOptions(1, preset)
-
     ptz.removePreset(options, callback)
 end
 
@@ -413,51 +447,41 @@ function OnvifCamera:continuousMove(x, y, z, callback)
     ptz.continuousMove(options, callback)
 end
 
-function OnvifCamera:getDeviceInformation(callback)
+function OnvifCamera:get(method, name, callback)
     if (not callback) then callback = function() end end
 
-    if (self.deviceInformation) then
-        return callback(self.deviceInformation)
+    if (self[name]) then
+        return callback(self[name])
     end
 
     local options = self:getOptions()
-
-    exports.getDeviceInformation(options, function(err, body) 
-        if (err) then
-            return callback(nil, err)
-        end
-
-        local response = body and body.GetDeviceInformationResponse
+    method(options, function(err, response)
         if (response) then
-            self.deviceInformation = response
+            self[name] = response
         end
 
-        return callback(response)
+        return callback(response, err)
     end)
 end
 
+function OnvifCamera:getDeviceInformation(callback)
+    self:get(exports.getDeviceInformation, 'deviceInformation', callback)
+end
+
+function OnvifCamera:getCapabilities(callback)
+    self:get(exports.getCapabilities, 'capabilities', callback)
+end
+
+function OnvifCamera:getServices(callback)
+    self:get(exports.getServices, 'services', callback)
+end
+
 function OnvifCamera:getProfiles(callback)
-    if (not callback) then callback = function() end end
+    self:get(media.getProfiles, 'profiles', callback)
+end
 
-    if (self.profiles) then
-        return callback(self.profiles)
-    end
-
-    local options = self:getOptions()
-
-    exports.media.getProfiles(options, function(err, body) 
-        if (err) then
-            return callback(nil, err)
-        end
-
-        local response = body and body.GetProfilesResponse
-        if (not response) then
-            return callback(nil)
-        end
-
-        self.profiles = response and response.Profiles
-        return callback(self.profiles)
-    end)
+function OnvifCamera:getVideoSources(callback)
+    self:get(media.getVideoSources, 'videoSources', callback)
 end
 
 function OnvifCamera:getOptions(index)
@@ -484,6 +508,7 @@ function OnvifCamera:getPresetOptions(index, preset)
     if (options.profile == 'MainStream') then
         -- options.profile = nil
         if (preset == 1) then
+            -- 修正某摄像机预置位 1 不能使用的问题
             options.preset = 201
         end
     end
@@ -508,8 +533,7 @@ function OnvifCamera:getStreamUri(index, callback)
             return callback(nil, err)
         end
 
-        local response = body and body.GetStreamUriResponse
-        response = response and response.MediaUri
+        local response = body and body.MediaUri
         local streamUri = response and response.Uri
         if (not streamUri) then
             return callback(nil, body)
@@ -540,8 +564,7 @@ function OnvifCamera:getSnapshotUri(index, callback)
         end
 
         -- console.log('body', body)
-        local response = body and body.GetSnapshotUriResponse
-        response = response and response.MediaUri
+        local response = body and body.MediaUri
         local snapshotUri = response and response.Uri
         if (not snapshotUri) then
             return callback(nil, body)
@@ -552,6 +575,9 @@ function OnvifCamera:getSnapshotUri(index, callback)
         callback(snapshotUri)
     end)
 end
+
+-------------------------------------------------------------------------------
+-- exports
 
 function exports.camera(options)
     return OnvifCamera:new(options)
