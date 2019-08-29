@@ -47,7 +47,18 @@ local function checkLogin(request, response)
     local pathname = request.uri.pathname or ''
     -- console.log(pathname)
 
-    if pathname:endsWith('.html') then
+    if (pathname == '/') or pathname:endsWith('.html') then
+        local activate = app.get('activate')
+        if (not activate) then
+            if (pathname ~= '/activate.html') then
+                response:set('Location', '/activate.html')
+                response:sendStatus(302)
+                return true
+            end
+    
+            return false
+        end
+    
         if (pathname == '/login.html') then
             return false
         end
@@ -75,10 +86,12 @@ local function apiAuthLogin(request, response)
 
     if (not password) or (#password < 1) then
         return response:json({ code = 401, error = 'Empty Password' })
-    end   
+    end
 
-    local value = app.get('password') or "wot2019"
-    if (value ~= password) then
+    local hash = util.md5string('wot:' .. password)
+
+    local value = app.get('password') or "60b495fa71c59a109d19b6d66ce18dc2"
+    if (value ~= password) and (value ~= hash) then
         return response:json({ code = 401, error = 'Wrong Password' })
     end
 
@@ -109,10 +122,13 @@ local function apiAuthSelf(request, response)
     response:json(userInfo or { code = 401, error = 'Unauthorized' })
 end
 
-local function apiStatusRead(request, response)
+local function apiSystemRead(request, response)
     local system = {
         version = process.version,
-        mac = getMacAddress()
+        mac = getMacAddress(),
+        base = app.get('base'),
+        mqtt = app.get('mqtt'),
+        did = app.get('did')
     }
 
     local nodePath = app.nodePath
@@ -129,7 +145,7 @@ local function apiStatusRead(request, response)
     response:json(status)
 end
 
-local function apiStatusWrite(request, response)
+local function apiSystemWrite(request, response)
     local query = request.body
 
     if (query.update) then
@@ -155,7 +171,7 @@ local function apiConfigRead(request, response)
     end)
 end
 
-local function apiFileUpload(request, response)
+local function apiUpload(request, response)
     --console.log(request.body)
     --console.log(request.files)
 
@@ -188,6 +204,22 @@ local function apiConfigWrite(request, response)
     end)
 end
 
+local function apiSystemActivate(request, response)
+    local query = request.body
+
+    config.load("user", function(ret, profile)
+        profile:set("did", query.did)
+        profile:set("base", query.base)
+        profile:set("password", query.password)
+        profile:set("activate", 'true')
+        profile:set("updated", Date.now())
+        profile:commit()
+
+        local result = { code = 0 }
+        response:json(result)
+    end)
+end
+
 local function setConfigRoutes(app) 
     -- checkLogin
     function app:onRequest(request, response)
@@ -207,10 +239,10 @@ local function setConfigRoutes(app)
     app:post('/config/write', apiConfigWrite);
     app:get('/config/read', apiConfigRead);
 
-    app:get('/system/read', apiStatusRead);
-    app:post('/system/write', apiStatusWrite);
-    app:post('/upload', apiFileUpload);
-    
+    app:get('/system/read', apiSystemRead);
+    app:post('/system/write', apiSystemWrite);
+    app:post('/system/activate', apiSystemActivate);
+    app:post('/upload', apiUpload);
 end
 
 function exports.start(port)

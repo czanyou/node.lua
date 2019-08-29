@@ -6,7 +6,7 @@ local http  = require('wot/bindings/http')
 local modbus = require('./modbus')
 local camera  = require('./camera/camera')
 local bluetooth = require('./bluetooth')
-local button = require('./button')
+local device = require('./device')
 
 local exports = {}
 
@@ -76,7 +76,7 @@ local function startLedTimer()
             state = 'on'
         end
 
-        button.setLEDStatus("blue", state)
+        device.setLEDStatus("blue", state)
     end)
 end
 

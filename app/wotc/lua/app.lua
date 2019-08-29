@@ -6,27 +6,27 @@ local ssdpServer = require('ssdp/server')
 
 local client = require('./client')
 local log = require('./log')
-local led = require('./led')
+local device = require('./device')
 
 local exports = {}
 
 -- LED service
 function exports.led()
-    if (not led.isSupport()) then
+    if (not device.isSupport()) then
         print('Warn: Current device not support LED')
         return
     end
 
     setInterval(500, function()
         -- Work status LED
-        led.setLEDStatus("green", "toggle")
+        device.setLEDStatus("green", "toggle")
 
         -- Network status LED
         local ret = wot.isConnected()
         if ret then
-            led.setLEDStatus("yellow", "on")
+            device.setLEDStatus("yellow", "on")
         else
-            led.setLEDStatus("yellow", "off")
+            device.setLEDStatus("yellow", "off")
         end
     end)
 end
@@ -154,13 +154,9 @@ function exports.start()
     end
 end
 
-function exports.test()
-    local test = require('./test')
-    test.start()
-end
-
 function exports.init()
-    print("test init")
+    print("Usage: ")
+    print("  lpm wotc start")
 end
 
 app(exports)

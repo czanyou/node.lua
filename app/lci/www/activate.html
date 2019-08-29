@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Activate</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <link rel="shortcut icon" href="/favicon.ico?v=100003" type="image/x-icon" />
+  <link rel="stylesheet" href="css/style.css?v=100003" />
+  <script src="js/polyfill.js?v=100003"></script>
+  <script src="js/jquery.min.js?v=100003"></script>
+  <script src="js/vue.min.js?v=100003"></script>
+	<script src="js/common.js?v=100003"></script>
+	<style>
+    header#header { background: #0063B1; }
+    .header-brand { line-height: 64px; padding: 0 16px; color: #fff; font-weight: 500;
+      margin: 0; }
+
+    .form-content { padding: 0 16px; max-width: 600px; margin: 0 auto; }
+    .form-content .form-control { min-width: 220px; display: inline-block;
+      border-radius: 3px; font-size: 100%; line-height: 36px; }
+    .form-content .form-file { padding: 0; width: 220px; background: #eee; }
+    .form-content h3 { margin: 24px 0 24px; font-size: 110%; color: #333; 
+      font-weight: 500; }
+
+    .form-footer { margin-top: 16px; margin-bottom: 16px; padding-bottom: 16px;
+      border-bottom: 1px solid #ddd; }
+    .col-form-label { display: inline-block; min-width: 100px; }
+
+	@media screen and (min-width: 480px) {}
+	</style>
+</head>
+
+<body class="home-body">
+<div id="app">
+  <header id="header" class="header">
+    <div class="header-inner">
+      <label class="header-brand" id="header-brand">Activate</label>
+    </div>
+  </header>
+
+  <div class="form-content">
+
+    <div class="form-header">
+      <h3 class="form-title">System Config</h3>
+    </div>
+
+    <div class="form-body">
+      <form>
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">DID:</label>
+          <input type="text" name="did" :value="status.did" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">API Base URL:</label>
+          <input type="text" name="base" :value="status.base" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">Password:</label>
+          <input type="text" name="password" :value="status.password" class="form-control">
+        </div>
+      </form>
+    </div>
+
+    
+    <div class="form-header">
+      <h3 class="form-title">Activate Information</h3>
+    </div>
+
+    <div class="form-body">
+      <form>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">MQTT URI:</label>
+          <input type="text" name="mqtt" :value="status.mqtt" class="form-control" disabled>
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">Version:</label>
+          <input type="text" name="ip" :value="status.version" class="form-control" disabled>
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">MAC:</label>
+          <input type="text" name="ip" :value="status.mac" class="form-control" disabled>
+        </div>
+  
+      </form>
+    </div>
+
+    <div class="form-footer">
+      <div class="form-group">
+        <label for="recipient-name" class="col-form-label">&nbsp;</label>
+        <button type="button" class="btn btn-primary" onclick="onSystemActivate()">Activate</button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer id="footer"></footer>
+
+</div>
+<script>
+
+var $vueData = {
+  ip_mode: 'static',
+  ip: '192.168.1.12',
+  netmask: '255.255.255.0',
+  router: '192.168.1.1',
+  dns: '8.8.8.8 192.168.1.1',
+  status: {},
+  update: {},
+  firmware: {}
+}
+
+var config = {
+
+}
+
+var app = new Vue({
+	el: '#app',
+	data: $vueData
+})
+
+function onStatusRead() {
+	var url = "/system/read";
+	$.get(url, function(result) {
+    
+    setTimeout(function() {
+      // onStatusRead();
+    }, 2000)
+
+		if (!result || result.error) {
+			return;
+    }
+    
+    $vueData.status = result.system || {}
+    $vueData.update = result.update || {}
+    $vueData.firmware = result.firmware || {}
+	});
+
+	return false;
+}
+
+function onConfigRead() {
+	var url = "/config/read";
+	$.get(url, function(result) {
+		if (!result || result.error) {
+			return;
+    }
+    
+    $vueData.ip_mode = result.ip_mode
+    $vueData.ip = result.ip
+    $vueData.netmask = result.netmask
+    $vueData.router = result.router
+    $vueData.dns = result.dns
+
+    config.network = result
+	});
+
+	return false;
+}
+
+function onConfigWrite(callback) {
+	var url = "/config/write";
+
+	var data = {
+    router: $vueData.router,
+    dns: $vueData.dns,
+		netmask: $vueData.netmask,
+    ip: $vueData.ip,
+		ip_mode: $vueData.ip_mode
+	}
+
+	console.log(url, data)
+	$.post(url, data, function(result) {
+		if (!result || result.error) {
+      alert('Failed to save. Please try again later');
+
+		} else {
+      alert('Save successfully');
+		}
+  });
+  
+  return false;
+}
+
+function onSystemActivate() {
+  if (!window.confirm("Are you sure want to activate the device?")) {
+    return;
+  }
+  
+  var url = "/system/activate";
+	var data = {
+    did: $vueData.did,
+    base: $vueData.base,
+		password: $vueData.password
+	}
+
+	console.log(url, data)
+	$.post(url, data, function(result) {
+		if (!result || result.error) {
+      alert('Failed to activate. Please try again later');
+
+		} else {
+      alert('Activate successfully');
+      location.href = '/';
+		}
+  });
+  
+  return false;
+}
+
+$(document).ready(function () {
+
+  onStatusRead();
+});
+
+</script>
+
+</body>
+</html>

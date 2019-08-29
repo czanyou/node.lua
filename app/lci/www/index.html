@@ -105,6 +105,30 @@
     </div>
 
     <div class="form-header">
+      <h3 class="form-title">System Config</h3>
+    </div>
+
+    <div class="form-body">
+      <form>
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">DID:</label>
+          <input type="text" name="did" :value="status.did" class="form-control" disabled>
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">API Base URL:</label>
+          <input type="text" name="base" :value="status.base" class="form-control" disabled>
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">MQTT URI:</label>
+          <input type="text" name="mqtt" :value="status.mqtt" class="form-control" disabled>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="form-header">
       <h3 class="form-title">Frimware Update</h3>
     </div>
 

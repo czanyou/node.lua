@@ -1,13 +1,16 @@
 local fs = require("fs")
 local config  = require('app/conf')
 local app = require('app')
+local path = require('path')
+local util = require('util')
 
 local http = require('./http')
+local device = require('./device')
 
 local exports = {}
 
 local function checkButtonStatus(interval_ms)
-    if (not fs.existsSync('/sys/class/gpio/')) then
+    if (not device.isSupport()) then
         print('Error: gpio not exists')
         return
     end
@@ -22,33 +25,26 @@ local function checkButtonStatus(interval_ms)
 
     local function onNetworkReset()
         console.log("network reset")
-        -- local cmd = 'ifconfig eth0 ' .. DEFAULT_IP
-        -- os.execute(cmd)
-        local cmd = 'rm /usr/local/lnode/conf/network.conf'
+
+        local cmd = 'ifconfig eth0 ' .. DEFAULT_IP
         os.execute(cmd)
-        local cmd = 'cp /usr/local/lnode/conf/network.deault.conf /usr/local/lnode/conf/network.conf'
-        os.execute(cmd)
-        setTimeout(1000,function()
-            os.execute('reboot')
-        end)
     end
 
     local function onSystemReset()
         console.log("system reset")
 
+        local cmd = 'rm /usr/local/lnode/conf/network.conf'
+        os.execute(cmd)
+        local cmd = 'cp /usr/local/lnode/conf/network.deault.conf /usr/local/lnode/conf/network.conf'
+        os.execute(cmd)
+
+        setTimeout(1000, function()
+            os.execute('reboot')
+        end)
     end
 
     setInterval(interval_ms, function()
-        local filename = "/sys/class/gpio/gpio62/value"
-        local filedata, err = fs.readFileSync(filename)
-        if (not filedata) then
-            console.log('checkButtonStatus', err)
-            return
-        end
-
-        local state = tonumber(filedata)
-        -- console.log('state', state, filedata)
-
+        local state = device.getButtonState('reset')
         if (state == 0) then
             pressTime = pressTime + 1
             print('reset button down', pressTime)
@@ -65,7 +61,6 @@ local function checkButtonStatus(interval_ms)
                     networkReset = 1
 
                     onNetworkReset()
-                    -- os.execute("ifconfig eth0 192.168.8.104")
                 end
             end
 
@@ -167,6 +162,62 @@ function exports.start(...)
         exports.network()
         exports.button()
         exports.http(...)
+    end
+end
+
+-- 激活设备
+function exports.activate(newPassword, newSecret)
+    local nodePath = app.nodePath
+    console.log(nodePath)
+
+    -- password
+    if (not newPassword) then
+        return print('Invalid password')
+    end
+
+    newPassword = util.md5string('wot:' .. newPassword)
+    os.execute("lpm set password " .. newPassword)
+
+
+end
+
+-- 恢复出厂设置
+function exports.reset(newSecret)
+    local nodePath = app.nodePath
+
+    -- secret
+    if (newSecret) then
+        newSecret = util.md5string('wot:' .. newSecret)
+    else
+        newSecret = '60b495fa71c59a109d19b6d66ce18dc2'
+    end
+
+    local filename = path.join(nodePath, 'conf/lnode.key')
+    fs.writeFileSync(filename, newSecret)
+
+    -- telnet secret
+    local passwd = 'root:HCIq1D.VMsZRw:0:0::/root:/bin/sh\n'
+    fs.writeFileSync('/etc/passwd', passwd)
+end
+
+function exports.test(type)
+    if (type == 'button') then
+        local state, err = device.getButtonState()
+        console.log('RESET button: ', state or err)
+
+    elseif (type == 'button') then
+        device.setLEDStatus('green', 'on')
+        device.setLEDStatus('blue', 'on')
+        device.setLEDStatus('yellow', 'on')
+
+        setTimeout(1000, function()
+            device.setLEDStatus('green', 'off')
+            device.setLEDStatus('blue', 'off')
+            device.setLEDStatus('yellow', 'off')
+        end)
+    else
+        local test = require('./test')
+        test.start()
     end
 end
 
