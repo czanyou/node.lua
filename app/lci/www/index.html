@@ -166,6 +166,7 @@
         <label for="recipient-name" class="col-form-label">&nbsp;</label>
         <button type="button" class="btn btn-primary" onclick="onSystemUpdate()">Update</button>
         <button type="button" class="btn btn-primary" onclick="onSystemUpload()">Upload</button>
+        <button type="button" class="btn btn-primary" onclick="onSystemInstall()">Install</button>
       </div>
     </div>
 
@@ -177,7 +178,8 @@
       <label for="recipient-name" class="col-form-label">&nbsp;</label>
       <button type="button" class="btn btn-primary" onclick="onSystemUpgrade()">Upgrade</button>
       <button type="button" class="btn btn-primary" onclick="onSystemReboot()">Reboot</button>
-   
+      <button type="button" class="btn btn-primary" onclick="onSystemReset()">Factory Reset</button>
+      
     </div>
   </div>
 
@@ -211,20 +213,29 @@ var app = new Vue({
 	data: $vueData
 })
 
-function onStatusRead() {
+function onSystemRead() {
+  var updateStates = ['INIT', 'DOWNLOADING', 'DOWNLOAD_COMPLETED', 'UPDATING'];
+  var updateResult = ['INIT', 'SUCCESSFULLY', 'NOT_ENOUGH_FLASH', 'NOT_ENOUGH_RAM', 
+    'DISCONNECTED', 'VALIDATION_FAILED', 'UNSUPPORTED_FIRMWARE_TYPE', 'INVALID_URI', 
+    'FAILED', 'UNSUPPORTED_PROTOCOL'];
+
 	var url = "/system/read";
 	$.get(url, function(result) {
     
     setTimeout(function() {
-      // onStatusRead();
+      onSystemRead();
     }, 2000)
 
 		if (!result || result.error) {
 			return;
     }
-    
+
+    var update = result.update || {};
+    update.state  = updateStates[update.state]  || update.state;
+    update.result = updateResult[update.result] || update.result;
+       
     $vueData.status = result.system || {}
-    $vueData.update = result.update || {}
+    $vueData.update = update || {}
     $vueData.firmware = result.firmware || {}
 	});
 
@@ -296,9 +307,11 @@ function onSystemUpload() {
       contentType: 'multipart/form-data',
       success: function (result) {
         console.log(result)
+        alert('Upload Done')
       },
       error: function (result) {
         console.log(result)
+        alert('Upload Error. Please try again later')
       }
   })
 }
@@ -371,12 +384,61 @@ function onSystemReboot() {
   return false;
 }
 
+function onSystemReset() {
+  if (!window.confirm("Are you sure want to reset the device?")) {
+    return;
+  }
+  
+  var url = "/system/write";
+
+  var data = {
+    reset: 3
+  }
+
+  console.log(url, data)
+  $.post(url, data, function(result) {
+    if (!result || result.error) {
+      alert('Failed to reset. Please try again later');
+
+    } else {
+      alert('Device will reset in 3 seconds');
+      location.href = '/'
+    }
+  });
+
+  return false;
+}
+
+function onSystemInstall() {
+  if (!window.confirm("Are you sure want to install the uploaded firmware?")) {
+    return;
+  }
+  
+  var url = "/system/write";
+
+  var data = {
+    install: 3
+  }
+
+  console.log(url, data)
+  $.post(url, data, function(result) {
+    if (!result || result.error) {
+      alert('Failed to install. Please try again later');
+
+    } else {
+      alert('Firmware will install in 3 seconds');
+    }
+  });
+
+  return false;
+}
+
 $(document).ready(function () {
 	$('#logout_item').click(OnLogout);
 
   onConfigRead();
 
-  onStatusRead();
+  onSystemRead();
 });
 
 </script>

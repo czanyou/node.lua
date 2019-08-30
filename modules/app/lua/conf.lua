@@ -21,6 +21,7 @@ local fs   	= require("fs")
 local json  = require("json")
 local path 	= require("path")
 local util  = require('util')
+local luv  	= require("luv")
 
 local exports = {}
 
@@ -73,10 +74,39 @@ exports.Profile = Profile
 
 function Profile:initialize(filename, callback)
 	self.filename = filename
+	self.fileWatch = nil
+
 	self:reload(callback)
 
 	if (not self.settings) then
 		self.settings = {}
+	end
+end
+
+function Profile:startWatch()
+	if (self.fileWatch) then
+		return
+	end
+
+	-- console.log('start watch', self.filename)
+    local fileWatch = luv.new_fs_event()
+    fileWatch:start(self.filename, { stat = true }, function(...)
+		fileWatch:stop()
+		self.fileWatch = nil
+
+		setTimeout(500, function()
+			self:reload()
+			self:startWatch()
+		end)
+    end)
+
+	self.fileWatch = fileWatch
+end
+
+function Profile:stopWatch()
+	if (self.fileWatch) then
+		self.fileWatch:stop()
+		self.fileWatch = nil
 	end
 end
 

@@ -42,49 +42,73 @@
   <div class="form-content">
 
     <div class="form-header">
-      <h3 class="form-title">System Config</h3>
+      <h3 class="form-title">Activate Settings</h3>
     </div>
 
     <div class="form-body">
       <form>
         <div class="form-group">
           <label for="recipient-name" class="col-form-label">DID:</label>
-          <input type="text" name="did" :value="status.did" class="form-control">
+          <input type="text" name="did" v-model="system.did" class="form-control" required>
         </div>
 
         <div class="form-group">
           <label for="recipient-name" class="col-form-label">API Base URL:</label>
-          <input type="text" name="base" :value="status.base" class="form-control">
+          <input type="text" name="base" v-model="system.base" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">MQTT URI:</label>
+          <input type="text" name="mqtt" v-model="system.mqtt" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">Secret:</label>
+          <input type="text" name="secret" v-model="system.secret" class="form-control" required>
         </div>
 
         <div class="form-group">
           <label for="recipient-name" class="col-form-label">Password:</label>
-          <input type="text" name="password" :value="status.password" class="form-control">
+          <input type="text" name="password" v-model="system.password" class="form-control" required>
         </div>
       </form>
     </div>
 
-    
     <div class="form-header">
-      <h3 class="form-title">Activate Information</h3>
+      <h3 class="form-title">Cloud Information</h3>
     </div>
 
     <div class="form-body">
       <form>
 
         <div class="form-group">
-          <label for="recipient-name" class="col-form-label">MQTT URI:</label>
-          <input type="text" name="mqtt" :value="status.mqtt" class="form-control" disabled>
+          <label for="recipient-name" class="col-form-label">Username:</label>
+          <input type="text" name="username" v-model="cloud.username" class="form-control">
         </div>
 
         <div class="form-group">
+          <label for="recipient-name" class="col-form-label">Password:</label>
+          <input type="text" name="password" v-model="cloud.password" class="form-control">
+        </div>
+  
+      </form>
+    </div>
+    
+    <div class="form-header">
+      <h3 class="form-title">Device Information</h3>
+    </div>
+
+    <div class="form-body">
+      <form>
+
+        <div class="form-group">
           <label for="recipient-name" class="col-form-label">Version:</label>
-          <input type="text" name="ip" :value="status.version" class="form-control" disabled>
+          <input type="text" name="ip" :value="system.version" class="form-control" disabled>
         </div>
 
         <div class="form-group">
           <label for="recipient-name" class="col-form-label">MAC:</label>
-          <input type="text" name="ip" :value="status.mac" class="form-control" disabled>
+          <input type="text" name="ip" :value="system.mac" class="form-control" disabled>
         </div>
   
       </form>
@@ -105,13 +129,14 @@
 <script>
 
 var $vueData = {
-  ip_mode: 'static',
-  ip: '192.168.1.12',
-  netmask: '255.255.255.0',
-  router: '192.168.1.1',
-  dns: '8.8.8.8 192.168.1.1',
-  status: {},
+  did: '',
+  base: '',
+  mqtt: '',
+  secret: '',
+  password: '',
+  system: {},
   update: {},
+  cloud: {},
   firmware: {}
 }
 
@@ -124,82 +149,37 @@ var app = new Vue({
 	data: $vueData
 })
 
-function onStatusRead() {
-	var url = "/system/read";
-	$.get(url, function(result) {
-    
-    setTimeout(function() {
-      // onStatusRead();
-    }, 2000)
-
-		if (!result || result.error) {
-			return;
-    }
-    
-    $vueData.status = result.system || {}
-    $vueData.update = result.update || {}
-    $vueData.firmware = result.firmware || {}
-	});
-
-	return false;
-}
-
-function onConfigRead() {
-	var url = "/config/read";
+function onSystemRead() {
+	var url = "/system/activate";
 	$.get(url, function(result) {
 		if (!result || result.error) {
 			return;
     }
     
-    $vueData.ip_mode = result.ip_mode
-    $vueData.ip = result.ip
-    $vueData.netmask = result.netmask
-    $vueData.router = result.router
-    $vueData.dns = result.dns
-
-    config.network = result
+    $vueData.system = result.system || {}
 	});
 
 	return false;
-}
-
-function onConfigWrite(callback) {
-	var url = "/config/write";
-
-	var data = {
-    router: $vueData.router,
-    dns: $vueData.dns,
-		netmask: $vueData.netmask,
-    ip: $vueData.ip,
-		ip_mode: $vueData.ip_mode
-	}
-
-	console.log(url, data)
-	$.post(url, data, function(result) {
-		if (!result || result.error) {
-      alert('Failed to save. Please try again later');
-
-		} else {
-      alert('Save successfully');
-		}
-  });
-  
-  return false;
 }
 
 function onSystemActivate() {
-  if (!window.confirm("Are you sure want to activate the device?")) {
+	var data = {
+    did: $vueData.system.did,
+    base: $vueData.system.base,
+    secret: $vueData.system.secret,
+    mqtt: $vueData.system.mqtt,
+		password: $vueData.system.password
+  }
+  
+  if (!data.password) {
+    return alert('Invalid password')
+
+  } else if (!window.confirm("Are you sure want to activate the device?")) {
     return;
   }
   
   var url = "/system/activate";
-	var data = {
-    did: $vueData.did,
-    base: $vueData.base,
-		password: $vueData.password
-	}
-
-	console.log(url, data)
+	// console.log(url, data)
 	$.post(url, data, function(result) {
 		if (!result || result.error) {
       alert('Failed to activate. Please try again later');
@@ -215,7 +195,7 @@ function onSystemActivate() {
 
 $(document).ready(function () {
 
-  onStatusRead();
+  onSystemRead();
 });
 
 </script>

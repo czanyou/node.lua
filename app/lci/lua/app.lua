@@ -1,8 +1,9 @@
 local fs = require("fs")
-local config  = require('app/conf')
+local config = require('app/conf')
 local app = require('app')
 local path = require('path')
 local util = require('util')
+local luv = require('luv')
 
 local http = require('./http')
 local device = require('./device')
@@ -15,7 +16,7 @@ local function checkButtonStatus(interval_ms)
         return
     end
 
-    local TIMEOUT_NETWORK_RESET = 5
+    local TIMEOUT_NETWORK_RESET = 4
     local TIMEOUT_SYSTEM_RESET = 10
     local DEFAULT_IP = "192.168.8.12"
 
@@ -32,11 +33,7 @@ local function checkButtonStatus(interval_ms)
 
     local function onSystemReset()
         console.log("system reset")
-
-        local cmd = 'rm /usr/local/lnode/conf/network.conf'
-        os.execute(cmd)
-        local cmd = 'cp /usr/local/lnode/conf/network.deault.conf /usr/local/lnode/conf/network.conf'
-        os.execute(cmd)
+        exports.reset()
 
         setTimeout(1000, function()
             os.execute('reboot')
@@ -72,50 +69,69 @@ local function checkButtonStatus(interval_ms)
     end)
 end
 
-local function checkNetworkstatus(interval_ms)
+local function checkNetworkStatus(interval_ms)
+    local function updateNetworkAddress(config)
+        local interface = config.interface or 'eth0'
+
+        if (not config.ip) then
+            return
+        end
+
+        print("set config ip:" .. config.ip)
+        local cmd = "ifconfig " .. interface .. " " .. config.ip
+        if (config.netmask) then
+            cmd = cmd .. " netmask " .. config.netmask
+        end
+
+        console.log(cmd)
+        os.execute(cmd)
+    end
+
+    local function updateNetworkRouter(config)
+        local interface = config.interface or 'eth0'
+
+        if (not config.router) then
+            return
+        end
+
+        print("set router:" .. config.router)
+        local cmd = "ip route del dev " .. interface
+        for i = 1, 10 do
+            console.log(cmd)
+            if (not os.execute(cmd)) then
+                break
+            end
+        end
+
+        cmd = "ip route add default via " .. config.router .. " dev " .. interface
+        console.log(cmd)
+        os.execute(cmd)
+    end
+
+    local function updateNetworkNameServer(config)
+        if (not config.dns) then
+            return
+        end
+
+        print("set name servers:" .. config.dns)
+        local tokens = config.dns:split(' ')
+        local data = ''
+        for _, name in ipairs(tokens) do
+            data = data .. 'nameserver ' .. name .. "\n"
+        end
+
+        console.log(data)
+        local filename = '/etc/resolv.conf'
+        fs.writeFileSync(filename, data)
+    end
+
     local function applyNetworkConfig(config)
         console.log('network config:', config)
-        local interface = 'eth0'
+        config.interface = 'eth0'
 
-        -- ip & netmask
-        if (config.ip) then
-            console.log("set config ip:" .. config.ip)
-            local cmd = "ifconfig " .. interface .. " " .. config.ip
-            if (config.netmask) then
-                cmd = cmd .. " netmask " .. config.netmask
-            end
-
-            console.log(cmd)
-            os.execute(cmd)
-        end
-
-        -- router
-        if (config.router) then
-            local cmd = "ip route del dev " .. interface
-            for i = 1, 10 do
-                console.log(cmd)
-                if (not os.execute(cmd)) then
-                    break
-                end
-            end
-
-            cmd = "ip route add default via " .. config.router .. " dev " .. interface
-            console.log(cmd)
-            os.execute(cmd)
-        end
-
-        -- dns
-        if (config.dns) then
-            local tokens = config.dns:split(' ')
-            local data = ''
-            for index, name in ipairs(tokens) do
-                data = data .. 'nameserver ' .. name .. "\n"
-            end
-
-            console.log(data)
-            local filename = '/etc/resolv.conf'
-            fs.writeFileSync(filename, data)
-        end
+        updateNetworkAddress(config) -- ip & netmask
+        updateNetworkRouter(config)
+        updateNetworkNameServer(config) -- dns
     end
 
     local configUpdated = 1
@@ -146,6 +162,7 @@ local function checkNetworkstatus(interval_ms)
 end
 
 function exports.http(...)
+    print('did: ', app.get('did'))
     http.start(...)
 end
 
@@ -154,7 +171,7 @@ function exports.button(interval)
 end
 
 function exports.network(interval)
-    checkNetworkstatus((interval or 10) * 1000)
+    checkNetworkStatus((interval or 10) * 1000)
 end
 
 function exports.start(...)
@@ -166,7 +183,7 @@ function exports.start(...)
 end
 
 -- 激活设备
-function exports.activate(newPassword, newSecret)
+function exports.activate(newPassword)
     local nodePath = app.nodePath
     console.log(nodePath)
 
@@ -177,27 +194,24 @@ function exports.activate(newPassword, newSecret)
 
     newPassword = util.md5string('wot:' .. newPassword)
     os.execute("lpm set password " .. newPassword)
-
-
 end
 
 -- 恢复出厂设置
-function exports.reset(newSecret)
+function exports.reset()
+    os.execute('lpm unset default:activate')
+
     local nodePath = app.nodePath
+    local filename = path.join(nodePath, 'conf/network.default.conf')
+    local destname = path.join(nodePath, 'conf/network.conf')
 
-    -- secret
-    if (newSecret) then
-        newSecret = util.md5string('wot:' .. newSecret)
-    else
-        newSecret = '60b495fa71c59a109d19b6d66ce18dc2'
-    end
+    os.remove(destname)
+    fs.copyfileSync(filename, destname)
 
-    local filename = path.join(nodePath, 'conf/lnode.key')
-    fs.writeFileSync(filename, newSecret)
+    filename = path.join(nodePath, 'conf/default.conf')
+    destname = path.join(nodePath, 'conf/user.conf')
 
-    -- telnet secret
-    local passwd = 'root:HCIq1D.VMsZRw:0:0::/root:/bin/sh\n'
-    fs.writeFileSync('/etc/passwd', passwd)
+    os.remove(destname)
+    fs.copyfileSync(filename, destname)
 end
 
 function exports.test(type)
@@ -205,7 +219,7 @@ function exports.test(type)
         local state, err = device.getButtonState()
         console.log('RESET button: ', state or err)
 
-    elseif (type == 'button') then
+    elseif (type == 'led') then
         device.setLEDStatus('green', 'on')
         device.setLEDStatus('blue', 'on')
         device.setLEDStatus('yellow', 'on')
@@ -215,9 +229,12 @@ function exports.test(type)
             device.setLEDStatus('blue', 'off')
             device.setLEDStatus('yellow', 'off')
         end)
-    else
+    elseif (type == 'test') then
         local test = require('./test')
         test.start()
+
+    else
+        print("Usage: lpm lci test <button,led,test>")
     end
 end
 

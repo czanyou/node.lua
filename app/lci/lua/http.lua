@@ -42,23 +42,31 @@ local function getMacAddress()
     return util.bin2hex(item.mac)
 end
 
+local function loadProfile(name)
+    local nodePath = app.nodePath
+    local filename = path.join(nodePath, 'conf', name)
+    local data = fs.readFileSync(filename)
+    return json.parse(data)
+end
+
 -- 检查客户端是否已经登录 
 local function checkLogin(request, response)
     local pathname = request.uri.pathname or ''
     -- console.log(pathname)
 
     if (pathname == '/') or pathname:endsWith('.html') then
-        local activate = app.get('activate')
+        local default = loadProfile('default.conf')
+        local activate = default and default.activate
         if (not activate) then
             if (pathname ~= '/activate.html') then
                 response:set('Location', '/activate.html')
                 response:sendStatus(302)
                 return true
             end
-    
+
             return false
         end
-    
+
         if (pathname == '/login.html') then
             return false
         end
@@ -149,13 +157,19 @@ local function apiSystemWrite(request, response)
     local query = request.body
 
     if (query.update) then
-        os.execute("lpm update &")
+        os.execute("lpm update > /tmp/update.log &")
 
     elseif (query.upgrade) then
-        os.execute("lpm upgrade " .. query.upgrade .. " &")
+        os.execute("lpm upgrade " .. query.upgrade .. " > /tmp/upgrade.log &")
 
     elseif (query.reboot) then
         os.execute("reboot " .. query.reboot .. " &")
+
+    elseif (query.reset) then
+        os.execute("lpm lci reset &")
+
+    elseif (query.install) then
+        os.execute("lpm install /tmp/upload > /tmp/install.log &")
     end
 
     local result = { code = 0 }
@@ -165,7 +179,7 @@ end
 local function apiConfigRead(request, response)
     config.load("network", function(ret, profile)
         local userConfig = profile:get('static')
-        console.log(userConfig)
+        -- console.log(userConfig)
 
         response:json(userConfig)
     end)
@@ -204,19 +218,65 @@ local function apiConfigWrite(request, response)
     end)
 end
 
+local function apiSystemActivateRead(request, response)
+    local default = loadProfile('default.conf') or {}
+
+    local system = {
+        version = process.version,
+        mac = getMacAddress(),
+        base = default.base,
+        mqtt = default.mqtt,
+        did = default.did,
+        secret = default.secret
+    }
+
+    local status = {
+        system = system,
+    }
+
+    response:json(status)
+end
+
 local function apiSystemActivate(request, response)
     local query = request.body
 
-    config.load("user", function(ret, profile)
-        profile:set("did", query.did)
-        profile:set("base", query.base)
-        profile:set("password", query.password)
+    config.load("default", function(ret, profile)
+        if (profile:get('activate')) then
+            return response:json({ code = 400, error = 'Already activated' })
+        end
+
+        if (query.did) then
+            profile:set("did", query.did)
+        end
+
+        if (query.base) then
+            profile:set("base", query.base)
+        end
+
+        if (query.mqtt) then
+            profile:set("mqtt", query.mqtt)
+        end
+
+        if (query.secret) then
+            profile:set("secret", query.secret)
+        end
+
         profile:set("activate", 'true')
         profile:set("updated", Date.now())
         profile:commit()
 
-        local result = { code = 0 }
-        response:json(result)
+        local nodePath = app.nodePath
+        console.log(nodePath)
+
+        -- password
+        if (not query.password) then
+            return print('Invalid password')
+        end
+
+        local newPassword = util.md5string('wot:' .. query.password)
+        os.execute("lpm set password " .. newPassword)
+
+        response:json({ code = 0 })
     end)
 end
 
@@ -241,6 +301,8 @@ local function setConfigRoutes(app)
 
     app:get('/system/read', apiSystemRead);
     app:post('/system/write', apiSystemWrite);
+
+    app:get('/system/activate', apiSystemActivateRead);
     app:post('/system/activate', apiSystemActivate);
     app:post('/upload', apiUpload);
 end

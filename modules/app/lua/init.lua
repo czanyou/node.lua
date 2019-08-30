@@ -36,8 +36,6 @@ local exports = { meta = meta }
 -------------------------------------------------------------------------------
 -- misc
 
-local getSystemInformation
-
 local function getRootPath()
     if (exports.rootPath) then
         return exports.rootPath
@@ -109,16 +107,6 @@ local function getApplicationName(cmdline)
     return appName
 end
 
-function getSystemInformation()
-	if (exports.systemInformation) then
-		return exports.systemInformation
-	end
-
-    local filename = getRootPath() .. '/package.json'
-    exports.systemInformation = json.parse(fs.readFileSync(filename)) or {}
-    return exports.systemInformation
-end
-
 local function executeApplication(basePath, ...)
 	local filename = path.join(basePath, "lua", "app.lua")
 	if (not fs.existsSync(filename)) then
@@ -168,7 +156,8 @@ local function loadDefaultProfile()
         return exports._defaultProfile
     end
 
-	exports._defaultProfile = conf('default')
+    exports._defaultProfile = conf('default')
+    exports._defaultProfile:startWatch()
     return exports._defaultProfile
 end
 
@@ -177,7 +166,8 @@ local function loadUserProfile(reload)
         return exports._userProfile
     end
 
-	exports._userProfile = conf('user')
+    exports._userProfile = conf('user')
+    exports._userProfile:startWatch()
     return exports._userProfile
 end
 
@@ -236,7 +226,7 @@ function exports.get(key)
 
     local profile = loadUserProfile()
     local value = profile and profile:get(key)
-    if (value) then
+    if (value ~= nil) then
         return value
     end
 
