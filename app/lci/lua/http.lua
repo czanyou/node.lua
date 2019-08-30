@@ -5,6 +5,7 @@ local path 	= require('path')
 local json  = require('json')
 local express = require('express')
 local config  = require('app/conf')
+local rpc     = require('app/rpc')
 
 local exports = {}
 
@@ -150,7 +151,10 @@ local function apiSystemRead(request, response)
         firmware = json.parse(firmware)
     }
 
-    response:json(status)
+    rpc.call('wotc', 'status', {}, function(err, result)
+        status.register = result or err
+        response:json(status)
+    end)    
 end
 
 local function apiSystemWrite(request, response)

@@ -129,6 +129,30 @@
     </div>
 
     <div class="form-header">
+        <h3 class="form-title">Register Status</h3>
+      </div>
+  
+      <div class="form-body">
+        <form>
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">State:</label>
+            <input type="text" name="state" :value="register.state" class="form-control" disabled>
+          </div>
+  
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Expires:</label>
+            <input type="text" name="expires" :value="register.expires" class="form-control" disabled>
+          </div>
+  
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Updated:</label>
+            <input type="text" name="updated" :value="register.updated" class="form-control" disabled>
+          </div>
+  
+        </form>
+      </div>
+
+    <div class="form-header">
       <h3 class="form-title">Frimware Update</h3>
     </div>
 
@@ -188,11 +212,6 @@
 </div>
 <script>
 
-var items = [
-    { name: "weather", title: "Weather", description: "Weather information", },
-    { name: "product", title: "Product", description: "Product information", }
-]
-
 var $vueData = {
   ip_mode: 'static',
   ip: '192.168.1.12',
@@ -201,6 +220,7 @@ var $vueData = {
   dns: '8.8.8.8 192.168.1.1',
   status: {},
   update: {},
+  register: {},
   firmware: {}
 }
 
@@ -218,6 +238,7 @@ function onSystemRead() {
   var updateResult = ['INIT', 'SUCCESSFULLY', 'NOT_ENOUGH_FLASH', 'NOT_ENOUGH_RAM', 
     'DISCONNECTED', 'VALIDATION_FAILED', 'UNSUPPORTED_FIRMWARE_TYPE', 'INVALID_URI', 
     'FAILED', 'UNSUPPORTED_PROTOCOL'];
+  var registerStates = ['UNREGISTER', 'REGISTER']
 
 	var url = "/system/read";
 	$.get(url, function(result) {
@@ -233,8 +254,14 @@ function onSystemRead() {
     var update = result.update || {};
     update.state  = updateStates[update.state]  || update.state;
     update.result = updateResult[update.result] || update.result;
+
+    var register = result.register || {};
+    register.state  = registerStates[register.state]  || register.state;
+    register.updated = Date.now() - (Number.parseInt(register.updated) || 0);
+    register.updated = Math.floor(register.updated / 1000);
        
     $vueData.status = result.system || {}
+    $vueData.register = register || {}
     $vueData.update = update || {}
     $vueData.firmware = result.firmware || {}
 	});

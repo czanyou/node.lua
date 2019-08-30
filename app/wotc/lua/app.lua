@@ -100,20 +100,25 @@ function exports.rpc()
         return 0
     end
 
+    handler.status = function(handler)
+        -- console.log(app.gateway)
+        return app.gateway.register
+    end
+
     local server = rpc.server(name, handler, function(event, ...)
         console.log(event, ...)
     end)
 end
 
-function exports.ipc()
-    --[[
+function exports.ipc(type, ...)
     local name = 'wotc'
-    local params = {{ at = 100, level = 200 }}
-    rpc.call(name, 'test', params, function(err, result)
-        print('test', err, result)
+    local params = { ... }
+    rpc.call(name, type or 'test', params, function(err, result)
+        console.printr(type or 'test', result or '-', err or '')
     end)
-    --]]
+end
 
+function exports.test()
     local test = {
         read = 100,
         write = 100

@@ -110,22 +110,24 @@ function ExposedThing:initialize(thingInstance)
     end
 
     self.client = nil -- MQTT thing client
-    self.deviceId = nil
     self.handlers = {} -- Action handlers
     self.id = thingInstance.id -- Thing ID / DID
-    self.clientId = thingInstance.clientId
     self.instance = thingInstance or {} -- Thing instance
-    self.token = nil -- Access token
+    self.clientId = (thingInstance.name or 'lnode') .. '-' .. thingInstance.id
+
+    if (thingInstance.clientId) then
+        self.clientId = thingInstance.clientId
+        thingInstance.clientId = nil
+    end
 
     -- register state
-    self.registerExpires = REGISTER_EXPIRES -- Register expires
-    self.registerInterval = REGISTER_MIN_INTERVAL -- Register retry interval
-    self.registerState = STATE_UNREGISTER -- Register state
-    self.registerTime = 0    -- The last register send time
+    self.register = {}
+    self.register.expires = REGISTER_EXPIRES -- Register expires
+    self.register.interval = REGISTER_MIN_INTERVAL -- Register retry interval
+    self.register.state = STATE_UNREGISTER -- Register state
+    self.register.time = 0    -- The last register send time
+    self.register.updated = 0 -- Register updated time
     self.registerTimer = nil -- The register timer
-    self.registerUpdated = 0 -- Register updated time
-
-    thingInstance.clientId = nil
 end
 
 function ExposedThing:_setHandler(type, name, handler)
@@ -143,33 +145,33 @@ function ExposedThing:_onRegister()
         return
     end
 
-    -- console.log('register', self.registerState, self.registerInterval, self.registerExpires, self.registerUpdated)
+    -- console.log('register', self.register.state, self.register.interval, self.register.expires, self.register.updated)
     local now = Date.now()
 
-    if (not self.registerState) then
+    if (not self.register.state) then
         -- init
-        self.registerState = STATE_UNREGISTER
-        self.registerTime = now
+        self.register.state = STATE_UNREGISTER
+        self.register.time = now
         client:sendRegister(self.id, self)
 
-    elseif (self.registerState == STATE_REGISTER) then
+    elseif (self.register.state == STATE_REGISTER) then
         -- register
-        local span = (now - (self.registerUpdated or 0)) / 1000
-        local expires = self.registerExpires or REGISTER_EXPIRES
+        local span = (now - (self.register.updated or 0)) / 1000
+        local expires = self.register.expires or REGISTER_EXPIRES
         -- console.log('span', span, expires)
         if (span >= expires) or (span <= -expires) then
-            self.registerTime = now
+            self.register.time = now
             client:sendRegister(self.id, self)
         end
 
     else
         -- unregister
         local span = math.abs(now - (self.registerTime or 0)) / 1000
-        local registerInterval = self.registerInterval or 2
+        local registerInterval = self.register.interval or 2
         -- console.log('span', span, registerInterval)
         if (span >= registerInterval) then
-            self.registerInterval = math.min(REGISTER_EXPIRES, 2 * registerInterval)
-            self.registerTime = now
+            self.register.interval = math.min(REGISTER_EXPIRES, 2 * registerInterval)
+            self.register.time = now
 
             client:sendRegister(self.id, self)
         end
@@ -183,18 +185,17 @@ function ExposedThing:_onRegisterResult(response)
 
     local result = response.result
     if (result and result.code and result.error) then
-        self.registerState = STATE_UNREGISTER
+        self.register.state = STATE_UNREGISTER
 
     else
-        self.registerState = STATE_REGISTER
-        self.registerInterval = REGISTER_MIN_INTERVAL
-
         local data = result.data or {}
 
-        self.token = data.token
-        self.deviceId = data.deviceId
-        self.registerExpires = data.expires or REGISTER_EXPIRES
-        self.registerUpdated = Date.now()
+        self.register.state = STATE_REGISTER
+        self.register.interval = REGISTER_MIN_INTERVAL
+        self.register.token = data.token
+        self.register.id = data.id
+        self.register.expires = data.expires or REGISTER_EXPIRES
+        self.register.updated = Date.now()
     end
 
     self:emit('register', response)
@@ -350,14 +351,14 @@ function ExposedThing:destroy()
 
     self.instance = nil
     self.client = nil
-    self.token = nil
-
-    self.registerExpires = REGISTER_EXPIRES
-    self.registerInterval = REGISTER_MIN_INTERVAL
-    self.registerState = STATE_UNREGISTER
-    self.registerTime = 0
+    
+    self.register.token = nil
+    self.register.expires = REGISTER_EXPIRES
+    self.register.interval = REGISTER_MIN_INTERVAL
+    self.register.state = STATE_UNREGISTER
+    self.register.time = 0
+    self.register.updated = 0
     self.registerTimer = nil
-    self.registerUpdated = 0
 
     setImmediate(function()
         promise:resolve()
@@ -434,8 +435,6 @@ function ThingClient:processMessage(message, topic)
         local data = message.data
         local thing = self.things[message.did]
         if (data and thing) then
-            thing.token = data.token
-
             thing.register = {}
             thing.register.id = data.id
             thing.register.token = data.token
@@ -593,7 +592,6 @@ end
 function ThingClient:sendEvent(events, thing, callback)
     local message = {
         did = thing.id,
-        token = thing.token,
         type = 'event',
         data = events
     }
@@ -604,7 +602,6 @@ end
 function ThingClient:sendStream(streams, thing)
     local message = {
         did = thing.id,
-        token = thing.token,
         type = 'stream',
         data = streams
     }

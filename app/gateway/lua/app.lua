@@ -30,11 +30,11 @@ local function getThingsStatus()
         data.deviceId = thing.deviceId
 
         data.register = {}
-        data.register.expires = thing.registerExpires
-        data.register.interval = thing.registerInterval
-        data.register.state = thing.registerState
-        data.register.time = thing.registerTime
-        data.register.updated = thing.registerUpdated
+        data.register.expires = thing.register.expires
+        data.register.interval = thing.register.interval
+        data.register.state = thing.register.state
+        data.register.time = thing.register.time
+        data.register.updated = thing.register.updated
 
         if (thing.getStatus) then
             thing.status = thing:getStatus()
