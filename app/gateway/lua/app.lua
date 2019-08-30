@@ -147,17 +147,20 @@ function exports.modbus()
     for _, options in ipairs(list) do
         options.gateway = did
         options.mqtt = mqtt
-        options.secret = secret
+
+        if (not options.secret) then
+            options.secret = secret
+        end
 
         local config = peripherals[options.did]
         if (config) then
-            options.properties = config.p
-            options.modbus = config.f
+            options.properties = config.properties or config.p
+            options.forms = config.forms or config.f
         end
 
         console.log(options);
 
-        local thing, err = modbus.createModbus(options)
+        local thing, err = modbus.createModbusThing(options)
         if (err) then
             console.log('createThing', err)
         end

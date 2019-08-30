@@ -68,6 +68,8 @@ local function modbusThread()
         local deviceName = options.device or "/dev/ttyAMA1"
         local baudrate = options.baudrate
 
+        console.log('getModbusDevice', deviceName, baudrate);
+
         local device = modbus.new(deviceName, baudrate)
         if (device) then
             device:connect()
@@ -168,9 +170,11 @@ local function modbusThread()
             return count, result
         end
 
-        local modbusDevice = getModbusDevice(modbusOptions)
         if (not modbusDevice) then
-            return
+            modbusDevice = getModbusDevice(modbusOptions)
+            if (not modbusDevice) then
+                return
+            end
         end
 
         -- properties
@@ -188,6 +192,8 @@ local function modbusThread()
 
                 -- 读取寄存器
                 local data = modbusDevice:readRegisters(register, quantity)
+                -- console.log(register, quantity, data)
+
                 if (data ~= nil) then
                     local value = getPropertyValue(property, data)
                     if (value ~= nil) then
@@ -228,13 +234,13 @@ local function modbusThread()
             end
         end
 
-        return count, result
+        return result
     end
 
     local name = 'modbus'
 
     local handler = {}
-    function handler:test(params)
+    function handler:send(params)
         return onModbusAction(params)
     end
 
@@ -248,10 +254,6 @@ local function modbusThread()
         modbusDevice:close()
         modbusDevice = nil
     end
-
-    -- console.log(result)
-    -- local resultString = cjson.encode(result)
-    -- return count, resultString
 end
 
 local function startModbusThread()
@@ -264,7 +266,7 @@ end
 
 local function sendModbusAction(action, callback)
     local name = 'modbus'
-    rpc.call(name, 'test', { action }, callback)
+    rpc.call(name, 'send', { action }, callback)
 end
 
 -- ----------------------------------------------------------------------------
@@ -419,7 +421,7 @@ local function initModbusProperties(options, webThing)
 
         setInterval(params.interval * 1000, function()
             sendModbusAction(params, function(error, result)
-                if (result) then
+                if (result and next(result)) then
                     webThing:sendStream(result)
                 end
             end)
@@ -438,7 +440,7 @@ local function initModbusProperties(options, webThing)
 
         setInterval(params.interval * 1000, function()
             sendModbusAction(params, function(error, result)
-                if (result) then
+                if (result and next(result)) then
                     webThing:sendStream(result)
                 end
             end)
@@ -466,7 +468,7 @@ local function initModbusProperties(options, webThing)
     local properties = {}
 
     -- Common options
-    local common = options.modbus or {}
+    local common = options.forms or {}
     webThing.modbus = {}
     webThing.modbus.baudrate = common.baudrate or common.b or 9600
     webThing.modbus.device   = common.device or common.n
@@ -511,7 +513,7 @@ end
 -- - options.did
 -- - options.name
 -- - options.secret
-local function createModbusThing(options)
+function exports.createModbusThing(options)
     if (not options) then
         return nil, 'need options'
 
@@ -553,8 +555,6 @@ local function createModbusThing(options)
 
     return webThing
 end
-
-exports.createModbus = createModbusThing
 
 function exports.isDataReady()
     return dataReady
