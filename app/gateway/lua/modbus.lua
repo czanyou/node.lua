@@ -163,11 +163,10 @@ local function modbusThread()
     local modbusDevice = nil;
 
     local function onModbusAction(modbusOptions)
-        local count = 0
         local result = {}
 
         if (not modbusOptions) then
-            return count, result
+            return result
         end
 
         if (not modbusDevice) then
@@ -177,29 +176,44 @@ local function modbusThread()
             end
         end
 
+        local function readRegister(register, quantity)
+            if (not register) or (register < 0) or (register > 65535) then
+                return
+            end
+
+            if (not quantity) or (quantity <= 0) then
+                return
+            end
+
+            if (modbusOptions.type == 0x01) then
+                register = register * 256 + modbusOptions.switch - 1
+            end
+
+            -- 读取寄存器
+            local data = modbusDevice:readRegisters(register, quantity)
+            console.log(register, quantity, data)
+            console.printBuffer(data or '')
+
+            return data
+        end
+
         -- properties
         local properties = modbusOptions.properties
         for name, property in pairs(properties) do
-            local register = property.register
-            local quantity = property.quantity
+            local register = tonumber(property.register)
+            local quantity = tonumber(property.quantity) or 1
+            local address = property.address or modbusOptions.address or 1
+            -- console.log('address', address)
 
-            modbusDevice:setSlave(property.address or modbusOptions.address or 1)
+            modbusDevice:setSlave(address)
 
-            if (property.code == 0x03 and register >= 0 and quantity >= 1) then
-                if (modbusOptions.type == 0x01) then
-                    register = register * 256 + modbusOptions.switch - 1
-                end
-
-                -- 读取寄存器
-                local data = modbusDevice:readRegisters(register, quantity)
-                -- console.log(register, quantity, data)
-
+            if (property.code == 0x03) then
+                local data = readRegister(register, quantity)
                 if (data ~= nil) then
                     local value = getPropertyValue(property, data)
                     if (value ~= nil) then
                         property.value = value
                         result[name] = value
-                        count = count + 1
                     end
                 end
 
@@ -217,7 +231,6 @@ local function modbusThread()
                         property.value = false
                         result[name] = false
                     end
-                    count = count + 1
                 end
 
             elseif (property.code == 0x05) then
@@ -228,7 +241,6 @@ local function modbusThread()
                 --     if (value == 1) then
                 --         property.value = "on"
                 --         result[name] = "on"
-                --         count = count + 1
                 --     end
                 -- end
             end
@@ -473,7 +485,7 @@ local function initModbusProperties(options, webThing)
     webThing.modbus.baudrate = common.baudrate or common.b or 9600
     webThing.modbus.device   = common.device or common.n
     webThing.modbus.interval = common.interval or common.i or 60
-    webThing.modbus.slave    = common.address or common.d or 2
+    webThing.modbus.slave    = common.address or common.d or 1
     webThing.modbus.switch   = common.switch or 2
     webThing.modbus.timeout  = common.timeout or common.t or 500
     webThing.modbus.type     = common.type or 0
