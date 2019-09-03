@@ -282,4 +282,9 @@ function exports.crond()
     shellExecute(cmdline)
 end
 
+function exports.watchdog()
+    local cmdline = 'killall watchdog; watchdog /dev/watchdog'
+    shellExecute(cmdline)
+end
+
 app(exports)

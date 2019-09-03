@@ -55,3 +55,7 @@ sleep 1
 /usr/local/lnode/bin/lpm start gateway
 /usr/local/lnode/bin/lpm start lpm
 
+# watchdog
+insmod /ko/sys_config.ko
+insmod /ko/hi_osal.ko mmz=anonymous,0,0x82000000,32M anony=1
+insmod /ko/hi3516cv300_wdt.ko
