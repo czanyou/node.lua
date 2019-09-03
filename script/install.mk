@@ -43,8 +43,9 @@ define sdk_install
 	@$(call make_link,${NODE_ROOTPATH}/bin/lnode,${LOCAL_BIN_PATH}/lnode)
 	@$(call make_link,${NODE_ROOTPATH}/bin/lua,${LOCAL_BIN_PATH}/lua)
 
-	@$(call make_app_bin_link,lpm)
-	@$(call make_app_bin_link,lbuild)
+	@$(call make_link,${NODE_ROOTPATH}/bin/lnode,${LOCAL_BIN_PATH}/lpm)
+	@$(call make_link,${NODE_ROOTPATH}/bin/lnode,${LOCAL_BIN_PATH}/lbuild)
+	@$(call make_link,${NODE_ROOTPATH}/bin/lnode,${LOCAL_BIN_PATH}/lci)
 
 	@$(call make_module_lua_links)
 

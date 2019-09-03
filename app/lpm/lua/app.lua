@@ -1,14 +1,15 @@
 local app       = require('app')
 local path      = require('path')
 local fs        = require('fs')
+local lpm       = require('lpm')
 
 -------------------------------------------------------------------------------
 -- exports
 
-local exports = {}
+local exports = lpm
 
 -- 返回所有需要后台运行的应用
-function exports.getApplicationNames()
+local function getApplicationNames()
     local configPath = path.join(app.nodePath, 'conf/process.conf')
     local filedata = fs.readFileSync(configPath)
     local names = {}
@@ -35,7 +36,7 @@ end
 
 -- 检查应用进程，自动重启意外退出的应用程序
 function exports.check()
-    local names = exports.getApplicationNames()
+    local names = getApplicationNames()
     local procs = app.processes()
     if (not procs) then
         return
@@ -52,7 +53,7 @@ function exports.check()
 end
 
 -- 启动应用进程守护程序
-function exports.start(interval, ...)
+function exports.run(interval, ...)
     print("Start lpm...")
 
     -- Check lock

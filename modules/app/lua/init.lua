@@ -336,6 +336,10 @@ function exports.daemon(name)
     updateProcessList(name)
 
     local cmdline  = "lnode -d " .. filename .. " start"
+    if (name == 'lpm') then
+        cmdline  = "lnode -d " .. filename .. " run"
+    end
+
     --local cmdline  = "lpm " .. name .. " start &"
 	print('start and daemonize: ' .. name)
     os.execute(cmdline)

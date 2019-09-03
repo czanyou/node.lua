@@ -395,7 +395,7 @@ System information:
 	]], packageInfo.target, packageInfo.version))
 end
 
-function exports.usage()
+function exports.init()
 	local appPath = path.join( app.rootPath, 'app')
 	local fmt = [[
 

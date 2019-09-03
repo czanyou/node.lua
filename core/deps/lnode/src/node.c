@@ -180,7 +180,13 @@ static void lnode_vm_release(lua_State* L) {
   	lua_close(L);
 }
 
-static int handle_luainit(lua_State *L) {
+static int lnode_lua_init(lua_State *L, int hasIgnore) {
+    if (hasIgnore != 0) {
+        lua_pushboolean(L, 1); /* signal for libraries to ignore env. vars. */
+		lua_setfield(L, LUA_REGISTRYINDEX, "LUA_NOENV");
+		return LUA_OK;
+    }
+
 	const char *name = "=" LUA_INITVARVERSION;
 	const char *init = getenv(name + 1);
 	if (init == NULL) {
@@ -201,11 +207,48 @@ static int handle_luainit(lua_State *L) {
     }
 }
 
+int run_applet(int argc, char* argv[]) {
+	lua_State* L = NULL;
+
+	int res = 0;
+
+	char buffer[PATH_MAX];
+	memset(buffer, 0, PATH_MAX);
+
+	// Hooks in libuv that need to be done in main.
+	argv = uv_setup_args(argc, argv);
+
+	// Create the lua state.
+	L = luaL_newstate();
+	if (L == NULL) {
+		fprintf(stderr, "luaL_newstate has failed\n");
+		return 1;
+	}
+
+	luaL_openlibs(L);  	// Add in the lua standard libraries
+	lnode_openlibs(L); 	// Add in the lua ext libraries
+	lnode_create_arg_table(L, argv, argc, 0);
+
+	luv_set_thread_cb(lnode_vm_acquire, lnode_vm_release);
+
+	lnode_path_init(L);
+
+	sprintf(buffer, "require('init'); require('%s/app');", argv[0]);
+	res = lnode_call_script(L, buffer, argv[0]);
+
+	lnode_call_script(L, "runLoop()", "=(C run)");
+	lnode_call_script(L, "process:emit('exit')\n", "=(C exit)");
+
+	lnode_vm_release(L);
+
+	return res;
+}
+
 int main(int argc, char* argv[]) {
 	lua_State* L 	= NULL;
-	int index 		= 0;
+
 	int res 		= 0;
-	int script 		= 1;
+	int arg_index   = 1;
 	int has_eval	= 0;
 	int has_info	= 0;
 	int has_script 	= 0;
@@ -218,35 +261,38 @@ int main(int argc, char* argv[]) {
 
 #ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);	// 13) 管道破裂: Write a pipe that does not have a read port
-
 #endif
 	
+	// applet
+	if (strcmp(argv[0], "lnode") != 0) {
+		return run_applet(argc, argv);
+	}
+
 	// Hooks in libuv that need to be done in main.
 	argv = uv_setup_args(argc, argv);
 
 	// while (argc >= 2) {
-    for (i = 1; argv[i] != NULL; i++)
-	{
+    for (i = 1; argv[i] != NULL; i++) {
 		const char* option = argv[i];
 
 		if (strcmp(option, "-d") == 0) {
-            has_deamon = 1; // Runs the current script in the background
+            has_deamon = i; // Runs the current script in the background
 
 		} else if (strcmp(option, "-p") == 0) {
-			has_info = 1;
+			has_info = i;
 
 		} else if (strcmp(option, "-e") == 0) {
-			has_eval = 1;
             i++;
 
             if (argv[i] == NULL || argv[i][0] == '-') {
-                has_error = 1;
+                has_error = i;
                 printf("invalid execute arg\r\n");
                 break;
             }
 
+			has_eval = i;
+
 		} else if (strcmp(option, "-l") == 0) {
-			has_require = 1;
             i++;
 
             if (argv[i] == NULL || argv[i][0] == '-') {
@@ -255,18 +301,19 @@ int main(int argc, char* argv[]) {
                 break;
             }
 
+			has_require = i;
+
 		} else if (strcmp(option, "-v") == 0) {
-            has_version = 1;
+            has_version = i;
 
         } else if (strcmp(option, "-E") == 0) {
-            has_ignore = 1;    
+            has_ignore = i;    
 
 		} else if (strcmp(option, "-") == 0) {
-			// Read Lua script content from the pipeline
-			has_script = 2;
+			has_script = i; // Read Lua script content from the pipeline
 
         } else if (strcmp(option, "--") == 0) {
-            script = i + 1;
+            arg_index = i + 1;
             break;
 
 		} else if (option[0] == '-') {
@@ -278,27 +325,19 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-        script = i + 1;
+        arg_index = i + 1;
 	}
 
     if (has_error) {
         return -107;
+
+    } else if (has_version) {
+        return lnode_print_version();
     }
 
     if (has_deamon) {
         lnode_run_as_deamon();
     }
-
-    if (has_version) {
-        lnode_print_version();
-    }
-
-	// filename
-	const char* filename = NULL;
-	if ((script > 0) && (script < argc)) {
-		filename = argv[script];
-		has_script = 1;
-	}
 
 	char pathBuffer[PATH_MAX];
 	memset(pathBuffer, 0, PATH_MAX);
@@ -310,33 +349,32 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
+	// init
 	luaL_openlibs(L);  	// Add in the lua standard libraries
 	lnode_openlibs(L); 	// Add in the lua ext libraries
-	lnode_create_arg_table(L, argv, argc, script);
-
-	luv_set_thread_cb(lnode_vm_acquire, lnode_vm_release);
+	lnode_create_arg_table(L, argv, argc, arg_index);
 
 	lnode_path_init(L);
+	lnode_dolibrary(L, "init");
 
-    if (has_ignore == 0) {
-        handle_luainit(L);
-        
-    } else {
-        lua_pushboolean(L, 1); /* signal for libraries to ignore env. vars. */
-		lua_setfield(L, LUA_REGISTRYINDEX, "LUA_NOENV");
-    }
+    lnode_lua_init(L, has_ignore);
 
 	if (has_info) {
-		lnode_print_info(L);
-    }
+		res = lnode_print_info(L);
+		lnode_call_script(L, "runLoop()", "=(C run)");
+		return res;
+	}
 
-    lnode_dolibrary(L, "init");
-
+	luv_set_thread_cb(lnode_vm_acquire, lnode_vm_release);
+	
+	// call eval or require
 	if (has_eval || has_require) {
-        for (i = 1; argv[i] != NULL; i++) {
+        for (i = 1; i <= arg_index; i++) {
             const char* option = argv[i];
+			if (option == NULL) {
+				break;
 
-            if (strcmp(option, "-e") == 0) {
+			} else if (strcmp(option, "-e") == 0) {
                 i++;
 
                 const char* text = argv[i];
@@ -351,17 +389,25 @@ int main(int argc, char* argv[]) {
         }
     }
 
+	// filename
+	const char* filename = NULL;
+	if ((arg_index > 0) && (arg_index < argc)) {
+		filename = argv[arg_index];
+		has_script = arg_index;
+	}
+
 	if (has_script) {
 		res = lnode_dofile(L, filename);
-
-	} else if (script <= 1) {
+		
+	} else {
 		lnode_print_version();
 		lnode_print_usage();
 	}
 
+	// exit
 	lnode_call_script(L, "runLoop()", "=(C run)");
 	lnode_call_script(L, "process:emit('exit')\n", "=(C exit)");
-
 	lnode_vm_release(L);
+
 	return res;
 }
