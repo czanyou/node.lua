@@ -68,6 +68,8 @@ local function modbusThread()
         local deviceName = options.device or "/dev/ttyAMA1"
         local baudrate = options.baudrate
 
+        console.log('getModbusDevice', deviceName, baudrate);
+
         local device = modbus.new(deviceName, baudrate)
         if (device) then
             device:connect()
@@ -161,39 +163,57 @@ local function modbusThread()
     local modbusDevice = nil;
 
     local function onModbusAction(modbusOptions)
-        local count = 0
         local result = {}
 
         if (not modbusOptions) then
-            return count, result
+            return result
         end
 
-        local modbusDevice = getModbusDevice(modbusOptions)
         if (not modbusDevice) then
-            return
+            modbusDevice = getModbusDevice(modbusOptions)
+            if (not modbusDevice) then
+                return
+            end
+        end
+
+        local function readRegister(register, quantity)
+            if (not register) or (register < 0) or (register > 65535) then
+                return
+            end
+
+            if (not quantity) or (quantity <= 0) then
+                return
+            end
+
+            if (modbusOptions.type == 0x01) then
+                register = register * 256 + modbusOptions.switch - 1
+            end
+
+            -- 读取寄存器
+            local data = modbusDevice:readRegisters(register, quantity)
+            console.log(register, quantity, data)
+            console.printBuffer(data or '')
+
+            return data
         end
 
         -- properties
         local properties = modbusOptions.properties
         for name, property in pairs(properties) do
-            local register = property.register
-            local quantity = property.quantity
+            local register = tonumber(property.register)
+            local quantity = tonumber(property.quantity) or 1
+            local address = property.address or modbusOptions.address or 1
+            -- console.log('address', address)
 
-            modbusDevice:setSlave(property.address or modbusOptions.address or 1)
+            modbusDevice:setSlave(address)
 
-            if (property.code == 0x03 and register >= 0 and quantity >= 1) then
-                if (modbusOptions.type == 0x01) then
-                    register = register * 256 + modbusOptions.switch - 1
-                end
-
-                -- 读取寄存器
-                local data = modbusDevice:readRegisters(register, quantity)
+            if (property.code == 0x03) then
+                local data = readRegister(register, quantity)
                 if (data ~= nil) then
                     local value = getPropertyValue(property, data)
                     if (value ~= nil) then
                         property.value = value
                         result[name] = value
-                        count = count + 1
                     end
                 end
 
@@ -211,7 +231,6 @@ local function modbusThread()
                         property.value = false
                         result[name] = false
                     end
-                    count = count + 1
                 end
 
             elseif (property.code == 0x05) then
@@ -222,19 +241,18 @@ local function modbusThread()
                 --     if (value == 1) then
                 --         property.value = "on"
                 --         result[name] = "on"
-                --         count = count + 1
                 --     end
                 -- end
             end
         end
 
-        return count, result
+        return result
     end
 
     local name = 'modbus'
 
     local handler = {}
-    function handler:test(params)
+    function handler:send(params)
         return onModbusAction(params)
     end
 
@@ -248,10 +266,6 @@ local function modbusThread()
         modbusDevice:close()
         modbusDevice = nil
     end
-
-    -- console.log(result)
-    -- local resultString = cjson.encode(result)
-    -- return count, resultString
 end
 
 local function startModbusThread()
@@ -264,7 +278,7 @@ end
 
 local function sendModbusAction(action, callback)
     local name = 'modbus'
-    rpc.call(name, 'test', { action }, callback)
+    rpc.call(name, 'send', { action }, callback)
 end
 
 -- ----------------------------------------------------------------------------
@@ -419,7 +433,7 @@ local function initModbusProperties(options, webThing)
 
         setInterval(params.interval * 1000, function()
             sendModbusAction(params, function(error, result)
-                if (result) then
+                if (result and next(result)) then
                     webThing:sendStream(result)
                 end
             end)
@@ -438,7 +452,7 @@ local function initModbusProperties(options, webThing)
 
         setInterval(params.interval * 1000, function()
             sendModbusAction(params, function(error, result)
-                if (result) then
+                if (result and next(result)) then
                     webThing:sendStream(result)
                 end
             end)
@@ -466,12 +480,12 @@ local function initModbusProperties(options, webThing)
     local properties = {}
 
     -- Common options
-    local common = options.modbus or {}
+    local common = options.forms or {}
     webThing.modbus = {}
     webThing.modbus.baudrate = common.baudrate or common.b or 9600
     webThing.modbus.device   = common.device or common.n
     webThing.modbus.interval = common.interval or common.i or 60
-    webThing.modbus.slave    = common.address or common.d or 2
+    webThing.modbus.slave    = common.address or common.d or 1
     webThing.modbus.switch   = common.switch or 2
     webThing.modbus.timeout  = common.timeout or common.t or 500
     webThing.modbus.type     = common.type or 0
@@ -511,7 +525,7 @@ end
 -- - options.did
 -- - options.name
 -- - options.secret
-local function createModbusThing(options)
+function exports.createModbusThing(options)
     if (not options) then
         return nil, 'need options'
 
@@ -553,8 +567,6 @@ local function createModbusThing(options)
 
     return webThing
 end
-
-exports.createModbus = createModbusThing
 
 function exports.isDataReady()
     return dataReady

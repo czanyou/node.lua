@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # network
-lnode -l lci/mac
+lnode -l lci/mac &
 ifconfig eth0 192.168.8.12 netmask 255.255.255.0
 route add default gw 192.168.8.1
 
@@ -9,6 +9,9 @@ hostname dt02
 
 udhcpc -b -i eth0 -p /var/run/udhcpc.pid &
 telnetd &
+
+# ntp client
+ntpd -p ntp.ubuntu.com &
 
 # tmpfs
 mount -t tmpfs -o size=16m tmpfs /tmp/
@@ -55,5 +58,3 @@ sleep 1
 /usr/local/lnode/bin/lpm start gateway
 /usr/local/lnode/bin/lpm start lpm
 
-# ntp client
-ntpd -p ntp.ubuntu.com &

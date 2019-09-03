@@ -86,29 +86,36 @@ static const uint8_t table_crc_lo[] = {
     0x43, 0x83, 0x41, 0x81, 0x80, 0x40
 };
 
-FILE * dir_fp;
+FILE* dir_fp = NULL;
 
 static FILE *dir_open()
 {  
     const char * dir_gpio_val_path = "/sys/class/gpio/gpio24/value";
     const char * dir_gpio_mode = "w";
-    dir_fp = fopen("/sys/class/gpio/gpio24/value", "w");
+    if (dir_fp == NULL) {
+        dir_fp = fopen("/sys/class/gpio/gpio24/value", "w");
+    }
+
     return dir_fp;
 }
 
 static void dir_read()
 {
     char *write_cmd = "0";
-    fwrite(write_cmd,1,strlen(write_cmd),dir_fp);
-    fflush(dir_fp);
+    if (dir_fp) {
+        fwrite(write_cmd, 1, strlen(write_cmd), dir_fp);
+        fflush(dir_fp);
+    }
 }
 
 static void dir_write()
 {
     char *write_cmd = "1";
-    fwrite(write_cmd,1,strlen(write_cmd),dir_fp);
-    fflush(dir_fp);
-    usleep(50);  
+    if (dir_fp) {
+        fwrite(write_cmd, 1, strlen(write_cmd), dir_fp);
+        fflush(dir_fp);
+        usleep(50);
+    }
 }
 
 /* Define the slave ID of the remote device to talk in master mode or set the
