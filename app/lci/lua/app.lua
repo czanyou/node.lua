@@ -268,22 +268,34 @@ local function shellExecute(cmdline)
 end
 
 function exports.ntp()
-    local cmdline = 'killall ntpd; ntpd -p ntp.ubuntu.com'
+    -- start NTP (Network time protocol) client
+    -- (-p) NTP (Time) server is ntp.ubuntu.com
+    -- (-n) Run in foreground
+    local cmdline = 'killall ntpd; ntpd -n -p ntp.ubuntu.com'
     shellExecute(cmdline)
 end
 
 function exports.dhcp()
-    local cmdline = 'killall udhcpc; udhcpc -b -i eth0 -p /var/run/udhcpc.pid'
+    -- start DHCP client
+    -- (-i) interface is eth0
+    -- (-p) pid file is /var/run/udhcpc.pid
+    -- (-f) Run in foreground
+    local cmdline = 'killall udhcpc; udhcpc -f -i eth0 -p /var/run/udhcpc.pid'
     shellExecute(cmdline)
 end
 
 function exports.crond()
+    -- Start task scheduler
+    -- (-f) Run in foreground
     local cmdline = 'killall crond; crond -f'
     shellExecute(cmdline)
 end
 
 function exports.watchdog()
-    local cmdline = 'killall watchdog; watchdog /dev/watchdog'
+    -- (-T) Timeout is 60S
+    -- (-t) Feed (reset) interval is 20s
+    -- (-F) Run in foreground
+    local cmdline = 'killall watchdog; watchdog -F -T 60 -t 20 /dev/watchdog'
     shellExecute(cmdline)
 end
 
