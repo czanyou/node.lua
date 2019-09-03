@@ -179,6 +179,8 @@ function exports.start(...)
         exports.network()
         exports.button()
         exports.http(...)
+        exports.ntp()
+        exports.dhcp()
     end
 end
 
@@ -236,6 +238,48 @@ function exports.test(type)
     else
         print("Usage: lpm lci test <button,led,test>")
     end
+end
+
+local function shellExecute(cmdline)
+    local thread = require('thread')
+    thread.start(function(cmdline)
+        local thread = require('thread')
+        local function shell(cmdline)
+            local ret, event, code = os.execute(cmdline)
+            if (not ret) and (event == 'signal') and (code == 2) then
+                return false
+            end
+
+            print(ret, event, code, cmdline)
+
+            return true
+        end
+
+        while (true) do
+            if (not shell(cmdline)) then break; end
+
+            thread.sleep(3000)
+        end
+    end, cmdline)
+
+    if (not exports.timer) then
+        exports.timer = setInterval(5000, function() end)
+    end
+end
+
+function exports.ntp()
+    local cmdline = 'killall ntpd; ntpd -p ntp.ubuntu.com'
+    shellExecute(cmdline)
+end
+
+function exports.dhcp()
+    local cmdline = 'killall udhcpc; udhcpc -b -i eth0 -p /var/run/udhcpc.pid'
+    shellExecute(cmdline)
+end
+
+function exports.crond()
+    local cmdline = 'killall crond; crond -f'
+    shellExecute(cmdline)
 end
 
 app(exports)

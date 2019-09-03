@@ -7,11 +7,7 @@ route add default gw 192.168.8.1
 
 hostname dt02
 
-udhcpc -b -i eth0 -p /var/run/udhcpc.pid &
 telnetd &
-
-# ntp client
-ntpd -p ntp.ubuntu.com &
 
 # tmpfs
 mount -t tmpfs -o size=16m tmpfs /tmp/
