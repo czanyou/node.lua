@@ -28,11 +28,6 @@ make_link() {
     fi
 }
 
-# Create link for bin file
-make_module_bin_link() {
-	make_link "${NODE_ROOTPATH}/app/$1/bin/$1" "${LOCAL_BIN_PATH}/$1"
-}
-
 # Create link for lua module
 make_lib_link() {
 	make_link "${PROJECT_ROOT}/modules/$1/lua" "${NODE_ROOTPATH}/lib/$1"
@@ -63,7 +58,8 @@ sdk_install() {
 
     # bin
     make_link "${NODE_ROOTPATH}/bin/lnode" "${LOCAL_BIN_PATH}/lnode"
-    make_module_bin_link "lpm"
+    make_link "${NODE_ROOTPATH}/bin/lnode" "${LOCAL_BIN_PATH}/lpm"
+    make_link "${NODE_ROOTPATH}/bin/lnode" "${LOCAL_BIN_PATH}/lci"
 
     chmod 777 ${LOCAL_BIN_PATH}/lnode
     chmod 777 ${LOCAL_BIN_PATH}/lpm
@@ -86,6 +82,7 @@ sdk_clean() {
     rm -rf /usr/local/bin/lpm
     rm -rf /usr/bin/lnode
     rm -rf /usr/bin/lpm
+    rm -rf /usr/bin/lci
 }
 
 if [ -z $1 ]
