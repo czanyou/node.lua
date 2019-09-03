@@ -188,7 +188,6 @@
     <div class="form-footer">
       <div class="form-group">
         <label for="recipient-name" class="col-form-label">&nbsp;</label>
-        <button type="button" class="btn btn-primary" onclick="onSystemUpdate()">Update</button>
         <button type="button" class="btn btn-primary" onclick="onSystemUpload()">Upload</button>
         <button type="button" class="btn btn-primary" onclick="onSystemInstall()">Install</button>
       </div>
@@ -200,6 +199,7 @@
 
     <div class="form-footer">
       <label for="recipient-name" class="col-form-label">&nbsp;</label>
+      <button type="button" class="btn btn-primary" onclick="onSystemUpdate()">Update</button>
       <button type="button" class="btn btn-primary" onclick="onSystemUpgrade()">Upgrade</button>
       <button type="button" class="btn btn-primary" onclick="onSystemReboot()">Reboot</button>
       <button type="button" class="btn btn-primary" onclick="onSystemReset()">Factory Reset</button>
@@ -330,7 +330,7 @@ function onSystemUpload2() {
     if (!reader.result) {
       return;
     }
-    
+
     $.ajax({
         url: '/upload',
         data: reader.result,
