@@ -155,12 +155,12 @@ function exports.modbus()
         local config = peripherals[options.did]
         if (config) then
             options.properties = config.properties or config.p
-            options.forms = config.forms or config.f
+            options.modbus = config.forms or config.f
         end
 
         console.log(options);
 
-        local thing, err = modbus.createModbusThing(options)
+        local thing, err = modbus.createModbus(options)
         if (err) then
             console.log('createThing', err)
         end

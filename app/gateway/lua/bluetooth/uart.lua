@@ -37,7 +37,6 @@ end
 local function uart_recevie_callback()
 
     fs.read(fd, function(err, temp, bytesRead)
-        -- console.printBuffer(temp)
         if(temp and #temp > 0) then
             if(ret) then
                 ret = ret..temp
@@ -89,8 +88,11 @@ end
 local function initBluetoothUart(cb)
     local dev = modbus.new("/dev/ttyAMA2", 115200, 78, 8, 1) -- N: 78, O: 79, E: 69
     dev:connect()
-    fd = dev:uart_fd()
+    console.log(dev)
+    fd = dev:getFD()
+    
     local uart = uv.new_poll(fd)
+    console.log(fd,uart)
     postMessages = cb
     uv.poll_start(uart, "r", uart_recevie_callback)
 

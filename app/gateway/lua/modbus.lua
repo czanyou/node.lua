@@ -9,53 +9,6 @@ exports.services = {}
 
 local modbusThreadId = nil
 
--- ----------------------------------------------------------------------------
--- list
-
-List = {}
-function List.new ()
-    return {first = 0, last = -1}
-end
-
-function List.pushleft (list, value)
-    local first = list.first - 1
-    list.first = first
-    list[first] = value
-end
-
-function List.pushright (list, value)
-    local last = list.last + 1
-    list.last = last
-    list[last] = value
-end
-
-function List.popleft (list)
-    local first = list.first
-    -- if first > list.last then error("list is empty") end
-    if first > list.last then
-        return nil
-    end
-
-    local value = list[first]
-    list[first] = nil -- to allow garbage collection
-    list.first = first + 1
-
-    return value
-end
-
-function List.popright (list)
-    local last = list.last
-    -- if list.first > last then error("list is empty") end
-    if list.first > last then
-        return nil
-    end
-
-    local value = list[last]
-    list[last] = nil -- to allow garbage collection
-    list.last = last - 1
-
-    return value
-end
 
 -- ----------------------------------------------------------------------------
 -- modbus
@@ -67,8 +20,6 @@ local function modbusThread()
     local function getModbusDevice(options)
         local deviceName = options.device or "/dev/ttyAMA1"
         local baudrate = options.baudrate
-
-        console.log('getModbusDevice', deviceName, baudrate);
 
         local device = modbus.new(deviceName, baudrate)
         if (device) then
@@ -480,15 +431,14 @@ local function initModbusProperties(options, webThing)
     local properties = {}
 
     -- Common options
-    local common = options.forms or {}
+    local common = options.modbus or {}
     webThing.modbus = {}
     webThing.modbus.baudrate = common.baudrate or common.b or 9600
     webThing.modbus.device   = common.device or common.n
     webThing.modbus.interval = common.interval or common.i or 60
     webThing.modbus.slave    = common.address or common.d or 1
-    webThing.modbus.switch   = common.switch or 2
+    webThing.modbus.switch   = common.switch or 0
     webThing.modbus.timeout  = common.timeout or common.t or 500
-    webThing.modbus.type     = common.type or 0
     webThing.modbus.properties = properties
 
     -- Property options
@@ -502,7 +452,13 @@ local function initModbusProperties(options, webThing)
         property.interval = value.interval or value.i or webThing.modbus.interval
         property.offset   = value.offset   or value.o or 0
         property.quantity = value.quantity or value.q or 1
+
         property.register = value.register or value.a or 0
+        if (webThing.modbus.switch ~= 0 and property.code == 0x03) then
+            property.register = property.register* 256 + webThing.modbus.switch  - 1
+        -- else
+            
+        end
         property.scale    = value.scale    or value.s or 1
         property.timeout  = value.timeout  or value.t or webThing.modbus.timeout
         property.type     = value.type     or value.y or 0
@@ -525,7 +481,7 @@ end
 -- - options.did
 -- - options.name
 -- - options.secret
-function exports.createModbusThing(options)
+local function createModbusThing(options)
     if (not options) then
         return nil, 'need options'
 
@@ -567,6 +523,8 @@ function exports.createModbusThing(options)
 
     return webThing
 end
+
+exports.createModbus = createModbusThing
 
 function exports.isDataReady()
     return dataReady

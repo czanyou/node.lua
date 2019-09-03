@@ -11,9 +11,9 @@ local bluetoothUart = require("./bluetooth/uart")
 local bluetoothGap = require("./bluetooth/gap")
 -- local bluetoothGatt = require("./bluetooth/gatt")
 
--- local uart_recevie_buf ={}
 
-local sensor_list = {}
+
+
 local white_list = {}
 
 local dataReady = 0
@@ -22,21 +22,14 @@ local dataReady = 0
 
 
 
-local boardcast_analyze
 
-local thing
+
+
 
 function Sleep(n)
     os.execute("sleep " .. n)
 end
 
-local function onread(data)
-    print(data)
-end
-
-local function string_nocase_cmp(src, dest)
-    return string.find(string.lower(src), string.lower(dest))
-end
 
 
 local bluetoothRdady = 0
@@ -51,14 +44,12 @@ local CONFIG_CHANNEL    = 0x00
 
 
 local function classifyBluetoothMessages(messages)
-    -- console.log("classify")
     local channel = string.byte(messages, 1)
     local tempMessage = string.sub(messages,2,#messages)
-    -- console.log(tempMessage,channel)
-    
     if (channel == BOARDCAST_CHANNEL) then
         bluetoothGap.analysisMsg(app.bluetoothDevices,white_list,tempMessage)
-    elseif (channel == BOARDCAST_CHANNEL) then
+    elseif (channel == CONFIG_CHANNEL) then
+        console.log(tempMessage)
     
     else
 
@@ -66,7 +57,6 @@ local function classifyBluetoothMessages(messages)
 end
 
 local function getBluetoothMessages(messages)
-    -- console.log(type(messages), messages)
     setImmediate(classifyBluetoothMessages,messages)
 end
 
@@ -99,13 +89,6 @@ local function setBluetoothConfig(code, data)
 end
 
 
-local function initBluetoothUart()
-    local dev = modbus.new("/dev/ttyAMA2", 115200, 78, 8, 1) -- N: 78, O: 79, E: 69
-    dev:connect()
-    fd = dev:getFD()
-    uart = uv.new_poll(fd)
-    uv.poll_start(uart, "r", uart_recevie_callback)
-end
 local flag = 0
 
 local function createBluetoothThing(options)
