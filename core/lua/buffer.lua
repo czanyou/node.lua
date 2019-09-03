@@ -330,6 +330,10 @@ function Buffer:toString(offset, endPos)
         endPos = self:size()
     end
 
+    if (endPos < offset) then
+        return
+    end
+
     local size = endPos - offset + 1
     --console.log(offset, endPos, size)
     return self.buffer:get_bytes(offset, size)

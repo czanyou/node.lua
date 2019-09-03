@@ -59,6 +59,7 @@ function FormData:initialize(contentLength)
 	self.headerIndex  	= 0
 	self.dataIndex  	= 0
 	self.boundaryIndex  = 0
+	self.boundary       = nil
 end
 
 function FormData:error(error)
@@ -86,7 +87,7 @@ function FormData:getValue(i, index, tail)
 	return self.buffer:toString(offset, limit)
 end
 
-function FormData:processData(data)
+function FormData:processData2(data)
 	if (not data) or (#data <= 0) then
 		return
 	end
@@ -97,13 +98,13 @@ function FormData:processData(data)
 
 	buffer:putBytes(data)
 	
-	--console.log('processData', data, '===')
-
-	console.log('processData', #data, startPos, endPos)
+	-- console.log('processData', data, '===')
+	-- console.log('processData', #data, startPos, endPos)
 
 	local expandSize  = 0
 
-	for i = startPos, endPos do
+	local i = startPos
+	while (i <= endPos) do
 		local c = buffer:read(i)
 		--print(string.char(c), c)
 
@@ -304,6 +305,18 @@ function FormData:processData(data)
 				if (c == 45) then -- '-'
 					self:setFindState(STATE_BOUNDARY_START)
 					self.findIndex = 0
+				else
+					-- [[
+					local pos = buffer:indexOf('-', i)
+					if (pos >= 1) then
+						print('data', i, c, state, pos)
+						self:setFindState(STATE_BOUNDARY_START)
+						self.findIndex = 0
+
+						i = i + pos - 1
+						self.dataIndex = self.dataIndex + pos
+					end
+					--]]
 				end
 
 			elseif (self.findState == STATE_BOUNDARY_START) then
@@ -341,10 +354,11 @@ function FormData:processData(data)
 					end
 
 					local offset = i - self.dataIndex + 1
-					local limit  = i - self.findIndex - 2 - 2
+					local limit  = i - self.findIndex - 2 -- -2
 					local data = buffer:toString(offset, limit)
 
 					expandSize = i
+					console.log('expandSize', expandSize)
 
 					self:emit('file', data)
 
@@ -361,15 +375,143 @@ function FormData:processData(data)
 				end
 			end
 		end
+
+		i = i + 1
 	end
 
 	buffer:skip(expandSize)
 end
 
+function FormData:processData(data)
+	if (not data) or (#data <= 0) then
+		return
+	end
+
+	local buffer = self.buffer;
+	buffer:putBytes(data)
+
+	-- console.log(buffer:position(), buffer:limit())
+
+	local function parseHeaderLine(token)
+		local pos = string.find(token, ':')
+		if not (pos >= 1) then
+			return
+		end
+
+		local name = string.sub(token, 1, pos - 1)
+		local value = string.sub(token, pos + 1)
+
+		self:emit('header-name', name)
+
+		local items = string.split(value, ';')
+		for index, item in ipairs(items) do
+			if (index == 1) then
+				item = string.trim(item)
+
+				self:emit('header-value', item)
+			else
+				pos = string.find(item, '=')
+				if (pos >= 1) then
+					name = string.sub(item, 1, pos - 1)
+					value = string.sub(item, pos + 1)
+					name = string.trim(name)
+					self:emit('feild-name', name)
+
+					if (#value >= 2) and (value:byte(1) == 34) then
+						value = string.sub(value, 2, #value - 1)
+					end
+
+					self:emit('feild-value', value)
+				end
+			end
+			-- console.log('parseHeader', index, string.trim(item))
+		end
+	end
+
+	local function parseHeader(data)
+		local tokens = string.split(data, '\r\n')
+
+		for _, token in ipairs(tokens) do
+			parseHeaderLine(token)
+		end
+	end
+
+	while (true) do
+		local state = self.state
+		if (state == STATE_START) then
+			local pos = buffer:indexOf('\r\n')
+			if (pos > 1) then
+				local data = buffer:toString(1, pos - 1)
+				-- console.log('boundary', pos, data)
+
+				self.boundary = '\r\n' .. data
+				buffer:skip(pos - 1)
+
+				self:setState(STATE_HEADER_START)
+
+			else
+				break
+			end
+
+		elseif (state == STATE_HEADER_START) then
+			local pos = buffer:indexOf('\r\n\r\n')
+			if (pos >= 1) then
+				if (pos > 1) then
+					local data = buffer:toString(3, pos - 1)
+					self.header = data
+					-- console.log('header', pos, data)
+
+					parseHeader(data)
+				end
+
+				buffer:skip(pos + 4 - 1)
+				-- console.log('buffer', buffer:toString())
+				self:setState(STATE_DATA_START)
+
+			else
+				break
+			end
+
+		elseif (state == STATE_DATA_START) then
+			local pos = buffer:indexOf(self.boundary)
+			if (pos > 1) then
+				local data = buffer:toString(1, pos - 1)
+				-- console.log('data', pos, #data, data)
+
+				self:emit('file', data)
+
+				buffer:skip(pos)
+				buffer:skip(#self.boundary - 1)
+
+				self:setState(STATE_DATA)
+			else
+				break
+			end
+
+		elseif (state == STATE_DATA) then
+			if (buffer:size() >= 2) then
+				local data = buffer:toString(1, 2)
+				-- console.log('buffer', data, buffer:toString())
+
+				if (data == '\r\n') then
+					self:setState(STATE_HEADER_START)
+
+				else
+					self:setState(STATE_END)
+				end
+			else
+				break
+			end
+		else
+			break
+		end
+	end
+end
+
 local function test()
 	local form = FormData:new()
 	form:on('file', function(data) 
-		console.log('file', data)
+		console.log('file', #data, data)
 	end)
 
 	--[[
@@ -385,10 +527,10 @@ local function test()
 	form:processData('\r\n\r\n[filedata-')
 	form:processData('filedata-\r\n\r\n------abcd')
 	form:processData('\r\nfiledata\r\nfiledata-')
-	form:processData('filedata]------abcde\r\n')
+	form:processData('filedata]\r\n------abcde\r\n')
 	form:processData('[header:data]\r\n')
 	form:processData('Content-Disposition: form-data;name="pic"; filename="photo.jpg"\r\n\r\n[filedata')
-	form:processData('\r\nfiledata]------abcde')
+	form:processData('\r\nfiledata]\r\n------abcde')
 	form:processData('--')
 	--]]
 

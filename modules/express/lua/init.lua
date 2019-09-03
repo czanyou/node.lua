@@ -114,18 +114,21 @@ function IncomingMessage:readBody(callback)
         contentType = tokens[1]
     end
 
-    -- console.log(contentType)
-
     local sb = StringBuffer:new()
 
     self:on('data', function(data)
         sb:append(data)
+
+        --console.log('data', contentType)
+        --console.log(#data, data)
     end)
 
     self:on('end', function(data)
         sb:append(data)
 
         local content = sb:toString()
+        -- console.log('end', contentType, #content)
+
         if (contentType == 'application/x-www-form-urlencoded') then
             self.body = querystring.parse(content)
 
@@ -160,7 +163,7 @@ function IncomingMessage:readBody(callback)
             end)
             
             parser:on('header-name', function(data)
-                console.log('header-name', data)
+                -- console.log('header-name', data)
                 headerName = data
                 fieldName = nil
             end)

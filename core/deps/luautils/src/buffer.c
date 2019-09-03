@@ -224,6 +224,10 @@ static int buffer_index_of(luv_buffer_t* buffer, const char* data, int size, int
 	char* destBuffer = buffer_get_data(buffer, offset);
 	int destSize = buffer_get_size(buffer);
 
+	if (destBuffer == NULL || destSize <= 0) {
+		return -1;
+	}
+
 	const char* find = memfind(destBuffer, destSize, data, size);
 	if (find) {
 		return find - destBuffer + 1;

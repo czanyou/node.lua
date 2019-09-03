@@ -190,8 +190,17 @@ local function apiConfigRead(request, response)
 end
 
 local function apiUpload(request, response)
-    --console.log(request.body)
-    --console.log(request.files)
+    -- console.log('apiUpload', #request.body)
+    -- console.log(request.files)
+    if (not request.files) then
+        if (request.body) then
+            local file = {
+                data = request.body
+            }
+
+            request.files = { file }
+        end
+    end
 
     local file = request.files and request.files[1]
     if (file) then

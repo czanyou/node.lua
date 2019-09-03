@@ -322,25 +322,26 @@ function onConfigWrite(callback) {
   return false;
 }
 
-function onSystemUpload() {
+function onSystemUpload2() {
   var input = document.getElementById('firmware-file');
   var file = input && input.files[0];
   var reader = new FileReader();
   reader.onload = function(event) {
-    console.log(reader.result)
-
+    if (!reader.result) {
+      return;
+    }
+    
     $.ajax({
         url: '/upload',
         data: reader.result,
         type: 'post',
         cache: false,
+        contentType: 'application/octet-stream',
         processData: false,
         success: function (result) {
-          console.log(result)
           alert('Upload Done')
         },
         error: function (result) {
-          console.log(result)
           alert('Upload Error. Please try again later')
         }
     })
@@ -348,7 +349,7 @@ function onSystemUpload() {
   reader.readAsArrayBuffer(file)
 }
 
-function onSystemUpload2() {
+function onSystemUpload() {
   var form = document.getElementById('firmware-form')
   var formData = new FormData(form);
   $.ajax({
