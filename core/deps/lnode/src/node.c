@@ -207,7 +207,7 @@ static int lnode_lua_init(lua_State *L, int hasIgnore) {
     }
 }
 
-int run_applet(int argc, char* argv[]) {
+int run_applet(const char* name, int argc, char* argv[]) {
 	lua_State* L = NULL;
 
 	int res = 0;
@@ -233,7 +233,7 @@ int run_applet(int argc, char* argv[]) {
 
 	lnode_path_init(L);
 
-	sprintf(buffer, "require('init'); require('%s/app');", argv[0]);
+	sprintf(buffer, "require('init'); require('%s/app');", name);
 	res = lnode_call_script(L, buffer, argv[0]);
 
 	lnode_call_script(L, "runLoop()", "=(C run)");
@@ -262,10 +262,15 @@ int main(int argc, char* argv[]) {
 #ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);	// 13) 管道破裂: Write a pipe that does not have a read port
 #endif
-	
+
+	char pathBuffer[PATH_MAX];
+	memset(pathBuffer, 0, PATH_MAX);
+
+	lnode_get_filename(argv[0], pathBuffer);
+
 	// applet
-	if (strcmp(argv[0], "lnode") != 0) {
-		return run_applet(argc, argv);
+	if (strcmp(pathBuffer, "lnode") != 0) {
+		return run_applet(pathBuffer, argc, argv);
 	}
 
 	// Hooks in libuv that need to be done in main.
@@ -338,9 +343,6 @@ int main(int argc, char* argv[]) {
     if (has_deamon) {
         lnode_run_as_deamon();
     }
-
-	char pathBuffer[PATH_MAX];
-	memset(pathBuffer, 0, PATH_MAX);
 
 	// Create the lua state.
 	L = luaL_newstate();

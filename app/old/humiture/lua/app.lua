@@ -84,7 +84,7 @@ function exports.clear(...)
 end
 
 function exports.start()
-    local lockfd = app.tryLock('sensor')
+    local lockfd = app.lock('sensor')
     if (not lockfd) then
         print('The sensor is locked!')
         return

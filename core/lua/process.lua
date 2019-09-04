@@ -29,7 +29,7 @@ meta.name        = "lnode/process"
 meta.tags        = { "lnode", "process" }
 meta.version     = "1.0.1"
 
-local patch     = 226
+local patch     = 227
 
 local env       = require('env')
 local uv        = require('luv')

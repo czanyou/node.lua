@@ -480,13 +480,10 @@ end
 -------------------------------------------------------------------------------
 -- call
 
-function exports.call(args)
-	local command = args[1]
-	table.remove(args, 1)
-
+function exports.call(command, ...)
 	local func = exports[command or 'usage']
 	if (type(func) == 'function') then
-		local status, ret = pcall(func, table.unpack(args))
+		local status, ret = pcall(func, ...)
 		runLoop()
 
 		if (not status) then
@@ -496,13 +493,13 @@ function exports.call(args)
 		return ret
 
 	else
-		_executeApplication(command, table.unpack(args))
+		_executeApplication(command, ...)
 	end
 end
 
 setmetatable(exports, {
-	__call = function(self, ...)
-		self.call(...)
+	__call = function(self, arg)
+		self.call(table.unpack(arg))
 	end
 })
 

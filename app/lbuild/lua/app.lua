@@ -298,11 +298,15 @@ function sdk.buildSDKPackage(type)
 	local target = getMakeTarget()
 	local board = getMakeBoard()
 	local version = getMakeVersion()
+	local pathname  = path.join(cwd, "build", type, target)
+
+	console.log('pathname', pathname)
+	os.execute("rm -rf " .. pathname)
+
 	local packageInfo = sdk.buildSDK(target, type, board, version)
 	--console.log(target)
 
 	-- build zip file
-	local pathname  = path.join(cwd, "build", type, target)
     local builder = zlib.ZipBuilder:new()
 	builder:build(pathname)
 	

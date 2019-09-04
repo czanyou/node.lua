@@ -73,4 +73,6 @@ LUALIB_API int lnode_run_as_deamon();
 LUALIB_API int lnode_print_version();
 LUALIB_API int lnode_print_usage();
 
+LUALIB_API int lnode_get_filename(const char* path, char* buffer);
+
 #endif // _LNODE_H

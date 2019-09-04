@@ -95,6 +95,26 @@ static int lnode_get_dirname(char* buffer) {
   return -1;
 }
 
+LUALIB_API int lnode_get_filename(const char* path, char* buffer) {
+  if (buffer == NULL || path == NULL) {
+    return -1;
+  }
+
+  size_t len = strlen(path);
+  const char* p = path + len - 1;
+  while (p > path) {
+    if (*p == '/' || *p == '\\') {
+      p++;
+      break;
+    }
+    p--;
+  }
+
+  strcpy(buffer, p);
+
+  return 0;
+}
+
 static int lnode_file_exists(const char* basePath, const char* subPath) {
   char filename[PATH_MAX];
   memset(filename, 0, sizeof(filename));

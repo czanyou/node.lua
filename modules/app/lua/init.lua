@@ -157,7 +157,6 @@ local function loadDefaultProfile()
     end
 
     exports._defaultProfile = conf('default')
-    exports._defaultProfile:startWatch()
     return exports._defaultProfile
 end
 
@@ -167,7 +166,6 @@ local function loadUserProfile(reload)
     end
 
     exports._userProfile = conf('user')
-    exports._userProfile:startWatch()
     return exports._userProfile
 end
 
@@ -175,31 +173,25 @@ function exports.appName()
 	return exports.name or 'user'
 end
 
--- 检查是否有另一个进程正在更新系统
-function exports.lock(name)
-	local tmpdir = os.tmpdir or '/tmp'
-
-    local appName = name or exports.appName()
-	local lockname = path.join(tmpdir, '/app_' .. appName .. '.lock')
-    local lockfd, err = fs.openSync(lockname, 'w+')
-    if (lockfd == nil) then
-        print("Error: ", err)
-        return nil
+-- 开始监控 Profile 改变
+function exports.watchProfile()
+    if (exports._defaultProfile) then
+        exports._defaultProfile:startWatch()
     end
 
-	local ret = fs.fileLock(lockfd, 'w')
-    if (ret == -1) then
-        fs.close(lockfd)
-		print('Error: The ' .. appName .. ' app already locked!')
-		return nil
+    if (exports._userProfile) then
+        exports._userProfile:startWatch()
     end
-
-	return lockfd
 end
 
-function exports.unlock(lockfd)
-    if (lockfd) then
-        fs.fileLock(lockfd, 'u')
+-- 重新加载 Profile 改变
+function exports.reloadProfile()
+    if (exports._defaultProfile) then
+        exports._defaultProfile:reload()
+    end
+
+    if (exports._userProfile) then
+        exports._userProfile:reload()
     end
 end
 
@@ -282,6 +274,7 @@ end
 -------------------------------------------------------------------------------
 -- methods
 
+-- 更新应用进程管理列表
 local function updateProcessList(add, remove)
     local configPath = path.join(getNodePath(), 'conf/process.conf')
     local fileData = fs.readFileSync(configPath) or ''
@@ -345,7 +338,7 @@ function exports.daemon(name)
     os.execute(cmdline)
 end
 
---
+-- 执行指定名称的应用
 function exports.execute(name, ...)
 	local basePath
 	if (not name) then
@@ -357,7 +350,7 @@ function exports.execute(name, ...)
 	return executeApplication(basePath, ...)
 end
 
---
+-- 返回指定名称的应用的信息
 function exports.info(name)
 	local filename = path.join(getAppPath(), name)
 	return getApplicationInfo(filename)
@@ -427,19 +420,24 @@ end
 
 function exports.main(handler, action, ...)
     local method = handler[action or 'init']
-    if (not method) then
-        method = handler.help
-    end
 
     if (not exports.name) then
         exports.name = getApplicationName(util.filename(4))
     end
 
     if (method) then
-        method(...)
-    else
-        print('usage: lpm ' .. exports.name .. ' <name> [<params>...]')
-	end
+        return method(...)
+    end
+
+    if (handler.call) then
+        return handler.call(action, ...)
+    end
+
+    if (handler.help) then
+        return handler.help(action, ...)
+    end
+
+    print('usage: lpm ' .. exports.name .. ' <name> [<params>...]')
 end
 
 -- 打印所有安装的应用
@@ -468,13 +466,16 @@ end
 
 -- 通过 cmdline 解析出相关的应用的名称
 function exports.parseName(cmdline)
+    -- lnode /xxx/lua/app.lua
     local _, _, appName = cmdline:find('lnode.+/([%w]+)/lua/app.lua')
 
     if (not appName) then
+        -- lnode /xxx/lpm xxx start
         _, _, appName = cmdline:find('lnode.+/lpm%s([%w]+)%sstart')
     end
 
     if (not appName) then
+        -- lnode /xxx/lpm start xxx
         _, _, appName = cmdline:find('lnode.+/lpm%sstart%s([%w]+)')
     end
 
@@ -676,34 +677,37 @@ function exports.getSystemTarget()
     return target
 end
 
--- 创建文件锁, 防止同时运行多个进程
-function exports.tryLock(name)
-    name = name or exports.name
-
+-- 检查是否有另一个进程正在更新系统
+function exports.lock(name)
     local tmpdir = os.tmpdir or '/tmp'
-    local lockname = path.join(tmpdir, name .. '.lock')
-    local lockfd = fs.openSync(lockname, 'w+')
-    if (not lockfd) then
-        return
+    if fs.existsSync('/var/run/') then
+        tmpdir = '/var/run/'
     end
 
-    local ret = fs.fileLock(lockfd, 'w')
+    local appName = name or exports.appName()
+	local lockname = path.join(tmpdir, '/app_' .. appName .. '.lock')
+    local lockfd, err = fs.openSync(lockname, 'w+')
+    if (lockfd == nil) then
+        print("Error: ", err)
+        return nil
+    end
+
+	local ret = fs.fileLock(lockfd, 'w')
     if (ret == -1) then
-        fs.closeSync(lockfd)
-        return
+        fs.close(lockfd)
+		print('Error: The ' .. appName .. ' app already locked!')
+		return nil
     end
 
-    process:on("exit", function()
-        fs.fileLock(lockfd, 'u')
-        os.remove(lockname)
-    end)
-
-    return lockfd
+	return lockfd
 end
 
 -- 释放文件锁
 function exports.unlock(lockfd)
-    fs.fileLock(lockfd, 'u')
+    if (lockfd) then
+        fs.fileLock(lockfd, 'u')
+        fs.close(lockfd)
+    end
 end
 
 exports.meta.__call = function(self, handler)

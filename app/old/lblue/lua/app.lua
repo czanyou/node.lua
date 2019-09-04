@@ -192,7 +192,7 @@ function exports.scan()
 end
 
 function exports.start(mac, timeout)
-    local lockfd = app.tryLock('clound')
+    local lockfd = app.lock('clound')
     if (not lockfd) then
         print('The clound is locked!')
         return

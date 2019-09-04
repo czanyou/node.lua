@@ -122,7 +122,7 @@ function exports.scan()
 end
 
 function exports.start()
-    local lockfd = app.tryLock(TAG)
+    local lockfd = app.lock(TAG)
     if (not lockfd) then
         print('The application is locked!')
         return

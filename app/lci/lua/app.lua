@@ -176,6 +176,8 @@ end
 
 function exports.start(...)
     if (app.lock()) then
+        app.watchProfile()
+        
         exports.network()
         exports.button()
         exports.http(...)

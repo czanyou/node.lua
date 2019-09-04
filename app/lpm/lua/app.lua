@@ -57,7 +57,7 @@ function exports.run(interval, ...)
     print("Start lpm...")
 
     -- Check lock
-    local lockfd = app.tryLock('apm')
+    local lockfd = app.lock('lpm')
     if (not lockfd) then
         print('The apm is locked!')
         return
