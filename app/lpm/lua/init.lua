@@ -80,6 +80,7 @@ Usage:
   lpm config get <key>         - Get value for <key>.
   lpm config list              - List all config files
   lpm config set <key> <value> - Sets the specified config <key> <value>.
+  lpm config setjson <key> <json> - Sets the specified config <key> <json>.
   lpm config unset <key>       - Clears the specified config <key>.
   lpm get <key>                - Get value for <key>.
   lpm set <key> <value>        - Sets the specified config <key> <value>.
@@ -120,6 +121,29 @@ function config.set(key, value)
 	print('set `' .. tostring(name) .. '` = `' .. tostring(value) .. '`')
 end
 
+function config.setjson(key, value)
+	if (not key) or (not value) then
+		print("\nError: missing required argument `key` and `value`.")
+		print('\nUsage: lpm set <key> <value>')
+		return
+	end
+
+	value = json.parse(value)
+	if (value == nil) then
+		print('Invalid JSON text')
+		return
+	end
+
+	local profile, name = getProfile(key)
+	local oldValue = profile:get(name)
+	if (not oldValue) or (value ~= oldValue) then
+		profile:set(name, value)
+		profile:commit()
+	end
+
+	print('set `' .. tostring(name) .. '` = `' .. tostring(value) .. '`')
+end
+
 -- 删除指定名称的配置参数项的值
 function config.unset(key)
 	if (not key) then
@@ -129,12 +153,11 @@ function config.unset(key)
 	end
 
 	local profile, name = getProfile(key)
-	if (profile:get(name) ~= nil) then
-		profile:set(name, nil)
+	if (profile:set(name, nil)) then
 		profile:commit()
-	end
 
-	print('unset `' .. tostring(name) .. '`')
+		print('unset `' .. tostring(name) .. '`')
+	end
 end
 
 function exports.config(action, ...)
@@ -152,6 +175,7 @@ exports.conf 	= exports.config
 exports.unset  	= config.unset
 exports.get  	= config.get
 exports.set  	= config.set
+exports.setjson = config.setjson
 
 -------------------------------------------------------------------------------
 -- application

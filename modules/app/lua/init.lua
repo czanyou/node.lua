@@ -151,7 +151,7 @@ exports.table 			= ext.table
 -------------------------------------------------------------------------------
 -- profile
 
-local function loadDefaultProfile()
+local function getDefaultProfile()
     if (exports._defaultProfile) then
         return exports._defaultProfile
     end
@@ -160,7 +160,7 @@ local function loadDefaultProfile()
     return exports._defaultProfile
 end
 
-local function loadUserProfile(reload)
+local function getUserProfile(reload)
     if (exports._userProfile) and (not reload) then
         return exports._userProfile
     end
@@ -202,9 +202,8 @@ function exports.unset(key)
         return
     end
 
-	local profile = loadUserProfile(true)
-	if (profile) and (profile:get(key)) then
-		profile:set(key, nil)
+	local profile = getUserProfile(true)
+	if (profile) and (profile:set(key, nil)) then
 		profile:commit()
 	end
 end
@@ -216,13 +215,13 @@ function exports.get(key)
         return
     end
 
-    local profile = loadUserProfile()
+    local profile = getUserProfile()
     local value = profile and profile:get(key)
     if (value ~= nil) then
         return value
     end
 
-	profile = loadDefaultProfile()
+	profile = getDefaultProfile()
     if (profile) then
 		return profile:get(key)
 	end
@@ -236,7 +235,7 @@ function exports.set(key, value)
 		return
 	end
 
-	local profile = loadUserProfile(true)
+	local profile = getUserProfile(true)
     if (not profile) then
         return
     end

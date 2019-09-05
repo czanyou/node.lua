@@ -15,11 +15,3 @@ lbuild 是 Node.lua SDK 打包工具
 - lua 核心 Lua 脚本
 - lib 扩展 Lua 脚本
 
-### patch
-
-创建 Patch 升级包, 只包含: 
-
-- app 应用程序
-- lib 扩展 Lua 脚本
-
-

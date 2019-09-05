@@ -48,6 +48,10 @@ local function trimValue(value)
 		return tostring(value)
 
 	elseif (valueType == 'userdata') then
+		if (value == json.null) then
+			return json.null
+		end
+
 		return tostring(value)
 
 	elseif (valueType == 'table') then
@@ -114,6 +118,8 @@ function Profile:commit(callback)
 	local tempname = self.filename .. ".tmp"
 	local data = self:toString()
 
+	console.log('commit')
+
 	if (callback) then
 		fs.writeFile(tempname, data, function(err)
 			if (err) then
@@ -160,7 +166,17 @@ function Profile:get(key)
 	end
 
 	local settings = self.settings or {}
-	return settings[key]
+
+	local tokens = string.split(key, '.')
+	for _, token in ipairs(tokens) do
+		if (type(settings) == 'table') then
+			settings = settings[token]
+		else
+			settings = nil
+		end
+	end
+
+	return settings
 end
 
 function Profile:load(text)
@@ -218,8 +234,49 @@ function Profile:set(key, value)
 		self.settings = {}
 	end
 
-	self.settings[key] = trimValue(value)
-	return true
+	local ret = false
+
+	local settings = self.settings
+	local tokens = string.split(key, '.')
+
+	if (value == nil) then
+		if (settings[key] ~= nil) then
+			settings[key] = nil
+			ret = true
+		end
+
+		for i = 1, #tokens - 1 do
+			local token = tokens[i]
+			if (token and #token > 0) then
+				if (type(settings[token]) == 'table') then
+					settings = settings[token]
+				end
+			end
+		end
+
+	else
+		for i = 1, #tokens - 1 do
+			local token = tokens[i]
+			if (token and #token > 0) then
+				if (type(settings[token]) ~= 'table') then
+					settings[token] = {}
+				end
+	
+				settings = settings[token]
+			end
+		end
+	end
+
+	if (settings) then
+		local name = tokens[#tokens]
+		value = trimValue(value)
+		if (name and #name > 0) and (settings[name] ~= value) then
+			settings[name] = value
+			ret = true
+		end
+	end
+
+	return ret
 end
 
 function Profile:toString()

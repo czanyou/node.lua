@@ -334,6 +334,7 @@ int main(int argc, char* argv[]) {
 	}
 
     if (has_error) {
+		lnode_print_usage();
         return -107;
 
     } else if (has_version) {
@@ -401,7 +402,7 @@ int main(int argc, char* argv[]) {
 	if (has_script) {
 		res = lnode_dofile(L, filename);
 		
-	} else {
+	} else if (argc <= 1) {
 		lnode_print_version();
 		lnode_print_usage();
 	}

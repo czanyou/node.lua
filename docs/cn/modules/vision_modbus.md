@@ -10,14 +10,14 @@
 
 ### lmodbus.version
 
-> lmodbus.version()
+> local version = lmodbus.version()
 
 返回 libmodbus 的版本号
 
 ### lmodbus.new
 
-> lmodbus.new(host, port)
-> lmodbus.new(name, baudrate, parity, dataBits, stopBits)
+> local devcie = lmodbus.new(host, port)
+> local devcie = lmodbus.new(name, baudrate, parity, dataBits, stopBits)
 
 打开一个新的 ModbusDevice 设备
 
@@ -33,31 +33,31 @@
 
 ### close
 
-> close()
+> device:close()
 
 关闭这个设备
 
 ### connect
 
-> connect()
+> device:connect()
 
 开始连接
 
 ### getFD
 
-> get_uart_fd()
+> local fd = device:getFD()
 
 返回打开的 UART 设备的文件描述符
 
 ### listen
 
-> listen()
+> device:listen()
 
 开始侦听请求
 
 ### newMapping
 
-> newMapping(address, count)
+> device:newMapping(address, count)
 
 创建新的映射寄存器
 
@@ -66,7 +66,7 @@
 
 ### read
 
-> read(addresses)
+> local values = device:read(addresses)
 
 读取多个寄存器
 
@@ -74,7 +74,7 @@
 
 ### readRegisters
 
-> readRegisters(address, count)
+> local values = device:readRegisters(address, count)
 
 读多个寄存器
 
@@ -83,7 +83,7 @@
 
 ### readBits
 
-> readBits(address, count)
+> local values device:readBits(address, count)
 
 读取多位
 
@@ -92,13 +92,13 @@
 
 ### receive
 
-> receive()
+> device:receive()
 
 接收客户端请求并返回应答
 
 ### setMappingValue
 
-> setMappingValue(type, address, value)
+> device:setMappingValue(type, address, value)
 
 设置映射寄存器的值
 
@@ -108,7 +108,7 @@
 
 ### setSlave
 
-> setSlave(slave)
+> device:setSlave(slave)
 
 设置从机地址
 
@@ -116,7 +116,7 @@
 
 ### write
 
-> write(values)
+> device:write(values)
 
 写入多个值
 
@@ -124,7 +124,7 @@
 
 ### writeBit
 
-> writeBit(address, value)
+> device:writeBit(address, value)
 
 写入一位
 
@@ -133,7 +133,7 @@
 
 ### writeRegister
 
-> writeRegister(address, value)
+> device:writeRegister(address, value)
 
 写寄存器
 

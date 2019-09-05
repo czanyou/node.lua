@@ -25,11 +25,12 @@ lpm 配置文件一般都保存在 `/usr/local/lnode/conf` 目录下
 
 conf 文件内容为 JSON 文本格式, 支持多级参数
 
-- `lpm config del <key>` 删除指定名称的参数
+- `lpm config unset <key>` 删除指定名称的参数
 - `lpm config get <key>` 打印指定名称的参数的值
 - `lpm config list [name]` 打印配置文件的内容
 - `lpm config set <key> <value>` 设置指定名称的参数的值
-- `lpm del <key>` 删除指定名称的参数
+- `lpm config setjson <key> <value>` 设置指定名称的参数的 JSON 值
+- `lpm unset <key>` 删除指定名称的参数
 - `lpm get <key>` 打印指定名称的参数的值
 - `lpm set <key> <value>` 设置指定名称的参数的值
 
@@ -52,13 +53,13 @@ $ lpm set lan.ipaddr 192.168.1.8
 $ lpm config list
 ```
 
-### del
+### unset
 
 删除指定的名称的配置参数
 
-是 `lpm config del` 命令的缩写
+是 `lpm config unset` 命令的缩写
 
-    lpm del <key>
+    lpm unset <key>
 
 key 可以是用 '.' 分隔的多级参数名.
 
@@ -84,6 +85,16 @@ key 可以是用 '.' 分隔的多级参数名.
 
 key 可以是用 '.' 分隔的多级参数名.
 
+### setjson
+
+设置指定的名称的配置参数的值
+
+是 `lpm config setjson` 命令的别名
+
+    lpm setjson <key> <value>
+
+- key 可以是用 '.' 分隔的多级参数名.
+- value JSON 字符串
 
 ## 应用管理
 
@@ -160,10 +171,8 @@ key 可以是用 '.' 分隔的多级参数名.
 从源下载最新更新包, 下载最新的 package.json 文件以及 nodelua-xxx-patch.zip
 
     lpm update
-    lpm update system
 
-- 默认只下载热更新包
-- 如果指定了 system 参数则下载整个系统安装包 (nodelua-xxx-sdk.zip)
+- 默认只下载更新包
 
 ### upgrade
 
@@ -171,11 +180,9 @@ key 可以是用 '.' 分隔的多级参数名.
 
     lpm upgrade
     lpm upgrade system
-    lpm upgrade [source]
 
-- 默认只下载和安装热更新包
-- 如果指定了 system 参数则下载整个系统安装包 (nodelua-xxx-sdk.zip)
-- source 要更新的数据源, 如果值为文件则安装指定的更新包文件
+- 默认显示升级状态
+- 如果指定了 system 参数则下载并安装整个系统安装包 (nodelua-xxx-sdk.zip)
 
 ## 其他
 
