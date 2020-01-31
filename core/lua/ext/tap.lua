@@ -20,42 +20,17 @@ local uv      = require('luv')
 
 local colorize  = console.colorize
 
--- test`
+-- test
 _G.module       = {}
 _G.module.dir   = uv.cwd()
 _G.module.path  = uv.cwd()
 _G.p            = console.log
 
--- _print
-local function _print(...)
-	local n = select('#', ...)
-	local arguments = {...}
-	for i = 1, n do
-		arguments[i] = tostring(arguments[i])
-	end
-
-	local text = table.concat(arguments, "\t")
-	text = "  " .. string.gsub(text, "\n", "\n  ")
-	--print(text)
-
-	return ...
-end
-
-local function _pprint(...)
-	local n = select('#', ...)
-	local arguments = { ... }
-
-	for i = 1, n do
-		arguments[i] = console.dump(arguments[i])
-	end
-
-	print(table.concat(arguments, "\t"))
-	return ...
-end
-
 -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
 
 local tests = {};
+local single = true
+local prefix = nil
 
 local function _run_tests()
 	local passed = 0
@@ -75,17 +50,18 @@ local function _run_tests()
 		local cwd = uv.cwd()
 		local pass, err = xpcall(function ()
 			local expected = 0
-			local function _expect(fn, count)
+
+			local function expect(func, count)
 				expected = expected + (count or 1)
 				return function (...)
 					expected = expected - 1
-					local ret = fn(...)
+					local ret = func(...)
 					collectgarbage()
 					return ret
 				end
 			end
 
-			test.func(_print, _pprint, _expect, uv)
+			test.func(expect, uv)
 
 			collectgarbage()
 			uv.run()
@@ -117,7 +93,7 @@ local function _run_tests()
 		uv.chdir(cwd)
 
 		if pass then
-			print("---- Finish '" .. test.name .. "'. ----\n")
+			print("---- Finish '" .. test.name .. "'.\n")
 			passed = passed + 1
 
 		else
@@ -138,37 +114,32 @@ local function _run_tests()
 	--uv.walk(uv.close)
 	uv.run()
 	os.exit(-failed)
+
+	return passed, failed, #tests
 end
 
 -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
 
-local single = true
-local prefix = nil
-
+-- 添加测试用例
+---@param name string 测试用例名称
+---@param func function 测试用例
 local test = function (name, func) -- test function
 	if prefix then
 		name = prefix .. ' - ' .. name
 	end
 
-	tests[#tests + 1] = { name = name, func = func }
+	table.insert(tests, { name = name, func = func })
 end
 
-local function tap(suite, func)
-
+-- 测试
+local function tap(suite)
 	if (type(suite) == "function") then
-		-- Pass in suite directly for single mode
-		local test = function (name, func) -- test function
-			if prefix then
-				name = prefix .. ' - ' .. name
-			end
-
-			tests[#tests + 1] = { name = name, func = func }
-		end
-
+		-- 执行测试套件
 		suite(test)
 		prefix = nil
 
 	elseif (type(suite) == "string") then
+		-- 执行测试套件
 		prefix = suite
 		single = false
 
@@ -188,12 +159,12 @@ end
 
 local passed, failed, total = tap(function (test)
 
-  test("add 1 to 2", function(print)
+  test("add 1 to 2", function(expect)
 	print("Adding 1 to 2")
 	assert(1 + 2 == 3)
   end)
 
-  test("close handle", function (print, p, expect, uv)
+  test("close handle", function (expect, uv)
 	local handle = uv.new_timer()
 	uv.close(handle, expect(function (self)
 	  assert(self == handle)
@@ -211,6 +182,13 @@ end)
 
 local exports = {}
 
+function exports.suite(name)
+	prefix = name
+	single = false
+end
+
+-- 执行指定目录下所有测试用例
+---@param dirname string 目录名
 function exports.testAll(dirname)
 	package.path = package.path .. ';' .. dirname .. '/?.lua'
 
@@ -218,19 +196,16 @@ function exports.testAll(dirname)
 
 	repeat
 		local name = uv.fs_scandir_next(req)
-		console.log(name)
-
 		if not name then
 			-- run the tests!
-			tap(true)
+			exports.run(true)
 		end
 
 		local match = string.match(name, "^test%-(.*).lua$")
 		if match then
 			local path = dirname .. "/test-" .. match .. ".lua"
-			tap(match)
+			exports.suite(match)
 
-			console.log(path)
 			local script = loadfile(path)
 			script()
 		end
@@ -239,9 +214,10 @@ end
 
 exports.test = test
 
-exports.run = function()
-	if single then
-		_run_tests()
+-- 开始运行所有测试用例
+exports.run = function(runAll)
+	if single or runAll then
+		return _run_tests()
 	end
 end
 

@@ -8,44 +8,44 @@
 
 ### SsdpClient:new
 
-    SsdpClient:new(options)
+> SsdpClient:new(options)
 
 创建一个新的 SSDP 客户端的实例。
 
-- options {Object} 选项
-    + ssdpPort {Number} 要搜索的端口，默认为 1900
+- options `{object}` 选项
+    + ssdpPort `{number}` 要搜索的端口，默认为 1900
 
 ### 事件 'request'
 
-    callback(request, rinfo)
+> callback(request, rinfo)
 
 当收到局域网内 SSDP 设备的 NOTIFY 广播消息，产生这个事件。
 
 ### 事件 'response'
 
-    callback(response, rinfo)
+> callback(response, rinfo)
 
 当收到局域网内 SSDP 设备的搜索应答消息时，产生这个事件。
 
 ### client:start
 
-    client:start()
+> client:start()
 
 准备开始搜索，将向局域网广播 M-SEARCH 消息，详情请参考 SSDP 协议文档。
 
 ### client:stop
 
-    client:stop()
+> client:stop()
 
 停止搜索，停止发送搜索消息并且不再接收 M-SEARCH 应答消息。
 
 ### client:search
 
-    client:search(serviceType)
+> client:search(serviceType)
 
 立即发送 M-SEARCH 广播消息。
 
-- serviceType {String} 要搜索的设备或者服务类型，如："ssdp:all" 表示搜索所有类型的根设备.
+- serviceType {string} 要搜索的设备或者服务类型，如："ssdp:all" 表示搜索所有类型的根设备.
 
 比如网关设备类型为:
 
@@ -78,35 +78,35 @@ client:search('urn:schemas-webofthings-org:device')
 
 ### SsdpServer:new
 
-    SsdpServer:new(options)
+> SsdpServer:new(options)
 
 创建一个新的 SSDP 服务器的实例. 
 
-- options {Object} 选项
-    + adInterval {Number} NOTIFY 广播通告间隔, 单位为秒, 默认为 10 秒
-    + ssdpPort {Number} 要侦听的 UDP 端口, 默认为 1900
-    + udn {String} 这个设备的 UUID
+- options `{object}` 选项
+    + adInterval `{number}` NOTIFY 广播通告间隔, 单位为秒, 默认为 10 秒
+    + ssdpPort `{number}` 要侦听的 UDP 端口, 默认为 1900
+    + udn {string} 这个设备的 UUID
 
 
 ### server:start
 
-    server:start()
+> server:start()
 
 开始服务，开始在指定的 UDP 端口侦听搜索消息，并定时发送 NOTIFY 广播通告消息。
 
 ### server:stop
 
-    server:stop()
+> server:stop()
 
 停止服务，不再侦听 UDP 端口的消息，并停止定时发送 NOTIFY 广播通告消息。
 
 ### server:notify
 
-    server:notify(alive)
+> server:notify(alive)
 
 立即发送 NOTIFY 广播通告消息, 详情请参考 SSDP 协议详细介绍。
 
-- alive {Boolean} 通告是上线，还是下线
+- alive `{boolean}` 通告是上线，还是下线
 
 使用服务端的例子:
 

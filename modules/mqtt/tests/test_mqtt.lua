@@ -8,7 +8,7 @@ local packet  = require('mqtt/packet')
 
 local Packet = packet.Packet
 
-tap(function(test)
+local test = tap.test
 
 test('test_mqtt_publish', function()
 	local function onMessage(topic, payload)
@@ -20,7 +20,7 @@ test('test_mqtt_publish', function()
 
 	-- publish
 	client.debugEnabled = true
-	client.connectReady = true
+	client.socketConnected = true
 	client.connected 	= true
 	client.callback 	= onMessage
 
@@ -54,7 +54,7 @@ test('test_mqtt_subscribe', function()
 
 	-- publish
 	client.debugEnabled = true
-	client.connectReady = true
+	client.socketConnected = true
 	client.connected 	= true
 
 	-- subscribe
@@ -104,7 +104,7 @@ test('test_mqtt_publish_qos1', function()
 
 	-- publish
 	client.debugEnabled = true
-	client.connectReady = true
+	client.socketConnected = true
 	client.connected 	= true
 	client.callback 	= onMessage
 
@@ -128,5 +128,4 @@ test('test_mqtt_publish_qos1', function()
 	--console.log(client.outgoingStore)
 end)
 
-
-end)
+tap.run()

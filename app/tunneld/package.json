@@ -1,0 +1,6 @@
+{
+	"description": "WoT cloud tunnel server",
+	"title": "WoT tunnel",
+	"name": "tunneld",
+	"version": "1.0.0"
+}

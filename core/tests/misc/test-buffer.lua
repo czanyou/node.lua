@@ -16,7 +16,6 @@ limitations under the License.
 
 --]]
 local tap 	    = require('ext/tap')
-local utils     = require('util')
 local assert    = require('assert')
 local core      = require('core')
 local buffer    = require('buffer')

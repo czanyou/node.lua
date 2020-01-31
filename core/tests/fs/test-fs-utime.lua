@@ -23,7 +23,6 @@ local fs = require('fs')
 local math = require('math')
 local os = require('os')
 local string = require('string')
-local init = require('init')
 
 local __filename = require('util').filename()
 

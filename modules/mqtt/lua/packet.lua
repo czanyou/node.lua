@@ -16,8 +16,6 @@ limitations under the License.
 
 --]]
 local core  = require('core')
-local url   = require('url')
-local utils = require('util')
 
 -------------------------------------------------------------------------------
 --
@@ -35,18 +33,6 @@ exports.VERSION     = 0x03
 exports.QOS_0       = 0
 exports.QOS_1       = 1
 exports.QOS_2       = 2
-
--- Header
-exports.CMD_MASK    = 0xF0
-exports.CMD_SHIFT   = 4
-exports.DUP_MASK    = 0x08
-exports.QOS_MASK    = 0x06
-exports.QOS_SHIFT   = 1
-exports.RETAIN_MASK = 0x01
-
--- Length 
-exports.LENGTH_MASK     = 0x7F
-exports.LENGTH_FIN_MASK = 0x80
 
 -- Connect
 exports.USERNAME_MASK       = 0x80
@@ -74,7 +60,7 @@ exports.CONACK_CODES = {                -- CONACK return code used as the index
 
 exports.MAX_PAYLOAD_LENGTH  = 268435455 -- bytes
 
--- Command code => mnemonic 
+-- Command code => mnemonic
 -- Fixed header, Message type
 -- 消息类型(4-7)，使用 4 位二进制表示，可代表 16 种消息类型：
 
@@ -102,11 +88,12 @@ exports.TYPE_RESERVED    = 0x0f     -- Reserved
 -- MQTT 3.1 Specification: Section 2.5: MQTT and UTF-8
 --
 -- | Bit        |
--- | - - - - - -| - - - - - - - - - - - - -                            
+-- | - - - - - -| - - - - - - - - - - - - -
 -- | byte  1    | String length MSB
 -- | byte  2    | String length LSB
 -- | bytes 3... | String encoded as UTF-8, if length > 0.
--- 
+-- @param {string} text
+-- @returns {string}
 function exports.encodeString(text)
     if (not text) then
         return
@@ -122,16 +109,25 @@ function exports.encodeString(text)
 end
 
 -- 解析 MQTT 消息包
--- @param buffer 
--- @param index 
--- @param callback 
--- @return message, offset
+-- @param {string} buffer
+-- @param {number} [index]
+-- @param {funciton} callback
+-- @returns {object} message
+-- @returns {number} offset
 function exports.parse(buffer, index, callback)
-    local offset = index or 1
-    local messageHeader = buffer:byte(offset)
+    if (not buffer) then
+        return nil
+    end
 
+    local remainingLength = nil
+    local offset = index or 1
+
+    -- byte[1]: MQTT packet header
+    local messageHeader = buffer:byte(offset)
     offset = offset + 1
-    local remainingLength, offset = exports.parseLength(buffer, offset)
+
+    -- byte[2...]: MQTT packet length, MQTT 使用一个变长度编码方案
+    remainingLength, offset = exports.parseLength(buffer, offset)
     if (not remainingLength) then
         return nil, offset
     end
@@ -139,33 +135,48 @@ function exports.parse(buffer, index, callback)
     local messageData = buffer:sub(offset, offset + remainingLength - 1)
     --print('parse', offset, remainingLength, #messageData)
 
-    if (remainingLength <= #messageData) then
-        local mqttMessage = exports.Packet:new()
-        if (callback) then
-            mqttMessage:on('error', callback)
-        end
-        
-        mqttMessage.length = remainingLength
-        mqttMessage:parse(messageHeader, remainingLength, messageData)
-        return mqttMessage, offset + remainingLength
-        
-    else
+    if (#messageData < remainingLength) then
         return nil, index or 1
     end
+
+    local mqttMessage = exports.Packet:new()
+    if (callback) then
+        mqttMessage:on('error', callback)
+    end
+
+    mqttMessage.length = remainingLength
+    mqttMessage:parse(messageHeader, remainingLength, messageData)
+    return mqttMessage, offset + remainingLength
 end
 
+-- 解析 MQTT 可变长度
+-- 剩余长度字段使用一个变长度编码方案，对小于 128 的值它使用单字节编码。更大的值按
+-- 下面的方式处理。低 7 位有效位用于编码数据，最高有效位用于指示是否有更多的字节。
+-- 因此每个字节可以编码 128 个数值和一个延续位（continuation bit）。剩余长度字段最
+-- 大 4 个字节。
+-- @param {buffer} buffer
+-- @param {number} [index]
+-- @returns {number} messageLength
+-- @returns {number} offset
 function exports.parseLength(buffer, index)
     local multiplier = 1
     local messageLength = 0
     local offset = index or 1
 
+    local LENGTH_MASK     = 0x7F
+    local LENGTH_FIN_MASK = 0x80
+
     -- parse messageLength
     repeat
         local digit = string.byte(buffer, offset)
-        messageLength = messageLength + ((digit & 0x7f) * multiplier)
+        messageLength = messageLength + ((digit & LENGTH_MASK) * multiplier)
+        if (multiplier > 128 * 128 * 128) then
+            return nil, 'Malformed Remaining Length'
+        end
+
         multiplier = multiplier * 128
         offset = offset + 1
-    until (digit < 0x80)                              -- check continuation bit   
+    until (digit < LENGTH_FIN_MASK) -- check continuation bit
 
     return messageLength, offset
 end
@@ -176,7 +187,11 @@ end
 local Packet = core.Emitter:extend()
 exports.Packet = Packet
 
-function Packet:initialize(messageType, payload) 
+-- 代表一个 MQTT 消息
+-- @constructor
+-- @param {number} messageType
+-- @param {string} payload
+function Packet:initialize(messageType, payload)
     self.cmd            = nil
     self.dup            = false
     self.length         = -1
@@ -190,6 +205,7 @@ function Packet:initialize(messageType, payload)
     self.messageType    = messageType or nil
 end
 
+-- 构建 MQTT 消息
 function Packet:build(...)
     local message = {}
 
@@ -198,16 +214,16 @@ function Packet:build(...)
         self:buildConnect(...)
 
     elseif (self.messageType == exports.TYPE_CONACK) then
-        self:buildConnectACK(...)        
+        self:buildConnectACK(...)
 
     elseif (self.messageType == exports.TYPE_PUBLISH) then
         self:buildPublish(...)
 
     elseif (self.messageType == exports.TYPE_SUBSCRIBE) then
         self:buildSubscribe(...)
-        
+
     elseif (self.messageType == exports.TYPE_UNSUBSCRIBE) then
-        self:buildUnsubscribe(...)      
+        self:buildUnsubscribe(...)
     end
 
     -- header
@@ -238,11 +254,14 @@ function Packet:build(...)
     return table.concat(message)
 end
 
+-- Connect ACK 消息
+-- @param {number} returnCode
 function Packet:buildConnectACK(returnCode)
     --self.returnCode = returnCode
     self.payload = string.char(0, returnCode or 0)
 end
 
+-- Connect 消息
 function Packet:buildConnect()
     -- Construct CONNECT variable header fields (bytes 1 through 9)
 
@@ -263,6 +282,7 @@ function Packet:buildConnect()
     -- bit    0: Unused        =  0
 
     local flags = 0x02 -- Clean session, no last will
+
     local will = self.will
     if (will) then
         flags = ((will.retain or 0) << 5)
@@ -307,6 +327,9 @@ function Packet:buildConnect()
     self.payload = table.concat(payload)
 end
 
+-- Publish 消息
+-- @param {string} topic MQTT 主题名
+-- @param {string} data 要发布的消息内容
 function Packet:buildPublish(topic, data)
     local payload = {}
 
@@ -319,10 +342,12 @@ function Packet:buildPublish(topic, data)
     if (data) then
         table.insert(payload, data)
     end
-    
+
     self.payload = table.concat(payload)
 end
 
+-- Subscribe 消息
+-- @param {string[]} topics 要订阅的主题
 function Packet:buildSubscribe(topics)
     local payload = {}
     table.insert(payload, string.pack('>I2', self.messageId))
@@ -341,6 +366,8 @@ function Packet:buildSubscribe(topics)
     self.payload = table.concat(payload)
 end
 
+-- Unsubscribe 消息
+-- @param {string[]} topics 要取消订阅的主题
 function Packet:buildUnsubscribe(topics)
     local payload = {}
     table.insert(payload, string.pack('>I2', self.messageId))
@@ -352,6 +379,9 @@ function Packet:buildUnsubscribe(topics)
     self.payload = table.concat(payload)
 end
 
+-- 编码可变长度
+-- @param {string} message
+-- @param {number} remainingLength
 function Packet:encodeLength(message, remainingLength)
     if (remainingLength < 0) then
         return false, 'invalid remaining length'
@@ -361,7 +391,7 @@ function Packet:encodeLength(message, remainingLength)
     repeat
         local digit = remainingLength & 0x7f
         remainingLength = remainingLength >> 7
-        if (remainingLength > 0) then 
+        if (remainingLength > 0) then
             digit = digit | 0x80
         end -- continuation bit
 
@@ -369,6 +399,9 @@ function Packet:encodeLength(message, remainingLength)
     until remainingLength == 0
 end
 
+-- 编码字符串
+-- @param {string} message
+-- @param {string} text
 function Packet:encodeString(list, text)
     if (not text) then
         return
@@ -378,11 +411,15 @@ function Packet:encodeString(list, text)
     if (#text <= 0) then
         return
     end
-    
+
     table.insert(list, string.pack('>I2', #text))
     table.insert(list, text)
 end
 
+-- 解析 MQTT 消息
+-- @param {number} messageHeader 消息头
+-- @param {number} messageLength 消息长度
+-- @param {string} messageData 消息内容
 function Packet:parse(messageHeader, messageLength, messageData)
     self.length  = messageLength
     self:parseHeader(messageHeader)
@@ -405,7 +442,7 @@ function Packet:parse(messageHeader, messageLength, messageData)
         return self:parsePublishACK(messageData)
 
     elseif (messageType == exports.TYPE_PUBREL)      then
-        return self:parsePublishACK(messageData)               
+        return self:parsePublishACK(messageData)
 
     elseif (messageType == exports.TYPE_PUBCOMP)     then
         return self:parsePublishACK(messageData)
@@ -429,6 +466,66 @@ function Packet:parse(messageHeader, messageLength, messageData)
     else
         self:emit('error', 'not supported message')
     end
+end
+
+-- 解析 MQTT 消息头
+-- @param {number} messageHeader
+function Packet:parseHeader(messageHeader)
+    local CMD_MASK    = 0xF0
+    local CMD_SHIFT   = 4
+    local QOS_MASK    = 0x06
+    local QOS_SHIFT   = 1
+    local DUP_MASK    = 0x08
+    local RETAIN_MASK = 0x01
+
+    self.messageType = (messageHeader & CMD_MASK) >> CMD_SHIFT
+    self.qos         = (messageHeader & QOS_MASK) >> QOS_SHIFT
+    self.dup         = (messageHeader & DUP_MASK) ~= 0
+    self.retain      = (messageHeader & RETAIN_MASK) ~= 0
+end
+
+-- 解析 MQTT 消息 ID
+-- @param {string} messageData
+-- @param {number} index
+function Packet:parseMessageId(messageData, index)
+    index = index or 1
+
+    if (not messageData) then
+        return nil, index
+    end
+
+     if (#messageData <= index) then
+        self:emit('error', "cannot parse message id")
+        return nil, index
+    end
+
+    self.messageId  = string.unpack(">I2", messageData, index)
+    return 0, index + 2
+end
+
+-- 解析 MQTT 字符串
+-- @param {string} messageData
+-- @param {number} index
+function Packet:parseString(messageData, index)
+    if (not messageData) then
+        return
+    end
+
+    local offset = index or 1
+    if (offset > #messageData) then
+        return nil
+    end
+
+    local length = string.unpack('>I2', messageData, offset)
+    offset  = offset + 2
+    if (offset + length - 1 > #messageData) then
+        return nil
+    end
+
+    local value  = string.sub(messageData, offset, offset + length - 1)
+    offset  = offset + length
+
+    return value, offset
 end
 
 function Packet:parseConnect(messageData)
@@ -455,10 +552,10 @@ function Packet:parseConnect(messageData)
     if (flags & exports.USERNAME_MASK) ~= 0 then
         self.username, index = self:parseString(messageData, index)
     end
-    
+
     if (flags & exports.PASSWORD_MASK) ~= 0 then
         self.password, index = self:parseString(messageData, index)
-    end      
+    end
 end
 
 function Packet:parseConnectACK(messageData)
@@ -477,29 +574,6 @@ function Packet:parseConnectACK(messageData)
     end
 
     return 0
-end
-
-function Packet:parseHeader(messageHeader)
-    self.messageType = (messageHeader & exports.CMD_MASK) >> exports.CMD_SHIFT
-    self.qos         = (messageHeader & exports.QOS_MASK) >> exports.QOS_SHIFT
-    self.dup         = (messageHeader & exports.DUP_MASK) ~= 0
-    self.retain      = (messageHeader & exports.RETAIN_MASK) ~= 0
-end
-
-function Packet:parseMessageId(messageData, index)
-     index = index or 1
-   
-    if (not messageData) then 
-        return nil, index
-    end
-
-     if (#messageData <= index) then
-        self:emit('error', "cannot parse message id")
-        return nil, index
-    end
-       
-    self.messageId  = string.unpack(">I2", messageData, index)
-    return 0, index + 2
 end
 
 function Packet:parsePublish(messageData)
@@ -532,30 +606,8 @@ function Packet:parsePublishACK(messageData)
     return 0
 end
 
-function Packet:parseString(messageData, index)
-    if (not messageData) then
-        return
-    end
-
-    local offset = index or 1
-    if (offset > #messageData) then
-        return nil
-    end
-
-    local length = string.unpack('>I2', messageData, offset)
-    offset  = offset + 2
-    if (offset + length - 1 > #messageData) then
-        return nil
-    end
-
-    local value  = string.sub(messageData, offset, offset + length - 1)
-    offset  = offset + length
-
-    return value, offset
-end
-
 function Packet:parseSubscribe(messageData)
-    if (not self:parseMessageId(messageData)) then 
+    if (not self:parseMessageId(messageData)) then
         return nil
     end
 
@@ -565,7 +617,7 @@ function Packet:parseSubscribe(messageData)
     while (true) do
         local topic = nil
         topic, index = self:parseString(messageData, index)
-        if (not topic) or (topic == '') then 
+        if (not topic) or (topic == '') then
             break
         end
 
@@ -584,7 +636,7 @@ function Packet:parseSubscribeACK(messageData)
 end
 
 function Packet:parseUnsubscribe(messageData)
-    if (not self:parseMessageId(messageData)) then 
+    if (not self:parseMessageId(messageData)) then
         return nil
     end
 
@@ -594,7 +646,7 @@ function Packet:parseUnsubscribe(messageData)
     while (true) do
         local topic = nil
         topic, index = self:parseString(messageData, index)
-        if (not topic) or (topic == '') then 
+        if (not topic) or (topic == '') then
             break
         end
 

@@ -28,9 +28,9 @@
 
 打开指定的视频输入通道, 因为视频输入的大小有限, 所以实际的采样宽高度可能小于设置的宽高度.
 
-- channel {Number} 要打开的视频输入通道号, 0 表示第一个通道, 网络摄像机通常也只有一个输入通道.
-- width {Number} 视频采样宽度
-- height {Number} 视频采样高度
+- channel {number} 要打开的视频输入通道号, 0 表示第一个通道, 网络摄像机通常也只有一个输入通道.
+- width {number} 视频采样宽度
+- height {number} 视频采样高度
 
 返回 video_in_t 类的实例
 
@@ -62,7 +62,7 @@
 
 设置当前视频输入通道的采样帧率, 因为一般视频输入的帧率有限, 所以实际帧率可能会低于设置的帧率.
 
-- framerate {Number} 帧率
+- framerate {number} 帧率
 
 ## lmedia.video_encoder
 
@@ -103,15 +103,15 @@ JPEG 编码类型
 
     lmedia.video_encoder.open(channel, options)
 
-- channel {Number} 要创建的视频编码通道号, 0 表示第一个通道, 可以有多个通道, 但注意不要重复打开同一个通道.
-- options {Object} 创建属性, 包含分辨率等信息.
-    + bitrate {Number} 目标码率，单位为位，如 1000 表示码率为 1000kbps, 即每秒大概产生 125KB 的流量。
-    + bitrateMode {Number} 码率控制模式
-    + framerate {Number} 目标帧率，单位为帧每秒，如 25 表示每秒产生 25 帧图像。
-    + gopLength {Number} GOP 长度，即 I 帧间隔，单位为帧，如 25 表示每隔 25 帧产生一个 I 帧。
-    + height {Number} 图像高度，单位为像素，不能超过视频输入通道图像的高度
-    + type {Number} 编码类型
-    + width {Number} 图像宽度，单位为像素，不能超过视频输入通道图像的宽度
+- channel {number} 要创建的视频编码通道号, 0 表示第一个通道, 可以有多个通道, 但注意不要重复打开同一个通道.
+- options {object} 创建属性, 包含分辨率等信息.
+    + bitrate {number} 目标码率，单位为位，如 1000 表示码率为 1000kbps, 即每秒大概产生 125KB 的流量。
+    + bitrateMode {number} 码率控制模式
+    + framerate {number} 目标帧率，单位为帧每秒，如 25 表示每秒产生 25 帧图像。
+    + gopLength {number} GOP 长度，即 I 帧间隔，单位为帧，如 25 表示每隔 25 帧产生一个 I 帧。
+    + height {number} 图像高度，单位为像素，不能超过视频输入通道图像的高度
+    + type {number} 编码类型
+    + width {number} 图像宽度，单位为像素，不能超过视频输入通道图像的宽度
 
 创建一个视频编码通道
 
@@ -133,7 +133,7 @@ JPEG 编码类型
 
      encoder:set_attributes(options)
 
-- options {Object} 通道属性
+- options {object} 通道属性
 
 设置当前视频编码通道的参数
 
@@ -143,10 +143,10 @@ JPEG 编码类型
 
 设置画面切割大小
 
-- left {Number}
-- top {Number}
-- right {Number}
-- bottom {Number}
+- left {number}
+- top {number}
+- right {number}
+- bottom {number}
 
 #### encoder:start
 
@@ -154,8 +154,8 @@ JPEG 编码类型
 
 开始编码, 当注册了回调函数时, 会在内部创建一个线程来采集视频并通过回调通知给应用程序.
 
-- flags {Number} 保留使用
-- callback {Function} - function(ret, buffer) 当有新的帧时调用这个方法
+- flags {number} 保留使用
+- callback {function} - function(ret, buffer) 当有新的帧时调用这个方法
 
 #### encoder:stop
 

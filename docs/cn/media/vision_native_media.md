@@ -14,13 +14,13 @@ Lua API 将分两层, 底层 API 为直接封装 media_comm.h 中定议的 C API
 
     lmedia.VERSION
 
-- {String} 返回当前媒体处理系统版本
+- {string} 返回当前媒体处理系统版本
 
 ### 常量 TYPE
 
     lmedia.TYPE
 
-- {String} 返回当前媒体处理的类型
+- {string} 返回当前媒体处理的类型
 
 ### lmedia.init
 

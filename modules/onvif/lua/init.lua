@@ -94,9 +94,9 @@ function exports.post(options, callback)
         callback = noop
     end
 
-    local host = options.host or options.ip
+    local host = options.address or options.ip
     if (not host) then
-        return callback('Invalid host')
+        return callback('Invalid host address')
     end
 
     local url = 'http://' .. host
@@ -108,8 +108,8 @@ function exports.post(options, callback)
     -- console.log(url, options)
 
     request.post(url, options, function(err, response, body)
-        -- console.log(err, response, body)
-        
+        -- console.log(url, err, response, body)
+
         if (err or not body) then
             callback(err or 'error')
             return
@@ -406,7 +406,7 @@ exports.ptz = ptz
 local OnvifCamera = core.Emitter:extend()
 
 -- options
--- - ip {string} IP 地址
+-- - address {string} IP 地址
 -- - username {string} 用户名
 -- - password {string} 密码
 function OnvifCamera:initialize(options)
@@ -498,7 +498,8 @@ function OnvifCamera:getOptions(index)
 
     return {
         ip = options.ip,
-        host = options.host,
+        address = options.address,
+        port = options.port,
         profile = profile,
         username = options.username,
         password = options.password

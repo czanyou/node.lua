@@ -3,13 +3,33 @@ local util  = require('util')
 local fs 	= require('fs')
 local path 	= require('path')
 local json  = require('json')
+local exec  = require('child_process').exec
+
 local express = require('express')
 local config  = require('app/conf')
 local rpc     = require('app/rpc')
 
+local network = require("./network")
+
 local exports = {}
 
--- Get the MAC address of localhost 
+-- 加载描写的配置文件的内容
+-- @param {string} name 名称
+local function loadProfile(name)
+    local filename = path.join(app.nodePath, 'conf', name)
+    local data = fs.readFileSync(filename)
+    return json.parse(data)
+end
+
+local function startWatchConfig(callback)
+    exports.defaultConfig = config('default')
+    exports.userConfig = config('user')
+
+    exports.userConfig:startWatch(callback)
+    exports.defaultConfig:startWatch(callback)
+end
+
+-- Get the MAC address of localhost
 local function getMacAddress()
     local faces = os.networkInterfaces()
     if (faces == nil) then
@@ -40,48 +60,49 @@ local function getMacAddress()
     	return
     end
 
-    return util.bin2hex(item.mac)
+    return util.hexEncode(item.mac)
 end
 
-local function loadProfile(name)
-    local nodePath = app.nodePath
-    local filename = path.join(nodePath, 'conf', name)
-    local data = fs.readFileSync(filename)
-    return json.parse(data)
+local function getSystemTime()
+    return os.date('%Y-%m-%d %X')
 end
 
--- 检查客户端是否已经登录 
+-- 检查客户端是否已经登录
 local function checkLogin(request, response)
     local pathname = request.uri.pathname or ''
     -- console.log(pathname)
-
-    if (pathname == '/') or pathname:endsWith('.html') then
-        local default = loadProfile('default.conf')
-        local activate = default and default.activate
-        if (not activate) then
-            if (pathname ~= '/activate.html') then
-                response:set('Location', '/activate.html')
-                response:sendStatus(302)
-                return true
-            end
-
-            return false
-        end
-
-        if (pathname == '/login.html') then
-            return false
-        end
-
-    elseif pathname ~= '/' then
+    if (pathname == '/login.html') then
         return false
     end
 
+    -- check file type
+    local isHtml = (pathname == '/') or pathname:endsWith('.html')
+    if (not isHtml) then
+        return false
+    end
+
+    -- check activate
+    local default = exports.defaultConfig
+    local activate = default and default:get('activate')
+    if (not activate) then
+        -- 当设备还未激活时，总是重定向到激活页面
+        if (pathname ~= '/activate.html') then
+            response:set('Location', '/activate.html')
+            response:sendStatus(302)
+            return true
+        end
+
+        return false
+    end
+
+    -- check session
     local session = request:getSession()
     local userinfo = session and session.userinfo
     if (userinfo) then
         return false
     end
 
+    -- 重定向到登录页面
     response:set('Location', '/login.html')
     response:sendStatus(302)
     return true
@@ -117,7 +138,7 @@ local function apiAuthLogout(request, response)
         session.userinfo = nil
         return response:json({ message = "logout" })
     end
-    
+
     response:json({ code = 401, error = 'Unauthorized' })
 end
 
@@ -131,21 +152,35 @@ local function apiAuthSelf(request, response)
     response:json(userInfo or { code = 401, error = 'Unauthorized' })
 end
 
-local function apiSystemRead(request, response)
+local function apiGetSystemStatus(request, response)
+    app.reloadProfile()
+
+    local device = loadProfile('device.conf') or {}
+
     local system = {
         version = process.version,
         mac = getMacAddress(),
         base = app.get('base'),
         mqtt = app.get('mqtt'),
+        hardwareVersion = device.hardwareVersion,
+        firmwareVersion = device.firmwareVersion,
+        modelNumber = device.modelNumber,
+        serialNumber = app.get('serialNumber'),
+        datetime = getSystemTime(),
         did = app.get('did')
     }
 
-    local nodePath = app.nodePath
+    local tmpPath = os.tmpdir
+    local update = fs.readFileSync(tmpPath .. '/update/status.json')
+    local firmware = fs.readFileSync(tmpPath .. '/update/update.json')
 
-    local update = fs.readFileSync(nodePath .. '/update/status.json')
-    local firmware = fs.readFileSync(nodePath .. '/update/update.json')
+    local networkStatus = network.getNetworkStatus()
+    if (networkStatus and networkStatus.ethernet) then
+        networkStatus.ethernet.mac = getMacAddress()
+    end
 
     local status = {
+        network = networkStatus,
         system = system,
         update = json.parse(update),
         firmware = json.parse(firmware)
@@ -154,53 +189,46 @@ local function apiSystemRead(request, response)
     rpc.call('wotc', 'status', {}, function(err, result)
         status.register = result or err
         response:json(status)
-    end)    
+    end)
 end
 
-local function apiSystemWrite(request, response)
+local function apiSystemAction(request, response)
+
+    local function shellExecute(cmdline)
+        exec(cmdline, {}, function(err, stdout, stderr)
+            console.log('exec', err, stdout, stderr)
+            local output = stdout or stderr
+
+            local result = { code = 0, output = output }
+            response:json(result)
+        end)
+    end
+
     local query = request.body
 
     if (query.update) then
-        os.execute("lpm update > /tmp/update.log &")
+        return shellExecute("lpm update")
 
     elseif (query.upgrade) then
-        os.execute("lpm upgrade " .. query.upgrade .. " > /tmp/upgrade.log &")
+        return shellExecute("lpm upgrade " .. query.upgrade .. "")
 
     elseif (query.reboot) then
-        os.execute("reboot " .. query.reboot .. " &")
+        return shellExecute("reboot " .. query.reboot .. " &")
 
     elseif (query.reset) then
-        os.execute("lpm lci reset &")
+        return shellExecute("lpm lci reset")
 
     elseif (query.install) then
-        os.execute("lpm install /tmp/upload > /tmp/install.log &")
+        return shellExecute("lpm install /tmp/upload")
     end
 
     local result = { code = 0 }
     response:json(result)
 end
 
-local function apiConfigRead(request, response)
-    config.load("network", function(ret, profile)
-        local userConfig = profile:get('static')
-        -- console.log(userConfig)
-
-        response:json(userConfig)
-    end)
-end
-
 local function apiUpload(request, response)
-    -- console.log('apiUpload', #request.body)
-    -- console.log(request.files)
-    if (not request.files) then
-        if (request.body) then
-            local file = {
-                data = request.body
-            }
-
-            request.files = { file }
-        end
-    end
+    --console.log(request.body)
+    --console.log(request.files)
 
     local file = request.files and request.files[1]
     if (file) then
@@ -210,10 +238,23 @@ local function apiUpload(request, response)
     response:json({ code = 0 })
 end
 
-local function apiConfigWrite(request, response)
+local function apiGetNetworkConfig(request, response)
+    config.load("network", function(ret, profile)
+        local userConfig = profile:get('static') or {}
+        -- console.log(userConfig)
+
+        userConfig.base = app.get('base')
+        userConfig.mqtt = app.get('mqtt')
+
+        response:json(userConfig)
+    end)
+end
+
+local function apiPostNetworkConfig(request, response)
     local query = request.body
 
     local data = {
+        net_mode = query.net_mode,
         ip_mode = query.ip_mode,
         ip = query.ip,
         netmask = query.netmask,
@@ -229,18 +270,52 @@ local function apiConfigWrite(request, response)
         local result = { code = 0 }
         response:json(result)
     end)
+
+    if (query.base and query.base ~= app.get('base')) then
+        app.set('base', query.base)
+    end
+
+    if (query.mqtt and query.mqtt ~= app.get('mqtt')) then
+        app.set('mqtt', query.mqtt)
+    end
 end
 
-local function apiSystemActivateRead(request, response)
+local function apiGetUserConfig(request, response)
+    config.load("user", function(ret, profile)
+        local gateway = profile:get('gateway')
+        response:json(gateway or { code = -404 })
+    end)
+end
+
+local function apiPostUserConfig(request, response)
+    config.load("user", function(ret, profile)
+        local gateway = request.body
+        if (gateway) then
+            --console.log('gateway', gateway)
+            profile:set("gateway", gateway)
+            profile:commit()
+        end
+
+        response:json({ code = 0 })
+    end)
+end
+
+local function apiActivateRead(request, response)
     local default = loadProfile('default.conf') or {}
+    local device = loadProfile('device.conf') or {}
 
     local system = {
         version = process.version,
         mac = getMacAddress(),
-        base = default.base,
-        mqtt = default.mqtt,
-        did = default.did,
-        secret = default.secret
+        base = default.base or 'http://iot.beaconice.cn/v2',
+        mqtt = default.mqtt or 'mqtt://iot.beaconice.cn',
+        did = default.did or getMacAddress(),
+        hardwareVersion = device.hardwareVersion,
+        firmwareVersion = device.firmwareVersion,
+        modelNumber = device.modelNumber,
+        serialNumber = default.serialNumber,
+        secret = default.secret or '0123456789abcdef',
+        password = ''
     }
 
     local status = {
@@ -250,7 +325,7 @@ local function apiSystemActivateRead(request, response)
     response:json(status)
 end
 
-local function apiSystemActivate(request, response)
+local function apiActivateWrite(request, response)
     local query = request.body
 
     config.load("default", function(ret, profile)
@@ -258,33 +333,21 @@ local function apiSystemActivate(request, response)
             return response:json({ code = 400, error = 'Already activated' })
         end
 
-        if (query.did) then
-            profile:set("did", query.did)
+        -- password
+        if (not query.password) then
+            return response:json({ code = 400, error = 'Invalid password'})
         end
 
-        if (query.base) then
-            profile:set("base", query.base)
-        end
-
-        if (query.mqtt) then
-            profile:set("mqtt", query.mqtt)
-        end
-
-        if (query.secret) then
-            profile:set("secret", query.secret)
+        local names = { 'did', 'base', 'mqtt', 'secret', 'serialNumber' }
+        for index, name in ipairs(names) do
+            if (query[name] ~= nil) then
+                profile:set(name, query[name])
+            end
         end
 
         profile:set("activate", 'true')
         profile:set("updated", Date.now())
         profile:commit()
-
-        local nodePath = app.nodePath
-        console.log(nodePath)
-
-        -- password
-        if (not query.password) then
-            return print('Invalid password')
-        end
 
         local newPassword = util.md5string('wot:' .. query.password)
         os.execute("lpm set password " .. newPassword)
@@ -293,12 +356,12 @@ local function apiSystemActivate(request, response)
     end)
 end
 
-local function setConfigRoutes(app) 
+local function setConfigRoutes(app)
     -- checkLogin
-    function app:onRequest(request, response)
-        -- console.log('onRequest', request.path)
-        return checkLogin(request, response)
-    end
+    app:use(function(request, response, next)
+        -- console.log('checkLogin', request.path, next)
+        return checkLogin(request, response, next)
+    end)
 
     -- @param pathname
     function app:getFileName(pathname)
@@ -309,15 +372,44 @@ local function setConfigRoutes(app)
     app:post('/auth/logout', apiAuthLogout);
     app:get('/auth/self', apiAuthSelf);
 
-    app:post('/config/write', apiConfigWrite);
-    app:get('/config/read', apiConfigRead);
+    app:get('/config/network', apiGetNetworkConfig);
+    app:get('/config/user', apiGetUserConfig);
+    app:post('/config/network', apiPostNetworkConfig);
+    app:post('/config/user', apiPostUserConfig);
 
-    app:get('/system/read', apiSystemRead);
-    app:post('/system/write', apiSystemWrite);
+    app:get('/system/status', apiGetSystemStatus);
+    app:post('/system/action', apiSystemAction);
 
-    app:get('/system/activate', apiSystemActivateRead);
-    app:post('/system/activate', apiSystemActivate);
+    app:get('/system/activate', apiActivateRead);
+    app:post('/system/activate', apiActivateWrite);
     app:post('/upload', apiUpload);
+
+    local function getRpcResult(name, method, params, callback)
+        rpc.call(name, method, params, function(err, result)
+            if (callback) then
+                callback(result, err, name, method)
+            end
+        end)
+    end
+
+    local function addRpcHandler(app, name, method)
+        app:get('/status/' .. name .. '/' .. method, function(req, res)
+            getRpcResult(name, method, {}, function(result)
+                res:json(result or {})
+            end)
+        end)
+    end
+
+    addRpcHandler(app, 'gateway', 'beacons')
+    addRpcHandler(app, 'gateway', 'bluetooth')
+    addRpcHandler(app, 'gateway', 'camera')
+    addRpcHandler(app, 'gateway', 'logs')
+    addRpcHandler(app, 'gateway', 'lora')
+    addRpcHandler(app, 'gateway', 'modbus')
+    addRpcHandler(app, 'gateway', 'status')
+    addRpcHandler(app, 'gateway', 'tags')
+    addRpcHandler(app, 'gateway', 'things')
+    addRpcHandler(app, 'wotc', 'status')
 end
 
 function exports.start(port)
@@ -325,10 +417,17 @@ function exports.start(port)
     local dirname = path.dirname(util.dirname())
     local root = path.join(dirname, 'www')
 
+    startWatchConfig(function (profile)
+        local default = exports.defaultConfig
+        local activate = default and default:get('activate')
+
+        console.log('changed', activate)
+    end)
+
     -- app
     local httpd = express({ root = root })
 
-    httpd:on('error', function(err, code) 
+    httpd:on('error', function(err, code)
         print('Error: ', err)
         if (code == 'EACCES') then
             print('Error: Only administrators have permission to use port 80')
@@ -338,6 +437,9 @@ function exports.start(port)
     setConfigRoutes(httpd)
 
     httpd:listen(port or 80)
+
+    -- HTTP sessions
+    express.startHttpSessions()
 end
 
 return exports

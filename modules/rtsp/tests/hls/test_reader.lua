@@ -43,7 +43,7 @@ local function writeAACData(output)
 	fs.writeFileSync(filename, data)
 end
 
-return tap(function(test)
+local test = tap.test
 
 test('test_hls_reader', function()
 	-- 这个测试程序将解析指定的源 TS 流文件，并输出 H.264 ES 流文件
@@ -120,5 +120,5 @@ test('test_hls_reader', function()
 
 end)
 
-end)
+tap.run()
 

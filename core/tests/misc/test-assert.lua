@@ -1,5 +1,4 @@
 local tap 	    = require("ext/tap")
-local utils     = require('util')
 local assert    = require('assert')
 
 local test = tap.test
@@ -70,7 +69,7 @@ test("assert ok", function()
 	assert.ok(true)
 	assert.ok(0)
 	assert.ok('')
-	
+
 	assert.equal(false, pcall(assert.ok, false))
 	assert.equal(false, pcall(assert.ok, nil))
 end)

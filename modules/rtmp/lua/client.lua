@@ -235,12 +235,12 @@ function RTMPClient:connect(urlString)
 
     -- Socket 被关闭
     local onSocketClose = function()
-        self:close('socket close')
+        self:close('socket.close')
     end
 
     -- 连接超时
     local onConnectTimeout = function()
-        self:close('connect timeout')
+        self:close('rtmp.connectTimeout')
     end
 
     socket:on("close", onSocketClose)

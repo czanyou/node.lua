@@ -1,11 +1,4 @@
 local tls 		= require('lmbedtls.tls')
-local utils 	= require('util')
-local lcrypto 	= require('tls/lcrypto')
-local tap 		= require('ext/tap')
-local net 		= require('net')
-local uv 		= require('luv')
-
-local data = ""
 
 local MBEDTLS_ERR_SSL_WANT_READ   = -0x6900 -- 26800 /**< Connection requires a read call. */
 local MBEDTLS_ERR_SSL_WANT_WRITE  = -0x6880 -- 26752

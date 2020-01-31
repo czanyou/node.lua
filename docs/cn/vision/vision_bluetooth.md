@@ -11,8 +11,8 @@
 
 开始扫描
 
-- options {Object} 扫描选项
-- callback {Function} - function(err, data)
+- options {object} 扫描选项
+- callback {function} - function(err, data)
     当接收到任何 BLE 广播数据时调用这个函数
 
 ## bluetooth.stopScan

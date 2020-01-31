@@ -35,34 +35,14 @@ local function localSearcher(name)
     end
 
     local _get_script_filename = function()
-        --console.trace()
+        local info = debug.getinfo(3, 'Sl') or {}
+        local filename = info.source or ''
+        local currentline = info.currentline
 
-        local waitRequire = false
-        local filename = nil
-        local currentline = nil
-
-        for i = 1, 10 do
-            local info = debug.getinfo(i, nil, 'Sln')
-            if (not info) then
-                return
-            end
-
-            if (info.name == 'require') then
-                waitRequire = true
-
-            elseif (waitRequire) then
-                filename = info.source or ''
-                currentline = info.currentline
-                break
-            end
-        end
-
-        -- [[
-        --local info = debug.getinfo(4, 'Sl') or {}
-        --local filename = info.source or ''
         if (filename:startsWith("@")) then
             filename = filename:sub(2)
         end
+
         return filename, currentline or -1
     end
 
@@ -75,10 +55,27 @@ local function localSearcher(name)
         local path = require('path')
         basePath = path.dirname(basePath)
 
-        local filename = path.join(basePath, name .. ".lua")
+        local filename = path.join(basePath, name)
+        local stat = uv.fs_stat(filename)
+        if (stat and stat.type == 'directory') then
+            filename = filename .. '/init.lua'
+        else
+            filename = filename .. '.lua'
+        end
+
+        local module = package.loaded[filename]
+        if (module) then
+            return module
+        end
 
         local ret, err = loadfile(filename)
         if (err) then print(err); os.exit() end
+
+        if (ret) then
+            ret = ret()
+        end
+
+        package.loaded[filename] = ret
         return ret, err
     end
 
@@ -102,7 +99,7 @@ local function moduleSearcher(name)
         return nil
     end
 
-    local stat, err = uv.fs_stat(basePath .. '/modules')
+    local stat = uv.fs_stat(basePath .. '/modules')
     if (stat == nil) then
         basePath = basePath .. '/../'
     end
@@ -121,7 +118,7 @@ local function moduleSearcher(name)
         filename = (basePath .. '/modules/' .. name .. '/lua/' .. "init.lua")
     end
 
-    local stat, err = uv.fs_stat(filename)
+    stat = uv.fs_stat(filename)
     if (stat == nil) then
         return nil
     end
@@ -150,7 +147,7 @@ local function appSearcher(name)
         return nil
     end
 
-    local stat, err = uv.fs_stat(basePath .. '/app')
+    local stat = uv.fs_stat(basePath .. '/app')
     if (stat == nil) then
         basePath = basePath .. '/../'
     end
@@ -170,7 +167,7 @@ local function appSearcher(name)
     end
 
     --console.log('filename', filename)
-    local stat, err = uv.fs_stat(filename)
+    stat = uv.fs_stat(filename)
     if (stat == nil) then
         return nil
     end
@@ -180,13 +177,26 @@ local function appSearcher(name)
     return ret, err
 end
 
-package.searchers[7] = appSearcher
-package.searchers[6] = moduleSearcher
-package.searchers[5] = package.searchers[4]
-package.searchers[4] = package.searchers[3]
-package.searchers[3] = package.searchers[2]
-package.searchers[2] = package.searchers[1]
-package.searchers[1] = localSearcher
+package.searchers[6] = appSearcher
+package.searchers[5] = moduleSearcher
+--package.searchers[4] = package.searchers[4]
+--package.searchers[3] = package.searchers[3]
+--package.searchers[2] = package.searchers[2]
+--package.searchers[1] = package.searchers[1]
+
+-------------------------------------------------------------------------------
+-- require
+
+_G._require = require
+_G.require = function(name, ...)
+
+    if (name and name:byte(1) == 46) then -- startsWith: `.`
+        return localSearcher(name)
+    end
+
+    -- print(package.loaded[name])
+    return _require(name, ...)
+end
 
 -------------------------------------------------------------------------------
 -- run loop
@@ -337,17 +347,6 @@ package._searcher = package.searchers[1]
 package.searchers[1] = function(name)
     print('_searcher', name)
     return package._searcher(name)
-end
---]]
-
--------------------------------------------------------------------------------
--- require
-
---[[
-_G._require = require
-_G.require = function(...)
-    print('require', ...)
-    return _require(...)
 end
 --]]
 

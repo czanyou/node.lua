@@ -6,8 +6,7 @@ local tap     = require('ext/tap')
 local packet = require('mqtt/packet')
 local Packet = packet.Packet
 
-tap(function(test)
-
+local test = tap.test
 
 test('test parse message length', function()
 	local Packet = Packet
@@ -199,4 +198,4 @@ test('Packet:build and packet.parse TYPE_CONACK', function()
 	assert.equal(message2.messageType, packet.TYPE_CONACK)
 end)
 
-end)
+tap.run()

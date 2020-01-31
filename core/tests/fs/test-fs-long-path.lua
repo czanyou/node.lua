@@ -24,7 +24,6 @@ local math = require('math')
 local string = require('string')
 local fs = require('fs')
 local path = require('path')
-local JSON = require('json')
 
 local successes = 0
 

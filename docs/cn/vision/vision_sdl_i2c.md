@@ -8,9 +8,9 @@ I2C 外部总线访问接口
 
 ### li2c.new
 
-- deviceName {String} I2C 总线设备名，如 `/dev/i2c-1`
-- mode {Number} I2C 设备工作模式
-- address {Number} I2C 设备地址
+- deviceName {string} I2C 总线设备名，如 `/dev/i2c-1`
+- mode {number} I2C 设备工作模式
+- address {number} I2C 设备地址
 
 ### i2c:close 
 
@@ -18,7 +18,7 @@ I2C 外部总线访问接口
 
 ### i2c:crc
 
-- data {String} 要计算 CRC 的数据
+- data {string} 要计算 CRC 的数据
 
 返回 8 位 CRC 值
 
@@ -28,7 +28,7 @@ I2C 外部总线访问接口
 
 ### i2c:write
 
-- data {String} 要写入的数据，不能超过 2 个字节，超出的部分将不会写入。
+- data {string} 要写入的数据，不能超过 2 个字节，超出的部分将不会写入。
 
 ### 示例
 

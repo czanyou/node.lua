@@ -45,12 +45,12 @@
 
 打开指定的音频输入通道
 
-- channel {Number} 要打开的音频输入通道号, 0 表示第一个通道, 网络摄像机通常也只有一个输入通道.
-- options {Object} 选项
-  - sampleRate {Number} 采样率, 没指定的话为 8000
-  - sampleBits {Number} 样本大小, 没指定的话为 16bit
-  - channels {Number} 通道数, 没有指定的话为 1, 2 则表示立体声
-  - codec {Number} 编码格式, 默认为 MEDIA_FORMAT_PCM
+- channel {number} 要打开的音频输入通道号, 0 表示第一个通道, 网络摄像机通常也只有一个输入通道.
+- options {object} 选项
+  - sampleRate {number} 采样率, 没指定的话为 8000
+  - sampleBits {number} 样本大小, 没指定的话为 16bit
+  - channels {number} 通道数, 没有指定的话为 1, 2 则表示立体声
+  - codec {number} 编码格式, 默认为 MEDIA_FORMAT_PCM
 
 ### 类 audio_in_t
 
@@ -66,7 +66,7 @@
 
 开始采集, 采集得到的数据通过注册的回调函数返回给应用程序.
 
-- callback {Function} `-function(data)`
+- callback {function} `-function(data)`
 
 #### audio_in:stop
 
@@ -122,7 +122,7 @@
 
 打开指定的音频输出通道
 
-- channel {Number} 要打开的音频输出通道号, 0 表示第一个通道, 网络摄像机通常也只有一个输出通道.
+- channel {number} 要打开的音频输出通道号, 0 表示第一个通道, 网络摄像机通常也只有一个输出通道.
 - options {Object|Number} 选项, 默认为 MEDIA_FORMAT_PCM
 
 ### 类 audio_out_t
@@ -137,4 +137,4 @@
 
     audio_out:write(data)
 
-- data {String} 要播放的音频流数据
+- data {string} 要播放的音频流数据

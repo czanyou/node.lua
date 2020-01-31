@@ -17,88 +17,13 @@ limitations under the License.
 
 --]]
 
-local uv        = require('luv')
-local adapt     = require('util').adapt
+local fs        = require('./file')
 local bind      = require('util').bind
 
 local Writable  = require('stream').Writable
 local Readable  = require('stream').Readable
 
 local exports = {}
-local fs = {}
-
-function fs.close(fd, callback)
-    return adapt(callback, uv.fs_close, fd)
-end
-
-function fs.open(path, flags, mode, callback)
-    local ft = type(flags)
-    local mt = type(mode)
-
-    -- (path, callback)
-    if (ft == 'function' or ft == 'thread') and (mode == nil and callback == nil) then
-        callback, flags = flags, nil
-
-    -- (path, flags, callback)
-    elseif (mt == 'function' or mt == 'thread') and (callback == nil) then
-        callback, mode = mode, nil
-    end
-
-    -- Default flags to 'r'
-    if (flags == nil) then
-        flags = 'r'
-    end
-
-    -- Default mode to 0666
-    if (mode == nil) then
-        mode = 438 -- 0666
-        -- Assume strings are octal numbers
-
-    elseif (mt == 'string') then
-        mode = tonumber(mode, 8)
-    end
-
-    return adapt(callback, uv.fs_open, path, flags, mode)
-end
-
-function fs.read(fd, size, offset, callback)
-    local st = type(size)
-    local ot = type(offset)
-
-    -- (fd, callback)
-    if (st == 'function' or st == 'thread') and (offset == nil and callback == nil) then
-        callback, size = size, nil
-
-    -- (fd, size, callback)
-    elseif (ot == 'function' or ot == 'thread') and (callback == nil) then
-        callback, offset = offset, nil
-    end
-
-    if (size == nil) then
-        size = 4096
-    end
-
-    if (offset == nil) then
-        offset = -1
-    end
-
-    return adapt(callback, uv.fs_read, fd, size, offset)
-end
-
-function fs.write(fd, offset, data, callback)
-    local ot = type(offset)
-
-    -- (fd, callback, data)
-    if (ot == 'function' or ot == 'thread') and (callback == nil) then
-        callback, offset = offset, nil
-    end
-
-    if (offset == nil) then
-        offset = -1 -- -1 means append
-    end
-
-    return adapt(callback, uv.fs_write, fd, data, offset)
-end
 
 -------------------------------------------------------------------------------
 -- WriteStream
@@ -124,7 +49,9 @@ function WriteStream:initialize(path, options)
 
     if not self.fd then self:open() end
 
-    self:on('finish', bind(self.close, self))
+    self:on('finish', function()
+        self:close()
+    end)
 end
 
 function WriteStream:open(callback)
@@ -206,7 +133,9 @@ function ReadStream:initialize(path, options)
         self:open()
     end
 
-    self:on('end', bind(self.close, self))
+    self:on('end', function()
+        self:close()
+    end)
 end
 
 function ReadStream:open(callback)

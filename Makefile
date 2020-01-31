@@ -79,8 +79,14 @@ load:
 build:
 	$(call make_build)
 
+test:
+	cd core/tests; lnode ./test-all.lua
+
 clean:
 	rm -rf build
+
+## ------------------------------------------------------------
+## Board
 
 local:
 	@make load board=$@
@@ -90,14 +96,23 @@ hi3516:
 	@make load board=$@
 	@make build
 
+dt02:
+	@make load board=$@
+	@make build
+
 ## ------------------------------------------------------------
 ## SDK
 
 sdk:
 	lpm lbuild sdk
 
+version:
+	lpm lbuild version
+
 install:
 	$(call sdk_install)
 
 remove:
 	$(call sdk_remove)
+
+

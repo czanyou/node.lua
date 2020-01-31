@@ -1,12 +1,9 @@
-local utils 	= require('util')
-local url 		= require('url')
-local fs 		= require('fs')
 local tap 		= require('ext/tap')
 
 local session 	= require('media/session')
 local rtp 	    = require('rtsp/rtp')
 
-return tap(function (test)
+local test = tap.test
 
 test('test_rtsp_session', function()
 	--console.log(server.MediaSession)
@@ -40,4 +37,4 @@ test('test_rtsp_session', function()
 	
 end)
 
-end)
+tap.run()

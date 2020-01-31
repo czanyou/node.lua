@@ -34,6 +34,33 @@ local IncomingMessage = http.IncomingMessage
 local exports = { }
 local IncomingCounter = 0
 
+function exports.checkHttpSessions()
+    local now = Date.now()
+    local httpSessions = exports.httpSessions
+    if (not httpSessions) then
+        return
+    end
+
+    for sessionId, httpSession in pairs(httpSessions) do
+        local span = now - (httpSession.updated or 0)
+        if (span > 10 * 60 * 1000) then
+            httpSessions[sessionId] = nil
+        end
+    end
+end
+
+function exports.startHttpSessions()
+    if (exports.httpSessions) then
+        return
+    end
+
+    exports.httpSessions = {}
+
+    exports.httpSessionTimer = setInterval(1000 * 10, function()
+        exports.checkHttpSessions()
+    end)
+end
+
 local function _getContentType(path)
     return mime[path:lower():match("[^.]*$")] or mime.default
 end
@@ -65,8 +92,6 @@ local function _getFileList(path, contextPath)
     return data:toString()
 end
 
-local httpSessions = {}
-
 -------------------------------------------------------------------------------
 -- IncomingMessage
 
@@ -86,6 +111,7 @@ function IncomingMessage:getSessionId()
 end
 
 function IncomingMessage:getSession(create)
+    local httpSessions = exports.httpSessions or {}
     local sessionId = self:getSessionId()
     local httpSession = sessionId and httpSessions[sessionId]
     if (not httpSession) and create then
@@ -93,7 +119,10 @@ function IncomingMessage:getSession(create)
         httpSessions[sessionId] = httpSession
     end
 
-    -- console.log(sessionId, httpSessions)
+    if (httpSession) then
+        httpSession.updated = Date.now()
+    end
+
     return httpSession
 end
 
@@ -123,11 +152,10 @@ function IncomingMessage:readBody(callback)
         --console.log(#data, data)
     end)
 
-    self:on('end', function(data)
+    self:once('end', function(data)
         sb:append(data)
 
         local content = sb:toString()
-        -- console.log('end', contentType, #content)
 
         if (contentType == 'application/x-www-form-urlencoded') then
             self.body = querystring.parse(content)
@@ -161,31 +189,32 @@ function IncomingMessage:readBody(callback)
                 headerName = nil
                 feilds = {}
             end)
-            
+
             parser:on('header-name', function(data)
                 -- console.log('header-name', data)
                 headerName = data
                 fieldName = nil
             end)
-            
+
             parser:on('header-value', function(data)
                 -- console.log('header-value', data)
                 if (headerName == 'Content-Type') then
                     feilds['mimetype'] = data
                 end
             end)
-            
+
             parser:on('feild-name', function(data)
                 -- console.log('feild-name', data)
                 fieldName = data
             end)
-            
+
             parser:on('feild-value', function(data)
                 -- console.log('feild-value', fieldName, data)
                 feilds[fieldName] = data
             end)
 
             parser:processData(content)
+            parser = nil
 
             self.files = files
             self.body = body
@@ -201,6 +230,8 @@ function IncomingMessage:readBody(callback)
             self.body = ''
         end
 
+        sb = nil
+        contentType = nil
         callback(self)
     end)
 end
@@ -209,15 +240,16 @@ end
 -- ServerResponse
 
 function ServerResponse:checkSessionId()
-    local sessionId = self.request:getSessionId()
-    if (not sessionId) then
-        sessionId = tostring(math.floor(os.uptime() * 1000) + IncomingCounter)
-        local cookie = "LSESSIONID=" .. sessionId .. ";path=/"
-        self:set("Set-Cookie", cookie)
-
-        IncomingCounter = (IncomingCounter + 1) % 1000
+    local sessionId = self.sessionId
+    if (sessionId) then
+        return
     end
 
+    sessionId = tostring(math.floor(os.uptime() * 1000) + IncomingCounter)
+    local cookie = "LSESSIONID=" .. sessionId .. ";path=/"
+    self:set("Set-Cookie", cookie)
+
+    IncomingCounter = (IncomingCounter + 1) % 1000
     --console.log('id', sessionId)
 end
 
@@ -239,6 +271,7 @@ function ServerResponse:json(data)
 
     self:checkSessionId()
     self:write(text)
+    self:finish()
 end
 
 function ServerResponse:redirect(status, path)
@@ -249,6 +282,7 @@ function ServerResponse:redirect(status, path)
 
     self:set("Location", path)
     self:sendStatus(status or 300)
+    self:finish()
 end
 
 function ServerResponse:send(text, contentType)
@@ -261,116 +295,38 @@ function ServerResponse:send(text, contentType)
     self:set("Content-Length", #text)
 
     self:checkSessionId()
-      self:write(text)
+    self:write(text)
+    self:finish()
 end
 
-function ServerResponse:sendFile(filename)
-    fs.stat(filename, function (err, statInfo, ...)
-        if err then
-            if err.code == "ENOENT" then
-                self:sendStatus(404, err.message)
-                return
-
-            elseif type(err) == 'string' and err:startsWith("ENOENT") then
-                self:sendStatus(404, err.message)
-                return
-            end
-
-            self:sendStatus(500, (err.message or tostring(err)))
-            return
-        end
-
-        --console.log(stat.type)
-
-        if (statInfo.type ~= 'file') then
-            self:sendFileList(filename)
-            return
-
-        elseif (statInfo.type ~= 'file') then
-            self:sendStatus(404, "Requested url is not a file")
-            return
-        end
-
-        local extName = filename:lower():match("[^.]*$")
-        if (extName == 'lua') then
-            self:sendScriptFile(filename)
-
-        else
-            local contentType = mime[extName] or mime.default
-            self:sendStaticFile(filename, statInfo, contentType)
-        end
-    end)
-end
-
-function ServerResponse:sendFileList(filename)
+function ServerResponse:sendFileList(filename, request)
     local indexFile = path.join(filename, 'index.html')
     fs.stat(indexFile, function (err, statInfo)
         if (not statInfo) then
-            local content = _getFileList(filename, self.request.uri.pathname)
+            local content = _getFileList(filename, request.uri.pathname)
             self:send(content)
             return
         end
 
         local contentType = mime["html"] or mime.default
-        self:sendStaticFile(indexFile, statInfo, contentType)
+        local options = {
+            filename = indexFile,
+            statInfo = statInfo,
+            contentType = contentType,
+            pathname = request.uri.pathname or '',
+            ifSince =  request.headers['If-Modified-Since']
+        }
+
+        self:sendStaticFile(options)
     end)
 end
 
-function ServerResponse:sendScript(filedata, filename)
-    local env = {}
-    for k, v in pairs(_G) do
-        env[k] = v
-    end
-
-    local script, err
-
-    local handler = function(message)
-        err = (message or '') .. "\r\n" .. debug.traceback()
-    end
-
-    env.request  = self.request
-    env.response = self
-    script, err = load(filedata, filename or '__', "t", env)
-    local content = ""
-    if (script) then
-        content = xpcall(script, handler)
-        if (content == true) then
-            return
-        end
-    end
-
-    if (err) then
-        content = '<pre><code>' .. tostring(err) .. '</code></pre>'
-        self:sendStatus(500, content)
-        return
-    end
-
-    if (type(content) ~= 'string') or (#content < 1) then
-        content = "internal error!"
-        self:sendStatus(500, content)
-        return
-    end
-
-    self:send(content)
-end
-
-function ServerResponse:sendScriptFile(filename)
-    fs.readFile(filename, function(err, filedata)
-        if (not filedata) then
-            self:sendStatus(404, "Requested url is not a file")
-            return
-        end
-
-        self:sendScript(filedata, filename)
-    end)
-end
-
-function ServerResponse:sendStaticFile(filename, statInfo, contentType)
-    local pathname = self.request.uri.pathname or ''
+function ServerResponse:sendStaticFile(options)
+    local pathname = options.pathname
 
     if (not pathname:endsWith('.html')) then
-        local since = self.request.headers['If-Modified-Since']
-        local value = os.date("!%a, %d %b %Y %H:%M:%S GMT", statInfo.mtime.sec)
+        local since = options.ifSince
+        local value = os.date("!%a, %d %b %Y %H:%M:%S GMT", options.statInfo.mtime.sec)
 
         if since and (since == value) then
             self:sendStatus(304)
@@ -380,9 +336,10 @@ function ServerResponse:sendStaticFile(filename, statInfo, contentType)
         self:set('Last-Modified', value)
     end
 
-    local fileStream = fs.createReadStream(filename)
-    self:sendStream(fileStream, contentType, statInfo.size)
+    local fileStream = fs.createReadStream(options.filename)
+    self:sendStream(fileStream, options.contentType, options.statInfo.size)
 end
+
 
 function ServerResponse:sendStatus(statusCode, message)
     self:status(statusCode)
@@ -408,6 +365,7 @@ function ServerResponse:sendStatus(statusCode, message)
 
     self:checkSessionId()
     self:write(data)
+    self:finish()
 end
 
 function ServerResponse:sendStream(stream, contentType, contentLength)
@@ -487,7 +445,7 @@ function Express:all(method, pathname, handler)
         route = {}
         self.routes[method] = route
     end
-    
+
     local tokens = pathname:split('/')
     --console.log(tokens)
 
@@ -516,7 +474,7 @@ function Express:all(method, pathname, handler)
             route = subRoute
         end
     end
-    
+
     route['@handler'] = handler
     -- console.log(self.routes)
 end
@@ -541,7 +499,7 @@ function Express:getHandler(request)
     local route = self.routes[method] or {}
 
     local tokens = pathname:split('/')
-    
+
     for index, item in ipairs(tokens) do
         if (item and item ~= '') then
             --console.log(index, item)
@@ -567,7 +525,7 @@ function Express:getHandler(request)
             end
         end
     end
-    
+
 
     if (route) then
         handler = route['@handler']
@@ -581,13 +539,56 @@ function Express:post(pathname, handler)
     self:all('POST', pathname, handler)
 end
 
-function Express:onRequest(request, response)
-    -- 子类可以实现这个方法来处理请求
-    return false
+function Express:handleFileRequest(request, response)
+    local filename = self:getFileName(request.path)
+    if (not filename) then
+        return response:sendStatus(404)
+    end
+
+    fs.stat(filename, function (err, statInfo, ...)
+        if err then
+            if err.code == "ENOENT" then
+                response:sendStatus(404, err.message)
+                return
+
+            elseif type(err) == 'string' and err:startsWith("ENOENT") then
+                response:sendStatus(404, err.message)
+                return
+            end
+
+            response:sendStatus(500, (err.message or tostring(err)))
+            return
+        end
+
+        --console.log(stat.type)
+
+        if (statInfo.type ~= 'file') then
+            response:sendFileList(filename, request)
+            return
+
+        elseif (statInfo.type ~= 'file') then
+            response:sendStatus(404, "Requested url is not a file")
+            return
+        end
+
+        local extName = filename:lower():match("[^.]*$")
+        local contentType = mime[extName] or mime.default
+        local options = {
+            filename = filename,
+            statInfo = statInfo,
+            contentType = contentType,
+            pathname = request.uri.pathname or '',
+            ifSince =  request.headers['If-Modified-Since']
+        }
+
+        response:sendStaticFile(options)
+    end)
 end
 
 function Express:handleRequest(request, response)
-    response.request = request
+    -- response.request = request
+    local sessionId = request:getSessionId()
+    response.sessionId = sessionId
 
     local uri           = url.parse(request.url)
 
@@ -598,32 +599,27 @@ function Express:handleRequest(request, response)
     request.ip          = nil
     request.query       = querystring.parse(uri.query)
 
-    -- 供子类拦截所有请求处理
-    if (self:onRequest(request, response)) then
-        return
-    end
-
+    -- 中间件
     for index, func in ipairs(self.functions) do
-        func(request, response)
+        local status, result = pcall(func, request, response)
+        if (status and result) then
+            return
+        end
     end
 
     -- handler
     local handler = self:getHandler(request)
-    if (handler) then
-        --self:handleWithHandler(request, response, handler)
-        request:readBody(function()
-            handler(request, response)
-        end)
+    if (not handler) then
+        self:handleFileRequest(request, response)
         return
     end
 
-    -- file
-    local filename = self:getFileName(request.path)
-    if (filename) then
-        response:sendFile(filename)
-    else
-        response:sendStatus(404)
-    end
+    request:readBody(function()
+        local status = pcall(handler, request, response)
+        if (not status) then
+            response:sendStatus(500)
+        end
+    end)
 end
 
 function Express:listen(port, callback)

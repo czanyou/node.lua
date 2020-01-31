@@ -6,7 +6,7 @@
 
 ## path.basename
 
-    path.basename(p, [ext])
+> path.basename(p, [ext])
 
 返回路径中的最后哦一部分. 类似于Unix 的 basename 命令.
 
@@ -19,7 +19,7 @@ path.basename('/foo/bar/baz/asdf/quux.html', '.html')
 
 ## path.dirname
 
-    path.dirname(p)
+> path.dirname(p)
 
 返回路径中文件夹的名称. 类似于 Unix 的 dirname 命令.
 
@@ -32,7 +32,7 @@ path.dirname('/foo/bar/baz/asdf/quux')
 
 ## path.extname
 
-    path.extname(p)
+> path.extname(p)
 
 返回路径中文件的扩展名, 在从最后一部分中的最后一个'.'到字符串的末尾。 如果在路径的最后一部分没有'.'，或者第一个字符是'.'，就返回一个 空字符串。 例子：
 
@@ -43,9 +43,9 @@ path.extname('index')
 
 ## path.isAbsolute
 
-    path.isAbsolute(path)
+> path.isAbsolute(path)
 
-判定path是否为绝对路径。一个绝对路径总是指向一个相同的位置，无论当前工作目录是在哪里。
+判定 path 是否为绝对路径。一个绝对路径总是指向一个相同的位置，无论当前工作目录是在哪里。
 
 Posix 示例:
 
@@ -67,7 +67,7 @@ path.isAbsolute('.')         -- false
 
 ## path.normalize
 
-     path.normalize(p)
+> path.normalize(p)
 
 规范化字符串路径，注意 '..' 和 `'.' 部分
 
@@ -82,7 +82,7 @@ path.normalize('/foo/bar//baz/asdf/quux/..')
 
 ## path.join
 
-    path.join([path1], [path2], [...])
+> path.join([path1], [path2], [...])
 
 连接所有参数, 并且规范化得到的路径.
 
@@ -97,13 +97,13 @@ path.join('foo', {}, 'bar')
 
 ## path.relative
 
-    path.relative(from, to)
+> path.relative(from, to)
 
 破解从from到to的相对路径。
 
 有时我们有2个绝对路径, 我们需要从中找出相对目录的起源目录。这完全是path.resolve的相反实现,我们可以看看是什么意思:
 
-    path.resolve(from, path.relative(from, to)) == path.resolve(to)
+> path.resolve(from, path.relative(from, to)) == path.resolve(to)
 
 示例:
 
@@ -114,7 +114,7 @@ path.relative('/data/orandea/test/aaa', '/data/orandea/impl/bbb')
 
 ## path.resolve
 
-    path.resolve([from ...], to)
+> path.resolve([from ...], to)
 
 把 to 解析为一个绝对路径。
 
@@ -122,7 +122,7 @@ path.relative('/data/orandea/test/aaa', '/data/orandea/impl/bbb')
 
 另一种思路, 是把它看做一系列 cd 命令.
 
-    path.resolve('foo/bar', '/tmp/file/', '..', 'a/../subfile')
+> path.resolve('foo/bar', '/tmp/file/', '..', 'a/../subfile')
 
 相当于:
 

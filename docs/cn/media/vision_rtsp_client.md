@@ -85,20 +85,20 @@
 
 当收到 SDP 描述信息时
 
-- sdpString {String} SDP 字符串
+- sdpString {string} SDP 字符串
 
 ### 事件 'error'
 
 当发生连接等错误时
 
-- error {String} 错误信息
+- error {string} 错误信息
 
 ### 事件 'response'
 
 当收到应答消息时
 
-- request {Object} 相关的请求消息
-- response {Object} 收到的应答消息
+- request {object} 相关的请求消息
+- response {object} 收到的应答消息
 
 ### 事件 'sample'
 
@@ -121,16 +121,16 @@
 }
 ```
 
-- data {Array} 这个 Sample 的有效负载内容
-- isEnd {Boolean} 这个 Sample 的分片结束标记，源自 RTP 包
-- isFragment {Boolean} 这个 Sample 的分片标记，源自 RTP 包
-- isStart {Boolean} 这个 Sample 的分片开始标记，源自 RTP 包
-- isVideo {Boolean} 指出这个 Sample 是否属视频流
-- marker {Boolean} 这个 Sample 的 marker 标记，表示是否是一帧的最后一个包，源自 RTP 包
-- payload {Number} 这个 Sample 的 RTP 负载格式，源自 RTP 包
-- rtpTime {Number} 这个 Sample 的 RTP 时间，源自 RTP 包
-- sampleTime {Number} 这个 Sample 的时间戳，单位为 1/1000 秒
-- sequence {Number} 这个 Sample 的序列号，源自 RTP 包
+- data {array} 这个 Sample 的有效负载内容
+- isEnd {boolean} 这个 Sample 的分片结束标记，源自 RTP 包
+- isFragment {boolean} 这个 Sample 的分片标记，源自 RTP 包
+- isStart {boolean} 这个 Sample 的分片开始标记，源自 RTP 包
+- isVideo {boolean} 指出这个 Sample 是否属视频流
+- marker {boolean} 这个 Sample 的 marker 标记，表示是否是一帧的最后一个包，源自 RTP 包
+- payload {number} 这个 Sample 的 RTP 负载格式，源自 RTP 包
+- rtpTime {number} 这个 Sample 的 RTP 时间，源自 RTP 包
+- sampleTime {number} 这个 Sample 的时间戳，单位为 1/1000 秒
+- sequence {number} 这个 Sample 的序列号，源自 RTP 包
 
 H.264 NALU 是 H.264 图像帧的基本组成部分，一帧视频由 1 到多个 NALU 组成。
 
@@ -190,7 +190,7 @@ NALU 会被分成多个小于 1500 的分片来传输，isStart 表示这个 NAL
 
 当连接状态发生改变时
 
-- state {String} 连接状态
+- state {string} 连接状态
 
 状态列表:
 
@@ -206,9 +206,9 @@ NALU 会被分成多个小于 1500 的分片来传输，isStart 表示这个 NAL
 
 当客户端收到的是 TS 流, 它不会解析流的内容, 而是直接将数据包转交给上层处理.
 
-- rtpInfo {Object} RTP 包头信息, 一般可以忽略，因为 TS 流本身包含了足够多的信息。
-- packet {String} 包含 TS 流数据包的缓存区对象
-- offset {Number} 有效数据偏移位置
+- rtpInfo {object} RTP 包头信息, 一般可以忽略，因为 TS 流本身包含了足够多的信息。
+- packet {string} 包含 TS 流数据包的缓存区对象
+- offset {number} 有效数据偏移位置
 
 packet 中包含了多个 TS 包，每个包的长度固定为 188, 开始位置为 offset。
 
@@ -291,4 +291,4 @@ packet 中包含了多个 TS 包，每个包的长度固定为 188, 开始位置
 
 打开指定的 RTSP URL 地址
 
-- url {String} RTSP URL 地址, 比如 'rtsp://test.com:554/live.mp4'
+- url {string} RTSP URL 地址, 比如 'rtsp://test.com:554/live.mp4'

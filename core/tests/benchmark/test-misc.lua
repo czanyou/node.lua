@@ -1,11 +1,6 @@
-local utils 	= require('util')
-local timer 	= require('timer')
-local core  	= require('core')
-local assert 	= require('assert')
 local tap 		= require('ext/tap')
 
-
-return tap(function (test)
+local test = tap.test
 
 -- [[
 test("test table insert & remove", function ()
@@ -200,5 +195,4 @@ test("test table insert & remove", function ()
 	print(data:size())
 end)
 
-
-end)
+tap.run()

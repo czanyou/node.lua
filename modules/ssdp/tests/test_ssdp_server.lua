@@ -1,4 +1,3 @@
-local dgram  = require('dgram')
 local printr = console.printr
 local server = require('ssdp/server')
 

@@ -10,195 +10,243 @@
   <script src="js/polyfill.js?v=100003"></script>
   <script src="js/jquery.min.js?v=100003"></script>
   <script src="js/vue.min.js?v=100003"></script>
-	<script src="js/common.js?v=100003"></script>
-	<style>
-    header#header { background: #0063B1; }
-    .header-brand { line-height: 64px; padding: 0 16px; color: #fff; font-weight: 500;
-      margin: 0; }
-
-    .form-content { padding: 0 16px; max-width: 600px; margin: 0 auto; }
-    .form-content .form-control { min-width: 220px; display: inline-block;
-      border-radius: 3px; font-size: 100%; line-height: 36px; }
-    .form-content .form-file { padding: 0; width: 220px; background: #eee; }
-    .form-content h3 { margin: 24px 0 24px; font-size: 110%; color: #333; 
-      font-weight: 500; }
-
-    .form-footer { margin-top: 16px; margin-bottom: 16px; padding-bottom: 16px;
-      border-bottom: 1px solid #ddd; }
-    .col-form-label { display: inline-block; min-width: 100px; }
-
-	@media screen and (min-width: 480px) {}
-	</style>
+  <script src="js/common.js?v=100003"></script>
 </head>
 
 <body class="home-body">
-<div id="app">
-  <header id="header" class="header">
-    <div class="header-inner">
-      <label class="header-brand" id="header-brand">Activate</label>
-    </div>
-  </header>
-
-  <div class="form-content">
-
-    <div class="form-header">
-      <h3 class="form-title">Activate Settings</h3>
-    </div>
-
-    <div class="form-body">
-      <form>
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">DID:</label>
-          <input type="text" name="did" v-model="system.did" class="form-control" required>
+  <div id="app">
+    <header id="header" class="header">
+      <div class="header-inner">
+        <div class="header-left">
+          <label class="header-brand" id="header-brand">Activate</label>
         </div>
 
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">API Base URL:</label>
-          <input type="text" name="base" v-model="system.base" class="form-control" required>
+        <div class="header-right">
+          <button type="button nav-item" class="btn btn-primary" onclick="onSystemActivate()">Activate</button>
         </div>
-
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">MQTT URI:</label>
-          <input type="text" name="mqtt" v-model="system.mqtt" class="form-control" required>
-        </div>
-
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">Secret:</label>
-          <input type="text" name="secret" v-model="system.secret" class="form-control" required>
-        </div>
-
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">Password:</label>
-          <input type="text" name="password" v-model="system.password" class="form-control" required>
-        </div>
-      </form>
-    </div>
-
-    <div class="form-header">
-      <h3 class="form-title">Cloud Information</h3>
-    </div>
-
-    <div class="form-body">
-      <form>
-
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">Username:</label>
-          <input type="text" name="username" v-model="cloud.username" class="form-control">
-        </div>
-
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">Password:</label>
-          <input type="text" name="password" v-model="cloud.password" class="form-control">
-        </div>
-  
-      </form>
-    </div>
-    
-    <div class="form-header">
-      <h3 class="form-title">Device Information</h3>
-    </div>
-
-    <div class="form-body">
-      <form>
-
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">Version:</label>
-          <input type="text" name="ip" :value="system.version" class="form-control" disabled>
-        </div>
-
-        <div class="form-group">
-          <label for="recipient-name" class="col-form-label">MAC:</label>
-          <input type="text" name="ip" :value="system.mac" class="form-control" disabled>
-        </div>
-  
-      </form>
-    </div>
-
-    <div class="form-footer">
-      <div class="form-group">
-        <label for="recipient-name" class="col-form-label">&nbsp;</label>
-        <button type="button" class="btn btn-primary" onclick="onSystemActivate()">Activate</button>
       </div>
+    </header>
+
+    <div class="form-content">
+      <form id="activate-form" method="post" action="/activate" onsubmit="return onActivateSumbit()">
+        <div class="form-header">
+          <h3 class="form-title">Activate Settings</h3>
+        </div>
+
+        <div class="form-body">
+
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">DID (MAC):</label>
+            <input type="text" name="did" v-model="system.did" class="form-control" maxLength="12"
+              pattern="[0-9a-f]{12}" placeholder="12 numbers or 'a' to 'f'" required>
+          </div>
+
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">API Base URL:</label>
+            <input type="url" name="base" v-model="system.base" class="form-control" maxLength="255" required>
+          </div>
+
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">MQTT URI:</label>
+            <input type="url" name="mqtt" v-model="system.mqtt" class="form-control" maxLength="255" required>
+          </div>
+
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Secret:</label>
+            <input type="text" name="secret" v-model="system.secret" class="form-control" maxLength="24" required>
+          </div>
+        </div>
+
+        <div class="form-header">
+          <h3 class="form-title">Admin Password</h3>
+        </div>
+
+        <div class="form-body">
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Password:</label>
+            <input type="text" name="password" v-model="system.password" class="form-control" maxLength="16" required>
+          </div>
+        </div>
+
+        <div class="form-header">
+          <h3 class="form-title">Hardware Information</h3>
+        </div>
+
+        <div class="form-body">
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Serial Number:</label>
+            <input type="text" name="serialNumber" v-model="system.serialNumber" class="form-control" maxLength="24">
+          </div>
+        </div>
+
+        <button style="display: none;" id="submit-button" type="submit" class="btn btn-primary"
+          onclick="onFormValidity();">Activate</button>
+      </form>
+
+      <div class="form-header">
+        <h3 class="form-title">Device Information</h3>
+      </div>
+
+      <div class="form-body">
+        <form>
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Software Version:</label>
+            <input type="text" name="version" :value="system.version" class="form-control" readonly>
+          </div>
+
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Firmware Version:</label>
+            <input type="text" name="firmwareVersion" :value="system.firmwareVersion" class="form-control" readonly>
+          </div>
+
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Hardware Version:</label>
+            <input type="text" name="hardwareVersion" :value="system.hardwareVersion" class="form-control" readonly>
+          </div>
+
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">Model Number:</label>
+            <input type="text" name="modelNumber" :value="system.modelNumber" class="form-control" readonly>
+          </div>
+
+          <div class="form-group">
+            <label for="recipient-name" class="col-form-label">MAC:</label>
+            <input type="text" name="mac" :value="system.mac" class="form-control" readonly>
+          </div>
+        </form>
+      </div>
+
+      <div class="form-footer">
+        <div class="form-group">
+          <label for="recipient-name" class="col-form-label">&nbsp;</label>
+          <button type="button" class="btn btn-primary" onclick="onSystemActivate()">Activate</button>
+        </div>
+      </div>
+
     </div>
+
+    <footer id="footer"></footer>
 
   </div>
+  <script>
 
-  <footer id="footer"></footer>
-
-</div>
-<script>
-
-var $vueData = {
-  did: '',
-  base: '',
-  mqtt: '',
-  secret: '',
-  password: '',
-  system: {},
-  update: {},
-  cloud: {},
-  firmware: {}
-}
-
-var config = {
-
-}
-
-var app = new Vue({
-	el: '#app',
-	data: $vueData
-})
-
-function onSystemRead() {
-	var url = "/system/activate";
-	$.get(url, function(result) {
-		if (!result || result.error) {
-			return;
+    var $vueData = {
+      did: '',
+      base: '',
+      mqtt: '',
+      secret: '',
+      password: '',
+      system: {},
+      update: {},
+      cloud: {},
+      firmware: {}
     }
-    
-    $vueData.system = result.system || {}
-	});
 
-	return false;
-}
+    var config = {
 
-function onSystemActivate() {
-	var data = {
-    did: $vueData.system.did,
-    base: $vueData.system.base,
-    secret: $vueData.system.secret,
-    mqtt: $vueData.system.mqtt,
-		password: $vueData.system.password
-  }
-  
-  if (!data.password) {
-    return alert('Invalid password')
+    }
 
-  } else if (!window.confirm("Are you sure want to activate the device?")) {
-    return;
-  }
-  
-  var url = "/system/activate";
-	// console.log(url, data)
-	$.post(url, data, function(result) {
-		if (!result || result.error) {
-      alert('Failed to activate. Please try again later');
+    var app = new Vue({
+      el: '#app',
+      data: $vueData
+    })
 
-		} else {
-      alert('Activate successfully');
-      location.href = '/';
-		}
-  });
-  
-  return false;
-}
+    function onSystemRead() {
+      var url = "/system/activate";
+      $.get(url, function (result) {
+        if (!result || result.error) {
+          return;
+        }
 
-$(document).ready(function () {
+        $vueData.system = result.system || {}
+      });
 
-  onSystemRead();
-});
+      return false;
+    }
 
-</script>
+    function onSystemActivate() {
+      onFormValidity();
+      $("#submit-button").click();
+      return false;
+    }
+
+    function onFormValidity() {
+      try {
+        var form = document.getElementById('activate-form');
+        onFormItemValidity(form.password);
+
+        onFormItemValidity(form.did);
+        onFormItemValidity(form.base);
+        onFormItemValidity(form.secret);
+        onFormItemValidity(form.mqtt);
+
+        onFormItemValidity(form.hardwareVersion);
+        onFormItemValidity(form.serialNumber);
+
+      } catch (e) {
+        console.log(e);
+        return false;
+      }
+
+      return true;
+    }
+
+    function onFormItemValidity(element) {
+      var validity = element.validity
+      if (validity == null || validity.valid) {
+        element.setCustomValidity("");
+        return;
+      }
+
+      var message = '';
+      if (validity.valueMissing) {
+        message = "Value is missing"
+      }
+
+      if (message) {
+        element.setCustomValidity(message);
+      }
+
+      element.focus();
+      throw 'test';
+    }
+
+    function onActivateSumbit() {
+      var data = {
+        did: $vueData.system.did,
+        base: $vueData.system.base,
+        secret: $vueData.system.secret,
+        mqtt: $vueData.system.mqtt,
+        hardwareVersion: $vueData.system.hardwareVersion,
+        serialNumber: $vueData.system.serialNumber,
+        password: $vueData.system.password
+      }
+
+      if (!window.confirm("Are you sure want to activate the device?")) {
+        return false;
+      }
+
+      var url = "/system/activate";
+      $.post(url, data, function (result) {
+        if (!result || result.error) {
+          alert('Failed to activate. Please try again later');
+
+        } else {
+          alert('Activate successfully');
+          location.href = '/';
+        }
+      });
+
+      return false;
+    }
+
+    $(document).ready(function () {
+
+      onSystemRead();
+    });
+
+  </script>
 
 </body>
+
 </html>

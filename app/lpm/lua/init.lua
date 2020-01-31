@@ -197,17 +197,19 @@ end
 
 -- Display lpm bin path
 function exports.bin()
-	print(path.join(exports.rootPath, 'bin'))
+	console.printr(path.join(exports.rootPath, 'bin'))
 end
 
 -- Stop and delete the specified process
 function exports.delete(...)
-	app.delete(...)
+	local ret, err = app.delete(...)
+	console.printr(err or ret or '')
 end
 
 -- Kill the specified application process
 function exports.kill(...)
-	app.kill(...)
+	local ret, err = app.kill(...)
+	console.printr(err or ret or '')
 end
 
 -- List all installed applications
@@ -227,22 +229,27 @@ end
 
 -- Restart the specified process
 function exports.restart(...)
-	app.restart(...)
+	local ret, err = app.restart(...)
+	console.printr(err or ret or '')
 end
 
 -- Display lpm root path
 function exports.root()
-	print(exports.rootPath)
+	console.printr(exports.rootPath)
 end
 
 -- Start and daemonize an application
 function exports.start(...)
-	app.start(...)
+	console.log('start', ...)
+
+	local ret, err = app.start(...)
+	console.printr(err or ret or '')
 end
 
 -- Stop the specified process
 function exports.stop(...)
-	app.stop(...)
+	local ret, err = app.stop(...)
+	console.printr(err or ret or '')
 end
 
 function exports.watch(...)
@@ -257,7 +264,7 @@ function exports.colors()
 end
 
 function exports.install(...)
-	require('lpm/upgrade').install(...)
+	require('lpm/update').install(...)
 end
 
 -- Retrieve new lists of packages
@@ -274,22 +281,15 @@ end
 
 -- Scanning for nearby devices
 function exports.scan(timeout, serviceType)
-	local err, client = pcall(require, 'ssdp/client')
-	if (not client) then
+	local err, ssdp = pcall(require, 'ssdp')
+	if (not ssdp) then
 		return
 	end
 
 	local list = {}
-
-	local grid = app.table({20, 24, 24})
-
 	print("Start scaning...")
 
-	grid.line()
-	grid.cell("IP", "UID", "Model")
-	grid.line('=')
-
-	local ssdpClient = client({}, function(response, rinfo)
+	local ssdpClient = ssdp.client({}, function(response, rinfo)
 		if (list[rinfo.ip]) then
 			return
 		end
@@ -310,7 +310,7 @@ function exports.scan(timeout, serviceType)
 		end
 
 		console.write('\r')  -- clear current line
-		grid.cell(rinfo.ip, item.usn, model)
+		print(rinfo.ip, item.usn, model)
 	end)
 
 	-- search for a service type
@@ -334,7 +334,6 @@ function exports.scan(timeout, serviceType)
 			ssdpClient:stop()
 
 			console.write('\r') -- clear current line
-			grid.line()
 			print("End scaning...")
 		end
 	end)
@@ -358,10 +357,61 @@ function exports.info(...)
 	print(console.colorful('${string}app.rootPath: ${normal}') .. (app.rootPath or '-'))
 	print(console.colorful('${string}app.nodePath: ${normal}') .. (app.nodePath or '-'))
 	print(console.colorful('${string}app.target:   ${normal}') .. (app.getSystemTarget() or '-'))
+	print();
+
 	print(console.colorful('${string}os.arch:      ${normal}') .. os.arch())
 	print(console.colorful('${string}os.time:      ${normal}') .. os.time())
 	print(console.colorful('${string}os.uptime:    ${normal}') .. os.uptime())
 	print(console.colorful('${string}os.clock:     ${normal}') .. os.clock())
+	print(console.colorful('${string}os.homedir:   ${normal}') .. os.homedir())
+	print(console.colorful('${string}os.hostname:  ${normal}') .. os.hostname())
+	print(console.colorful('${string}os.tmpdir:    ${normal}') .. os.tmpdir)
+	print(console.colorful('${string}os.platform:  ${normal}') .. os.platform())
+	print(console.colorful('${string}Date.now:     ${normal}') .. Date.now())
+	print();
+
+	print(console.colorful('${string}process.cwd:      ${normal}') .. process.cwd())
+	print(console.colorful('${string}process.execPath: ${normal}') .. process.execPath)
+	print(console.colorful('${string}process.now:      ${normal}') .. process.now())
+	print(console.colorful('${string}process.hrtime:   ${normal}') .. process.hrtime())
+	print(console.colorful('${string}process.rootPath: ${normal}') .. process.rootPath)
+	print();
+
+	print(console.colorful('${string}console.stderr:  ${normal}'), console.stderr)
+	print(console.colorful('${string}console.stdin:   ${normal}'), console.stdin)
+	print(console.colorful('${string}console.stdout:  ${normal}'), console.stdout)
+	print(console.colorful('${string}console.theme:   ${normal}'), console.defaultTheme)
+	print();
+end
+
+function exports.wget(url, name)
+	if (not url) then
+		print('empty url string')
+		return
+	end
+
+	local request = require('http/request')
+	request.download(url, {}, function(err, percent, response)
+		if (percent <= 100) then
+			console.write('\rDownloading: (' .. percent .. '%)...  ')
+		end
+
+		if (percent < 100) or (not response) then
+			return
+		end
+
+		-- write to a temp file
+		console.write('\rDownloading: Done        \r\n')
+		fs.writeFile(os.tmpdir .. '/' .. (name or 'file'), response.body)
+	end)
+end
+
+function exports.test()
+	local stdout = process.stdout;
+	console.log(stdout)
+
+	stdout = process.stdout;
+	console.log(stdout)
 
 end
 
@@ -377,34 +427,15 @@ function exports.version()
 		printVersion(k, v)
 	end
 
-	local info = require('cjson')
-	if (info and info.VERSION) then
-		printVersion("cjson", info.VERSION)
+	local names = {'cjson', 'mbedtls.md', 'sqlite', 'miniz', 'lmedia'}
+	for _, name in ipairs(names) do
+		local _, info = pcall(require, name)
+		if (info and info.VERSION) then
+			printVersion(name, info.VERSION)
+		end
 	end
 
-	local ret = nil
-
-	ret, info = pcall(require, 'lmbedtls.md')
-	if (info and info._VERSION) then
-		printVersion("mbedtls", info.VERSION)
-	end
-
-	ret, info = pcall(require, 'lsqlite')
-	if (info and info.VERSION) then
-		printVersion("sqlite", info.VERSION)
-	end
-
-	ret, info = pcall(require, 'miniz')
-	if (info and info.VERSION) then
-		printVersion("miniz", info.VERSION)
-	end
-
-	ret, info = pcall(require, 'lmedia')
-	if (info and info.version) then
-		printVersion("lmedia", info.version())
-	end
-
-	local filename = path.join(exports.rootPath, 'package.json')
+	local filename = path.join(os.tmpdir, 'update/update.json')
 	local packageInfo = json.parse(fs.readFileSync(filename))
 	if (not packageInfo) then
 		return
@@ -413,10 +444,11 @@ function exports.version()
 	--console.log(packageInfo)
 	print(string.format([[
 
-System information:
-- target: %s
-- version: %s
-	]], packageInfo.target, packageInfo.version))
+Firmware information:
+ - target: %s
+ - size: %s
+ - md5sum: %s
+	]], packageInfo.name, packageInfo.size, packageInfo.md5sum))
 end
 
 function exports.init()
@@ -425,15 +457,13 @@ function exports.init()
 
 This is the CLI for Node.lua.
 
-
 Usage: ${highlight}lpm <command> [args]${normal}
 ${braces}
 where <command> is one of:
-	c, config, get, set, unset
-	l, list, ps, restart, start, stop,
+	config, get, set, unset
+	list, ls, ps, restart, start, stop,
 	update, upgrade
 	help, info, root, scan, version ${normal}
-
 
    or: ${highlight}lpm <name> <command> [args]${normal}
 ${braces}
@@ -441,16 +471,11 @@ where <name> is the name of the application, located in
 	']] .. appPath .. [[', the supported values of <command>
 	depend on the invoked application.${normal}
 
-
-   or: ${highlight}lpm help - ${braces}involved overview${normal}
-
-
 Start with 'lpm list' to see installed applications.
 	]]
 
 	print(console.colorful(fmt))
-	print('lpm - v' .. process.version, '\r\n')
-
+	print('lpm - v' .. process.version)
 end
 
 -- Display the help information
@@ -505,7 +530,7 @@ end
 -- call
 
 function exports.call(command, ...)
-	local func = exports[command or 'usage']
+	local func = exports[command or 'init']
 	if (type(func) == 'function') then
 		local status, ret = pcall(func, ...)
 		runLoop()

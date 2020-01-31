@@ -34,19 +34,6 @@
 #endif
 
 /**
- * 执行指定名称的 lua 文件
- * @param filename 要运行的文件的名称
- */
-LUALIB_API int lnode_call_file(lua_State* L, const char* filename);
-
-/**
- * 执行指定的 lua 脚本
- * @param script 要运行的脚本
- * @param name 要运行的脚本的名称
- */
-LUALIB_API int lnode_call_script(lua_State* L, const char* script, const char* name);
-
-/**
  * 创建 arg 参数数组
  * @param argv 参数列表
  * @param argc 参数数量
@@ -55,9 +42,9 @@ LUALIB_API int lnode_call_script(lua_State* L, const char* script, const char* n
 LUALIB_API int lnode_create_arg_table(lua_State *L, char **argv, int argc, int offset);
 
 /**
- * 初始化
+ * 初始化 package.path 和 package.cpath
  */ 
-LUALIB_API int lnode_path_init(lua_State* L);
+LUALIB_API int lnode_init_package_paths(lua_State* L);
 
 /**
  * 注册 lnode 核心模块到预加载列表中
@@ -67,12 +54,12 @@ LUALIB_API int lnode_openlibs(lua_State* L);
 /**
  * 在后台运行
  */
-LUALIB_API int lnode_run_as_deamon();
+LUALIB_API int lnode_run_as_daemon();
 
-
-LUALIB_API int lnode_print_version();
-LUALIB_API int lnode_print_usage();
-
+/**
+ * 返回指定的路径中的文件名部分
+ * 如: `/bin/test/tcc` 将返回 `tcc`
+ */
 LUALIB_API int lnode_get_filename(const char* path, char* buffer);
 
 #endif // _LNODE_H

@@ -110,7 +110,7 @@ exports.STATUS_CODES = STATUS_CODES
 
 function exports.encoder()
 
-    local mode
+    local httpEncodeMode
     local encodeHttpHeader, encodeRawContent, encodeChunkedContent
 
     function encodeHttpHeader(item)
@@ -157,13 +157,13 @@ function exports.encoder()
         --console.log('chunkedEncoding', chunkedEncoding)
 
         -- cotent
-        mode = chunkedEncoding and encodeChunkedContent or encodeRawContent
+        httpEncodeMode = chunkedEncoding and encodeChunkedContent or encodeRawContent
         return concat(head)
     end
 
     function encodeRawContent(item)
         if type(item) ~= "string" then
-            mode = encodeHttpHeader
+            httpEncodeMode = encodeHttpHeader
             return encodeHttpHeader(item)
         end
 
@@ -172,7 +172,7 @@ function exports.encoder()
 
     function encodeChunkedContent(item)
         if type(item) ~= "string" then
-            mode = encodeHttpHeader
+            httpEncodeMode = encodeHttpHeader
             local extra = encodeHttpHeader(item)
             if extra then
                 return "0\r\n\r\n" .. extra
@@ -182,15 +182,15 @@ function exports.encoder()
         end
 
         if #item == 0 then
-            mode = encodeHttpHeader
+            httpEncodeMode = encodeHttpHeader
         end
 
         return format("%x", #item) .. "\r\n" .. item .. "\r\n"
     end
 
-    mode = encodeHttpHeader
+    httpEncodeMode = encodeHttpHeader
     return function(item)
-        return mode(item)
+        return httpEncodeMode(item)
     end
 end
 

@@ -31,7 +31,7 @@ fs.rename('/tmp/hello', '/tmp/world', function (err)
 end)
 fs.stat('/tmp/world', function (err, stats) 
   if (err) return nil, err
-  print('stats: ' + JSON.stringify(stats))
+  print('stats: ' + json.stringify(stats))
 end);
 ```
 
@@ -49,103 +49,267 @@ end)
 
 在繁重的任务中,强烈推荐使用这些函数的异步版本.同步版本会阻塞进程,直到完成处理,也就是说会暂停所有的连接.
 
-可以使用文件名的相对路径, 但是记住这个路径是相对于process.cwd()的.
+可以使用文件名的相对路径, 但是记住这个路径是相对于 process.cwd() 的.
 
-大部分的文件系统(fs)函数可以忽略回调函数(callback)这个参数.如果忽略它,将会由一个默认回调函数(callback)来重新抛出(rethrow)错误.要获得原调用点的堆栈跟踪(trace)信息,需要在环境变量里设置NODE_DEBUG.
+异步版本的 rename 函数(2).完成时的回调函数 (callback) 只接受一个参数:可能出现的异常信息.
 
-```lua
-$ env NODE_DEBUG=fs node script.js
-fs.js:66
-        throw err;
-              ^
-Error: EISDIR, read
-    at rethrow (fs.js:61:21)
-    at maybeCallback (fs.js:79:42)
-    at Object.fs.readFile (fs.js:153:18)
-    at bad (/path/to/script.js:2:17)
-    at Object.<anonymous> (/path/to/script.js:5:1)
-    <etc.>
+## 文件 chmod
 
-fs.rename(oldPath, newPath, callback)#
-```
+### fs.chmod
 
-异步版本的rename函数(2).完成时的回调函数(callback)只接受一个参数:可能出现的异常信息.
+> fs.chmod(path, mode, callback)
 
-## fs.appendFile
+异步版的 chmod(2). 完成时的回调函数 (callback) 只接受一个参数: 可能出现的异常信息.
 
-    fs.appendFile(filename, data, [options], callback)
+### fs.chmodSync
 
-- filename {String}
-- data {String | Buffer}
-- options {Object}
-    - encoding {String | Null} default = 'utf8'
-    - mode {Number} default = 438 (aka 0666 in Octal)
-    - flag {String} default = 'a'
-- callback {Function}
+> fs.chmodSync(path, mode)
 
-异步的将数据添加到一个文件的尾部, 如果文件不存在, 会创建一个新的文件. data 可以是一个string, 也可以是原生buffer。
+同步版的 chmod(2).
 
-实例：
+### fs.fchmod
 
-```lua
-fs.appendFile('message.txt', 'data to append', function (err) 
-  if (err) then return nil, err
-  print('The "data to append" was appended to file!') --数据被添加到文件的尾部
-end)
-```
+> fs.fchmod(fd, mode, callback)
 
-## fs.appendFileSync
+异步版的 fchmod(2). 完成时的回调函数 (callback) 只接受一个参数:可能出现的异常信息.
 
-    fs.appendFileSync(filename, data, [options])
+### fs.fchmodSync
 
-fs.appendFile 的同步版本。
+> fs.fchmodSync(fd, mode)
 
-## fs.copyfile
+同步版的 fchmod(2).
 
-    fs.copyfile(src, dest, [flags], callback)
+### fs.lchmod
 
-异步版的 copyfile(2). 完成时的回调函数 (callback) 
+> fs.lchmod(path, mode, callback)
 
-## fs.copyfileSync
+异步版的 lchmod(2). 完成时的回调函数 (callback) 只接受一个参数:可能出现的异常信息.
 
-    fs.copyfileSync(src, dest, [flags], mode)
+仅在 Mac OS X 系统下可用。
+
+### fs.lchmodSync
+
+> fs.lchmodSync(path, mode)
+
+同步版的 lchmod(2).
+
+## 文件 chown
+
+### fs.chown
+
+> fs.chown(path, uid, gid)
+
+异步版本的 chown(2).
+
+### fs.chownSync
+
+> fs.chownSync(path, uid, gid)
+
+同步版本的 chown(2).
+
+### fs.fchown
+
+> fs.fchown(fd, uid, gid, callback)
+
+异步版本的 fchown(2)。回调函数的参数除了出现错误时有一个错误对象外, 没有其它参数。
+
+### fs.fchownSync
+
+> fs.fchownSync(fd, uid, gid)
+
+同步版本的 fchown(2).
+
+### fs.lchown
+
+> fs.lchown(path, uid, gid, callback)
+
+异步版的 lchown(2)。完成时的回调函数 (callback) 只接受一个参数:可能出现的异常信息.
+
+### fs.lchownSync
+
+> fs.lchownSync(path, uid, gid)
+
+同步版本的 lchown(2).
+
+## 文件 truncate
+
+### fs.truncate
+
+> fs.truncate(path, len, callback)
+
+异步版本的truncate(2). 完成时的回调函数 (callback) 只接受一个参数:可能出现的异常信息.
+
+### fs.truncateSync
+
+> fs.truncateSync(path, len)
+
+同步版本的truncate(2).
+
+异步版本的chown.完成时的回调函数 (callback) 只接受一个参数:可能出现的异常信息.
+
+异步版本的chown(2).完成时的回调函数 (callback) 只接受一个参数:可能出现的异常信息.
+
+### fs.ftruncate
+
+> fs.ftruncate(fd, len, callback)
+
+异步版本的ftruncate(2). 完成时的回调函数 (callback) 只接受一个参数:可能出现的异常信息.
+
+### fs.ftruncateSync
+
+> fs.ftruncateSync(fd, len)
+
+同步版本的ftruncate(2).
+
+## 目录 dir
+
+### fs.mkdtemp
+
+> fs.mkdtemp(template, callback)
+
+异步版的 mkdtemp(2). 
+
+创建一个唯一的临时目录。
+
+### fs.mkdtempSync
+
+> fs.mkdtempSync(template)
+
+同步版的 mkdtemp(2)。
+
+### fs.mkdir
+
+> fs.mkdir(path, [mode], callback)
+
+异步版的 mkdir(2). 完成时的回调函数 (callback) 只接受一个参数：可能出现的异常信息。文件 mode 默认为 0777。
+
+### fs.mkdirSync
+
+> fs.mkdirSync(path, [mode])
+
+同步版的 mkdir(2)。
+
+### fs.readdir
+
+> fs.readdir(path, callback)
+
+异步版的 readdir(3). 读取 path 路径所在目录的内容. 回调函数 (callback) 接受两个参数 (err, files) 其中 files 是一个存储目录中所包含的文件名称的数组, 数组中不包括 '.' 和 '..'。
+
+### fs.readdirSync
+
+> fs.readdirSync(path)
+
+同步版的 readdir(3). 返回文件名数组, 其中不包括 '.' 和 '..' 目录.
+
+### fs.rmdir
+
+> fs.rmdir(path, callback)
+
+异步版的 rmdir(2).  完成时的回调函数 (callback) 只接受一个参数：可能出现的异常信息。
+
+### fs.rmdirSync
+
+> fs.rmdirSync(path)
+
+同步版的 rmdir(2).
+
+## 链接文件 link
+
+### fs.link
+
+> fs.link(srcpath, dstpath, callback)
+
+异步版的 link(2). 完成时的回调函数 (callback) 只接受一个参数：可能出现的异常信息。
+
+### fs.linkSync
+
+> fs.linkSync(srcpath, dstpath)
+
+同步版的 link(2).
+
+### fs.readlink
+
+> fs.readlink(path, callback)
+
+异步版的 readlink(2). 回调函数 (callback) 接收两个参数： (err, linkString).
+
+### fs.readlinkSync
+
+> fs.readlinkSync(path)
+
+同步版的 readlink(2). 返回符号链接（symbolic link）的字符串值。
+
+### fs.unlink
+
+> fs.unlink(path, callback)
+
+异步版的 unlink(2). 完成时的回调函数 (callback) 只接受一个参数：可能出现的异常信息.
+
+### fs.unlinkSync
+
+> fs.unlinkSync(path)
+
+同步版的 unlink(2).
+
+### fs.symlink
+
+> fs.symlink(srcpath, dstpath, [type], callback)
+
+异步版的 symlink(2). 完成时的回调函数 (callback) 只接受一个参数：可能出现的异常信息. type 可以是 'dir', 'file', 或者'junction' (默认是 'file'), 此参数仅用于 Windows 系统（其他系统平台会被忽略）. 注意： Windows 系统要求目标路径（译者注：即 dstpath 参数）必须是一个绝对路径, 当使用 'junction' 时, dstpath 参数会自动转换为绝对路径。
+
+### fs.symlinkSync
+
+> fs.symlinkSync(srcpath, dstpath, [type])
+
+同步版的 symlink(2).
+
+## 文件 utimes
+
+### fs.futimes
+
+> fs.futimes(fd, atime, mtime, callback)
+
+### fs.futimesSync
+
+> fs.futimesSync(fd, atime, mtime)
+
+更改文件描述符 (file discriptor) 所指向的文件的时间戳。
+
+### fs.utimes
+
+> fs.utimes(path, atime, mtime, callback)
+
+### fs.utimesSync
+
+> fs.utimesSync(path, atime, mtime)
+
+更改 path 所指向的文件的时间戳。
+
+## 文件
+
+### fs.copyfile
+
+> fs.copyfile(src, dest, [flags], callback)
+
+异步版的 copyfile(2). 
+
+异步地将 src 拷贝到 dest。 默认情况下，如果 dest 已经存在，则覆盖它。 除了可能的异常，回调函数没有其他参数。
+
+- src {string} 要拷贝的源文件名。
+- dest {string} 拷贝操作的目标文件名。
+- flags {number}  用于拷贝操作的修饰符。默认值: 0。
+- callback {function}
+
+### fs.copyfileSync
+
+> fs.copyfileSync(src, dest, [flags], mode)
 
 同步版的 copyfile(2).
 
 
-## fs.chmod
+### fs.exists
 
-    fs.chmod(path, mode, callback)
-
-异步版的 chmod(2). 完成时的回调函数 (callback) 只接受一个参数: 可能出现的异常信息.
-
-## fs.chmodSync
-
-    fs.chmodSync(path, mode)
-
-同步版的 chmod(2).
-
-## fs.chownSync
-
-    fs.chownSync(path, uid, gid)
-
-同步版本的chown(2).
-
-## fs.close
-
-    fs.close(fd, callback)
-
-异步版 close(2). 完成时的回调函数(callback)只接受一个参数: 可能出现的异常信息.
-
-## fs.closeSync
-
-     fs.closeSync(fd)
-
-同步版的 close(2).
-
-## fs.exists
-
-    fs.exists(path, callback)
+> fs.exists(path, callback)
 
 检查指定路径的文件或者目录是否存在。接着通过 callback 传入的参数指明存在 (true) 或者不存在 (false)。示例:
 
@@ -155,147 +319,96 @@ fs.exists('/etc/passwd', function (exists)
 end)
 ```
 
-## fs.existsSync
+### fs.existsSync
 
-    fs.existsSync(path)
+> fs.existsSync(path)
 
 fs.exists 函数的同步版。
 
-## fs.fchmod
+### fs.renameSync
 
-    fs.fchmod(fd, mode, callback)
+> fs.rename(oldPath, newPath, callback)
 
-异步版的 fchmod(2). 完成时的回调函数(callback)只接受一个参数:可能出现的异常信息.
+异步版本的 rename(2).
 
-## fs.fchmodSync
+### fs.renameSync
 
-    fs.fchmodSync(fd, mode)
+> fs.renameSync(oldPath, newPath)
 
-同步版的 fchmod(2).
+同步版本的 rename(2).
 
-## fs.fchown
+### fs.realpath
 
-    fs.fchown(fd, uid, gid, callback)
+> fs.realpath(path, [cache], callback)
 
-异步版本的fchown(2)。回调函数的参数除了出现错误时有一个错误对象外, 没有其它参数。
+异步版的 realpath(2). 回调函数（callback）接收两个参数： (err, resolvedPath). May use process.cwd to resolve relative paths. cache is an object literal of mapped paths that can be used to force a specific path resolution or avoid additional fs.stat calls for known real paths.
 
-## fs.fchownSync
+实例：
 
-    fs.fchownSync(fd, uid, gid)
+```lua
+local cache = {'/etc':'/private/etc'};
+fs.realpath('/etc/passwd', cache, function (err, resolvedPath)
+  if (err) return nil, err;
+  print(resolvedPath)
+end)
+```
 
-同步版本的fchown(2).
+### fs.realpathSync
 
-## fs.fstat
+> fs.realpathSync(path, [cache])
 
-    fs.fstat(fd, callback)
+realpath(2) 的同步版本。返回解析出的路径。
 
-异步版的 fstat(2). 回调函数（callback）接收两个参数： (err, stats) 其中 stats 是一个 fs.Stats 对象. fstat() 与 stat() 相同, 区别在于： 要读取的文件（译者注：即第一个参数）是一个文件描述符（file descriptor） fd 。
+## 文件读写
 
-## fs.fstatSync
+### fs.close
 
-    fs.fstatSync(fd)
+> fs.close(fd, callback)
 
-同步版的 fstat(2). 返回一个 fs.Stats 实例。
+异步版 close(2). 完成时的回调函数(callback)只接受一个参数: 可能出现的异常信息.
 
-## fs.fsync
+### fs.closeSync
 
-    fs.fsync(fd, callback)
+>  fs.closeSync(fd)
+
+同步版的 close(2).
+
+### fs.fdatasync
+
+> fs.fdatasync(fd, callback)
+
+异步版本的 fdatasync(2)。回调函数仅含有一个异常 (exception) 参数。
+
+当文件数据写入磁盘后返回，比 fsync 少一次 I/O 操作
+
+### fs.fdatasyncSync
+
+> fs.fdatasyncSync(fd)
+
+fdatasync(2) 的同步版本。
+
+### fs.fsync
+
+> fs.fsync(fd, callback)
 
 异步版本的 fsync(2)。回调函数仅含有一个异常 (exception) 参数。
 
-## fs.fsyncSync
+当文件数据以及文件的元数据写入磁盘后返回
 
-    fs.fsyncSync(fd)
+### fs.fsyncSync
+
+> fs.fsyncSync(fd)
 
 fsync(2) 的同步版本。
 
-## fs.ftruncate
+### fs.open
 
-    fs.ftruncate(fd, len, callback)
+> fs.open(path, flags, [mode], callback)
 
-异步版本的ftruncate(2). 完成时的回调函数(callback)只接受一个参数:可能出现的异常信息.
-
-## fs.ftruncateSync
-
-    fs.ftruncateSync(fd, len)
-
-同步版本的ftruncate(2).
-
-## fs.futimes
-
-    fs.futimes(fd, atime, mtime, callback)
-
-## fs.futimesSync
-
-    fs.futimesSync(fd, atime, mtime)
-
-更改文件描述符 (file discriptor) 所指向的文件的时间戳。
-
-## fs.lchown
-
-    fs.lchown(path, uid, gid, callback)
-
-异步版的lchown(2)。完成时的回调函数(callback)只接受一个参数:可能出现的异常信息.
-
-## fs.lchownSync
-
-    fs.lchownSync(path, uid, gid)
-
-同步版本的lchown(2).
-
-## fs.lchmod
-
-    fs.lchmod(path, mode, callback)
-
-异步版的 lchmod(2). 完成时的回调函数(callback)只接受一个参数:可能出现的异常信息.
-
-仅在 Mac OS X 系统下可用。
-
-## fs.lchmodSync
-
-    fs.lchmodSync(path, mode)
-
-同步版的 lchmod(2).
-
-## fs.link
-
-    fs.link(srcpath, dstpath, callback)
-
-异步版的 link(2). 完成时的回调函数（callback）只接受一个参数：可能出现的异常信息。
-
-## fs.linkSync
-
-    fs.linkSync(srcpath, dstpath)
-
-同步版的 link(2).
-
-## fs.lstat
-
-    fs.lstat(path, callback)
-
-异步版的 lstat(2). 回调函数（callback）接收两个参数： (err, stats) 其中 stats 是一个 fs.Stats 对象. lstat() 与 stat() 相同, 区别在于： 若 path 是一个符号链接时（symbolic link）,读取的是该符号链接本身, 而不是它所 链接到的文件。
-
-## fs.lstatSync
-
-    fs.lstatSync(path)
-
-同步版的 lstat(2). 返回一个 fs.Stats 实例。
-
-## fs.mkdir
-
-    fs.mkdir(path, [mode], callback)
-
-异步版的 mkdir(2). 完成时的回调函数（callback）只接受一个参数：可能出现的异常信息。文件 mode 默认为 0777。
-
-## fs.mkdirSync
-
-    fs.mkdirSync(path, [mode])
-
-同步版的 mkdir(2)。
-
-## fs.open
-
-     fs.open(path, flags, [mode], callback)
+- `path` {string}
+- `flags` {string}
+- `mode` {string}
+- `callback` {function}
 
 异步版的文件打开. 详见 open(2). flags 可以是:
 
@@ -329,42 +442,87 @@ fsync(2) 的同步版本。
 
 在 Linux 上, 无法对以追加 (append) 模式打开的文件进行指定位置的写入操作. 内核会忽略位置参数并且总是将数据追加到文件尾部。
 
-## fs.openSync
+### fs.openSync
 
-    fs.openSync(path, flags, [mode])
+> fs.openSync(path, flags, [mode])
 
 fs.open() 的同步版.
 
-## fs.readdir
+### fs.read
 
-    fs.readdir(path, callback)
-
-异步版的 readdir(3). 读取 path 路径所在目录的内容. 回调函数 (callback) 接受两个参数 (err, files) 其中 files 是一个存储目录中所包含的文件名称的数组, 数组中不包括 '.' 和 '..'。
-
-## fs.readdirSync
-
-    fs.readdirSync(path)
-
-同步版的 readdir(3). 返回文件名数组, 其中不包括 '.' 和 '..' 目录.
-
-## fs.read
-
-    fs.read(fd, size, offset, callback)
+> fs.read(fd, size, offset, callback)
 
 从指定的文档标识符fd读取文件数据。
 
-- length 是一个整形值, 指定了读取的字节数。
-- offset 是开始向缓冲区 buffer 写入的偏移量。
-- callback 回调函数给定了三个参数,  (err, buffer),  分别为错误, 读取的字节和缓冲区。
+- `size` 是一个整形值, 指定了读取的字节数。
+- `offset` 是开始向缓冲区 buffer 写入的偏移量。
+- `callback` 回调函数给定了三个参数,  (err, buffer),  分别为错误, 读取的字节和缓冲区。
 
-## fs.readFile
+### fs.readSync
 
-    fs.readFile(filename, [options], callback)
+> fs.readSync(fd, size, offset)
 
-- filename {String}
-- options {Object}
-    + flag {String} default = 'r'
-- callback {Function}
+fs.read 函数的同步版本. 返回 bytesRead 的个数。
+
+### fs.write
+
+> fs.write(fd, offset, data, callback)
+
+通过文件标识 fd, 向指定的文件中写入 data。
+
+offset 可以确定从哪个位置开始写入。
+
+回调中会给出三个参数 (err, written, buffer), written 说明从 buffer 写入的字节数。
+
+注意, fs.write 多次地在同一个文件中使用而没有等待回调是不安全的。在这种情况下, 强烈推荐使用 fs.createWriteStream。
+
+在 Linux 上, 无法对以追加 (append) 模式打开的文件进行指定位置的写入操作. 内核会忽略位置参数并且总是将数据追加到文件尾部。
+
+### fs.writeSync
+
+> fs.writeSync(fd, offset, data)
+
+同步版本的fs.write()。返回写入的字节数。
+
+## 文件快捷读写
+
+### fs.appendFile
+
+> `fs.appendFile(filename, data, [options], callback)`
+
+- `filename` {string}
+- `data` {stringr}
+- `options` {object}
+    - `encoding` {string} default = 'utf8'
+    - `mode` {number} default = 438 (aka 0666 in Octal)
+    - `flag` {string} default = 'a'
+- `callback` {function}
+
+异步的将数据添加到一个文件的尾部, 如果文件不存在, 会创建一个新的文件. data 可以是一个string, 也可以是原生buffer。
+
+实例：
+
+```lua
+fs.appendFile('message.txt', 'data to append', function (err) 
+  if (err) then return nil, err
+  print('The "data to append" was appended to file!') --数据被添加到文件的尾部
+end)
+```
+
+### fs.appendFileSync
+
+> fs.appendFileSync(filename, data, [options])
+
+fs.appendFile 的同步版本。
+
+### fs.readFile
+
+> fs.readFile(filename, [options], callback)
+
+- `filename` {string}
+- `options` {object}
+    + `flag` {string} default = 'r'
+- `callback` {function}
 
 异步读取一个文件的全部内容。举例：
 
@@ -379,184 +537,24 @@ end)
 
 如果未指定编码方式, 原生buffer就会被返回。
 
-## fs.readFileSync
+### fs.readFileSync
 
-    fs.readFileSync(filename, [options])
+> fs.readFileSync(filename, [options])
 
 fs.readFile的同步版本. 返回文件名为 filename 的文件内容。
 
-如果 encoding 选项被指定,  那么这个函数返回一个字符串。如果未指定, 则返回一个原生buffer。
+如果 encoding 选项被指定,  那么这个函数返回一个字符串。如果未指定, 则返回一个原生 buffer。
 
-## fs.readlink
+### fs.writeFile
 
-    fs.readlink(path, callback)
+> fs.writeFile(filename, data, [options], callback)
 
-异步版的 readlink(2). 回调函数（callback）接收两个参数： (err, linkString).
-
-## fs.readlinkSync
-
-    fs.readlinkSync(path)
-
-同步版的 readlink(2). 返回符号链接（symbolic link）的字符串值。
-
-## fs.readSync
-
-    fs.readSync(fd, buffer, offset, length, position)
-
-fs.read 函数的同步版本. 返回bytesRead的个数。
-
-## fs.realpath
-
-    fs.realpath(path, [cache], callback)
-
-异步版的 realpath(2). 回调函数（callback）接收两个参数： (err, resolvedPath). May use process.cwd to resolve relative paths. cache is an object literal of mapped paths that can be used to force a specific path resolution or avoid additional fs.stat calls for known real paths.
-
-实例：
-
-```lua
-local cache = {'/etc':'/private/etc'};
-fs.realpath('/etc/passwd', cache, function (err, resolvedPath)
-  if (err) return nil, err;
-  print(resolvedPath)
-end)
-```
-
-## fs.realpathSync
-
-    fs.realpathSync(path, [cache])
-
-realpath(2) 的同步版本。返回解析出的路径。
-
-## fs.renameSync
-
-    fs.renameSync(oldPath, newPath)
-
-同步版本的rename(2).
-
-## fs.rmdir
-
-    fs.rmdir(path, callback)
-
-异步版的 rmdir(2).  完成时的回调函数（callback）只接受一个参数：可能出现的异常信息。
-
-## fs.rmdirSync
-
-    fs.rmdirSync(path)
-
-同步版的 rmdir(2).
-
-## fs.stat
-
-    fs.stat(path, callback)
-
-异步版的 stat(2). 回调函数（callback） 接收两个参数： (err, stats) , 其中 stats 是一个 fs.Stats 对象. 详情请参考 fs.Stats
-
-## fs.statSync
-
-    fs.statSync(path)
-
-同步版的 stat(2). 返回一个 fs.Stats 实例。
-
-## fs.symlink
-
-    fs.symlink(srcpath, dstpath, [type], callback)
-
-异步版的 symlink(2). 完成时的回调函数（callback）只接受一个参数：可能出现的异常信息. type 可以是 'dir', 'file', 或者'junction' (默认是 'file'), 此参数仅用于 Windows 系统（其他系统平台会被忽略）. 注意： Windows 系统要求目标路径（译者注：即 dstpath 参数）必须是一个绝对路径, 当使用 'junction' 时, dstpath 参数会自动转换为绝对路径。
-
-## fs.symlinkSync
-
-    fs.symlinkSync(srcpath, dstpath, [type])
-
-同步版的 symlink(2).
-
-## fs.truncate
-
-    fs.truncate(path, len, callback)
-
-异步版本的truncate(2). 完成时的回调函数(callback)只接受一个参数:可能出现的异常信息.
-
-## fs.truncateSync
-
-    fs.truncateSync(path, len)
-
-同步版本的truncate(2).
-
-异步版本的chown.完成时的回调函数(callback)只接受一个参数:可能出现的异常信息.
-
-异步版本的chown(2).完成时的回调函数(callback)只接受一个参数:可能出现的异常信息.
-
-## fs.unlink
-
-    fs.unlink(path, callback)
-
-异步版的 unlink(2). 完成时的回调函数（callback）只接受一个参数：可能出现的异常信息.
-
-## fs.unlinkSync
-
-    fs.unlinkSync(path)
-
-同步版的 unlink(2).
-
-## fs.utimes
-
-    fs.utimes(path, atime, mtime, callback)
-
-## fs.utimesSync
-
-    fs.utimesSync(path, atime, mtime)
-
-更改 path 所指向的文件的时间戳。
-
-## fs.write
-
-    fs.write(fd, buffer, offset, length[, position], callback)
-
-通过文件标识fd, 向指定的文件中写入buffer。
-
-
-offset 和length 可以确定从哪个位置开始写入buffer。
-
-
-position 是参考当前文档光标的位置, 然后从该处写入数据。如果typeof position !== 'number', 那么数据会从当前文档位置写入, 请看pwrite(2)。
-
-
-回调中会给出三个参数 (err, written, buffer), written 说明从buffer写入的字节数。
-
-
-注意, fs.write多次地在同一个文件中使用而没有等待回调是不安全的。在这种情况下, 强烈推荐使用fs.createWriteStream。
-
-
-在 Linux 上, 无法对以追加 (append) 模式打开的文件进行指定位置的写入操作. 内核会忽略位置参数并且总是将数据追加到文件尾部。
-
-
-## fs.write
-
-    fs.write(fd, data[, position[, encoding]], callback)
-
-把data写入到文档中通过指定的fd,如果data不是buffer对象的实例则会把值强制转化成一个字符串。
-
-position 是参考当前文档光标的位置, 然后从该处写入数据。如果typeof position !== 'number', 那么数据会从当前文档位置写入, 请看pwrite(2)。
-
-encoding 是预期得到一个字符串编码
-
-回调会得到这些参数 (err, written, string), written表明传入的string需要写入的字符串长度。注意字节的写入跟字符串写入是不一样的。请看Buffer.byteLength.
-
-与写入buffer不同, 必须写入完整的字符串, 截取字符串不是符合规定的。这是因为返回的字节的位移跟字符串的位移是不一样的。
-
-注意, fs.write多次地在同一个文件中使用而没有等待回调是不安全的。在这种情况下, 强烈推荐使用fs.createWriteStream。
-
-在 Linux 上, 无法对以追加 (append) 模式打开的文件进行指定位置的写入操作. 内核会忽略位置参数并且总是将数据追加到文件尾部。
-
-## fs.writeFile
-
-    fs.writeFile(filename, data, [options], callback)
-
-- filename {String}
-- data {String | Buffer}
-- options {Object}
-    + mode {Number} default = 438 (aka 0666 in Octal)
-    + flag {String} default = 'w'
-- callback {Function}
+- `filename` {string}
+- `data` {string}
+- `options` {object}
+    + `mode` {number} default = 438 (aka 0666 in Octal)
+    + `flag` {string} default = 'w'
+- `callback` {function}
 
 异步的将数据写入一个文件, 如果文件原先存在, 会被替换. data 可以是一个string, 也可以是一个原生buffer。
 
@@ -569,22 +567,17 @@ fs.writeFile('message.txt', 'Hello Node', function (err)
 end);
 ```
 
-## fs.writeFileSync
+### fs.writeFileSync
 
-    fs.writeFileSync(filename, data, [options])
+> fs.writeFileSync(filename, data, [options])
 
 fs.writeFile的同步版本。
 
-## fs.writeSync
+## 文件 watch
 
-    fs.writeSync(fd, buffer, offset, length[, position])
-    fs.writeSync(fd, data[, position[, encoding]])
+### fs.watchFile
 
-同步版本的fs.write()。返回写入的字节数。
-
-## fs.watchFile
-
-    fs.watchFile(filename, [options], listener)
+> fs.watchFile(filename, [options], listener)
 
 尽可能的话推荐使用 fs.watch 来代替。
 
@@ -601,11 +594,11 @@ fs.watchFile('message.text', function (curr, prev)
 end)
 ```
 
-listener中的文件状态对象类型为 fs.Stat。
+listener 中的文件状态对象类型为 fs.Stat。
 
 如果你只想在文件被修改时被告知, 而不是仅仅在被访问时就告知, 你应当在 listener 回调函数中比较下两个状态对象的 mtime 属性。即 curr.mtime 和 prev.mtime.
 
-## fs.unwatchFile
+### fs.unwatchFile
 
     fs.unwatchFile(filename, [listener])
 
@@ -615,7 +608,7 @@ listener中的文件状态对象类型为 fs.Stat。
 
 调用 fs.unwatchFile() 时, 传递的文件名为未被监视的文件时, 不会发生错误, 而会发生一个no-op。
 
-## fs.watch
+### fs.watch
 
     fs.watch(filename, [options], [listener])
 
@@ -625,11 +618,11 @@ listener中的文件状态对象类型为 fs.Stat。
 
 监听器的回调函数得到两个参数 (event, filename)。其中 event 是 'rename'（重命名）或者 'change'（改变）, 而 filename 则是触发事件的文件名。
 
-### 注意事项
+#### 注意事项
 
 fs.watch 不是完全跨平台的, 且在某些情况下不可用。
 
-### 可用性
+#### 可用性
 
 此功能依赖于操作系统底层提供的方法来监视文件系统的变化。
 
@@ -642,7 +635,7 @@ fs.watch 不是完全跨平台的, 且在某些情况下不可用。
 
 你仍然可以调用使用了文件状态调查的 fs.watchFile, 但是会比较慢而且比较不可靠。
 
-### 文件名参数
+#### 文件名参数
 
 在回调函数中提供的 filename 参数不是在每一个操作系统中都被支持（当下仅在 Linux 和 Windows 上支持）. 即便是在支持的系统中, filename 也不能保证在每一次回调都被提供。因此, 不要假设filename参数总会会在 回调函数中提供, 在回调函数中添加检测 filename 是否为 null 的 if 判断语句。
 
@@ -657,7 +650,69 @@ fs.watch('somedir', function (event, filename)
 end);
 ```
 
-## Class: fs.Stats
+### Class: fs.FSWatcher
+
+fs.watch() 返回的对象类型。
+
+#### 事件: 'change'
+
+- event string fs 改变的类型
+- filename string 改变的文件名 (if relevant/available)
+
+当正在观察的目录或文件发生变动时触发。更多细节, 详见 fs.watch。
+
+#### 事件: 'error'
+
+- error {Error 对象}
+
+当产生错误时触发
+
+#### watcher.close
+
+    watcher.close()
+
+停止观察 fs.FSWatcher 对象中的更改。
+
+## 统计 stat
+
+### fs.fstat
+
+    fs.fstat(fd, callback)
+
+异步版的 fstat(2). 回调函数（callback）接收两个参数： (err, stats) 其中 stats 是一个 fs.Stats 对象. fstat() 与 stat() 相同, 区别在于： 要读取的文件（译者注：即第一个参数）是一个文件描述符（file descriptor） fd 。
+
+### fs.fstatSync
+
+    fs.fstatSync(fd)
+
+同步版的 fstat(2). 返回一个 fs.Stats 实例。
+
+### fs.lstat
+
+    fs.lstat(path, callback)
+
+异步版的 lstat(2). 回调函数（callback）接收两个参数： (err, stats) 其中 stats 是一个 fs.Stats 对象. lstat() 与 stat() 相同, 区别在于： 若 path 是一个符号链接时（symbolic link）,读取的是该符号链接本身, 而不是它所 链接到的文件。
+
+### fs.lstatSync
+
+    fs.lstatSync(path)
+
+同步版的 lstat(2). 返回一个 fs.Stats 实例。
+
+### fs.stat
+
+    fs.stat(path, callback)
+
+异步版的 stat(2). 回调函数（callback） 接收两个参数： (err, stats) , 其中 stats 是一个 fs.Stats 对象. 详情请参考 fs.Stats
+
+### fs.statSync
+
+    fs.statSync(path)
+
+同步版的 stat(2). 返回一个 fs.Stats 实例。
+
+
+### Class: Stats
 
 fs.stat(), fs.lstat() 和 fs.fstat() 以及他们对应的同步版本返回的对象。
 
@@ -690,7 +745,7 @@ fs.stat(), fs.lstat() 和 fs.fstat() 以及他们对应的同步版本返回的�
 
 请注意 atime, mtime, birthtime, and ctime 是 Date 对象的实例。而且在比较这些对象的值时你应当使用合适的方法. 大部分情况下, 使用 getTime() 将会返回自 1 January 1970 00:00:00 UTC 以来逝去的毫秒数,  而且这个整形值应该能满足任何比较的使用条件。但是仍然还有一些额外的方法可以用来显示一些模糊的信息。
 
-### Stat Time Values
+#### Stat Time Values
 
 在状态对象（stat object）中的时间有以下语义：
 
@@ -700,7 +755,9 @@ fs.stat(), fs.lstat() 和 fs.fstat() 以及他们对应的同步版本返回的�
 - ctime "Change Time" - 文件状态上次改变的时间. (inode data modification). 会被 chmod(2), chown(2), link(2), mknod(2), rename(2), unlink(2), utimes(2), read(2), and write(2) 等系统调用改变。
 - birthtime "Birth Time" - 文件被创建的时间. 会在文件被创建时生成. 在一些不提供文件birthtime的文件系统中, 这个字段会被 ctime 或 1970-01-01T00:00Z (ie, unix epoch timestamp 0)来填充. 在 Darwin 和其他 FreeBSD 系统变体中, 也将 atime 显式地设置成比它现在的 birthtime 更早的一个时间值, 这个过程使用了utimes(2)系统调用。
 
-## fs.createReadStream
+## ReadStream
+
+### fs.createReadStream
 
     fs.createReadStream(path, [options])
 
@@ -727,17 +784,19 @@ options 可以提供 start 和 end 值用于读取文件内的特定范围而非
 
     fs.createReadStream('sample.txt', {start: 90, end: 99});
 
-## Class: fs.ReadStream
+### Class: ReadStream
 
 ReadStream 是一个可读的流(Readable Stream).
 
-### 事件: 'open'
+#### 事件: 'open'
 
 - fd number ReadStream 所使用的文件描述符。
 
 当文件的 ReadStream 被创建时触发。
 
-## fs.createWriteStream
+## WriteStream
+
+### fs.createWriteStream
 
     fs.createWriteStream(path, [options])
 
@@ -753,40 +812,16 @@ options 是一个包含下列缺省值的对象：
 
 options 也可以包含一个 start 选项用于指定在文件中开始写入数据的位置. 修改而不替换文件需要 flags 的模式指定为 r+ 而不是默值的 w.
 
-## Class: fs.WriteStream
+### Class: WriteStream
 
 WriteStream 是一个可写的流(Writable Stream).
 
-### 事件: 'open'
+#### 事件: 'open'
 
 fd number WriteStream 所使用的文件描述符。
 
 当 WriteStream 创建时触发。
 
-### file.bytesWritten
+#### file.bytesWritten
 
 已写的字节数。不包含仍在队列中准备写入的数据。
-
-
-## Class: fs.FSWatcher
-
-fs.watch() 返回的对象类型。
-
-### 事件: 'change'
-
-- event string fs 改变的类型
-- filename string 改变的文件名 (if relevant/available)
-
-当正在观察的目录或文件发生变动时触发。更多细节, 详见 fs.watch。
-
-### 事件: 'error'
-
-- error {Error 对象}
-
-当产生错误时触发
-
-### watcher.close
-
-    watcher.close()
-
-停止观察 fs.FSWatcher 对象中的更改。

@@ -11,7 +11,7 @@
 
 Node.lua 应用可以用 lpm 命令行工具快速调用, 其格式通常如下
 
-    lpm <app> <action> [args, ...]
+> lpm <app> <action> [args, ...]
 
 - app 是要执行的应用的名称
 - action 要执行的方法, 如果没有指定则通常会调用 help 方法
@@ -62,27 +62,27 @@ app(exports)
 
 ## app
 
-    app(exports)
+> app(exports)
 
 运行当前的 APP, 一般在应用程序 init.lua 最后调用这个方法.
 
-- exports {Object} 要运行的 APP
+- exports `{object}` 要运行的 APP
 
 
 ## 属性 app.rootPath
 
-{String} Node.lua 的安装根目录.
+{string} Node.lua 的安装根目录.
 
 比如在 linux 下默认为 '/usr/local/lnode'.
 
 
 ## app.get
 
-    app.get(key)
+> app.get(key)
 
 返回指定的名称的配置参数的值, 是对 conf.get 的封装
 
-- key {String} 以 '.' 分隔的参数名
+- key `{string}` 以 '.' 分隔的参数名
 
 比如:
 
@@ -93,23 +93,23 @@ local value = app.get('video.width')
 
 ## app.del
 
-    app.del(key)
+> app.del(key)
 
 删除指定的名称的配置参数的值, 是对 conf.del 的封装
 
-- key {String} 以 '.' 分隔的参数名
+- key `{string}` 以 '.' 分隔的参数名
 
 
 ## app.set
 
-    app.set(key, value)
-    app.set(table)
+> app.set(key, value)
+> app.set(table)
 
 修改指定的名称的配置参数的值, 是对 conf.set 的封装
 
-- key {String} 以 '.' 分隔的参数名
-- value {String|Number} 要修改的参数的值
-- table {Object} 名称和值对表格, 可一次性修改多个参数的值
+- key `{string}` 以 '.' 分隔的参数名
+- value `{any}` 要修改的参数的值
+- table `{object}` 名称和值对表格, 可一次性修改多个参数的值
 
 比如:
 
@@ -123,72 +123,42 @@ app.set({'video.width' = 100, 'video.height' = 80})
 
 ## app.daemon
 
-    app.daemon(name)
+> app.daemon(name)
 
 调用这个方法会让指定名称的应用程序在后台运行.
 
 注意后台模式目前不支持 Windows
 
-- name 要在后台运行的应用的名称
+- name `{string}` 要在后台运行的应用的名称
 
 
 ## app.execute
 
-    app.execute(name, ...)
+> app.execute(name, ...)
 
 执行指定名称的应用程序
 
-- name {String} 要执行的应用程序的名称
+- name `{string}` 要执行的应用程序的名称
 - ... 调用方法时所需的参数
 
 
 ## app.list
 
-    app.list()
+> app.list()
 
 打印所有安装的应用
 
 
 ## app.main
 
-    app.main(handler, action, ...)
+> app.main(handler, action, ...)
 
 默认 main 函数, 即根据参数的值来决定调用 APP 哪个方法, 这样 APP 可以不用自己实现入口函数, 
 只需实现具体子方法即可被自动调用
 
-- handler {Object} 处理器, 包含多个不同名称的方法可被调用
-- action {String} 要执行的方法名
+- handler `{object}` 处理器, 包含多个不同名称的方法可被调用
+- action `{string}` 要执行的方法名
 - ... 从命令行传入的其他参数, 将作为要调用的方法的输入参数
-
-
-## app.tableDivision
-
-    app.tableDivision(cols, ch)
-
-打印表格分隔线
-
-- cols {Array} 每一列的宽度, 单位为字符
-- ch {String} 要打印的分隔线符号, 默认为 '-'
-
-
-## app.tableHeader
-
-    app.tableHeader(cols, title)
-
-打印表格标题
-
-- cols {Array} 每一列的宽度, 单位为字符
-- title {String} 要打印的标题
-
-
-## app.tableLine
-
-    app.tableLine(cols, ...)
-
-打印表格行, 应用中常需要打印一些表格信息, 这里提供标准和统一的打印方法
-
-- cols {Array} 每一列的宽度, 单位为字符, 如 '{16, 8, 8, 12}'
-- ... {Any} 要打印的值
 
 
 ## app.rpc
@@ -197,8 +167,8 @@ app.set({'video.width' = 100, 'video.height' = 80})
 
 创建一个远程过程调用服务器
 
-- name {String} 侦听的名称
-- handler {Object} 远程方法提供者
+- name {string} 侦听的名称
+- handler {object} 远程方法提供者
 
 返回创建的 RPC 服务器
 
@@ -208,7 +178,7 @@ app.set({'video.width' = 100, 'video.height' = 80})
 -- server
 local server = app.rpc('foo', {
     bar = function(self, ...)
-        console.log(...)
+   console.log(...)
     end
 })
 
@@ -223,16 +193,16 @@ rpc.call('foo', 'bar', 100)
 
 ## app.getSystemTarget
 
-     app.getSystemTarget()
+> app.getSystemTarget()
 
 返回当前目标板的名称
 
 
 ## app.usage
 
-    app.usage(dirname)
+> app.usage(dirname)
 
 这个方法能够根据 package.json 的描述打印当前 APP 的使用方法等信息.
 
-- dirname {String} 当前 APP 所在目录
+- dirname `{string}` 当前 APP 所在目录
 

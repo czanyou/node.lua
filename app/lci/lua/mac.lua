@@ -1,27 +1,15 @@
 local app = require('app')
 
--- local function getMac()
---     local path = "/sys/class/net/eth0/address"
---     local did
---     local mac, err = fs.readFileSync(path)
- 
---     console.log(mac)
---     for value in string.gmatch(mac, "(%s+):*") do
---         if(did) then
---             did = did..value
---         else
---             did = value
---         end
---     end
---     console.log(did)
--- end
+-- 设置以太网口 MAC 地址
+-- - 仅在系统初始化的时候调用这个方法
 
-local function setMac()
+local function setMacAddress()
     local did = app.get('did')
     if (not did) then
         return
     end
 
+    -- format MAC address string
     local mac = ''
     for i = 1, 11, 2 do
         if (i > 1) then
@@ -32,6 +20,7 @@ local function setMac()
 
     print('mac', mac)
 
+    -- set mac address
     local cmd = "ifconfig eth0 down"
     os.execute(cmd)
 
@@ -42,4 +31,10 @@ local function setMac()
     os.execute(cmd)
 end
 
-setMac()
+local function onSystemBoot()
+    local boot = require('./boot')
+    boot.onSystemBoot()
+end
+
+setMacAddress()
+onSystemBoot()

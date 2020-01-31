@@ -20,8 +20,8 @@
 
 使用指定的回调函数处理指定路径的 HTTP GET 请求.
 
-- path {String} 路径
-- callback {Function} 回调函数 `function(req, res)`
+- path {string} 路径
+- callback {function} 回调函数 `function(req, res)`
 
 ### app:post
 
@@ -29,7 +29,7 @@
 
 使用指定的回调函数处理指定路径的 HTTP POST 请求.
 
-- path {String} 路径
+- path {string} 路径
 - handler {callback} 回调函数 `function(req, res)`
 
 ### app:listen
@@ -38,13 +38,15 @@
 
 绑定并在指定的端口和主机上侦听连接请求。
 
-- port {Number} 端口
-- hostname {String} 主机 IP 地址，没有指定则为 `0.0.0.0`
-- callback {Function} 
+- port {number} 端口
+- hostname {string} 主机 IP 地址，没有指定则为 `0.0.0.0`
+- callback {function} 
 
 ## Request
 
-### 属性: request.body
+### 属性
+
+#### 属性: request.body
 
 请求消息体, 通常是键值表
 
@@ -57,19 +59,19 @@
 
 如果是其他未知类型则 body 为请求消息原始内容 
 
-### 属性: request.hostname
+#### 属性: request.hostname
 
 请求的主机地址
 
-### 属性: request.path
+#### 属性: request.path
 
 请求的路径
 
-### 属性: request.protocol
+#### 属性: request.protocol
 
 请求协议类型, 一般为 'http' 或 'https'.
 
-### 属性: request.query
+#### 属性: request.query
 
 请求 URL 参数键值表
 
@@ -79,13 +81,13 @@
 
 返回指定名称的头字段的值
 
-- field {String} 头字段的名称
+- field {string} 头字段的名称
 
 ### request:getSession
 
     request:getSession(create)
 
-- create {Boolean} 如果不存在，是否创建一个
+- create {boolean} 如果不存在，是否创建一个
 
 ### request:readBody
 
@@ -112,8 +114,8 @@ Boolean 类型，指出当前 HTTP 应答头字段是否已发送.
 
 发送指定的状态码的应答消息
 
-- statusCode {Number}  消息状态码
-- message {String} 消息状态字符串
+- statusCode {number}  消息状态码
+- message {string} 消息状态字符串
 
 ### response:json
 
@@ -121,7 +123,7 @@ Boolean 类型，指出当前 HTTP 应答头字段是否已发送.
 
 发送 JSON 内容的应答消息
 
-- value {Object} 要转换的对象
+- value {object} 要转换的对象
 
 ### response:send
 
@@ -129,7 +131,7 @@ Boolean 类型，指出当前 HTTP 应答头字段是否已发送.
 
 发送指定字符串内容的应答消息
 
-- text {String}
+- text {string}
 
 ### response:sendFile
 
@@ -137,7 +139,7 @@ Boolean 类型，指出当前 HTTP 应答头字段是否已发送.
 
 发送指定名称的文件或目录的内容的应答消息
 
-- filename {String} 要发送的文件的名称
+- filename {string} 要发送的文件的名称
 
 这个方法最终会根据文件的类型来调用 sendFileList, sendStaticFile 或 sendScriptFile 方法.
 
@@ -148,8 +150,8 @@ Boolean 类型，指出当前 HTTP 应答头字段是否已发送.
 
 发送指定名称的脚本文件执行的结果的应答消息
 
-- script {String} 要执行的脚本的内容
-- name {String} 要执行的脚本的名称
+- script {string} 要执行的脚本的内容
+- name {string} 要执行的脚本的名称
 
 这个方法会传递 request, response 对象给脚本并会动态执行指定的脚本。
 
@@ -161,7 +163,7 @@ Boolean 类型，指出当前 HTTP 应答头字段是否已发送.
 发送指定状态的应答消息
 
 - statusCode {Stream} 要发送的状态码
-- statusMessage {String} 要发送的状态字符串
+- statusMessage {string} 要发送的状态字符串
 
 ### response:sendStream
 
@@ -170,8 +172,8 @@ Boolean 类型，指出当前 HTTP 应答头字段是否已发送.
 发送指定流的应答消息
 
 - stream {Stream} 要发送的流
-- contentType {String} 要发送的流的 MIME 类型
-- contentLength {Number} 要发送的数据的长度
+- contentType {string} 要发送的流的 MIME 类型
+- contentLength {number} 要发送的数据的长度
 
 ### response:status
 
@@ -179,7 +181,7 @@ Boolean 类型，指出当前 HTTP 应答头字段是否已发送.
 
 设置应答状态码
 
-- code {Number}
+- code {number}
 
 ### response:set
 
@@ -188,7 +190,7 @@ Boolean 类型，指出当前 HTTP 应答头字段是否已发送.
 设置头字段
 
 - field {String|Object} 头字段的名称或头字段的集合
-- value {String} 头字段的值
+- value {string} 头字段的值
 
 ```lua
 

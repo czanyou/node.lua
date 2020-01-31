@@ -87,12 +87,14 @@ function Profile:initialize(filename, callback)
 	end
 end
 
-function Profile:startWatch()
+function Profile:startWatch(callback)
 	if (self.fileWatch) then
+		console.log('already watched...')
 		return
 	end
 
 	-- console.log('start watch', self.filename)
+
     local fileWatch = luv.new_fs_event()
     fileWatch:start(self.filename, { stat = true }, function(...)
 		fileWatch:stop()
@@ -100,7 +102,12 @@ function Profile:startWatch()
 
 		setTimeout(500, function()
 			self:reload()
-			self:startWatch()
+
+			if (type(callback) == 'function') then
+				callback(self)
+			end
+
+			self:startWatch(callback)
 		end)
     end)
 

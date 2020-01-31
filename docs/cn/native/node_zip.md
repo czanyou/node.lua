@@ -10,8 +10,8 @@
 
 创建一个 Reader
 
-- filename {String} ZIP 文件名
-- flags {Number}
+- filename {string} ZIP 文件名
+- flags {number}
   - MZ_ZIP_FLAG_DO_NOT_SORT_CENTRAL_DIRECTORY = 0x0800
 
 ### reader:close
@@ -26,8 +26,8 @@
 
 解压指定索引的文件, 并返回解压后的文件内容
 
-- index {Number} 文件索引
-- flags {Number}
+- index {number} 文件索引
+- flags {number}
   - MZ_ZIP_FLAG_COMPRESSED_DATA = 0x0400 直接返回压缩的数据(不进行解压)
 
 ### reader:get_filename
@@ -36,7 +36,7 @@
 
 返回指定索引位置的文件的名称
 
-- index {Number} 文件索引
+- index {number} 文件索引
 
 ### reader:get_num_files
 
@@ -48,7 +48,7 @@
 
     reader:is_directory(index)
 
-- index {Number} 文件索引
+- index {number} 文件索引
 
 指出指定的索引的文件是否是一个目录
 
@@ -58,8 +58,8 @@
 
 返回指定的文件名的文件的索引位置
 
-- path {String} 文件路径名
-- flags {Number}
+- path {string} 文件路径名
+- flags {number}
   - MZ_ZIP_FLAG_CASE_SENSITIVE = 0x0100,
   - MZ_ZIP_FLAG_IGNORE_PATH = 0x0200,
 
@@ -69,7 +69,7 @@
 
 返回指定索引的文件的统计信息, 如压缩大小, 原文件大小等信息
 
-- index {Number} 文件索引
+- index {number} 文件索引
 
 返回:
 
@@ -93,8 +93,8 @@
 
 创建一个 Writer
 
-- reserve {Number} 文件开始位置保留的长度, 默认为 0
-- initialSize {Number} 初始化时预分配的空间大小, 默认为 128 * 1024
+- reserve {number} 文件开始位置保留的长度, 默认为 0
+- initialSize {number} 初始化时预分配的空间大小, 默认为 128 * 1024
 
 ### writer:add
 
@@ -102,16 +102,16 @@
 
 添加一个文件到压缩包中
 
-- path {String} 相对路径
-- data {String} 文件内容
-- flags {Number}
+- path {string} 相对路径
+- data {string} 文件内容
+- flags {number}
 
 ### writer:add_from_zip
 
     writer:add_from_zip(source, index)
 
 - source {reader Object} ZIP 文件 Reader 对象
-- index {Number} 文件索引
+- index {number} 文件索引
 
 直接从指定的 Reader 中读取一个文件并添加到这个 Writer 中.
 
@@ -133,7 +133,7 @@ deflate
 
 解压
 
-- data {String} 要解压的数据包
+- data {string} 要解压的数据包
 - flags  Decompression flags used by tinfl_decompress().
   - 1: TINFL_FLAG_PARSE_ZLIB_HEADER: If set, the input has a valid zlib header and ends with an adler32 checksum (it's a valid zlib stream). Otherwise, the input is a raw deflate stream.
   - 2: TINFL_FLAG_HAS_MORE_INPUT: If set, there are more input bytes available beyond the end of the supplied input buffer. If clear, the input buffer contains all remaining input.
@@ -148,7 +148,7 @@ inflate
 
 压缩
 
-- data {String} 要压缩的数据包
+- data {string} 要压缩的数据包
 - flags
   - 0x01000: TDEFL_WRITE_ZLIB_HEADER: If set, the compressor outputs a zlib header before the deflate data, and the Adler-32 of the source data at the end. Otherwise, you'll get raw deflate data.
   - 0x02000: TDEFL_COMPUTE_ADLER32: Always compute the adler-32 of the input data (even when not writing zlib headers).

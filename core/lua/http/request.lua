@@ -91,6 +91,10 @@ function exports.download(urlString, options, callback)
     callback = callback or function() end
     options  = options  or {}
 
+    if (type(options) == 'function') then
+        callback, options = options, nil
+    end
+
     --print('url', url)
     local request = http.get(urlString, function(response)
 

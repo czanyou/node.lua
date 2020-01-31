@@ -6,7 +6,7 @@ local sdp   	= require('rtsp/sdp')
 
 local sdpString = 'v=0\r\no=- 1453271342214497 1 IN IP4 10.10.42.66\r\ns=MPEG Transport Stream, streamed by the LIVE555 Media Server\r\ni=hd.ts\r\nt=0 0\r\na=tool:LIVE555 Streaming Media v2015.07.31\r\na=type:broadcast\r\na=control:*\r\na=range:npt=0-\r\na=x-qt-text-nam:MPEG Transport Stream, streamed by the LIVE555 Media Server\r\na=x-qt-text-inf:hd.ts\r\nm=video 0 RTP/AVP 33\r\nc=IN IP4 0.0.0.0\r\nb=AS:5000\r\na=control:track1\r\n'
 
-return tap(function (test)
+local test = tap.test
 
 test("test sdp decode", function()
 	local session = sdp.decode(sdpString)
@@ -97,4 +97,4 @@ a=control:trackID=2
 
 end)
 
-end)
+tap.run()

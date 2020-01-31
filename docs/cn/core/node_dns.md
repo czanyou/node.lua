@@ -5,7 +5,7 @@
 
 ## dns.lookup
 
-    dns.lookup(domain, [family], callback)
+> dns.lookup(domain, [family], callback)
 
 将一个域名（比如 'google.com'）解析为第一个找到的 A 记录（IPv4）或 AAAA 记录（IPv6）。地址族 family 可以是数字 4 或 6，缺省为 null 表示同时允许 IPv4 和 IPv6 地址族。
 
@@ -15,7 +15,7 @@
 
 ## dns.resolve
 
-    dns.resolve(domain, [rrtype], callback)
+> dns.resolve(domain, [rrtype], callback)
 
 将一个域名（比如 'google.com'）解析为一个 rrtype 指定记录类型的数组。有效 rrtypes 取值有 'A'（IPv4 地址，缺省）、'AAAA'（IPv6 地址）、'MX'（邮件交换记录）、'TXT'（文本记录）、'SRV'（SRV 记录）、'PTR'（用于 IP 反向查找）、'NS'（域名服务器记录）和 'CNAME'（别名记录）。
 
@@ -26,12 +26,12 @@
 
 ## dns.resolve4
 
-    dns.resolve4(domain, callback)
+> dns.resolve4(domain, callback)
 
 于 dns.resolve() 一样，但只用于查询 IPv4（A 记录）。addresses 是一个 IPv4 地址的数组（比如 ['74.125.79.104', '74.125.79.105', '74.125.79.106']）。
 
 
 ## dns.resolve6
 
-    dns.resolve6(domain, callback)
+> dns.resolve6(domain, callback)
 

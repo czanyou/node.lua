@@ -1,5 +1,3 @@
-local util  	= require('util')
-local net 		= require('net')
 local tls 		= require('tls')
 
 local tap = require("ext/tap")

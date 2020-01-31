@@ -30,4 +30,8 @@ int lutils_hex_decode(uint8_t* buffer, size_t bufferSize,
 int lutils_hex_encode(char* buffer,    size_t bufferSize, 
 					 const void* data,   size_t dataSize);
 
+uint32_t lutils_crc32(const uint8_t *data, int len);
+
+uint16_t lutils_crc16(const uint8_t *buffer, uint16_t buffer_length);
+
 #endif // LUTILS_H

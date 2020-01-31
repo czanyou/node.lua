@@ -5,11 +5,11 @@ local test = tap.test
 local isWindows = os.platform() == "win32"
 
 
-test("test disable_stdio_inheritance", function (print, p, expect, uv)
+test("test disable_stdio_inheritance", function (expect, uv)
 	uv.disable_stdio_inheritance()
 end)
 
-test("process stdout", function (print, p, expect, uv)
+test("process stdout", function (expect, uv)
 	local stdout = uv.new_pipe(false)
 
 	local handle, pid
@@ -32,7 +32,7 @@ end)
 
 if isWindows then return end
 
-test("spawn and kill by pid", function (print, p, expect, uv)
+test("spawn and kill by pid", function (expect, uv)
 	local handle, pid
 	handle, pid = uv.spawn("sleep", {
 		args = {1},
@@ -48,7 +48,7 @@ test("spawn and kill by pid", function (print, p, expect, uv)
 	uv.kill(pid, "sigint")
 end)
 
-test("spawn and kill by handle", function (print, p, expect, uv)
+test("spawn and kill by handle", function (expect, uv)
 	local handle, pid
 	handle, pid = uv.spawn("sleep", {
 		args = {1},
@@ -63,7 +63,7 @@ test("spawn and kill by handle", function (print, p, expect, uv)
 	uv.process_kill(handle, "sigterm")
 end)
 
-test("invalid command", function (print, p, expect, uv)
+test("invalid command", function (expect, uv)
 		local handle, err
 		handle, err = uv.spawn("ksjdfksjdflkjsflksdf", {}, function(exit, code)
 		assert(false)
@@ -72,7 +72,7 @@ test("invalid command", function (print, p, expect, uv)
 		assert(err)
 end)
 
-test("process stdio", function (print, p, expect, uv)
+test("process stdio", function (expect, uv)
 	local stdin = uv.new_pipe(false)
 	local stdout = uv.new_pipe(false)
 

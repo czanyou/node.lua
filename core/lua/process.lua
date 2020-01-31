@@ -29,13 +29,12 @@ meta.name        = "lnode/process"
 meta.tags        = { "lnode", "process" }
 meta.version     = "1.0.1"
 
-local patch     = 227
-
 local env       = require('env')
 local uv        = require('luv')
 local Emitter   = require('core').Emitter
 local lutils    = require('lutils')
 local lnode     = require('lnode')
+local version   = require('@version')
 
 local process   = { meta = meta }
 local exports   = process
@@ -212,7 +211,7 @@ exports.versions    = lnode.versions    -- A property exposing version strings o
 
 --
 
-exports.version = exports.version .. '.' .. patch
+exports.version = exports.version .. '.' .. version.build
 
 -------------------------------------------------------------------------------
 -- stream

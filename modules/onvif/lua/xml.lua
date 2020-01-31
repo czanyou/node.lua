@@ -150,4 +150,79 @@ function exports.newParser()
     return XmlParser
 end
 
+-- 将 XML 节点转换为 Lua 表格
+-- @param element {XmlNode}
+function exports.xmlToTable(element)
+    if (not element) then
+        return
+    end
+
+    local function getXmlNodeName(name)
+        if (type(name) ~= 'string') then
+            return name
+        end
+    
+        local pos = string.find(name, ':')
+        if (pos and pos > 0) then
+            name = string.sub(name, pos + 1)
+        end
+    
+        return name
+    end
+
+    local name = getXmlNodeName(element:name())
+    local properties = element:properties();
+    local children = element:children();
+
+    if (children and #children > 0) then
+        local item = {}
+
+        -- children
+        for _, value in ipairs(children) do
+            local key, ret = exports.xmlToTable(value)
+            local lastValue = item[key]
+            if (lastValue == nil) then
+                item[key] = ret
+
+            elseif (type(lastValue) == 'table') and (lastValue[1]) then
+                table.insert(lastValue, ret)
+
+            else
+                item[key] = { lastValue, ret }
+            end
+        end
+  
+        -- properties
+        if (properties and #properties > 0) then
+            for _, property in ipairs(properties) do
+                local value = element['@' .. property.name]
+                item['@' .. property.name] = value
+            end
+        end
+
+        return name, item
+
+    else
+        -- properties
+        if (properties and #properties > 0) then
+            -- console.log(name, properties)
+            local item = {}
+            for _, property in ipairs(properties) do
+                local value = element['@' .. property.name]
+                -- console.log(name, property, value)
+
+                item['@' .. property.name] = value
+            end
+
+            item.value = element:value()
+
+            -- console.log(name, item)
+            return name, item
+
+        else
+            return name, element:value()
+        end
+    end
+end
+
 return exports

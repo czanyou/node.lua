@@ -527,6 +527,7 @@ os.platform           = lutils.os_platform      -- operating system platform. Po
 os.tmpdir             = uv.os_tmpdir()          -- operating system's default directory for temporary files.
 os.totalmem           = uv.get_total_memory     -- total amount of system memory in bytes.
 os.type               = lutils.os_platform      -- operating system name.
+os.reboot             = lutils.os_reboot        -- reboot system
 os.uptime             = uv.uptime               -- system uptime in seconds.
 
 os.getppid            = uv.os_getppid

@@ -123,7 +123,7 @@ local function _hash(token1, token2, token3)
         sb:append(token3)
     end
 
-    return utils.bin2hex(utils.md5(sb:toString())):lower()
+    return utils.md5string(sb:toString()):lower()
 end
 
 local function _parseQString(value)

@@ -1,14 +1,26 @@
 #!/usr/bin/env lnode
 
 local conf  = require('app/conf')
+local path  = require('path')
+local fs    = require('fs')
+local json  = require('json')
+
+-- 当 DHCP 客户端获取到新的 IP 地址时调用这个方法
+-- - 这个方法由 /usr/share/udhcpc/default.script 中调用
+-- - 这个方法将获取到新地址等保存到 network.conf 配置文件中
+-- TODO: 改为保存到临时目录
 
 local function onDhcpBound()
-    local function saveConfig(data)  
+    local function saveConfig(data)
         conf.load("network", function(ret, profile)
             profile:set("dhcp", data)
             profile:set("updated", Date.now())
             profile:commit()
         end)
+
+        local filename = path.join(os.tmpdir, 'run/dhcp.json')
+        local filedata = json.stringify(data)
+        fs.writeFile(filename, filedata)
     end
 
     local config = {}
@@ -21,7 +33,8 @@ local function onDhcpBound()
     config.dns = os.getenv("dns")
     config.domain = os.getenv("domain")
     config.ntpsrv = os.getenv("ntpsrv")
-    
+    config.updated = Date.now()
+
     if (config.ip) then
         saveConfig(config)
     end

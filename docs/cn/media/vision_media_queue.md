@@ -32,7 +32,7 @@
 
 返回创建的 MediaQueue 对象
 
-- maxQueueSize {Number} 这个队列的最大长度, 如果没有指定则为 10.
+- maxQueueSize {number} 这个队列的最大长度, 如果没有指定则为 10.
 
 ## 类 MediaQueue
 
@@ -44,19 +44,21 @@ MediaQueue 提供了一个队列，能够缓存，排序媒体帧，并自动丢
 
 在接收到可以缓存收到的数据并等待客户端解码显示等处理。
 
-### 属性 currentSample
+### 属性
+
+#### 属性 currentSample
 
 {Object + Array} 当前正在拼接的帧, 直到等到 FLAG_IS_END 才表示收到完整的一帧.
 
-### 属性 maxQueueSize
+#### 属性 maxQueueSize
 
-{Number} 指出当前队列最大缓存长度, 当队列中的帧超过此长度时, 队列中所有帧都会被丢弃.
+{number} 指出当前队列最大缓存长度, 当队列中的帧超过此长度时, 队列中所有帧都会被丢弃.
 
 这样可以保证缓存队列不会无限扩大.
 
-### 属性 waitSync
+#### 属性 waitSync
 
-{Boolean} 指出是否还在等待关键帧, 当 waitSync 为 true 的时候, 所有非关键帧都会被丢弃.
+{boolean} 指出是否还在等待关键帧, 当 waitSync 为 true 的时候, 所有非关键帧都会被丢弃.
 
 ### MediaQueue:onSyncPoint
 
@@ -76,8 +78,8 @@ MediaQueue 提供了一个队列，能够缓存，排序媒体帧，并自动丢
 
 返回 {Array + Object} 有如下属性:
 
-- sampleTime {Number} 当前帧时间戳, 源自 push 方法, 单位为 1 / 1,000,000 秒
-- isSyncPoint {Boolean} 当前帧是否是同步点, 源自 push 方法
+- sampleTime {number} 当前帧时间戳, 源自 push 方法, 单位为 1 / 1,000,000 秒
+- isSyncPoint {boolean} 当前帧是否是同步点, 源自 push 方法
 
 ### MediaQueue:push
 
@@ -89,8 +91,8 @@ MediaQueue 提供了一个队列，能够缓存，排序媒体帧，并自动丢
 
 需要合并成完整的帧的原因是为了方便丢帧处理，因为假如只丢掉帧的部分数据会导致传输和解码异常，出现马赛克甚至崩溃。
 
-- sampleData {String} 字节数组，媒体数据，这个队列不关心数据内容和长度等
-- sampleTime {Number} 整数, 媒体时间戳, 单位为 1 / 1,000,000 秒
-- flags {Number} 整数, 媒体数据标记, 具体定义有为 FLAG_IS_SYNC: 同步点(关键帧), FLAG_IS_END: 帧结束标记
+- sampleData {string} 字节数组，媒体数据，这个队列不关心数据内容和长度等
+- sampleTime {number} 整数, 媒体时间戳, 单位为 1 / 1,000,000 秒
+- flags {number} 整数, 媒体数据标记, 具体定义有为 FLAG_IS_SYNC: 同步点(关键帧), FLAG_IS_END: 帧结束标记
 
 如果返回 true 表示拼接了完整的一帧并 push 到了队列中, 这时 currentSample 会变为 nil, 否则只是暂存到了 currentSample 中.

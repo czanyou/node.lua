@@ -9,9 +9,9 @@ net 模块封装了异步 TCP 网络通信功能, 提供了一些方法来创建
 
 创建一个新的 TCP 服务器. 参数 connectionListener 会被自动作为 'connection' 事件的监听器. 
 
-- options {Object} 是一个包含下列值的对象：
+- options {object} 是一个包含下列值的对象：
   + handle {TCP stream}
-- connectionListener {Function} `function(connect) end`
+- connectionListener {function} `function(connect) end`
 
 下面是一个监听 8124 端口连接的应答服务器的例子：
 
@@ -71,23 +71,25 @@ end)
 
 该类用于创建一个 TCP 或 UNIX 服务器. 服务器实际上是一个可监听传入连接的 net.Socket. 
 
-### 事件: 'close'
+### 事件
+
+#### 事件: 'close'
 
 当服务被关闭时触发. 
 
 注意：如果当前仍有活动连接, 这个事件将等到所有连接都结束后才触发. 
 
-### 事件: 'connection'
+#### 事件: 'connection'
 
 - connection {Socket object} 连接对象
 
 在一个新连接被创建时触发. socket 是一个 net.Socket 的实例. 
 
-### 事件: 'error'
+#### 事件: 'error'
 
 当一个错误发生时触发. 'close' 事件将直接被下列时间调用. 请查看讨论 server.listen 的例子. 
 
-### 事件: 'listening'
+#### 事件: 'listening'
 
 在服务器调用 server.listen 绑定后触发. 
 
@@ -159,18 +161,20 @@ end)
 
 net.Socket 实例是带有以下事件的 EventEmitter 对象：
 
-### 事件: 'close'
+### 事件
+
+#### 事件: 'close'
 
 - had_error boolean 如果套接字发生了传输错误则此字段为 true
 
 当套接字完全关闭时该事件被分发. 参数 had_error 是一个布尔值, 
 表示了套接字是否因为一个传输错误而被关闭. 
 
-### 事件: 'connect'
+#### 事件: 'connect'
 
 该事件在一个套接字连接成功建立后被分发. 见 connect(). 
 
-### 事件: 'data'
+#### 事件: 'data'
 
 - data {Buffer object}
 
@@ -178,13 +182,13 @@ net.Socket 实例是带有以下事件的 EventEmitter 对象：
 
 请注意, 如果一个 Socket 对象分发一个 'data' 事件时没有任何监听器存在, 则 数据会丢失. 
 
-### 事件: 'drain'
+#### 事件: 'drain'
 
 当写入缓冲被清空时产生. 可被用于控制上传流量. 
 
 参阅：`socket:write()` 的返回值
 
-### 事件: 'end'
+#### 事件: 'end'
 
 当套接字的另一端发送 FIN 包时, 该事件被分发. 
 
@@ -193,13 +197,13 @@ net.Socket 实例是带有以下事件的 EventEmitter 对象：
 那么套接字将不会从它这边自动调用 done()，使得用户可以随意写入数据, 
 但同时使得用户自己需要调用 done(). 
 
-### 事件: 'error'
+#### 事件: 'error'
 
 - error {Error object}
 
 当一个错误发生时产生. 'close' 事件会紧接着该事件被触发. 
 
-### 事件: 'lookup'
+#### 事件: 'lookup'
 
 这个事件在解析主机名之后, 连接主机之前被分发. 对 UNIX 套接字不适用. 
 
@@ -207,14 +211,16 @@ net.Socket 实例是带有以下事件的 EventEmitter 对象：
 - address string IP地址. 
 - family string 得知类型. 见 [dns.lookup()][]. 
 
-### 事件: 'timeout'
+#### 事件: 'timeout'
 
 当套接字因为非活动状态而超时时该事件被分发. 这只是用来表明套接字处于空闲状态.
 用户必须手动关闭这个连接. 
 
 参阅：`socket:setTimeout()`
 
-### 属性: socket.bufferSize
+### 属性
+
+#### 属性: socket.bufferSize
 
 是一个 net.Socket 的属性, 用于 socket.write(). 用于帮助用户获取更快的运行速度. 
 计算机不能一直处于大量数据被写入状态 —— 网络链接可能会变得过慢. 
@@ -227,28 +233,28 @@ Node 在内部会排队等候数据被写入套接字并确保传输连接上的
 
 遇到数值很大或者增长很快的 bufferSize 的时候, 用户应该尝试用 pause() 和 resume() 来控制数据流. 
 
-### 属性: socket.bytesRead
+#### 属性: socket.bytesRead
 
 所接收的字节数. 
 
-### 属性: socket.bytesWritten
+#### 属性: socket.bytesWritten
 
 所发送的字节数. 
 
-### 属性: socket.localAddress
+#### 属性: socket.localAddress
 
 远程客户端正在连接的本地IP地址的字符串表示. 例如, 如果你在监听 '0.0.0.0' 
 而客户端连接在 '192.168.1.1'，这个值就会是 '192.168.1.1'. 
 
-### 属性: socket.localPort
+#### 属性: socket.localPort
 
 本地端口的数值表示. 比如 80 或 21. 
 
-### 属性: socket.remoteAddress
+#### 属性: socket.remoteAddress
 
 远程 IP 地址的字符串表示. 例如，'74.125.127.100' 或 '2001:4860:a005::68'. 
 
-### 属性: socket.remotePort
+#### 属性: socket.remotePort
 
 远程端口的数值表示. 例如, 80 或 21. 
 

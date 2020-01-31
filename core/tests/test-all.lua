@@ -24,14 +24,15 @@ local function test_all(subdirs)
 	console.log(list)
 
 	for _, file in ipairs(list) do
-		tap(file)
+		local name = path.basename(file)
+		tap.suite(name)
+
 		process.chdir(path.dirname(file))
 		dofile(file)
 	end
 
-	tap(true)
+	tap.run(true)
 end
-
 
 local subdirs = {"fs", "misc", "net", "stream", "uv"}
 test_all(subdirs)

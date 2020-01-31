@@ -135,7 +135,7 @@ end
 
 local function createBundleReader(filename)
 
-	local listFiles 
+	local listFiles
 
 	listFiles = function(list, basePath, filename)
 		--print(filename)
@@ -203,7 +203,7 @@ local function cleanFirmwareFile(newVersion)
 				result[#result + 1] = name
 			end
 		  end
-		  
+
 		  return result
 	end
 
@@ -212,27 +212,35 @@ local function cleanFirmwareFile(newVersion)
 	local rootPath = fs.readlinkSync(nodePath .. '/bin')
 	if (rootPath) then
 		rootPath = path.dirname(rootPath)
-	else 
+	else
 		rootPath = app.rootPath
 	end
-	
+
 	local currentPath = path.basename(rootPath)
 
 	-- The new version to be installed
 	local newPath = 'v' .. newVersion
 
-	print("rootPath: " .. rootPath)
-	print("nodePath: " .. nodePath)
-	print("newPath: " .. newPath)
-	print("currentPath: " .. currentPath)
+	print("Root Path: " .. rootPath)
+	print("Node Path: " .. nodePath)
+	print("New Path: " .. newPath)
+	print("Current Path: " .. currentPath)
 
 	local versions = getVersions(nodePath, currentPath, newPath)
+	-- console.log("versions: ", versions)
 	-- console.log(nodePath, currentPath, versions)
+	if (versions and #versions > 0) then
+		for index, name in ipairs(versions) do
+			local cmdline = 'rm -rf ' .. nodePath .. '/' .. name;
+			print("Remove: " .. nodePath .. '/' .. name)
+			os.execute(cmdline);
+		end
+	end
 
-	for index, name in ipairs(versions) do
-		local cmdline = 'rm -rf ' .. nodePath .. '/' .. name;
-		print("Remove: " .. cmdline)
-		os.execute(cmdline);
+	local stat = fs.statfs(nodePath)
+	if (stat) then
+		local freeSize = stat.bsize * stat.bfree
+		print("Free Size: " .. math.floor(freeSize / (1024 * 1024)) .. "MB")
 	end
 
 	return versions
@@ -241,7 +249,7 @@ end
 local BundleUpdater = core.Emitter:extend()
 exports.BundleUpdater = BundleUpdater
 
--- 
+--
 -- @param options
 --  filename
 --  rootPath
@@ -250,20 +258,27 @@ function BundleUpdater:initialize(options)
 	self.rootPath = options.rootPath
 	self.nodePath = options.nodePath or options.rootPath
 
+	if (not self.filename) then
+		print('missed updater options: filename')
+	end
+
+	if (not self.rootPath) then
+		print('missed updater options: rootPath')
+	end
+
 	self:reset()
 end
 
 -- Check whether the specified file need to updated
 -- @param checkInfo 需要的信息如下:
 --  - rootPath 目标路径
---  - reader 
+--  - reader
 --  - index 源文件索引
 -- @return 0: not need update; other: need updated
--- 
+--
 function BundleUpdater:checkFile(index)
 	local join   	= path.join
 	local rootPath  = self.rootPath
-	local nodePath  = self.nodePath
 
 	local reader   	= self.reader
 	local filename  = reader:get_filename(index)
@@ -294,7 +309,7 @@ function BundleUpdater:checkFile(index)
 	if (destInfo == nil) then
 		return 1, filename
 
-	elseif (srcInfo.uncomp_size ~= destInfo.size) then 
+	elseif (srcInfo.uncomp_size ~= destInfo.size) then
 		return 2, filename
 	end
 
@@ -310,9 +325,9 @@ end
 
 -- Check for files that need to be updated
 -- @param checkInfo
---  - reader 
+--  - reader
 --  - rootPath 目标路径
--- @return 
+-- @return
 -- checkInfo 会被更新的值:
 --  - list 需要更新的文件列表
 --  - updated 需要更新的文件数
@@ -345,23 +360,23 @@ end
 -- @param rootPath 目标目录
 -- @param reader 文件源
 -- @param index 文件索引
--- 
+--
 function BundleUpdater:updateFile(rootPath, reader, index)
 	local join 	 	= path.join
 
 	if (not rootPath) or (not rootPath) then
-		return -6, 'invalid parameters' 
+		return -6, 'invalid parameters'
 	end
 
 	local filename = reader:get_filename(index)
 	if (not filename) then
-		return -5, 'invalid source file name: ' .. index 
-	end	
+		return -5, 'invalid source file name: ' .. index
+	end
 
 	-- read source file data
 	local fileData 	= reader:extract(index)
 	if (not fileData) then
-		return -3, 'invalid source file data: ', filename 
+		return -3, 'invalid source file data: ', filename
 	end
 
 	-- write to a temporary file and check it
@@ -371,15 +386,15 @@ function BundleUpdater:updateFile(rootPath, reader, index)
 
 	local ret, err = fs.writeFileSync(tempname, fileData)
 	if (not ret) then
-		return -4, err, filename 
+		return -4, err, filename
 	end
 
 	local destInfo = fs.statSync(tempname)
 	if (destInfo == nil) then
-		return -1, 'not found: ', filename 
+		return -1, 'not found: ', filename
 
 	elseif (destInfo.size ~= #fileData) then
-		return -2, 'invalid file size: ', filename 
+		return -2, 'invalid file size: ', filename
 	end
 
 	-- rename to dest file
@@ -387,7 +402,7 @@ function BundleUpdater:updateFile(rootPath, reader, index)
 	os.remove(destname)
 	local destInfo = fs.statSync(destname)
 	if (destInfo ~= nil) then
-		return -1, 'failed to remove old file: ' .. filename 
+		return -1, 'failed to remove old file: ' .. filename
 	end
 
 	os.rename(tempname, destname)
@@ -397,11 +412,11 @@ end
 -- Update all Node.lua system files
 -- 安装系统更新包
 -- @param checkInfo 更新包
---  - reader 
+--  - reader
 --  - rootPath
 -- @param files 要更新的文件列表, 保存的是文件在 reader 中的索引.
 -- @param callback 更新完成后调用这个方法
--- @return 
+-- @return
 -- checkInfo 会更新的属性:
 --  - faileds 更新失败的文件数
 function BundleUpdater:updateAllFiles(callback)
@@ -411,7 +426,7 @@ function BundleUpdater:updateAllFiles(callback)
 	local files = self.list or {}
 
 	if (#files > 0) then
-		print('Updating: "' .. rootPath .. '" (total ' 
+		print('Updating: "' .. rootPath .. '" (total '
 			.. #files .. ' files need to update).')
 	end
 
@@ -470,7 +485,7 @@ end
 
 -- 安装系统更新包
 -- @param checkInfo 更新包
---  - filename 
+--  - filename
 --  - rootPath
 -- @param callback 更新完成后调用这个方法
 -- @return
@@ -480,7 +495,7 @@ end
 --  - updated
 --  - totalBytes
 --  - faileds
--- 
+--
 function BundleUpdater:upgradeSystemPackage(callback)
 	callback = callback or noop
 
@@ -507,7 +522,7 @@ function BundleUpdater:upgradeSystemPackage(callback)
     if (packageInfo.target) then
 		local target = app.getSystemTarget()
 		if (target ~= packageInfo.target) then
-			callback('Mismatched target: local is `' .. target .. 
+			callback('Mismatched target: local is `' .. target ..
 				'`, but the update file is `' .. tostring(packageInfo.target) .. '`')
 	    	return
 		end
@@ -528,7 +543,7 @@ function BundleUpdater:upgradeSystemPackage(callback)
 	end
 
 	self.rootPath = self.rootPath .. '/v' .. self.version
-	
+
 	print('Version: ' .. self.version)
 	print('Path: ' .. self.rootPath)
 
@@ -587,19 +602,15 @@ local function installFirmwareFile(filename, callback)
 		return
 	end
 
-	local nodePath = getNodePath()
-
 	if (not filename) then
-		filename = path.join(nodePath, 'update/update.zip')
+		filename = path.join(os.tmpdir, 'update/update.zip')
 	end
 
-	local options = {}
-	options.filename 	= filename
-	options.rootPath 	= nodePath
-
+	local nodePath = getNodePath()
+	local options = { filename = filename, rootPath = nodePath }
 	local updater = BundleUpdater:new(options)
 
-	updater:on('update', function(index, filename, ret, err)
+	local function printUpdateProgress(index, filename, ret, err)
 		local total = updater.updated or 0
 		if (index) then
 			console.write('\rUpdating: (' .. index .. '/' .. total .. ')...  ')
@@ -609,19 +620,19 @@ local function installFirmwareFile(filename, callback)
 		else
 			print('')
 		end
-	end)
+	end
 
-	updater:upgradeSystemPackage(function(err)
+	local function switchVersion(rootPath)
+		setTimeout(1000, function()
+			--
+			local cmdline = rootPath .. '/bin/lnode -d -l lpm/switch > /tmp/switch.log'
+			-- console.log(cmdline)
+			print('Switch to new version...')
+			os.execute(cmdline)
+		end)
+	end
 
-		if (err) then
-			print("Error: ", err)
-			return
-		end
-
-		if (callback) then 
-			callback(updater:getUpgradeResult())
-		end
-
+	local function printUpdateResult(updater)
 		print('Files: ' .. updater.total)
 		print('Updated: ' .. updater.updated)
 		print('Faileds: ' .. updater.faileds)
@@ -630,19 +641,26 @@ local function installFirmwareFile(filename, callback)
 		print('Skips: ' .. updater.skips)
 		print('Index: ' .. updater.index)
 		print('Confirms: ' .. updater.confirms)
-		print('Path: ' .. updater.rootPath)
+		print('Root Path: ' .. updater.rootPath)
+	end
 
-		if (updater.faileds > 0) then
+	updater:on('update', printUpdateProgress)
+	updater:upgradeSystemPackage(function(err)
+		if (err) then
+			callback(err)
 			return
 		end
 
+		printUpdateResult(updater)
+
+		if (updater.faileds > 0) then
+			callback('faileds: ' .. updater.faileds)
+			return
+		end
+
+		callback(nil, updater:getUpgradeResult())
 		local rootPath = updater.rootPath
-		setTimeout(1000, function()
-			-- 
-			local cmdline = rootPath .. '/bin/lnode -d -l lpm/switch > /tmp/switch.log'
-			console.log(cmdline)
-			os.execute(cmdline)
-		end)
+		switchVersion(rootPath)
 	end)
 
 	return true
@@ -665,10 +683,12 @@ function exports.openUpdater(options)
 	return BundleUpdater:new(options)
 end
 
+-- 清除所有旧的，不会再使用的固件版本
 function exports.clean(version)
 	cleanFirmwareFile(version)
 end
 
+-- 安装指定的固件文件
 function exports.install(filename, callback)
 	installFirmwareFile(filename, callback)
 end

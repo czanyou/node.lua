@@ -1,0 +1,9 @@
+# /etc/ppp/peers/quectel-chat-connect
+ABORT "BUSY"
+ABORT "NO CARRIER"
+ABORT "NO DIALTONE"
+ABORT "ERROR"
+ABORT "NO ANSWER"
+TIMEOUT 30
+"" AT
+OK ATE0

@@ -1,7 +1,7 @@
 local tap = require('ext/tap')
 local test = tap.test
 
-test("test thread create", function(print, p, expect, uv)
+test("test thread create", function(expect, uv)
 	local delay = 1000
 	local before = uv.uptime()
 	local thread = uv.new_thread(function(delay)
@@ -15,7 +15,7 @@ test("test thread create", function(print, p, expect, uv)
 	assert(elapsed >= delay, "elapsed should be at least delay ")
 end)
 
-test("test thread create with arguments", function(print, p, expect, uv)
+test("test thread create with arguments", function(expect, uv)
 	local before = uv.uptime()
 	local args = { 500, 'string', nil, false, 5, "helloworld" }
 
@@ -34,7 +34,7 @@ test("test thread create with arguments", function(print, p, expect, uv)
 end)
 
 
-test("test thread sleep msecs in main thread", function(print, p, expect, uv)
+test("test thread sleep msecs in main thread", function(expect, uv)
 	local delay = 1000
 	local before = uv.uptime()
 	uv.sleep(delay)

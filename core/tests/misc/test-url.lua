@@ -1,5 +1,4 @@
 local url     = require("url")
-local utils   = require('util')
 
 local deepEqual = require('assert').isDeepEqual
 
@@ -87,7 +86,7 @@ test('should format', function (expected)
     source = 'http://localhost:9000/'
     local target = url.format(url.parse(source))
     assert(source == target, "target: " .. (target or ''))
-    
+
     source = 'https://GabrielNicolasAvellaneda:s3cr3t@github.com:443/GabrielNicolasAvellaneda/luvit'
     local target = url.format(url.parse(source))
     assert(source == target, "target: " .. (target or ''))
@@ -103,7 +102,7 @@ test('url.resolve', function (expected)
 
     local target = url.resolve('http://example.com/one', '/two')
     assert('http://example.com/two' == target, "target: " .. (target or ''))
-    
+
 end)
 
 tap.run()

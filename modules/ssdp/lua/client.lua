@@ -15,7 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local ssdp   = require('ssdp/ssdp')
+
+local ssdp = require('ssdp/ssdp')
 
 local exports = {}
 
@@ -44,11 +45,10 @@ exports.SsdpClient = SsdpClient
 function SsdpClient:initialize(options, socket)
 	options = options or {}
 
-	self.socket 		= socket
-	self.port           = options.ssdpPort  or ssdp.UPNP_PORT
-	self.ssdpIp         = options.ssdpIp   	or ssdp.UPNP_ADDRESS	
-
-	self._started		= false
+	self.socket 	= socket
+	self.port       = options.ssdpPort  or ssdp.UPNP_PORT
+	self.ssdpIp     = options.ssdpIp   	or ssdp.UPNP_ADDRESS
+	self._started	= false
 end
 
 function SsdpClient:_handleNotify(request, remote)

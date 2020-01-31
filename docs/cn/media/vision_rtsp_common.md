@@ -37,7 +37,7 @@ a=control:trackID=239
 
 解析指定的 SDP 字符串
 
-- sdpString {String} SDP 字符串
+- sdpString {string} SDP 字符串
 
 返回解析后的 SdpSession 对象
 
@@ -55,7 +55,7 @@ a=control:trackID=239
 
 返回指定的类型的 media
 
--- type {String}，如 'video', 'audio', 等等
+-- type {string}，如 'video', 'audio', 等等
 
 ### 类 'SdpMedia'
 
@@ -136,7 +136,7 @@ message.STATUS_CODES = {
 
     message.parseAuthenticate(value)
 
-- value {String} Authenticate 等消息头的值
+- value {string} Authenticate 等消息头的值
 
 返回解析后的对象
 
@@ -152,8 +152,8 @@ Authorization: Digest realm="4419b727ab09", nonce="66bb9f0bf5ac93a909ac8e88877ae
 
 返回创建的 RTSP 请求消息
 
-- method {String} 请求方法
-- path {String} 请求路径
+- method {string} 请求方法
+- path {string} 请求路径
 
 ### message.newResponse
 
@@ -161,8 +161,8 @@ Authorization: Digest realm="4419b727ab09", nonce="66bb9f0bf5ac93a909ac8e88877ae
 
 返回创建的 RTSP 应答消息
 
-- statusCode {Number} 100 ~ 699 应答码
-- reason {String} 应答原因短语
+- statusCode {number} 100 ~ 699 应答码
+- reason {string} 应答原因短语
 
 ### message.newDateHeader
 
@@ -170,7 +170,7 @@ Authorization: Digest realm="4419b727ab09", nonce="66bb9f0bf5ac93a909ac8e88877ae
 
 返回创建的 Date 消息头
 
-- time {Number} 时间，如果没有指定则为 os.time().
+- time {number} 时间，如果没有指定则为 os.time().
 
 ### 类 message.RtspHeaderMeta
 
@@ -187,8 +187,8 @@ Authorization: Digest realm="4419b727ab09", nonce="66bb9f0bf5ac93a909ac8e88877ae
 这个方法一般由服务端调用，检查客户端是否有有效的身份认证。
 
 - request {RtspMessage Object} 要检查的消息
-- callback {Function} `function(username)` 回调函数
-  - username {String} 客户端请求的用户名，返回这个用户的密码
+- callback {function} `function(username)` 回调函数
+  - username {string} 客户端请求的用户名，返回这个用户的密码
 
 下面是通信过程:
 
@@ -229,7 +229,7 @@ v=1
 
 返回指定名称的消息头的值
 
-- name {String} 消息头的名称
+- name {string} 消息头的名称
 
 #### RtspMessage:removeHeader
 
@@ -237,7 +237,7 @@ v=1
 
 删除指定名称的消息头的值
 
-- name {String} 消息头的名称
+- name {string} 消息头的名称
 
 #### RtspMessage:setAuthorization
 
@@ -249,12 +249,12 @@ RTSP 沿用的是 HTTP 的身份认证方法，常见的有 Digest，Basic 认�
 
 这个方法一般由客户端调用，当服务端返回 401 应答时，提供有效的身份认证信息。
 
-- params {Object} 请求参数
+- params {object} 请求参数
   - METHOD 认证方法名，源自 Authenticate, 如 'Digest', 'Basic'
   - realm 源自 Authenticate
   - nonce 源自 Authenticate
-- username {String} 用户名
-- password {String} 密码
+- username {string} 用户名
+- password {string} 密码
 
 #### RtspMessage:setHeader
 
@@ -262,8 +262,8 @@ RTSP 沿用的是 HTTP 的身份认证方法，常见的有 Digest，Basic 认�
 
 设置指定名称的消息头的值
 
-- name {String} 消息头的名称
-- value {String} 消息头的值
+- name {string} 消息头的名称
+- value {string} 消息头的值
 
 #### RtspMessage:setStatusCode
 
@@ -271,8 +271,8 @@ RTSP 沿用的是 HTTP 的身份认证方法，常见的有 Digest，Basic 认�
 
 设置应答消息的状态码
 
-- statusCode {Number} 状态码
-- statusText {String} 状态原因短语，如果未指定则使用状态码对应的默认短语
+- statusCode {number} 状态码
+- statusText {string} 状态原因短语，如果未指定则使用状态码对应的默认短语
 
 ## RTP 会话
 
@@ -302,8 +302,8 @@ rtp.RTP_PACKET_HEAD = 0x80
 
 解析指定的数据包
 
-- packet {String} 包含 RTP 数据的缓存区
-- offset {Number} 有效数据的开始位置，如果没有指定则为 1
+- packet {string} 包含 RTP 数据的缓存区
+- offset {number} 有效数据的开始位置，如果没有指定则为 1
 
 #### RtpSession:decodeHeader
 
@@ -311,8 +311,8 @@ rtp.RTP_PACKET_HEAD = 0x80
 
 解析指定的数据包头信息
 
-- packet {String} 包含 RTP 数据的缓存区
-- offset {Number} 有效数据的开始位置，如果没有指定则为 1
+- packet {string} 包含 RTP 数据的缓存区
+- offset {number} 有效数据的开始位置，如果没有指定则为 1
 
 #### RtpSession:encode
 
@@ -320,15 +320,15 @@ rtp.RTP_PACKET_HEAD = 0x80
 
 把指定的流编码成 RTP 包
 
-- data {String}
-- timestamp {Number} ，单位为毫秒 (1/1000)
+- data {string}
+- timestamp {number} ，单位为毫秒 (1/1000)
 
 #### RtpSession:encodeHeader
 
     RtpSession:encodeHeader(timestamp, isMaker)
 
-- timestamp {Number} 时间戳，单位为毫秒 (1/1000)
-- isMaker {Number} 指出是否是一帧的最后一个包
+- timestamp {number} 时间戳，单位为毫秒 (1/1000)
+- isMaker {number} 指出是否是一帧的最后一个包
 
 #### RtpSession:encodeTS
 
@@ -344,7 +344,7 @@ rtp.RTP_PACKET_HEAD = 0x80
 
     RtpSession:getNaluStartLength(data)
 
-- data {String} Nalu 数据
+- data {string} Nalu 数据
 
 H.264 NAL 单元前常有 '00 00 01' 或 '00 00 00 01' 和引导码
 
@@ -364,7 +364,7 @@ H.264 NAL 单元前常有 '00 00 01' 或 '00 00 00 01' 和引导码
 
 解析 RTSP 头的值, 比如
 
-- line {String}
+- line {string}
 
 ### 类 `RtspCodec`
 
@@ -374,7 +374,7 @@ H.264 NAL 单元前常有 '00 00 01' 或 '00 00 00 01' 和引导码
 
 当收到了完整的 RTP 数据包
 
-- packet {String} RTP 数据包
+- packet {string} RTP 数据包
 
 #### 事件 response
 
@@ -398,7 +398,7 @@ H.264 NAL 单元前常有 '00 00 01' 或 '00 00 00 01' 和引导码
 
 以流的方式解析 RTSP 消息流，可以在收到任何长度的数据都丢给这个方法处理
 
-- data {String} 要解码的消息流片段
+- data {string} 要解码的消息流片段
 
 当收到完整的消息时，会以事件的方式通知
 

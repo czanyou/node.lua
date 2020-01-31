@@ -124,3 +124,33 @@ function OnLogout() {
 		location.href = 'login.html'
 	});
 }
+
+var $wot = {}
+
+/**
+ * 解析指定的 URL 的 Query 部分
+ * @param {string} urlString 要解析的 URL 字符串, 未指定则默认为 location.search
+ * @returns {object}
+ */
+$wot.parseQueryString = function (urlString) {
+	urlString = urlString || location.search;
+	if ((typeof urlString) !== 'string') {
+		return {}
+	}
+
+	const search = urlString.split('?')[1]
+	if (!search) {
+		return {};
+	}
+
+	const result = {}
+	const tokens = search.split('&');
+	for (let i = 0; i < tokens.length; i++) {
+		const items = tokens[i].split('=');
+		const name = items[0];
+		const value = items[1];
+		result[name] = decodeURIComponent(value);
+	}
+
+	return result;
+};

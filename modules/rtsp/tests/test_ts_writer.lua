@@ -83,7 +83,7 @@ local function loadMediaStream()
 	return list
 end
 
-return tap(function(test)
+local test = tap.test
 
 -- 这个测试将从 TS 流中分离出单纯的 ES 流
 
@@ -126,4 +126,4 @@ test('test_hls_reader', function()
 
 end)
 
-end)
+tap.run()

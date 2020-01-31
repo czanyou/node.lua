@@ -10,7 +10,7 @@ local RtspMessage = message.RtspMessage
 
 message.realm = '4419b727ab09'
 
-return tap(function (test)
+local test = tap.test
 
 test("RtspMessage.header", function ()
 	local request = RtspMessage:new()
@@ -96,4 +96,4 @@ test("RtspMessage.checkAuthorization", function()
 
 end)
 
-end)
+tap.run()

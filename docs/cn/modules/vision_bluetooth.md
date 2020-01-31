@@ -6,11 +6,13 @@
 
 ### requestDevice
 
-> bluetooth.requestDevice(options)
+> bluetooth.requestDevice(options, function (device) end)
 
 这个方法用于请求一个蓝牙设备对象, 以使后续和蓝牙模块以及远程的蓝牙设备进行交互
 
 - options `{object}` 选项
+  - filter
+- device `{BluetoothDevice}` 蓝牙设备
 
 ```lua
 
@@ -33,6 +35,8 @@ end)
 
 > function(event)
 
+当收到新的广播消息
+
 - event
   - device `{BluetoothDevice}` 相关的蓝牙设备
   - manufacturerData `{string}` 制造商数据
@@ -46,38 +50,80 @@ end)
 
 > function(event)
 
+当指定的从机 GATT 服务器连接断开
+
 - event
   - device `{BluetoothDevice}` 相关的蓝牙设备
+  - gatt `{BluetoothRemoteGATTServer}` GATT 服务器的引用
 
 ##### characteristicvaluechanged
 
 > function(event)
+
+当指定的特征值的值发生了改变
 
 - event
   - characteristic `{BluetoothGATTCharacteristic}` 发生改变的特征值
     - value `{string}` 发生改变后的值
 
 
+##### configchanged
+
+> function(event)
+
+当蓝牙设备的配置参数发生了改变
+
+- event
+  - device `{BluetoothDevice}` 相关的蓝牙设备
+
 #### 属性
 
 - id `{string}` 一个设备的唯一 ID
 - name `{string}` 设备的人类可读的名称
-- gatt `{BluetoothRemoteGATTServer}` GATT 服务器的引用
-- watchingAdvertisements `{boolean}` 如果正在侦听广播
+- watchingAdvertisements `{boolean}` 指出是否正在侦听广播
 
 #### watchAdvertisements 方法
 
-> watchAdvertisements(callback)
+> device:watchAdvertisements(callback)
 
-开始侦听广播
+开始侦听蓝牙广播
 
 - callback `{function()}`
 
 #### unwatchAdvertisements 方法
 
-> unwatchAdvertisements()
+> device:unwatchAdvertisements()
 
-停止侦听广播
+停止侦听蓝牙广播
+
+#### getGATTServer
+
+> local gatt = device:getGATTServer(options)
+
+获取指定从机的 GATT 服务器，如果不存在则创建一个
+
+- options `{object}` 选项
+  - address `{string}` 从机 MAC 地址
+  - channel `{number}` 通道号
+- gatt `{BluetoothRemoteGATTServer}` GATT 服务器的引用
+
+#### readConfig
+
+> device:readConfig(function(data, err) end)
+
+读取蓝牙设备的配置参数
+
+- data `{string}` 配置参数二进制数据
+- err `{string}` 表示发生错误
+
+#### writeConfig
+
+> device:writeConfig(data, function(err) end)
+
+修改蓝牙设备的配置参数
+
+- data `{string}` 配置参数二进制数据
+- err `{string}` 表示发生错误
 
 ### GATT 服务器
 
@@ -95,7 +141,7 @@ end)
 请求连接指定的远程设备
 
 - callback `{function(server)}`
-    - server `{BluetoothRemoteGATTServer}` GATT 服务器
+  - server `{BluetoothRemoteGATTServer}` GATT 服务器
 
 #### disconnect 方法
 
@@ -140,6 +186,8 @@ end)
 - device `{BluetoothDevice}` 所属的蓝牙设备的信息
 - isPrimary `{boolean}` 指出是否是 primary 服务
 - uuid `{string}` 这个服务的 UUID
+- address `{string}` 从机 MAC 地址, 用 16 进制字符串表示
+- channel `{number}` 从机通道号
 
 #### getCharacteristic 方法
 

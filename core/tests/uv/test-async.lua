@@ -7,7 +7,7 @@ end)
 
 -- [[
 
-test("test pass async between threads", function(p, p, expect, uv)
+test("test pass async between threads", function(expect, uv)
 	local before = uv.uptime()
 	local async = nil
 

@@ -1,11 +1,9 @@
-local url 		= require('url')
-local fs 		= require('fs')
 local assert 	= require('assert')
 local tap 		= require('ext/tap')
 
 local rtp 		= require('rtsp/rtp')
 
-return tap(function (test)
+local test = tap.test
 
 test("test rtp", function()
 	local session = rtp.RtpSession:new()
@@ -87,4 +85,4 @@ test("test rtp encode header", function()
 
 end)
 
-end)
+tap.run()

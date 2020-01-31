@@ -18,14 +18,13 @@ limitations under the License.
 local util 		= require('util')
 local http 		= require('http')
 local json  	= require('json')
+local fs        = require('fs')
 
 local request 	= require('http/request')
 
-local MQTT_PORT = 39901
-
 local isWindows = os.platform() == "win32"
 
-local BASE_SOCKET_NAME = "/tmp/uv-"
+local BASE_SOCKET_NAME = "/tmp/sock/uv-"
 if (isWindows) then
     BASE_SOCKET_NAME = "\\\\?\\pipe\\uv-"
 end
@@ -35,19 +34,19 @@ end
 
 local ServerResponse  = http.ServerResponse
 
-function ServerResponse:sendJSON(data)
-    local text = json.stringify(data)
+function ServerResponse:json(data)
+    local content = json.stringify(data)
 
-    if (not text) then
+    if (not content) then
         self:status(400)
 
-        text = '{error="Bad request body."}'
+        content = '{error="Bad request body."}'
     end
 
     self:setHeader("Content-Type", "application/json")
-    self:setHeader("Content-Length", #text)
+    self:setHeader("Content-Length", #content)
 
-    self:write(text)
+    self:write(content)
 end
 
 -------------------------------------------------------------------------------
@@ -108,7 +107,7 @@ function exports.call(url, method, params, callback)
     callback = callback or function() end
 
     local id = nil
-    local body = {jsonrpc = 2.0, method = method, params = params, id = id}
+    local body = { jsonrpc = 2.0, method = method, params = params, id = id }
 
     local options = {}
     options.data = json.stringify(body)
@@ -133,19 +132,26 @@ function exports.call(url, method, params, callback)
 end
 
 -- create a IPC server
--- @param port IPC server listen port
--- @param callback {Function} - function(event, data)
+-- @param {string} port/name IPC server listen port
+-- @param {function} callback - function(event, data)
 function exports.server(port, handler, callback)
     port = port or 9001
     callback = callback or function() end
 
-    local handleRpcRequest = function(handler, request, response)
-        local content = request.body
-        local body = json.parse(content)
+    if (not handler) then
+        return callback('error', 'invalid handler')
+    end
+
+    if (not fs.existsSync('/tmp/sock/')) then
+        fs.mkdirSync('/tmp/sock/')
+    end
+
+    local function handleRpcRequest(request, response)
+        local body = json.parse(request.body)
 
         -- bad request
         if (not body) then
-            response:sendJSON({jsonrpc = 2.0, error = {
+            response:json({jsonrpc = 2.0, error = {
                 code = -32700, message = 'Parse error'}})
             return
         end
@@ -155,26 +161,24 @@ function exports.server(port, handler, callback)
         -- invalid method
         local method = handler[body.method]
         if (not method) then
-            response:sendJSON({jsonrpc = 2.0, id = id, error = {
+            response:json({jsonrpc = 2.0, id = id, error = {
                 code = -32601, message = 'Method not found'}})
             return
         end
 
-        util.async(function()
-            local status, ret = pcall(method, handler, table.unpack(body.params))
-            if (not status) then
-                response:sendJSON({jsonrpc = 2.0, id = id, error = {
-                    code = -32000, message = ret}})
+        local ret, result = pcall(method, handler, table.unpack(body.params))
+        if (not ret) then
+            response:json({jsonrpc = 2.0, id = id, error = {
+                code = -32000, message = result}})
 
-                console.log('pcall error: ', ret)
-                return
-            end
+            console.log('pcall error: ', result)
+            return
+        end
 
-            response:sendJSON({jsonrpc = 2.0, id = id, result = ret})
-        end)
+        response:json({jsonrpc = 2.0, id = id, result = result})
     end
 
-    local handleRequest = function(handler, request, response)
+    local function handleRequest(request, response)
         local sb = StringBuffer:new()
 
         request:on('data', function(data)
@@ -185,12 +189,12 @@ function exports.server(port, handler, callback)
             sb:append(data)
             request.body = sb:toString()
 
-            handleRpcRequest(handler, request, response)
+            handleRpcRequest(request, response)
         end)
     end
 
     local server = http.createServer(function(request, response)
-        handleRequest(handler, request, response)
+        handleRequest(request, response)
     end)
 
     server:on('error', function(err, name)
@@ -216,88 +220,9 @@ function exports.server(port, handler, callback)
         local IPC_HOST = '127.0.0.1'
         server:listen(port, IPC_HOST)
         print("RPC server listening at http://" .. IPC_HOST .. ":" .. port)
-
     end
 
     return server
-end
-
--- send PUBLISH message to mqtt.app
--- @param topic {String} target MQTT topic name
--- @param data {String} MQTT publish message payload
--- @param callback {Function} - function(err, result)
-function exports.publish(topic, data, qos, callback)
-    exports.call(MQTT_PORT, 'publish', { topic, data, qos }, callback)
-end
-
--- Subscribe a topic with mqtt.app
--- @param options {Object}
--- - topic {String} MQTT topic name
--- - port {Number} local notify callback  port
--- - notify {Function} local notify callback function
--- @param callback {Function} - function(err, result)
-function exports.subscribe(options, callback)
-    if (type(options) ~= 'table') then
-        callback('options excepted')
-        return
-
-    elseif (tonumber(options.port) == nil) then
-        callback('options.port excepted')
-        return
-
-    elseif (options.topic == nil) then
-        callback('options.topic excepted')
-        return
-
-    elseif (options.notify == nil) then
-        callback('options.notify excepted')
-        return
-    end
-
-    if (not options.server) then
-        options.server = exports.server(options.port, options)
-    end
-
-    -- subscribe
-    local params = {options.topic, '', options.port }
-    exports.call(MQTT_PORT, 'subscribe', params, function(err, result)
-        if (err) then
-            console.log('subscribe', err)
-        end
-
-        if (callback) then
-            callback(err, result)
-        end
-    end)
-
-    -- interval
-    local expires = options.expires or 30
-    options.timer = setInterval(expires * 1000, function()
-        exports.call(MQTT_PORT, 'subscribe', params)
-    end)
-end
-
--- Unsubscribe a topic with mqtt.app
--- @param options {Object}
--- @param callback {Function} - function(err, result)
-function exports.unsubscribe(options, callback)
-    if (type(options) ~= 'table') then
-        callback('options excepted')
-        return
-    end
-
-    clearInterval(options.timer)
-
-    local params = { options.topic }
-    exports.call(MQTT_PORT, 'unsubscribe', params, function(err, result)
-        if (err) then
-            console.log('unsubscribe', err)
-        end
-
-        if (callback) then
-            callback(err, result)
-        end
-    end)
 end
 
 -- the same as exports.server

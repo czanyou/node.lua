@@ -20,13 +20,13 @@ local child_code = string.dump(function ()
 	os.exit(7) -- exit with code 7
 end)
 
-test("Catch Nothing", function (print, p, expect, uv)
+test("Catch Nothing", function (expect, uv)
 
 end)
 
 if isWindows then return end
 
-test("Catch SIGINT", function (print, p, expect, uv)
+test("Catch SIGINT", function (expect, uv)
 	local child, pid
 	local stdin = uv.new_pipe(false)
 	local options = {

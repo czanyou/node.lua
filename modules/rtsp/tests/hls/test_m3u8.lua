@@ -1,12 +1,7 @@
-local path  	= require('path')
-local utils		= require('util')
-local url   	= require('url')
-local fs    	= require('fs')
-local uv 		= require('luv')
 local assert 	= require("assert")
 local tap 		= require("ext/tap")
 
-return tap(function(test)
+local test = tap.test
 
 test('test_m3u8', function()
 	local list = [[
@@ -149,4 +144,4 @@ test('playList:addItem with END-LIST', function()
 	print(playList:toString())
 end)
 
-end)
+tap.run()

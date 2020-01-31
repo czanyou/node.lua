@@ -16,7 +16,7 @@ local rootPath   = path.dirname(visionPath)
 
 local testFile   = path.join(rootPath, 'app/camera/examples/hd.ts')
 
-return tap(function(test)
+local test = tap.test
 
 --[[
 
@@ -135,4 +135,4 @@ test('test_hls_writer', function()
 	source_fd = 0
 end)
 
-end)
+tap.run()

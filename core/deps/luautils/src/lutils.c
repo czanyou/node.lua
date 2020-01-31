@@ -23,6 +23,30 @@
 
 typedef unsigned char uint8_t;
 
+static int luv_crc32(lua_State *L) {
+  size_t len;
+  const char *message = luaL_checklstring(L, 1, &len);
+  if (message) {
+    uint32_t result = lutils_crc32(message, len);
+    lua_pushnumber(L, result);
+  } else {
+    lua_pushnil(L);
+  }
+  return 1;
+}
+
+static int luv_crc16(lua_State *L) {
+  size_t len;
+  const char *message = luaL_checklstring(L, 1, &len);
+  if (message) {
+    uint32_t result = lutils_crc16(message, len);
+    lua_pushnumber(L, result);
+  } else {
+    lua_pushnil(L);
+  }
+  return 1;
+}
+
 /**
  *  Hash function. Returns a hash for a given string.
  *  @param message: arbitrary binary string.
@@ -188,8 +212,11 @@ static const luaL_Reg lutils_functions[] = {
   { "os_fork",          luv_os_fork },
   { "os_platform",      luv_os_platform },
   { "os_statfs",        luv_os_statfs },
+  { "os_reboot",        luv_os_reboot },
   
   // misc
+  { "crc32",            luv_crc32 },
+  { "crc16",            luv_crc16 },
   { "md5",              luv_md5 },
   { "sha1",             luv_sha1 },
   { "base64_encode",    luv_base64_encode },

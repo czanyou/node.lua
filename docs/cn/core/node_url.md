@@ -92,27 +92,27 @@ Spaces (' ') and the following characters will be automatically escaped in the p
 
 ## url.format
 
-    url.format(urlObj)
+> `url.format(urlObj)`
 
 输入一个 URL 对象，返回格式化后的 URL 字符串。
 
-- href 属性会被忽略处理.
-- protocol 无论是否有末尾的 : (冒号)，会同样的处理
-    + 这些协议包括 http, https, ftp, gopher, file 后缀是 :// (冒号-斜杠-斜杠).
+- `href` 属性会被忽略处理.
+- `protocol` 无论是否有末尾的 : (冒号)，会同样的处理
+    + 这些协议包括 http, https, ftp, gopher, file 后缀是 `://` (冒号-斜杠-斜杠).
     + 所有其他的协议如 mailto, xmpp, aim, sftp, foo, 等 会加上后缀 : (冒号)
-- auth 如果有将会出现.
-- hostname 如果 host 属性没被定义，则会使用此属性.
-- port 如果 host 属性没被定义，则会使用此属性.
-- host 优先使用，将会替代 hostname 和 port
-- pathname 将会同样处理无论结尾是否有/ (斜杠)
-- search 将会替代 query属性
-- query (object类型; 详细请看 querystring) 如果没有 search,将会使用此属性.
-- search 无论前面是否有 ? (问号)，都会同样的处理
-- hash 无论前面是否有# (井号, 锚点)，都会同样处理
+- `auth` 如果有将会出现.
+- `hostname` 如果 host 属性没被定义，则会使用此属性.
+- `port` 如果 host 属性没被定义，则会使用此属性.
+- `host` 优先使用，将会替代 hostname 和 port
+- `pathname` 将会同样处理无论结尾是否有/ (斜杠)
+- `search` 将会替代 query属性
+- `query` (object类型; 详细请看 querystring) 如果没有 search,将会使用此属性.
+- `search` 无论前面是否有 ? (问号)，都会同样的处理
+- `hash` 无论前面是否有# (井号, 锚点)，都会同样处理
 
 ## url.parse
 
-    url.parse(urlStr[, parseQueryString][, slashesDenoteHost])
+> `url.parse(urlStr[, parseQueryString][, slashesDenoteHost])`
 
 输入 URL 字符串，返回一个对象。
 
@@ -123,7 +123,7 @@ Spaces (' ') and the following characters will be automatically escaped in the p
 
 ## url.resolve
 
-    url.resolve(from, to)
+> `url.resolve(from, to)`
 
 给定一个基础 URL 路径，和一个 href URL 路径，并且象浏览器那样处理他们可以带上锚点。 例如：
 

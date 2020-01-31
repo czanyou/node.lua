@@ -17,7 +17,7 @@ RTMP 实时消息协议
 > amf0.parseValue(data, pos)
 
 - data   {Buffer} 要解析的 `amf0` 数据
-- pos {Number} 可选，有效数据开始位置，默认为 1
+- pos {number} 可选，有效数据开始位置，默认为 1
 
 返回:
 
@@ -31,8 +31,8 @@ RTMP 实时消息协议
 > amf0.parseArray(data, pos, limit)
 
 - data {Buffer} 要解析的 `amf0` 数据
-- pos {Number} 可选，有效数据开始位置，默认为 1
-- limit  {Number} 可选，有效数据结束限制位置
+- pos {number} 可选，有效数据开始位置，默认为 1
+- limit  {number} 可选，有效数据结束限制位置
 
 返回:
 
@@ -45,7 +45,7 @@ RTMP 实时消息协议
 
 > amf0.encodeArray(array)
 
-- array {Array} 要编码的 Lua 数组
+- array {array} 要编码的 Lua 数组
 
 支持的数据类型:
 

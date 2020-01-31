@@ -19,8 +19,6 @@ limitations under the License.
 local tap = require('ext/tap')
 local test = tap.test
 
-local math = require('math')
-local string = require('string')
 local fs = require('fs')
 local path = require('path')
 local dirname = require('util').dirname()

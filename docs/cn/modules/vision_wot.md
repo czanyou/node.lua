@@ -102,7 +102,7 @@ IoT 客户端模块
 
 读取并返回指定名称的属性的值
 
-- name {string} 属性名
+- name `{string}` 属性名
 
 ### readMultipleProperties
 
@@ -110,7 +110,7 @@ IoT 客户端模块
 
 读取并返回指定名称的属性的值
 
-- names {string[]} 属性名
+- names `{string[]}` 属性名
 
 ### readAllProperties
 
@@ -124,7 +124,7 @@ IoT 客户端模块
 
 修改指定名称的属性的值
 
-- name {string} 属性名
+- name `{string}` 属性名
 - value{any} 属性值
 
 ### writeMultipleProperties
@@ -133,7 +133,7 @@ IoT 客户端模块
 
 修改指定名称的属性的值
 
-- values {object} 属性集合
+- values `{object}` 属性集合
 
 ### invokeAction
 
@@ -141,8 +141,8 @@ IoT 客户端模块
 
 调用指定名称的操作
 
-- name {string} 操作名
-- params {object} 操作输入参数
+- name `{string}` 操作名
+- params `{object}` 操作输入参数
 
 ### subscribeProperty
 
@@ -150,8 +150,8 @@ IoT 客户端模块
 
 订阅指定名称的属性
 
-- name {string} 属性名
-- listener {function} 处理函数
+- name `{string}` 属性名
+- listener `{function}` 处理函数
 
 ### unsubscribeProperty
 
@@ -159,7 +159,7 @@ IoT 客户端模块
 
 取消阅指定名称的属性
 
-- name {string} 属性名
+- name `{string}` 属性名
 
 ### subscribeEvent
 
@@ -167,8 +167,8 @@ IoT 客户端模块
 
 订阅指定名称的事件
 
-- name {string} 事件名
-- listener {function} 处理函数
+- name `{string}` 事件名
+- listener` {function}` 处理函数
 
 ### unsubscribeEvent
 
@@ -176,7 +176,7 @@ IoT 客户端模块
 
 取消阅指定名称的事件
 
-- name {string} 事件名
+- name` {string}` 事件名
 
 ## ExposedThing
 
@@ -186,7 +186,7 @@ IoT 客户端模块
 
 > ExposedThing:new(thingInstance)
 
-- thingInstance {object|string} 事物描述
+- thingInstance `{object|string}` 事物描述
 
 ### setPropertyReadHandler
 
@@ -194,8 +194,8 @@ IoT 客户端模块
 
 > ExposedThing:setPropertyReadHandler(name, handler)
 
-- name {string} 属性名
-- handler {function} 处理函数
+- name `{string}` 属性名
+- handler `{function}` 处理函数
 
 ### setPropertyWriteHandler
 
@@ -203,8 +203,8 @@ IoT 客户端模块
 
 > ExposedThing:setPropertyWriteHandler(name, handler)
 
-- name {string} 属性名
-- handler  {function} 处理函数
+- name `{string}` 属性名
+- handler  `{function}` 处理函数
 
 ### setActionHandler
 
@@ -212,8 +212,8 @@ IoT 客户端模块
 
 > setActionHandler(name, handler)
 
-- name {string} 操作名
-- handler  {function} 处理函数
+- name `{string}` 操作名
+- handler  `{function}` 处理函数
 
 ### emitEvent
 
@@ -221,8 +221,8 @@ IoT 客户端模块
 
 发送事件
 
-- name {string} 事件名
-- data {any} 事件数据
+- name `{string}` 事件名
+- data `{any}` 事件数据
 
 ### expose
 

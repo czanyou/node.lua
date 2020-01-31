@@ -9,13 +9,13 @@ local utils = require('util')
 local KEY   = rng.new('gen key')
 
 local value = md.md5('hello')
-console.log('md5', utils.bin2hex(value))
+console.log('md5', utils.hexEncode(value))
 
 local value = md.sha256('hello')
-console.log('sha256', utils.bin2hex(value))
+console.log('sha256', utils.hexEncode(value))
 
 local value = utils.md5('hello')
-console.log('md5', utils.bin2hex(value))
+console.log('md5', utils.hexEncode(value))
 
 --console.log('pk', pk)
 console.log('RSA', pk.RSA)

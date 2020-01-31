@@ -27,6 +27,7 @@
 # define PLATFORM_ID "linux"
 
 #include <sys/statfs.h>
+#include <sys/reboot.h>
 
 #elif defined(__APPLE__)
 # define PLATFORM_ID "darwin"
@@ -199,6 +200,18 @@ static int luv_os_statfs(lua_State* L) {
 		luv_os_push_statfs_table(L, &fs);
 		return 1;
 	}
+#endif
+
+	return 0;
+}
+
+static int luv_os_reboot(lua_State* L) {
+
+#if defined(__linux__) || defined(__linux)
+	sync();
+	int ret = reboot(RB_AUTOBOOT);
+	lua_pushinteger(L, ret);
+	return 1;
 #endif
 
 	return 0;

@@ -14,7 +14,7 @@ function exports.connect(urlString, options)
     end)
 
     client:on('error', function(errInfo)
-        console.log(TAG, 'event', 'error', errInfo)
+        -- console.log(TAG, 'event', 'error', errInfo)
     end)
 
     exports.client = client

@@ -315,17 +315,17 @@ Payload for the ‘User Control’ protocol message
 
 ##### connect
 
-- Command Name {String} `connect`
-- Transaction ID {Number} 1
-- Command Object {Object}
-- Optional User Arguments {Object}
+- Command Name {string} `connect`
+- Transaction ID {number} 1
+- Command Object {object}
+- Optional User Arguments {object}
 
 response:
 
-- Command Name {String} `_result`
-- Transaction ID {Number} 1
-- Properties {Object}
-- Information {Object}
+- Command Name {string} `_result`
+- Transaction ID {number} 1
+- Properties {object}
+- Information {object}
 
 ##### call
 
@@ -335,28 +335,28 @@ response:
 
 ##### createStream
 
-- Command Name {String} `createStream`
-- Transaction ID {Number} 
-- Command Object {Object} 
+- Command Name {string} `createStream`
+- Transaction ID {number} 
+- Command Object {object} 
 
 response:
 
-- Command Name  {String} `_result`
-- Transaction ID {Number} 
-- Command Object {Object} 
-- Stream ID {Number} 
+- Command Name  {string} `_result`
+- Transaction ID {number} 
+- Command Object {object} 
+- Stream ID {number} 
 
 #### NetStream
 
 ##### play
 
-- Command Name {String} play
-- Transaction ID {Number} 0
+- Command Name {string} play
+- Transaction ID {number} 0
 - Command Object {Null}
-- Stream Name {String} 
-- Start {Number}
-- Duration {Number}
-- Reset {Boolean}
+- Stream Name {string} 
+- Start {number}
+- Duration {number}
+- Reset {boolean}
 
 ##### play2
 
@@ -370,11 +370,11 @@ response:
 
 ##### publish
 
-- Command Name {String} publish
-- Transaction ID {Number} 0 
+- Command Name {string} publish
+- Transaction ID {number} 0 
 - Command Object {Null} null
-- Publishing Name {String}
-- Publishing Type {String} live/record/append
+- Publishing Name {string}
+- Publishing Type {string} live/record/append
 
 ##### seek
 

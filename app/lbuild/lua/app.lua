@@ -38,8 +38,8 @@ function copy_files(source, target)
 	fs.mkdirpSync(target)
 
 	local files = fs.readdirSync(source)
-    if (not files) then 
-    	return 
+    if (not files) then
+    	return
     end
 
     for i = 1, #files do
@@ -48,7 +48,9 @@ function copy_files(source, target)
             local stat = fs.statSync(join(source, name))
             if (not stat) then
             	console.log(source, name)
-            end
+			end
+			
+			-- console.log(source, name)
 
             if (stat.type == 'file') then
             	copy(join(source, name), join(target, name))
@@ -92,7 +94,7 @@ local sdk = {}
 @param target {String} 构建目标，如 win,linux,pi 等等.
 --]]
 function sdk.getSDKBuildPath(target, type)
-	return join(process.cwd(), "build", (type or 'sdk') .. "/" .. target)
+	return join(process.cwd(), "build", "sdk", target)
 end
 
 function sdk.buildCommonSDK(target, packageInfo)
@@ -126,8 +128,10 @@ function sdk.buildCommonSDK(target, packageInfo)
 	local buildPath  = join(sourcePath, "build", board)
 
 	local libs = packageInfo.libs or {}
+	-- console.log(libs)
 	for _, file in ipairs(libs) do
 		local destFile = join(nodePath, 'lib', file)
+		console.log(destFile)
 		copy(join(buildPath,  file), destFile)
 	end
 
@@ -192,7 +196,6 @@ end
 function sdk.buildWindowSDK(target, packageInfo)
 	local nodePath 		= join(cwd, "core")
 	local binPath 		= join(cwd, "bin")
-	local releasePath 	= join(cwd, "build/win32/Release")
 	local sdkPath 		= sdk.getSDKBuildPath(target)
 
 	local mkdir = fs.mkdirpSync
@@ -381,7 +384,7 @@ function sdk.buildPackageInfo(target, packageInfo)
 	end
 
 	local fileSize = fileData and #fileData
-	local fileHash = util.bin2hex(util.md5(fileData))
+	local fileHash = util.md5string(fileData)
 
 	local package = packageInfo or {}
 	local version = getMakeVersion()
@@ -393,11 +396,11 @@ function sdk.buildPackageInfo(target, packageInfo)
 
 	local username = registry.username or 'cz'
 	local password = registry.password or '888888'
-	local passhash = util.bin2hex(util.md5(username .. ":" .. password))
+	local passhash = util.md5string(username .. ":" .. password)
 	registry.username 	= username
 
 	local value = username .. ":" .. passhash .. ":" .. fileHash
-	registry.sign 		= util.bin2hex(util.md5(value))
+	registry.sign 		= util.md5string(value)
 
 	package['target'] 	= target
 	package['arch'] 	= os.arch()
@@ -436,6 +439,42 @@ end
 function exports.tar(...)
 	sdk.buildTarPackage(...)
 	print(console.colorize("success", 'Finished!'))
+end
+
+function exports.version()
+	local file = io.popen("svn info --xml", "r")
+	if nil == file then
+		return print("open pipe for svn fail")
+	end
+
+	local content = file:read("*a")
+	if nil == content then
+		return print("read pipe for svn fail")
+	end
+
+	local xml = require('onvif/xml')
+	local parser = xml.newParser()
+	local document = parser:ParseXmlText(content)
+	if nil == document then
+		return print("parse xml for svn fail")
+	end
+
+	local children = document:children();
+	local root = children and children[1]
+	_, root = xml.xmlToTable(root)
+
+	local entry = root and root.entry
+	local commit = entry and entry.commit
+	local reversion = commit and commit['@revision']
+	if nil == reversion then
+		return print("parse reversion for svn fail")
+	end
+
+	print('reversion: ' .. reversion)
+	if (reversion) then
+		local data = 'local exports = { build = ' .. reversion .. '}\nreturn exports\n'
+		fs.writeFileSync('core/lua/@version.lua', data)
+	end
 end
 
 function exports.help()

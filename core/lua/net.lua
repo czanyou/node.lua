@@ -314,6 +314,7 @@ function Socket:setTimeout(msecs, callback)
         timer.enroll(self, msecs)
         timer.active(self)
         if callback then self:once('timeout', callback) end
+        
     elseif msecs == 0 then
         timer.unenroll(self)
     end

@@ -2,54 +2,70 @@
 
 通过 require('timer') 调用
 
-## clearImmediate
+## 取消定时器
 
-    clearImmediate(immediateObject)
+### clearImmediate
 
-停止一个 immediate 的触发。   
+> clearImmediate(immediate)
 
+取消由 setImmediate() 创建的 Immediate 对象。
 
-## clearInterval
-
-    clearInterval(intervalObject)
-
-停止一个 interval 的触发。
+- `immediate` {Immediate} setImmediate() 返回的 Immediate 对象。
 
 
-## clearTimeout
+### clearInterval
 
-    clearTimeout(timeoutObject)
+> clearInterval(timeout)
 
-阻止一个 timeout 被触发。
+取消由 setInterval() 创建的 Timeout 对象。
+
+- `timeout` {Timeout} setInterval() 返回的 Timeout 对象。
+
+### clearTimeout
+
+> clearTimeout(timeout)
+
+取消由 setTimeout() 创建的 Timeout 对象。
+
+- `timeout` {Timeout} setTimeout() 返回的 Timeout 对象。
+
+## 设置定时器
+
+### setImmediate
+
+> setImmediate(callback[, args][, ...])
+
+预定在 I/O 事件的回调之后立即执行的 callback。
+
+- `callback` {function} 在当前回合的 Node 事件循环结束时调用的函数。
+- `...args` {any} 当调用 callback 时传入的可选参数。
+- `返回`: {Immediate} 用于 clearImmediate()。
+
+当多次调用 setImmediate() 时， callback 函数将按照创建它们的顺序排队等待执行。 每次事件循环迭代都会处理整个回调队列。 如果立即定时器是从正在执行的回调排入队列，则直到下一次事件循环迭代才会触发。
 
 
-## setImmediate
+### setInterval
 
-    setImmediate(callback[, arg][, ...])
+> setInterval(delay, callback[, arg][, ...])
 
-调度在所有 I/O 事件回调之后、setTimeout 和 setInterval 之前“立即”执行 callback。
-返回一个可能被 clearImmediate() 用到的 immediateId。可选地，您还能给回调传入参数。
+预定每隔 delay 毫秒重复执行 callback。
 
-
-immediate 的回调以它们创建的顺序被加入队列。整个回调队列会在每个事件循环迭代中被处理。
-如果您在一个正被执行的回调中添加 immediate，那么这个 immediate 在下一个事件循环迭代之前都不会被触发。
-
-
-## setInterval
-
-    setInterval(delay, callback[, arg][, ...])
-
-调度每隔 delay 毫秒执行一次的 callback。返回一个可能被 clearInterval() 用到的 intervalId。
-可选地，您还能给回调传入参数。
+- `callback` {function} 当定时器到点时调用的函数。
+- `delay` {number} 调用 callback 之前等待的毫秒数。
+- `...args` {any} 当调用 callback 时传入的可选参数。
+- `返回`: {Timeout} 用于 clearInterval()。
 
 
-## setTimeout
+### setTimeout
 
-    setTimeout(delay, callback[, arg][, ...])
+> setTimeout(delay, callback[, arg][, ...])
 
-调度 delay 毫秒后的一次 callback 执行。返回一个可能被 clearTimeout() 用到的 timeoutId。
-可选地，您还能给回调传入参数。
+预定在 delay 毫秒之后执行一次性的 callback。
 
-请务必注意，您的回调有可能不会在准确的 delay 毫秒后被调用。Node
-不保证回调被触发的精确时间和顺序。回调会在尽可能接近所指定时间上被调用。
+- `callback` {function} 当定时器到点时调用的函数。
+- `delay` {number} 调用 callback 之前等待的毫秒数。
+- `...args` {any} 当调用 callback 时传入的可选参数。
+- `返回`: {Timeout} 用于 clearTimeout()。
+
+可能不会精确地在 delay 毫秒时调用 callback。 Node 不保证回调被触发的确切时间，也不保证它们的顺序。 回调会在尽可能接近指定的时间调用。
 

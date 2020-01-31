@@ -2,8 +2,6 @@ local _, pk   = pcall(require, 'lmbedtls.pk')
 local _, rng  = pcall(require, 'lmbedtls.rng')
 
 local utils 	= require('util')
-local assert 	= require('assert')
-local tap 		= require('ext/tap')
 local fs 		= require('fs')
 
 console.log(pk)

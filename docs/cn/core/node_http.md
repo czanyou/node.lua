@@ -33,35 +33,37 @@ HTTP 的消息头 (Headers) 通过如下对象来表示:
   'accepT', '*/*' ]
 ```
 
-## 属性: http.globalAgent
+## 属性
 
-超全局的代理实例，是http客户端的默认请求。
+### 属性: http.globalAgent
 
-## 属性: http.STATUS_CODES
+超全局的代理实例，是 http 客户端的默认请求。
 
-    {Object}
+### 属性: http.STATUS_CODES
+
+> {object}
 
 全部标准 HTTP 响应状态码的集合和简短描述。例如 `http.STATUS_CODES[404] === 'Not Found'`。
 
-## http:createClient
+## http.createClient
 
-    http.createClient([port], [host])
+> http.createClient([port], [host])
 
-该函数已弃用,请用http.request()代替. 创建一个新的HTTP客户端. port 和host 表示所连接的服务器.
+该函数已弃用, 请用 http.request() 代替. 创建一个新的 HTTP 客户端. port 和 host 表示所连接的服务器.
 
-## http:createServer
+## http.createServer
 
-    http.createServer([requestListener])
+> http.createServer([requestListener])
 
-返回一个新的web服务器对象
+返回一个新的 web 服务器对象
 
-参数 requestListener 是一个函数,它将会自动加入到 'request' 事件的监听队列.
+参数 requestListener 是一个函数, 它将会自动加入到 'request' 事件的监听队列.
 
-## http:get
+## http.get
 
-    http:get(options, callback)
+> http.get(options, callback)
 
-因为大部分的请求是没有报文体的GET请求，所以Node提供了这种便捷的方法。该方法与http.request()的唯一区别是它设置的是GET方法并自动调用req.end()。
+因为大部分的请求是没有报文体的 GET 请求，所以 Node 提供了这种便捷的方法。该方法与 http.request() 的唯一区别是它设置的是 GET 方法并自动调用 req.end()。
 
 实例：
 
@@ -73,31 +75,31 @@ end).on('error', function(e)
 end);
 ```
 
-## http:request
+## http.request
 
-    http:request(options, callback)
+> http.request(options, callback)
 
-Node 维护几个连接每个服务器的HTTP请求。 这个函数允许后台发布请求。
+Node 维护几个连接每个服务器的 HTTP 请求。 这个函数允许后台发布请求。
 
-options可以是一个对象或一个字符串。如果options是一个字符串, 它将自动使用url.parse()解析。
+options 可以是一个对象或一个字符串。如果 options 是一个字符串, 它将自动使用 url.parse() 解析。
 
 Options:
 
-- host：请求发送到的服务器的域名或IP地址。默认为'localhost'。
-- hostname：用于支持url.parse()。hostname比host更好一些
-- port：远程服务器的端口。默认值为80。
-- localAddress：用于绑定网络连接的本地接口。
-- socketPath：Unix域套接字 (使用host:port或socketPath) 
-- method：指定HTTP请求方法的字符串。默认为'GET'。
-- path：请求路径。默认为'/'。如果有查询字符串，则需要包含。例如'/index.html?page=12'。请求路径包含非法字符时抛出异常。目前，只否决空格，不过在未来可能改变。
-- headers：包含请求头的对象。
-- auth：用于计算认证头的基本认证，即'user:password'
-- agent：控制Agent的行为。当使用了一个Agent的时候，请求将默认为Connection: - keep-alive。可能的值为：
-undefined (默认) ：在这个主机和端口上使用[全局Agent][]。
-Agent对象：在Agent中显式使用passed。
-false：在对Agent进行资源池的时候，选择停用连接，默认请求为：Connection: close。
-- keepAlive：{Boolean} 保持资源池周围的套接字在未来被用于其它请求。默认值为false
-- keepAliveMsecs：{Integer} 当使用HTTP KeepAlive的时候，通过正在保持活动的套接字发送TCP KeepAlive包的频繁程度。默认值为1000。仅当keepAlive被设置为true时才相关。
+- `host`: 请求发送到的服务器的域名或IP地址。默认为'localhost'。
+- `hostname`: 用于支持url.parse()。hostname比host更好一些
+- `port`: 远程服务器的端口。默认值为80。
+- `localAddress`: 用于绑定网络连接的本地接口。
+- `socketPath`: Unix域套接字 (使用host:port或socketPath) 
+- `method`: 指定HTTP请求方法的字符串。默认为'GET'。
+- `path`: 请求路径。默认为'/'。如果有查询字符串，则需要包含。例如'/index.html?page=12'。请求路径包含非法字符时抛出异常。目前，只否决空格，不过在未来可能改变。
+- `headers`: 包含请求头的对象。
+- `auth`: 用于计算认证头的基本认证，即'user:password'
+- `agent`: 控制Agent的行为。当使用了一个Agent的时候，请求将默认为Connection: - keep-alive。可能的值为: 
+  - undefined (默认) : 在这个主机和端口上使用[全局Agent][]。
+  - Agent对象: 在Agent中显式使用passed。
+  - false: 在对Agent进行资源池的时候，选择停用连接，默认请求为: Connection: close。
+- `keepAlive`: {boolean} 保持资源池周围的套接字在未来被用于其它请求。默认值为false
+- `keepAliveMsecs`: {Integer} 当使用HTTP KeepAlive的时候，通过正在保持活动的套接字发送TCP KeepAlive包的频繁程度。默认值为1000。仅当keepAlive被设置为 true 时才相关。
 
 http.request() 返回一个 http.ClientRequest 类的实例。ClientRequest 实例是一个可写流对象。如果需要用 POST 请求上传一个文件的话，就将其写入到 ClientRequest 对象。
 
@@ -110,26 +112,26 @@ req:write('data\n')
 req:finish()
 ```
 
-注意，例子里的req.end()被调用了。使用http.request()方法时都必须总是调用req.end()以表明这个请求已经完成，即使响应body里没有任何数据。
+注意，例子里的 req.end() 被调用了。使用 http.request() 方法时都必须总是调用 req.end() 以表明这个请求已经完成，即使响应 body 里没有任何数据。
 
-如果在请求期间发生错误 (DNS解析、TCP级别的错误或实际HTTP解析错误
-
-) ，在返回的请求对象会触发一个'error'事件。
+如果在请求期间发生错误 (DNS 解析、TCP 级别的错误或实际 HTTP 解析错误) ，在返回的请求对象会触发一个'error'事件。
 
 有一些特殊的标题应该注意。
 
-- 发送 'Connection: keep-alive'将会告知Node保持连接直到下一个请求发送。
+- 发送 'Connection: keep-alive' 将会告知 Node 保持连接直到下一个请求发送。
 - 发送 'Content-length' 头将会禁用默认的 chunked 编码.
-- 发送 'Expect'报头会立即发送请求报头. 通常当发送 'Expect: 100-continue'时，你会同时发送一个超时和监听继续的事件。 查看 RFC2616 第 8.2.3 章节获得更多信息。
+- 发送 'Expect' 报头会立即发送请求报头. 通常当发送 'Expect: 100-continue'时，你会同时发送一个超时和监听继续的事件。 查看 RFC2616 第 8.2.3 章节获得更多信息。
 - 发送一个授权报头将会覆盖使用 auth 选项来完成基本授权。
 
-## Class: http.Server
+## Class: Server
 
 这是一个包含下列事件的EventEmitter:
 
-### 事件: 'checkContinue'
+### 事件
 
-    function (request, response)
+#### 事件: 'checkContinue'
+
+> function (request, response)
 
 每当收到 `Expect: 100-continue` 的 http 请求时触发。 如果未监听该事件，服务器会酌情自动发送 100 Continue 响应。
 
@@ -137,45 +139,45 @@ req:finish()
 
 需要注意到, 当这个事件触发并且被处理后, request 事件将不再会触发.
 
-### 事件: 'clientError'
+#### 事件: 'clientError'
 
-    function (exception, socket)
+> function (exception, socket)
 
 如果一个客户端连接触发了一个 'error' 事件, 它就会转发到这里.
 
 socket 是导致错误的 net.Socket 对象。
 
-### 事件: 'close'
+#### 事件: 'close'
 
 当此服务器关闭时触发
 
-### 事件: 'connect'
+#### 事件: 'connect'
 
-    function (request, socket, head)
+> function (request, socket, head)
 
 每当客户端发起CONNECT请求时出发。如果未监听该事件，客户端发起CONNECT请求时连接会被关闭。
 
-- request 是该HTTP请求的参数，与request事件中的相同。
-- socket 是服务端与客户端之间的网络套接字。
-- head 是一个Buffer实例，隧道流的第一个包，该参数可能为空。
+- `request` 是该HTTP请求的参数，与request事件中的相同。
+- `socket` 是服务端与客户端之间的网络套接字。
+- `head` 是一个Buffer实例，隧道流的第一个包，该参数可能为空。
 
 在这个事件被分发后，请求的套接字将不会有data事件监听器，也就是说你将需要绑定一个监听器到data事件，来处理在套接字上被发送到服务器的数据。
 
-### 事件: 'connection'
+#### 事件: 'connection'
 
-    function (socket)
+> function (socket)
 
 新的TCP流建立时出发。 socket是一个net.Socket对象。 通常用户无需处理该事件。 特别注意，协议解析器绑定套接字时采用的方式使套接字不会出发readable事件。 还可以通过request.connection访问socket。
 
-### 事件: 'request'
+#### 事件: 'request'
 
-    function (request, response)
+> function (request, response)
 
 每次收到一个请求时触发.注意每个连接又可能有多个请求(在keep-alive的连接中).request是http.IncomingMessage的一个实例.response是http.ServerResponse的一个实例
 
-### 事件: 'upgrade'
+#### 事件: 'upgrade'
 
-    function (request, socket, head)
+> function (request, socket, head)
 
 每当一个客户端请求http升级时，该事件被分发。如果这个事件没有被监听，那么这些请求升级的客户端的连接将会被关闭。
 
@@ -191,7 +193,7 @@ socket 是导致错误的 net.Socket 对象。
 
 ### server.timeout
 
-{Number} 默认 120000 (2 分钟)
+{number} 默认 120000 (2 分钟)
 
 一个套接字被判断为超时之前的闲置毫秒数。
 
@@ -201,13 +203,13 @@ socket 是导致错误的 net.Socket 对象。
 
 ### server:close
 
-    server:close([callback])
+> server:close([callback])
 
 禁止服务端接收新的连接. 查看 `net.Server.close()`.
 
 ### server:listen
 
-    server:listen(port, [hostname], [backlog], [callback])
+> server:listen(port, [hostname], [backlog], [callback])
 
 开始在指定的主机名和端口接收连接。如果省略主机名，服务器会接收指向任意IPv4地址的链接 (INADDR_ANY) 。
 
@@ -219,7 +221,7 @@ socket 是导致错误的 net.Socket 对象。
 
 ### server:listen
 
-    server:listen(path, [callback])
+> server:listen(path, [callback])
 
 启动一个 UNIX 套接字服务器在所给路径 path 上监听连接。
 
@@ -227,10 +229,10 @@ socket 是导致错误的 net.Socket 对象。
 
 ### server:listen
 
-    server:listen(handle, [callback])
+> server:listen(handle, [callback])
 
-- handle 处理器
-- callback {Function} 回调函数 function
+- `handle` 处理器
+- `callback` {function} 回调函数 function
 
 handle 变量可以被设置为 server 或者 socket (任一以下划线开头的成员 _handle), 或者一个 {fd: <n>} 对象
 
@@ -244,8 +246,8 @@ Windows 不支持监听一个文件描述符。
 
     server:setTimeout(msecs, callback)
 
-- msecs {Number}
-- callback {Function}
+- `msecs` {number}
+- `callback` {function}
 
 为套接字设定超时值。如果一个超时发生，那么 Server 对象上会分发一个'timeout'事件，同时将套接字作为参数传递。
 
@@ -253,7 +255,7 @@ Windows 不支持监听一个文件描述符。
 
 默认情况下，服务器的超时时间是 2 分钟，超时后套接字会自动销毁。 但是如果为‘timeout’事件指定了回调函数，你需要负责处理套接字超时。
 
-## Class: http.ServerResponse
+## Class: ServerResponse
 
 这是一个由 HTTP 服务器内部创建的对象 (不是由用户自行创建) 。它将作为第二个参数传递到 'request' 事件中。
 
@@ -263,29 +265,31 @@ Windows 不支持监听一个文件描述符。
 
 需要注意的是，底层链接在 response.end() 被调用或可以冲洗掉之前就被终结了。
 
-### 属性: response.headersSent
+### 属性
+
+#### 属性: response.headersSent
 
 布尔型值(只读).如果 headers 发送完毕,则为 true, 反之为 false
 
-### 属性: response.sendDate
+#### 属性: response.sendDate
 
 若为 true, 则当 headers 里没有 Date 值时自动生成 Date 并发送. 默认值为true
 
 只有在测试环境才禁用它; 因为 HTTP 要求响应包含 Date 头.
 
-### 属性: response.statusCode
+#### 属性: response.statusCode
 
 当使用默认 headers时 (没有显式地调用 response.writeHead() 来修改 headers) ，这个属性决定 headers 更新时被传回客户端的 HTTP 状态码。
 
 实例：
 
-    response.statusCode = 404;
+> response.statusCode = 404;
 
 当响应头被发送回客户端，那么这个属性则表示已经被发送出去的状态码。
 
 ### response:addTrailers
 
-    response:addTrailers(headers)
+> response:addTrailers(headers)
 
 这个方法添加 HTTP 尾随 headers (一个在消息末尾的 header) 给响应。
 
@@ -307,12 +311,12 @@ response:finish()
 
 ### response:done
 
-    response:done([data])
+> response:done([data])
 
 
 ### response:getHeader
 
-    response:getHeader(name)
+> response:getHeader(name)
 
 读取一个在队列中但是还没有被发送至客户端的header。需要注意的是 name 参数是不区分 大小写的。它只能在header还没被冲洗掉之前调用。
 
@@ -322,7 +326,7 @@ response:finish()
 
 ### response:removeHeader
 
-    response:removeHeader(name)
+> response:removeHeader(name)
 
 取消掉一个在队列内等待发送的header。
 
@@ -346,10 +350,10 @@ response:finish()
 
 ### response:setTimeout
 
-    response:setTimeout(msecs, callback)
+> response:setTimeout(msecs, callback)
 
-- msecs {Number}
-- callback {Function}
+- `msecs` {number}
+- `callback` {function}
 
 设定套接字的超时时间为 msecs。如果提供了回调函数，会将其添加为响应对象的 'timeout' 事件的监听器。
 
@@ -357,7 +361,7 @@ response:finish()
 
 ### response:write
 
-    response:write(chunk)
+> response:write(chunk)
 
 如果这个方法被调用但是 response:writeHead() 没有被调用，它将切换到默认 header 模式并更新默认的 headers。
 
@@ -373,13 +377,13 @@ chunk可以是字符串或者缓存。如果chunk 是一个字符串， 第二�
 
 ### response:writeContinue
 
-    response:writeContinue()
+> response:writeContinue()
 
 发送一个 `HTTP/1.1 100 Continue`消息至客户端，表明请求体可以被发送。可以再服务器上查看 'checkContinue' 事件。
 
 ### response:writeHead
 
-    response:writeHead(statusCode, [reasonPhrase], [headers])
+> response:writeHead(statusCode, [reasonPhrase], [headers])
 
 向请求回复响应头. statusCode 是一个三位是的 HTTP 状态码, 例如 404. 最后一个参数, headers, 是响应头的内容. 可以选择性的，把人类可读的‘原因短句’作为第二个参数。
 
@@ -396,7 +400,7 @@ response:writeHead(200, {
 
 如果你在调用这之前调用了 response.write() 或者 response.end() , 就会调用这个函数，并且 不明/容易混淆 的头将会被使用。
 
-## Class: http.Agent
+## Class: Agent
 
 HTTP Agent 是用于把套接字做成资源池，用于 HTTP 客户端请求。
 
@@ -429,10 +433,10 @@ end)
 
 ### Agent:new([options])
 
-- options {Object} 设置于agent上的配置选项的集合。可以有下列字段：
-    - keepAlive {Boolean} 保持在资源池周围套接未来字被其它请求使用。默认值为false
+- options {object} 设置于agent上的配置选项的集合。可以有下列字段：
+    - keepAlive {boolean} 保持在资源池周围套接未来字被其它请求使用。默认值为false
     - keepAliveMsecs {Integer} 当使用HTTP KeepAlive时, 通过正在被保持活跃的套接字来发送TCP KeepAlive包的频繁程度。默认值为1000。仅当keepAlive设置为true时有效。
-    - maxSockets {Number} 每台主机允许的套接字的数目的最大值。默认值为Infinity。
+    - maxSockets {number} 每台主机允许的套接字的数目的最大值。默认值为Infinity。
 在空闲状态下还依然开启的套接字的最大值。仅当keepAlive设置为true的时候有效。默认值为256。
 
 被 http.request 使用的默认的 http.globalAgent 有设置为它们各自的默认值的全部这些值。
@@ -467,7 +471,7 @@ keepAliveAgent:request(options, onResponseCallback)
 
 ### agent.destroy
 
-    agent.destroy()
+> agent.destroy()
 
 销毁被此agent占用的任何套接字
 
@@ -475,12 +479,12 @@ keepAliveAgent:request(options, onResponseCallback)
 
 ### agent.getName
 
-    agent.getName(options)
+> agent.getName(options)
 
 通过设置请求选项获得一个独一无二的名称，来决定是否一个连接是否可以再生。 在http代理中，它将返回host:port:localAddress`。在https代理中，这个名称 包含CA, cert, ciphers,和其他HTTPS/TLS特殊选项来决定一个套接字是否可以再生。
 
 
-## Class: http.ClientRequest
+## Class: ClientRequest
 
 该对象在内部创建，并由 http.request() 返回。它表示着一个正在处理 的请求，其头部已经进入请求队列。该头部仍然可以通过 `setHeader(name, value), getHeader(name), removeHeader(name)` 等 API 进行修改。实际的头部将会随着第一个数据块发送，或在连接关闭时发送。
 
@@ -494,13 +498,15 @@ keepAliveAgent:request(options, onResponseCallback)
 
 该请求实现了 Writable Stream 接口。这是一个包含下列事件的 EventEmitter：
 
-### 事件: 'connect'
+### 事件
 
-    function(response, socket, head)
+#### 事件: 'connect'
 
-- response {http.IncomingMessage}
-- socket {net.Socket}
-- head {}
+> function(response, socket, head)
+
+- `response` {http.IncomingMessage}
+- `socket` {net.Socket}
+- `head` {}
 
 每次服务器使用 CONNECT 方法响应一个请求时被触发。如果该事件未被监听，接收 CONNECT 方法的客户端将关闭它们的连接。
 
@@ -563,31 +569,31 @@ proxy:listen(1337, '127.0.0.1', function()
 end);
 ```
 
-### 事件: 'continue'
+#### 事件: 'continue'
 
 当服务器发送 100 Continue 响应时触发，通常是因为请求包含 Expect: 100-continue。该指令表示客户端应发送请求体。
 
-### 事件: 'response'
+#### 事件: 'response'
 
-    function (response)
+> function (response)
 
 当接收到请求的响应时触发，该事件只被触发一次。response 参数是 http.IncomingMessage 的一个实例。
 
 Options:
 
-- host: 请求要发送的域名或服务器的IP地址。
-- port: 远程服务器的端口。
-- socketPath: Unix Domain Socket  (使用 host:port 和 socketPath 其中之一) 
+- `host`: 请求要发送的域名或服务器的IP地址。
+- `port`: 远程服务器的端口。
+- `socketPath`: Unix Domain Socket  (使用 host:port 和 socketPath 其中之一) 
 
-### 事件: 'socket'
+#### 事件: 'socket'
 
-    function (socket)
+> function (socket)
 
 触发于一个套接字被赋予为这个请求的时候。
 
-### 事件: 'upgrade'
+#### 事件: 'upgrade'
 
-    function (response, socket, head)
+> function (response, socket, head)
 
 每次服务器返回 upgrade 响应时触发。如果该事件未被监听，客户端收到 upgrade 后将关闭连接。
 
@@ -604,13 +610,13 @@ Options:
 
 ### request:abort
 
-    request.abort()
+> request.abort()
 
 终止一个请求.
 
 ### request:done
 
-    request.done([data])
+> request.done([data])
 
 结束发送请求。如果请求体的某些部分还发送，该函数将会把它们 flush 到流中。如果该请求是分块的，该方法将会发送终结符 `0\r\n\r\n`。
 
@@ -618,31 +624,31 @@ Options:
 
 ### request:setNoDelay
 
-    request:setNoDelay([noDelay])
+> request:setNoDelay([noDelay])
 
 一旦一个套接字被分配给该请求并且完成连接，socket.setNoDelay()将会被调用。
 
 ### request:setSocketKeepAlive
 
-    request:setSocketKeepAlive([enable], [initialDelay])
+> request:setSocketKeepAlive([enable], [initialDelay])
 
 一旦一个套接字被分配到这个请求，而且成功连接，那么socket.setKeepAlive()就会被调用。
 
 ### request:setTimeout
 
-    request:setTimeout(timeout, [callback])
+> request:setTimeout(timeout, [callback])
 
 一旦一个套接字被分配给该请求并且完成连接，socket.setTimeout()将会被调用。
 
 ### request:write
 
-    request:write(chunk)
+> request:write(chunk)
 
 发送一块请求体。调用该方法多次，用户可以流式地发送请求体至服务器——在这种情况下，创建请求时建议使用['Transfer-Encoding', 'chunked']头。
 
 chunk 参数必须是 Buffer 或者 string.
 
-## http.IncomingMessage
+## Class: IncomingMessage
 
 一个 IncomingMessage 对象是由 http.Server 或 http.ClientRequest 创建的，并作为第一参数分别传递给 'request' 和 'response' 事件。它也可以被用来访问应答的状态，头文件和数据。
 
@@ -650,13 +656,15 @@ chunk 参数必须是 Buffer 或者 string.
 
 ### 事件: 'close'
 
-    function() end
+> function() end
 
 表示在 response:done() 被调用或强制刷新之前，底层的连接已经被终止了。
 
 跟 'end' 一样，这个事件对于每个应答只会触发一次。详见 http.ServerResponse 的 'close' 事件。
 
-### 属性: message.headers
+### 属性
+
+#### 属性: message.headers
 
 请求/响应头对象.
 
@@ -673,19 +681,19 @@ console.log(request.headers)
 
 ```
 
-### 属性: message.httpVersion
+#### 属性: message.httpVersion
 
 客户端向服务器发出请求时，客户端发送的 HTTP 本；或是服务器向客户端返回应答时，服务器的 HTTP 版本。通常是 '1.1' 或 '1.0'。
 
 另外，response.httpVersionMajor 是第一个整数，response.httpVersionMinor 是第二个整数。
 
-### 属性: message.method
+#### 属性: message.method
 
 仅对从 http.Server 获得到的请求 (request) 有效.
 
 请求 (request) 方法如同一个只读的字符串，比如 ‘GET’、‘DELETE’。
 
-### 属性: message.rawHeaders
+#### 属性: message.rawHeaders
 
 接收到的原始请求/响应头字段列表。
 
@@ -708,19 +716,19 @@ console.log(request.rawHeaders);
 
 ```
 
-### 属性: message.rawTrailers
+#### 属性: message.rawTrailers
 
 接收到的原始的请求/响应尾部键和值，只在 'end' 事件时存在。
 
-### 属性: message.socket
+#### 属性: message.socket
 
 与此连接 (connection) 关联的 net.Socket 对象.
 
-### 属性: message.trailers
+#### 属性: message.trailers
 
 请求/响应的尾部对象，只在 'end' 事件时是存在的。
 
-### 属性: message.url
+#### 属性: message.url
 
 仅对从 http.Server 获得到的请求 (request) 有效.
 
@@ -768,10 +776,10 @@ require('url').parse('/status?name=ryan', true)
 
 ### message:setTimeout
 
-    message:setTimeout(msecs, callback)
+> message:setTimeout(msecs, callback)
 
-- msecs {Number}
-- callback {Function}
+- `msecs` {number}
+- `callback` {function}
 
 调用 `message.connection:setTimeout(msecs, callback)`
 

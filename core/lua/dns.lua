@@ -35,7 +35,6 @@ local net   = require('net')
 local timer = require('timer')
 
 local Error  = require('core').Error
-local adapt  = require('util').adapt
 local crypto = require('tls/lcrypto')
 
 local DEFAULT_SERVERS = {
@@ -677,7 +676,7 @@ local function _query(servers, name, dnsclass, qtype, callback)
 end
 
 local function query(servers, name, dnsclass, qtype, callback)
-    return adapt(callback, _query, servers, name, dnsclass, qtype)
+    return _query(servers, name, dnsclass, qtype, callback)
 end
 
 exports.query = query

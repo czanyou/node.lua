@@ -44,24 +44,21 @@ LUALIB_API int luaopen_lhttp_parser (lua_State* const L);
 LUALIB_API int luaopen_lutils       (lua_State* const L);
 LUALIB_API int luaopen_miniz        (lua_State* const L);
 LUALIB_API int luaopen_lsqlite      (lua_State* const L);
+LUALIB_API int luaopen_snapshot     (lua_State* const L);
 
 static int lua_table_set(lua_State *L, const char* key, const char* value)
 {
-  lua_pushstring(L, value);
-  lua_setfield(L, -2, key);
-  return 0;
-}
-
-static int lnode_get_exepath(char* buffer, size_t size) {
-  if (buffer == NULL || size <= 0) {
+  if (key == NULL || value == 0) {
     return -1;
   }
 
-  memset(buffer, 0, size);
-  return uv_exepath(buffer, &size);
+  lua_pushstring(L, value);
+  lua_setfield(L, -2, key);
+
+  return 0;
 }
 
-static int lnode_get_uxpath(char* buffer) {
+static int lnode_dos2unix_path(char* buffer) {
   if (buffer == NULL) {
     return -1;
   }
@@ -75,6 +72,30 @@ static int lnode_get_uxpath(char* buffer) {
 	}
 
   return 0;
+}
+
+static int lnode_file_exists(const char* basePath, const char* subPath) {
+  char filename[PATH_MAX];
+  memset(filename, 0, sizeof(filename));
+
+  if (basePath) {
+    strncpy(filename, basePath, PATH_MAX);
+  }
+
+  if (subPath) {
+    strncat(filename, subPath, PATH_MAX);
+  }
+
+  return access(filename, 0) == 0;
+}
+
+static int lnode_get_exepath(char* buffer, size_t size) {
+  if (buffer == NULL || size <= 0) {
+    return -1;
+  }
+
+  memset(buffer, 0, size);
+  return uv_exepath(buffer, &size);
 }
 
 static int lnode_get_dirname(char* buffer) {
@@ -110,24 +131,9 @@ LUALIB_API int lnode_get_filename(const char* path, char* buffer) {
     p--;
   }
 
-  strcpy(buffer, p);
+  strncpy(buffer, p, PATH_MAX);
 
   return 0;
-}
-
-static int lnode_file_exists(const char* basePath, const char* subPath) {
-  char filename[PATH_MAX];
-  memset(filename, 0, sizeof(filename));
-
-  if (basePath) {
-    strncpy(filename, basePath, PATH_MAX);
-  }
-
-  if (subPath) {
-    strncat(filename, subPath, PATH_MAX);
-  }
-
-  return access(filename, 0) == 0;
 }
 
 #ifdef _WIN32
@@ -138,30 +144,22 @@ const char* lnode_get_realpath(const char* filename, char* realname) {
 	}
 
 	GetFullPathNameA(filename, PATH_MAX, realname, NULL);
-  lnode_get_uxpath(realname);
+  lnode_dos2unix_path(realname);
 
 	return realname;
 }
 
-static int lnode_get_root(char* buffer) {
-  const char* root = NODE_LUA_ROOT;
-
-  char exePath[PATH_MAX];
-  memset(exePath, 0, sizeof(exePath));
+static int lnode_get_rootpath(char* buffer) {
+  char pathName[PATH_MAX];
+  memset(pathName, 0, sizeof(pathName));
 
   // Dev path
-  lnode_get_exepath(exePath, PATH_MAX);
-  lnode_get_uxpath(exePath);
-  lnode_get_dirname(exePath);
-  lnode_get_dirname(exePath);
-  root = exePath;
+  lnode_get_exepath(pathName, PATH_MAX);
+  lnode_dos2unix_path(pathName);
+  lnode_get_dirname(pathName);
+  lnode_get_dirname(pathName);
 
-  strncpy(buffer, root, PATH_MAX);
-  return 0;
-}
-
-/** Let current program runs into the background. */
-LUALIB_API int lnode_run_as_deamon() {
+  strncpy(buffer, pathName, PATH_MAX);
   return 0;
 }
 
@@ -177,7 +175,7 @@ const char* lnode_get_realpath(const char* filename, char* realname) {
 	return realname;
 }
 
-static int lnode_get_root(char* buffer) {
+static int lnode_get_rootpath(char* buffer) {
   const char* root = NODE_LUA_ROOT;
 
   char exePath[PATH_MAX];
@@ -206,58 +204,75 @@ static int lnode_get_root(char* buffer) {
   return 0;
 }
 
-/** Let current program runs into the background. */
-LUALIB_API int lnode_run_as_deamon() {
-  if (fork() != 0) {
-    exit(1);
-  }
-
-  // Create a new process session, and from the current Shell terminal,
-  // so that the new process can run independently in the background.
-  if (setsid() < 0) {
-    exit(1);
-  }
-
-  if (fork() != 0) {
-    exit(1);
-  }
-
-  umask(022);
-
-  signal(SIGCHLD, SIG_IGN);
-
-  return 0;
-}
-
 #endif
 
 LUALIB_API int luaopen_lnode(lua_State *L)
 {
   char buffer[1024];
-
   lua_newtable(L); // lnode
 
+  // lnode version
 #ifdef LNODE_MAJOR_VERSION
   sprintf(buffer, "%d.%d", LNODE_MAJOR_VERSION, LNODE_MINOR_VERSION);
   lua_table_set(L, "version", buffer);
 #endif
 
-  char root[PATH_MAX];
-  memset(root, 0, sizeof(root));
-  lnode_get_root(root);
-  lua_table_set(L, "NODE_LUA_ROOT", root);
-
+  // lnode root path
+  char rootPath[PATH_MAX];
+  memset(rootPath, 0, sizeof(rootPath));
+  lnode_get_rootpath(rootPath);
+  lua_table_set(L, "NODE_LUA_ROOT", rootPath);
 
   lua_newtable(L); // versions
 
+  // libuv version
   lua_table_set(L, "uv", uv_version_string());
 
+  // lua version
   sprintf(buffer, "%s.%s.%s", LUA_VERSION_MAJOR, LUA_VERSION_MINOR, LUA_VERSION_RELEASE);
   lua_table_set(L, "lua", buffer);
 
   lua_setfield(L, -2, "versions");
 
   return 1;
+}
+
+// ////////////////////////////////////////////////////////////////////////////
+// public methods
+
+/** Let current program runs into the background. */
+LUALIB_API int lnode_run_as_daemon() {
+
+#ifndef _WIN32
+
+  // fork off the parent process & let it terminate if forking was successful. 
+  // -> Because the parent process has terminated, the child process now runs in the background.
+  if (fork() != 0) {
+    exit(EXIT_SUCCESS);
+  }
+
+  // Create a new session. The calling process becomes the leader of the new 
+  // session and the process group leader of the new process group. 
+  // The process is now detached from its controlling terminal
+  if (setsid() < 0) {
+    exit(EXIT_FAILURE);
+  }
+
+  signal(SIGCHLD, SIG_IGN);
+  signal(SIGHUP, SIG_IGN);
+
+  // fork again & let the parent process terminate to ensure that you get rid 
+  // of the session leading process. (Only session leaders may get a TTY again.)
+  if (fork() != 0) {
+    exit(EXIT_FAILURE);
+  }
+
+  // Change the file mode mask according to the needs of the daemon.
+  umask(022);
+  
+#endif
+
+  return 0;
 }
 
 /**
@@ -322,13 +337,13 @@ LUALIB_API int lnode_call_script(lua_State* L, const char* script, const char* n
   return ret;
 }
 
-LUALIB_API int lnode_path_init(lua_State* L) {
+LUALIB_API int lnode_init_package_paths(lua_State* L) {
   char buffer[PATH_MAX];
   memset(buffer, 0, sizeof(buffer));
 
   char root[PATH_MAX];
   memset(root, 0, sizeof(root));
-  lnode_get_root(root);
+  lnode_get_rootpath(root);
 
 #ifdef _WIN32
   const char* fmt = "package.path='"
@@ -415,7 +430,7 @@ LUALIB_API int lnode_openlibs(lua_State *L)
     lua_getfield(L, -1, "loaded");
     lua_remove(L, -2); // Remove package
 
-    // Store uv module definition at loaded.uv
+    // Store uv module definition at loaded.luv
     luaopen_luv(L);
     lua_setfield(L, -2, "luv");
     lua_pop(L, 1);
@@ -435,13 +450,14 @@ LUALIB_API int lnode_openlibs(lua_State *L)
     lua_setfield(L, -2, "env");
 #endif
 
-    // Store lnode module definition at preload.lnode
-    lua_pushcfunction(L, luaopen_lnode);
-    lua_setfield(L, -2, "lnode");
-
 #ifdef WITH_LUTILS
     lua_pushcfunction(L, luaopen_lutils);
     lua_setfield(L, -2, "lutils");
+#endif
+
+#ifdef WITH_LUTILS
+    lua_pushcfunction(L, luaopen_snapshot);
+    lua_setfield(L, -2, "snapshot");
 #endif
 
 #ifdef WITH_MINIZ
@@ -454,48 +470,11 @@ LUALIB_API int lnode_openlibs(lua_State *L)
     lua_setfield(L, -2, "lsqlite");
 #endif
 
+    // Store lnode module definition at preload.lnode
+    lua_pushcfunction(L, luaopen_lnode);
+    lua_setfield(L, -2, "lnode");
+
     lua_pop(L, 1);
-
-    return 0;
-}
-
-/** Prints the current lnode version information. */
-LUALIB_API int lnode_print_version()
-{
-    char buffer[PATH_MAX];
-    memset(buffer, 0, sizeof(buffer));
-    sprintf(buffer, "lnode %d.%d (Lua %s.%s.%s, libuv %s, build %s %s)",
-            LNODE_MAJOR_VERSION, LNODE_MINOR_VERSION,
-            LUA_VERSION_MAJOR, LUA_VERSION_MINOR, LUA_VERSION_RELEASE,
-            uv_version_string(), __DATE__, __TIME__);
-    lua_writestring(buffer, strlen(buffer));
-    lua_writeline();
-
-    return 0;
-}
-
-/** Prints the current lnode usage information. */
-LUALIB_API int lnode_print_usage() 
-{
-  	char buffer[PATH_MAX];
-  	memset(buffer, 0, sizeof(buffer));
-  	sprintf(buffer, "\n"
-	  	"usage: lnode [options] [script [args]]\n"
-  		"Available options are:\n"
-		  "\n"
-  		"  -d      run as daemon\n"
-  		"  -e stat execute string `stat`\n"
-      "  -E      ignores environment variables\n"
-  		"  -p      show package path information\n"
-  		"  -l name require package `name`\n"
-  		"  -v      show version information\n"
-      "  --      stop handling options\n"
-  		"  -       stop handling options and execute stdin\n"
-		  "\n"
-	);
-
-    lua_writestring(buffer, strlen(buffer));
-    lua_writeline();
 
     return 0;
 }

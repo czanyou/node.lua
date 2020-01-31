@@ -59,6 +59,7 @@ end)
 test("readfile coroutine", function (expect)
 	local finish = expect(function () end)
 	coroutine.wrap(function ()
+		fs = fs.wrap()
 		local thread = coroutine.running()
 		--p{thread=thread}
 		local path = dirname .. "/fixtures/x.txt"
@@ -137,6 +138,7 @@ end)
 test("scandir coroutine", function (expect)
 	local done = expect(function () end)
 	coroutine.wrap(function ()
+		fs = fs.wrap()
 		local thread = coroutine.running()
 		local count = 0
 		for k,v in fs.scandir(dirname, thread) do
@@ -192,6 +194,7 @@ end)
 
 test('access coroutine', function ()
 	coroutine.wrap(function ()
+		fs = fs.wrap()
 		local thread = coroutine.running()
 		local result = {
 			read = fs.access(module.path, "r", thread),
@@ -234,6 +237,7 @@ end)
 
 test("readfile helper coroutine", function (expect)
 	coroutine.wrap(expect(function ()
+		fs = fs.wrap()
 		local thread = coroutine.running()
 		local path = dirname .. "/fixtures/x.txt"
 		local data = fs.readFile(path, thread)

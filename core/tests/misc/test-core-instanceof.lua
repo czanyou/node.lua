@@ -25,42 +25,33 @@ local instanceof = core.instanceof
 local tap = require("ext/tap")
 local test = tap.test
 
-test(
-	"test instanceof",
-	function()
-		local o = Object:new()
-		local e = Emitter:new()
-		local b = buffer.Buffer:new(1)
+test("test instanceof", function()
+	local o = Object:new()
+	local e = Emitter:new()
+	local b = buffer.Buffer:new(1)
 
-		--console.log(b.meta)
-		--console.log(buffer.Buffer)
-		--console.log(buffer.Buffer.meta)
+	--console.log(b.meta)
+	--console.log(buffer.Buffer)
+	--console.log(buffer.Buffer.meta)
 
-		assert(instanceof(b, Object))
-		assert(instanceof(b, buffer.Buffer))
-		assert(not instanceof(b, Emitter))
+	assert(instanceof(b, Object))
+	assert(instanceof(b, buffer.Buffer))
+	assert(not instanceof(b, Emitter))
 
-		assert(instanceof(o, Object))
-		assert(not instanceof(o, Emitter))
+	assert(instanceof(o, Object))
+	assert(not instanceof(o, Emitter))
 
-		assert(instanceof(e, Emitter))
-		assert(instanceof(e, Object))
+	assert(instanceof(e, Emitter))
+	assert(instanceof(e, Object))
 
-		assert(not instanceof({}, Object))
-		assert(not instanceof(2, Object))
-		assert(not instanceof("a", Object))
-		assert(
-			not instanceof(
-				function()
-				end,
-				Object
-			)
-		)
+	assert(not instanceof({}, Object))
+	assert(not instanceof(2, Object))
+	assert(not instanceof("a", Object))
+	assert(not instanceof(function() end, Object))
 
-		-- Caveats: We would like to these to be false, but we could not.
-		assert(instanceof(Object, Object))
-		assert(instanceof(Emitter, Object))
-	end
-)
+	-- Caveats: We would like to these to be false, but we could not.
+	assert(instanceof(Object, Object))
+	assert(instanceof(Emitter, Object))
+end)
 
 tap.run()

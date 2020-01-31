@@ -1,7 +1,18 @@
 #!/bin/sh
+# DT02 Gateway
+
+# tmpfs
+mount -t tmpfs -o size=16m tmpfs /tmp/
+
+mkdir -p /tmp/run
+mkdir -p /tmp/lock
+mkdir -p /tmp/log
+mkdir -p /tmp/lock
 
 # network
-lnode -l lci/mac &
+lnode -l lci/mac
+
+ifconfig lo up
 ifconfig eth0 192.168.8.12 netmask 255.255.255.0
 route add default gw 192.168.8.1
 
@@ -9,53 +20,11 @@ hostname dt02
 
 telnetd &
 
-# tmpfs
-mount -t tmpfs -o size=16m tmpfs /tmp/
-mount -t tmpfs -o size=1m tmpfs /var/run/
-
 # nfs
-# mount -t nfs -o nolock 192.168.8.38:/mnt/nfs /mnt/dt02
-
-# modbus
-echo 24 > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio24/direction
-
-# button
-echo 62 > /sys/class/gpio/export
-echo in > /sys/class/gpio/gpio62/direction
-
-# led green
-echo 53 > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio53/direction
-
-# led  yellow
-echo 54 > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio54/direction
-
-# led  blue
-echo 55 > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio55/direction
-
-# uart switch
-echo 63 > /sys/class/gpio/export
-echo out > /sys/class/gpio/gpio63/direction
-echo 1 > /sys/class/gpio/gpio63/value
-
-# device /dev/ttyAMA2
-himm 0x12098000 0xe2
-himm 0x120400c4 0x02
-himm 0x120400c8 0x02
-himm 0x120400f0 0x01
-
-sleep 1
+# mount -t nfs -o nolock 192.168.1.38:/mnt/nfs /mnt/nfs
 
 # lpm
-/usr/local/lnode/bin/lpm start lci
-/usr/local/lnode/bin/lpm start wotc
-/usr/local/lnode/bin/lpm start gateway
-/usr/local/lnode/bin/lpm start lpm
+lpm start lci wotc gateway lpm
 
-# watchdog
-insmod /ko/sys_config.ko
-insmod /ko/hi_osal.ko mmz=anonymous,0,0x82000000,32M anony=1
-insmod /ko/hi3516cv300_wdt.ko
+
+# cd /mnt/dt02/node.lua/app/gateway/lua/lora/

@@ -1,6 +1,4 @@
 local rpc 	= require('app/rpc')
-local path  = require('path')
-
 
 local handler = {}
 
@@ -25,9 +23,7 @@ setTimeout(100, function()
 
 
 	client.test()
-
 	client.test(1)
-
 	client.test(1, 2)
 	client.printf(1, 2, 3, function(err, result)
 

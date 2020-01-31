@@ -5,7 +5,7 @@ local test = tap.test
 
 -- This tests using timers for a simple timeout.
 -- It also tests the handle close callback and
-test("simple timeout", function (print, p, expect)
+test("simple timeout", function (expect)
 	local timer = uv.new_timer()
 	local function onClose()
 		console.log("closed", timer)
@@ -19,7 +19,7 @@ test("simple timeout", function (print, p, expect)
 end)
 
 -- This is like the previous test, but using repeat.
-test("simple interval (3 times)", function (print, p, expect)
+test("simple interval (3 times)", function (expect)
 	local timer = uv.new_timer()
 	local count = 3
 
@@ -41,7 +41,7 @@ end)
 -- Test two concurrent timers
 -- There is a small race condition, but there are 50ms of wiggle room.
 -- 250ms is halfway between 2x100ms and 3x100ms
-test("timeout with interval (2 times)", function (print, p, expect)
+test("timeout with interval (2 times)", function (expect)
 	local a = uv.new_timer()
 	local b = uv.new_timer()
 	uv.timer_start(a, 250, 0, expect(function ()
@@ -58,7 +58,7 @@ end)
 
 -- This advanced test uses the rest of the uv_timer_t functions
 -- to create an interval that shrinks over time.
-test("shrinking interval (4 times)", function (print, p, expect)
+test("shrinking interval (4 times)", function (expect)
 	local timer = uv.new_timer()
 	uv.timer_start(timer, 10, 0, expect(function ()
 		local r = uv.timer_get_repeat(timer)
@@ -77,7 +77,7 @@ test("shrinking interval (4 times)", function (print, p, expect)
 	end, 4))
 end)
 
-test("shrinking interval using methods (4 times)", function (print, p, expect)
+test("shrinking interval using methods (4 times)", function (expect)
 	local timer = uv.new_timer()
 	local timeout = 10
 	timer:start(timeout, 0, expect(function()

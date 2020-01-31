@@ -4,45 +4,40 @@
 
 这是一个全局的模块, 可以直接调用.
 
-## console.error
+## 打印
 
-    console.error(...)
+### console.printr
 
-同 console.log。
-
-
-## console.printr
-
-    utils.printr(...)
+> utils.printr(...)
 
 以更友好的方式打印指定的参数的值，方便调试
 
 
-## console.printBuffer
+### console.printBuffer
 
-     utils.printBuffer(value)
+>  utils.printBuffer(value)
 
-以 16 进制打印指定的缓存区数据的值
+以 16 进制数字型式打印指定的缓存区数据的值
 
+- `value` {string} 缓存区
 
-## console.dump
+### console.error
 
-     utils.dump(...)
-
-返回指定的参数的字符串表示，方便调试
-
-
-## console.info
-
-    console.info(...)
+> console.error(...)
 
 同 console.log。
 
-## console.log
+### console.info
 
-    console.log(...)
+> console.info(...)
 
-向 stdout 打印并新起一行。这个函数可以像 printf() 那样接受多个参数，例如：
+同 console.log。
+
+### console.log
+
+> console.log(...)
+
+向 stdout 打印并新起一行。这个函数可以接受多个参数，例如：
 
 ```lua
 
@@ -52,21 +47,37 @@ console.log('count: ', count)
 
 ```
 
+### console.warn
+
+> console.warn(...)
+
+同 console.log。
+
+
+## console.dump
+
+>  utils.dump(...)
+
+返回指定的参数的字符串表示，方便调试
+
+
 ## console.time
 
-    console.time(label)
+> console.time(label)
 
 标记一个时间点。
 
-- label {String} 时间标记名称
+- `label` {string} 时间标记名称
 
 ## console.timeEnd
 
-    console.timeEnd(label)
+> console.timeEnd(label)
 
-结束计时器，记录输出。例如：
+结束计时器，输出结果。
 
-- label {String} 时间标记名称
+- `label` {string} 时间标记名称
+
+例如：
 
 ```lua
 
@@ -80,23 +91,17 @@ console.timeEnd('100-elements')
 
 ## console.trace
 
-    console.trace(message)
+> console.trace(message)
 
-打印当前位置的栈跟踪到 stderr。
+打印当前位置的函数栈到 stderr。
 
+- `message` {string} 
 
-## console.warn
+## 参考
 
-    console.warn(...)
-
-同 console.log。
-
-
-## 特殊符号
+### ANSI控制码
 
 ```sh
-
-ANSI控制码
 
 \33[0m 关闭所有属性 
 \33[01m 设置高亮度 

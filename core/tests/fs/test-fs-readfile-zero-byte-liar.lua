@@ -20,9 +20,7 @@ local tap = require('ext/tap')
 local test = tap.test
 
 local fs = require('fs')
-local Path = require('path')
 
-local string = require('string')
 local filename = require('util').filename()
 
 local dataExpected = fs.readFileSync(filename)

@@ -26,12 +26,9 @@ meta.tags        = { "lnode", "spawn", "process" }
 
 local exports = { meta = meta }
 
-local core   = require('core')
-local net    = require('net')
-local uv     = require('luv')
-local util  = require('util')
-
-local adapt  = util.adapt
+local core  = require('core')
+local net   = require('net')
+local uv    = require('luv')
 
 -------------------------------------------------------------------------------
 -- Node.lua 通过 child_process 模块实现类似 popen(3) 的功能
@@ -83,7 +80,7 @@ function ChildProcess:kill(signal)
     end
 end
 
-function ChildProcess:sendMessage(message, handle)
+function ChildProcess:send(message)
     if (self.stdin) then
         self.stdin:write(message)
     end
@@ -303,8 +300,8 @@ local function _exec(file, args, options, callback)
         end
     end
 
-    local _onClose = function (_exitCode)
-        _exitHandler(_exitCode, nil)
+    local _onClose = function (code)
+        _exitHandler(code, nil)
     end
 
     local _kill = function ()
@@ -329,7 +326,8 @@ local function _exec(file, args, options, callback)
         else
             table.insert(stdout, chunk)
         end
-    end ):once('end', _exitHandler)
+
+    end):once('end', _exitHandler)
 
     child.stderr:on('data', function(chunk)
         stderrLen = stderrLen + #chunk
@@ -338,9 +336,11 @@ local function _exec(file, args, options, callback)
         else
             table.insert(stderr, chunk)
         end
-    end )
+    end)
 
     child:once('close', _onClose)
+    
+    return child
 end
 
 function exports.exec(command, options, callback)
@@ -376,7 +376,7 @@ function exports.execFile(file, args, options, callback)
         args    = {}
     end
 
-    return adapt(callback, _exec, file, args, options)
+    return _exec(file, args, options, callback)
 end
 
 return exports;

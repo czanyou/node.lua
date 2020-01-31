@@ -22,7 +22,7 @@ GPIO 口用于读写开关量信号, 即可以用于控制类似 LED 灯之类�
 
 必须在其他方法前调用
 
-- callback {Function} 打开完成后被调用
+- callback {function} 打开完成后被调用
 
 ## gpio:direction
 
@@ -31,7 +31,7 @@ GPIO 口用于读写开关量信号, 即可以用于控制类似 LED 灯之类�
 设置或读取当前 GPIO 的输入输出方向
 
 - direction {'in'|'out'|nil} GPIO 输入输出方向, 只接受 'in' 或者 'out', 如果为 nil 则表示不修改 direction 
-- callback {Function} callback(direction) 返回最后读取的 GPIO 输入输出方向
+- callback {function} callback(direction) 返回最后读取的 GPIO 输入输出方向
 
 ## gpio:read
 
@@ -39,7 +39,7 @@ GPIO 口用于读写开关量信号, 即可以用于控制类似 LED 灯之类�
 
 读取 GPIO 当前电平状态, 返回 0 或者 1
 
-- callback {Function} callback(value) 返回最后读取的 GPIO 的输入输出电平
+- callback {function} callback(value) 返回最后读取的 GPIO 的输入输出电平
 
 ## gpio:write
 
@@ -47,6 +47,6 @@ GPIO 口用于读写开关量信号, 即可以用于控制类似 LED 灯之类�
 
 设置 GPIO 输出电平
 
-- value {Number} 只接受 0 或 1.
+- value {number} 只接受 0 或 1.
 
-- callback {Function} 设置完成后被调用
+- callback {function} 设置完成后被调用

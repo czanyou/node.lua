@@ -1,12 +1,8 @@
-local utils 	= require('util')
-local timer 	= require('timer')
 local codec 	= require('rtsp/codec')
-local core  	= require('core')
 local assert 	= require('assert')
 local tap 		= require('ext/tap')
 
-
-return tap(function (test)
+local test = tap.test
 
 test("test codec.decodeNext", function ()
 	local test_message = [[
@@ -65,4 +61,4 @@ Date: 2016
 	rtspCodec:decode(string.pack('>BBB', 0x24, 0, 0))
 end)
 
-end)
+tap.run()

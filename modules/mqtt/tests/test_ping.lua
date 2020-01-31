@@ -10,7 +10,8 @@ local TAG = "mqtt"
 local url = 'mqtt://127.0.0.1:1883'
 local url = 'mqtt://iot.beaconice.cn:1883'
 
-local client = mqtt.connect(url)
+local options = { clientId = 'wotc_34dac1400002' }
+local client = mqtt.connect(url, options)
 client.options.debugEnabled = true
 client.options.keepalive = 4
 
@@ -18,15 +19,15 @@ local TOPIC = '/test-topic'
 local MESSAGE = 'Hello mqtt'
 
 client:on('connect', function()
-	print(TAG, 'event - connect')
+	print(TAG, 'event.connect')
 
   	client:subscribe(TOPIC, function(err, ack)
-	  	if (err) then 
+	  	if (err) then
 		  	console.log(err)
 			return
 		end
 
-	  	console.log('ack', ack)
+	  	console.log('subscribe.ack', ack)
 	end)
 end)
 
@@ -65,7 +66,7 @@ setInterval(3000, function()
 		local intervalIn = now - lastActivityIn
 		local intervalPing = now - lastActivityPing
 
-		console.log(intervalIn, intervalPing)
+		console.log('intervalIn, intervalPing', intervalIn, intervalPing)
 	end
 end)
 

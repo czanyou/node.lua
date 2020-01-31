@@ -114,16 +114,29 @@ exports.ServerResponse = ServerResponse
 
 function ServerResponse:initialize(socket)
     Writable.initialize(self)
-    local encode = codec.encoder()
     self.socket      = socket
-    self.encode      = encode
+    self.encoder     = codec.encoder()
     self.statusCode  = 200
     self.headersSent = false
     self.headers     = setmetatable( { }, headerMeta)
 
-    for _, evt in pairs( { 'close', 'drain', 'end' }) do
-        self.socket:on(evt, utils.bind(self.emit, self, evt))
-    end
+    local callbacks = {
+        close = function(...)
+            self:emit('close', ...)
+        end,
+        drain = function(...)
+            self:emit('drain', ...)
+        end,
+        finish = function(...)
+            self:emit('end', ...)
+        end
+    }
+    self._callbacks = callbacks
+
+    -- console.log('close.count', self.socket:listenerCount('close'))
+    self.socket:on('close', callbacks.close)
+    self.socket:on('drain', callbacks.drain)
+    self.socket:on('end', callbacks.finish)
 end
 
 -- Override this in the instance to not send the date
@@ -145,7 +158,10 @@ function ServerResponse:removeHeader(name)
 end
 
 function ServerResponse:flushHeaders()
-    if self.headersSent then return end
+    if self.headersSent then
+        return
+    end
+
     self.headersSent = true
 
     local headers = self.headers
@@ -209,8 +225,8 @@ function ServerResponse:flushHeaders()
     end
 
     head.code = statusCode
-    local h = self.encode(head)
-    self.socket:write(h)
+    local headerData = self.encoder(head)
+    self.socket:write(headerData)
 end
 
 function ServerResponse:write(chunk, callback)
@@ -219,7 +235,7 @@ function ServerResponse:write(chunk, callback)
     end
 
     self:flushHeaders()
-    return self.socket:write(self.encode(chunk), callback)
+    return self.socket:write(self.encoder(chunk), callback)
 end
 
 function ServerResponse:done(chunk)
@@ -230,21 +246,38 @@ function ServerResponse:done(chunk)
     self:flushHeaders()
     local last = ""
     if chunk then
-        last = last .. self.encode(chunk)
+        last = last .. self.encoder(chunk)
     end
 
-    last = last ..(self.encode("") or "")
+    last = last .. (self.encoder("") or "")
+
     local _maybeClose = function ()
         self:emit('finish')
+
         if not self.keepAlive then
             self.socket:_end()
         end
+
+        local callbacks = self._callbacks
+        -- console.log('_maybeClose', callbacks)
+
+        self._callbacks = nil
+        if (callbacks) then
+            self.socket:removeListener('close', callbacks.close)
+            self.socket:removeListener('drain', callbacks.drain)
+            self.socket:removeListener('end', callbacks.finish)
+        end
+    
+        self.encoder = nil
+        self.headers = nil
+
+        Writable.close(self)
     end
 
     if #last > 0 then
         self.socket:write(last, function()
             _maybeClose()
-        end )
+        end)
     else
         _maybeClose()
     end
@@ -252,7 +285,6 @@ end
 
 ServerResponse._end   = ServerResponse.done
 ServerResponse.finish = ServerResponse.done
-
 
 function ServerResponse:writeHead(newStatusCode, newHeaders)
     if (self.headersSent) then
@@ -266,8 +298,8 @@ function ServerResponse:writeHead(newStatusCode, newHeaders)
         self.headers = setmetatable( { }, headerMeta)
     end
 
-    for k, v in pairs(newHeaders) do
-        self.headers[k] = v
+    for name, value in pairs(newHeaders) do
+        self.headers[name] = value
     end
 end
 
@@ -279,28 +311,28 @@ function exports.handleConnection(socket, onRequest)
     local decoder = nil
     local request, response
 
-    local _onData = nil
+    local _onSocketData = nil
 
-    local _onFlush = function ()
+    local _onRequestFlush = function ()
         request:push()
         request = nil
     end
 
-    local _onTimeout = function ()
+    local _onSocketTimeout = function ()
         socket:_end()
     end
 
-    local _onEnd = function ()
-        process:removeListener('exit', _onTimeout)
+    local _onSocketEnd = function ()
+        process:removeListener('exit', _onSocketTimeout)
         -- Just in case the stream ended and we still had an open request,
         -- end it.
-        if request then _onFlush() end
+        if request then _onRequestFlush() end
     end
 
     local _onHeadersEnd = function(event)
         -- If there was an old request that never closed, end it.
         if request then
-            _onFlush()
+            _onRequestFlush()
         end
 
         -- Create a new request object
@@ -314,11 +346,11 @@ function exports.handleConnection(socket, onRequest)
         if request.headers.upgrade then
             request.is_upgraded = true
             socket:setTimeout(0)
-            socket:removeListener("timeout", _onTimeout)
-            socket:removeListener("data",    _onData)
-            socket:removeListener("end",     _onEnd)
+            socket:removeListener("timeout", _onSocketTimeout)
+            socket:removeListener("data",    _onSocketData)
+            socket:removeListener("end",     _onSocketEnd)
 
-            process:removeListener('exit', _onTimeout)
+            process:removeListener('exit', _onSocketTimeout)
             if decoder and #decoder.buffer > 0 then
                 socket:pause()
                 socket:unshift(decoder.buffer)
@@ -337,7 +369,7 @@ function exports.handleConnection(socket, onRequest)
         if #chunk == 0 then
             -- Empty string in http-decoder means end of body
             -- End the request stream and remove the request reference.
-            _onFlush()
+            _onRequestFlush()
             return
         end
 
@@ -349,34 +381,38 @@ function exports.handleConnection(socket, onRequest)
         end
     end
 
+    -- --------------------------------------------------------
+    -- decoder
+
     -- [[
     decoder = codec.createDecoder({}, function(event, error)
-        --console.log('event', event, error)
-
         if (error) then
             socket:emit('error', error)
 
         elseif type(event) == "table" then
             return _onHeadersEnd(event)
 
-        elseif request and type(event) == "string" then
-            return _onContentData(event)
+        elseif type(event) == "string" then
+            if (request) then
+                return _onContentData(event)
+            end
         end
     end)
 
-    _onData = function (chunk)
+    _onSocketData = function (chunk)
         decoder.decode(chunk)
     end
     --]]
 
-    socket:once('timeout', _onTimeout)
+    -- --------------------------------------------------------
+    -- socket
 
-    -- set socket timeout
-    socket:setTimeout(120000)
-    socket:on('data', _onData)
-    socket:on('end',  _onEnd)
+    socket:once('timeout', _onSocketTimeout)
+    socket:setTimeout(120000 )-- set socket timeout
+    socket:on('data', _onSocketData)
+    socket:on('end',  _onSocketEnd)
 
-    process:once('exit', _onTimeout)
+    process:once('exit', _onSocketTimeout)
 end
 
 function exports.createServer(onRequest)
@@ -472,9 +508,9 @@ function ClientRequest:initialize(options, callback)
 
         --console.log('request', self)
 
-        local _onData = nil;
+        local _onSocketData = nil;
 
-        local _onEnd = function ()
+        local _onSocketEnd = function ()
             -- Just in case the stream ended and we still had an open response,
             -- end it.
             if response then _onFlush() end
@@ -490,8 +526,8 @@ function ClientRequest:initialize(options, callback)
                 local is_upgraded
                 if response.headers.upgrade then
                     is_upgraded = true
-                    socket:removeListener("data", _onData)
-                    socket:removeListener("end",  _onEnd)
+                    socket:removeListener("data", _onSocketData)
+                    socket:removeListener("end",  _onSocketEnd)
                     socket:read(0)
                     if decoder and #decoder.buffer > 0 then
                         socket:pause()
@@ -548,13 +584,13 @@ function ClientRequest:initialize(options, callback)
             end
         end)
 
-        _onData = function (chunk)
+        _onSocketData = function (chunk)
             decoder.decode(chunk)
         end
         --]]
 
-        socket:on('data', _onData)
-        socket:on('end', _onEnd)
+        socket:on('data', _onSocketData)
+        socket:on('end', _onSocketEnd)
 
         if self.ended then
             self:_done(self.ended.data, self.ended.cb)

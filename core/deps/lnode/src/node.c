@@ -22,20 +22,6 @@
 
 #define LUA_INITVARVERSION LUA_INIT_VAR LUA_VERSUFFIX
 
-static int lnode_print_info(lua_State* L) {
-  char script[] =
-    "pcall(require, 'init')\n"
-    "local lnode = require('lnode')\n"
-    "print('NODE_LUA_ROOT:\\n' .. lnode.NODE_LUA_ROOT .. '\\n')\n"
-    "local path = string.gsub(package.path, ';', '\\n')"
-  	"print('package.path:\\n' .. path)\n"
-    "local cpath = string.gsub(package.cpath, ';', '\\n')"
-  	"print('package.cpath:\\n' .. cpath)\n"
-  	;
-
-  return lnode_call_script(L, script, "info.lua");
-}
-
 /**
  * Note that a Lua virtual machine can only be run in a single thread,
  * creating a new virtual machine for each new thread created.
@@ -50,7 +36,7 @@ static lua_State* lnode_vm_acquire() {
 
 	luaL_openlibs(L);	// Add in the lua standard libraries
 	lnode_openlibs(L);	// Add in the lnode lua ext libraries
-	lnode_path_init(L);
+	lnode_init_package_paths(L);
 
 	return L;
 }
@@ -157,6 +143,10 @@ static int lnode_dofile (lua_State *L, const char *name) {
   	return lnode_dochunk(L, luaL_loadfile(L, name));
 }
 
+static int lnode_dostring (lua_State *L, const char *s, const char *name) {
+  return lnode_dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
+}
+
 /*
 ** Calls 'require(name)' and stores the result in a global variable
 ** with the given name.
@@ -203,11 +193,11 @@ static int lnode_lua_init(lua_State *L, int hasIgnore) {
 		return lnode_dofile(L, init + 1);
 
     } else {
-		return lnode_call_script(L, init, name);
+		return lnode_dostring(L, init, name);
     }
 }
 
-int run_applet(const char* name, int argc, char* argv[]) {
+int lnode_run_applet(const char* name, int argc, char* argv[]) {
 	lua_State* L = NULL;
 
 	int res = 0;
@@ -225,23 +215,81 @@ int run_applet(const char* name, int argc, char* argv[]) {
 		return 1;
 	}
 
+	// init
 	luaL_openlibs(L);  	// Add in the lua standard libraries
 	lnode_openlibs(L); 	// Add in the lua ext libraries
 	lnode_create_arg_table(L, argv, argc, 0);
-
+	lnode_init_package_paths(L);
+	lnode_dolibrary(L, "init");
 	luv_set_thread_cb(lnode_vm_acquire, lnode_vm_release);
 
-	lnode_path_init(L);
+	// call
+	sprintf(buffer, "require('%s/app');", name);
+	res = lnode_dostring(L, buffer, argv[0]);
 
-	sprintf(buffer, "require('init'); require('%s/app');", name);
-	res = lnode_call_script(L, buffer, argv[0]);
-
-	lnode_call_script(L, "runLoop()", "=(C run)");
-	lnode_call_script(L, "process:emit('exit')\n", "=(C exit)");
-
+	// exit
+	lnode_dostring(L, "runLoop()", "=(C run)");
+	lnode_dostring(L, "process:emit('exit')\n", "=(C exit)");
 	lnode_vm_release(L);
 
 	return res;
+}
+
+
+/** Prints the current lnode version information. */
+static int lnode_print_version()
+{
+    char buffer[PATH_MAX];
+    memset(buffer, 0, sizeof(buffer));
+    sprintf(buffer, "lnode %d.%d (Lua %s.%s.%s, libuv %s, build %s %s)",
+            LNODE_MAJOR_VERSION, LNODE_MINOR_VERSION,
+            LUA_VERSION_MAJOR, LUA_VERSION_MINOR, LUA_VERSION_RELEASE,
+            uv_version_string(), __DATE__, __TIME__);
+    lua_writestring(buffer, strlen(buffer));
+    lua_writeline();
+
+    return 0;
+}
+
+/** Prints the current lnode usage information. */
+static int lnode_print_usage() 
+{
+  	char buffer[PATH_MAX];
+  	memset(buffer, 0, sizeof(buffer));
+  	sprintf(buffer, "\n"
+	  	"usage: lnode [options] [script [args]]\n"
+  		"Available options are:\n"
+		  "\n"
+  		"  -d      run as daemon\n"
+  		"  -e stat execute string `stat`\n"
+      "  -E      ignores environment variables\n"
+  		"  -p      show package path information\n"
+  		"  -l name require package `name`\n"
+  		"  -v      show version information\n"
+      "  --      stop handling options\n"
+  		"  -       stop handling options and execute stdin\n"
+		  "\n"
+	);
+
+    lua_writestring(buffer, strlen(buffer));
+    lua_writeline();
+
+    return 0;
+}
+
+static int lnode_print_runtime_info(lua_State* L) {
+  char script[] =
+    "pcall(require, 'init')\n"
+    "local lnode = require('lnode')\n"
+    "print('NODE_LUA_ROOT:\\n' .. lnode.NODE_LUA_ROOT .. '\\n')\n"
+    "local path = string.gsub(package.path, ';', '\\n')"
+  	"print('package.path:\\n' .. path)\n"
+    "local cpath = string.gsub(package.cpath, ';', '\\n')"
+  	"print('package.cpath:\\n' .. cpath)\n"
+	"runLoop()\n"
+  	;
+
+  return lnode_dostring(L, script, "=(C print_runtime_info)");
 }
 
 int main(int argc, char* argv[]) {
@@ -261,16 +309,30 @@ int main(int argc, char* argv[]) {
 
 #ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);	// 13) 管道破裂: Write a pipe that does not have a read port
+
+	signal(SIGHUP, SIG_IGN);
 #endif
 
 	char pathBuffer[PATH_MAX];
 	memset(pathBuffer, 0, PATH_MAX);
-
 	lnode_get_filename(argv[0], pathBuffer);
+
+#ifdef _WIN32
+	// get basename
+	size_t len = strlen(pathBuffer);
+	char* p = pathBuffer + len - 1;
+	while (p > pathBuffer) {
+		if (*p == '.') {
+			*p = '\0';
+			break;
+		}
+		p--;
+	}
+#endif
 
 	// applet
 	if (strcmp(pathBuffer, "lnode") != 0) {
-		return run_applet(pathBuffer, argc, argv);
+		return lnode_run_applet(pathBuffer, argc, argv);
 	}
 
 	// Hooks in libuv that need to be done in main.
@@ -334,15 +396,17 @@ int main(int argc, char* argv[]) {
 	}
 
     if (has_error) {
+		// 发现参数错误
 		lnode_print_usage();
         return -107;
 
     } else if (has_version) {
+		// 仅仅打印版本号
         return lnode_print_version();
     }
 
     if (has_deamon) {
-        lnode_run_as_deamon();
+        lnode_run_as_daemon();
     }
 
 	// Create the lua state.
@@ -355,16 +419,14 @@ int main(int argc, char* argv[]) {
 	// init
 	luaL_openlibs(L);  	// Add in the lua standard libraries
 	lnode_openlibs(L); 	// Add in the lua ext libraries
-	lnode_create_arg_table(L, argv, argc, arg_index);
-
-	lnode_path_init(L);
+	lnode_create_arg_table(L, argv, argc, has_eval ? arg_index - 1 : arg_index);
+	lnode_init_package_paths(L);
 	lnode_dolibrary(L, "init");
-
     lnode_lua_init(L, has_ignore);
 
 	if (has_info) {
-		res = lnode_print_info(L);
-		lnode_call_script(L, "runLoop()", "=(C run)");
+		// 仅仅打印运行环境信息
+		res = lnode_print_runtime_info(L);
 		return res;
 	}
 
@@ -380,36 +442,40 @@ int main(int argc, char* argv[]) {
 			} else if (strcmp(option, "-e") == 0) {
                 i++;
 
+				// eval
                 const char* text = argv[i];
-                res = lnode_call_script(L, text, "=(command line)");
+                res = lnode_dostring(L, text, "=(C eval)");
 
             } else if (strcmp(option, "-l") == 0) {
                 i++;
 
+				// load library
                 const char* text = argv[i];
                 res = lnode_dolibrary(L, text);
             }
         }
     }
 
-	// filename
-	const char* filename = NULL;
-	if ((arg_index > 0) && (arg_index < argc)) {
-		filename = argv[arg_index];
-		has_script = arg_index;
-	}
+	if (!has_eval) {
+		// filename
+		const char* filename = NULL;
+		if ((arg_index > 0) && (arg_index < argc)) {
+			filename = argv[arg_index];
+			has_script = arg_index;
+		}
 
-	if (has_script) {
-		res = lnode_dofile(L, filename);
-		
-	} else if (argc <= 1) {
-		lnode_print_version();
-		lnode_print_usage();
+		if (has_script) {
+			res = lnode_dofile(L, filename);
+			
+		} else if (argc <= 1) {
+			lnode_print_version();
+			lnode_print_usage();
+		}
 	}
 
 	// exit
-	lnode_call_script(L, "runLoop()", "=(C run)");
-	lnode_call_script(L, "process:emit('exit')\n", "=(C exit)");
+	lnode_dostring(L, "runLoop()", "=(C run)");
+	lnode_dostring(L, "process:emit('exit')\n", "=(C exit)");
 	lnode_vm_release(L);
 
 	return res;

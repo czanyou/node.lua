@@ -15,6 +15,7 @@
 - [OS - 操作系统](node_os.md)
 - [Path - 路径](node_path.md)
 - [Process - 进程](node_process.md)
+- [Promise - 承诺](node_promise.md)
 - [Query String - 查询字符串](node_querystring.md)
 - [Request - HTTP 请求](node_http_request.md)
 - [Stream - 流](node_stream.md)

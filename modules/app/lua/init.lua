@@ -28,8 +28,10 @@ local json   	= require('json')
 local path   	= require('path')
 local util      = require('util')
 local conf      = require('app/conf')
-local ext   	= require('app/utils')
 local process   = require('process')
+local uv        = require('luv')
+
+local exec  = require('child_process').exec
 
 local exports = { meta = meta }
 
@@ -95,6 +97,7 @@ local function getApplicationName(cmdline)
 	end
 
     local _, _, appName = cmdline:find('/([%w]+)/lua/app.lua')
+    -- console.log(cmdline, appName)
 
     if (not appName) then
         _, _, appName = cmdline:find('/lpm%S([%w]+)%Sstart')
@@ -143,11 +146,6 @@ exports.nodePath 		= getNodePath()
 exports.rootURL 		= 'http://iot.beaconice.cn/v2/'
 exports.appPath 		= getAppPath()
 
---
-exports.formatFloat 	= ext.formatFloat
-exports.formatBytes 	= ext.formatBytes
-exports.table 			= ext.table
-
 -------------------------------------------------------------------------------
 -- profile
 
@@ -174,24 +172,34 @@ function exports.appName()
 end
 
 -- 开始监控 Profile 改变
-function exports.watchProfile()
-    if (exports._defaultProfile) then
-        exports._defaultProfile:startWatch()
+function exports.watchProfile(callback)
+    -- load a profile first
+    local updated = exports.get('updated')
+    print('Start watch profile...', exports.appName())
+
+    local profile = exports._defaultProfile
+    if (profile) then
+        profile:startWatch(callback)
     end
 
-    if (exports._userProfile) then
-        exports._userProfile:startWatch()
+    profile = exports._userProfile
+    if (profile) then
+        profile:startWatch(callback)
     end
+
+    return updated
 end
 
 -- 重新加载 Profile 改变
 function exports.reloadProfile()
-    if (exports._defaultProfile) then
-        exports._defaultProfile:reload()
+    local profile = exports._defaultProfile
+    if (profile) then
+        profile:reload()
     end
 
-    if (exports._userProfile) then
-        exports._userProfile:reload()
+    profile = exports._userProfile
+    if (profile) then
+        profile:reload()
     end
 end
 
@@ -315,26 +323,34 @@ end
 -- 以后台的方式运行指定的应用
 function exports.daemon(name)
 	if (not name) or (name == '') then
-        print("Error: missing required argument '<name>'.")
-		return -1
+        return -1, "Error: missing required argument '<name>'."
 	end
 
 	local filename = path.join(getAppPath(), name, 'lua', 'app.lua')
 	if (not fs.existsSync(filename)) then
-		print('"' .. filename .. '" not exists!')
-		return -3
+		return -3, '"' .. filename .. '" not exists!'
     end
 
     updateProcessList(name)
 
-    local cmdline  = "lnode -d " .. filename .. " start"
+    local action = 'start'
     if (name == 'lpm') then
-        cmdline  = "lnode -d " .. filename .. " run"
+        action = 'run'
     end
 
-    --local cmdline  = "lpm " .. name .. " start &"
-	print('start and daemonize: ' .. name)
-    os.execute(cmdline)
+    local cmdline  = "lnode -d " .. filename .. " " .. action
+    local options = {
+        timeout = 1000,
+        env = process.env
+    }
+
+    exec(cmdline, options, function(err, stdout, stderr)
+        if (err) then
+            console.log(err, stdout, stderr)
+        end
+    end)
+
+    return 0
 end
 
 -- 执行指定名称的应用
@@ -358,38 +374,37 @@ end
 -- kill 指定名称的进程
 function exports.kill(name)
     if (not name) then
-        print('missing required argument `name`!\n')
+        return nil, 'missing required argument `name`!\n'
     end
 
     local list = exports.processes()
     if (not list) or (#list < 1) then
-        return
+        return nil, 'process list is empty'
     end
 
-    local uv = require('luv')
-    local tmpdir = os.tmpdir or '/tmp'
     local ppid = process.pid
 
     if (name == 'all') then
+        local result = {}
         for _, proc in ipairs(list) do
             if (ppid ~= proc.pid) then
-                print('kill: ' .. proc.name .. '(' .. proc.pid .. ')')
-                uv.kill(proc.pid, "sigterm")
-
-                os.remove(path.join(tmpdir, proc.name .. '.lock'))
+                local ret, err = uv.kill(proc.pid, "sigterm")
+                result[proc.name] = { ret = ret, error = err, pid = proc.pid }
             end
         end
+
+        return result
 
     else
+        local ret, err, pid
         for _, proc in ipairs(list) do
             if (proc.name == name) and (ppid ~= proc.pid) then
-                local cmd = "kill " .. proc.pid
-                print("kill (" .. name .. ") " .. proc.pid)
-                uv.kill(proc.pid, "sigterm")
+                ret, err = uv.kill(proc.pid, "sigterm")
+                pid = proc.pid
             end
         end
 
-        os.remove(path.join(tmpdir, name .. '.lock'))
+        return ret, err, pid
     end
 end
 
@@ -420,9 +435,8 @@ end
 function exports.main(handler, action, ...)
     local method = handler[action or 'init']
 
-    if (not exports.name) then
-        exports.name = getApplicationName(util.filename(4))
-    end
+    exports.name = getApplicationName(util.filename(4))
+    -- console.log(method, exports.name, util.filename(4))
 
     if (method) then
         return method(...)
@@ -449,41 +463,22 @@ function exports.printList()
 		return
 	end
 
-	local grid = ext.table({ 12, 12, 48 })
-	grid.line()
-	grid.cell('Name', 'Version', 'Description')
-	grid.line('=')
-
-	for _, app in ipairs(apps) do
-		grid.cell(app.name, app.version, app.description)
-	end
-
-	grid.line()
+    print(util.formatTable(apps, {'name', 'version', 'description'}))
+    
     print(string.format("+ total %s applications (%s).",
         #apps, appPath))
 end
 
 -- 通过 cmdline 解析出相关的应用的名称
 function exports.parseName(cmdline)
-    -- lnode /xxx/lua/app.lua
-    local _, _, appName = cmdline:find('lnode.+/([%w]+)/lua/app.lua')
-
-    if (not appName) then
-        -- lnode /xxx/lpm xxx start
-        _, _, appName = cmdline:find('lnode.+/lpm%s([%w]+)%sstart')
-    end
-
-    if (not appName) then
-        -- lnode /xxx/lpm start xxx
-        _, _, appName = cmdline:find('lnode.+/lpm%sstart%s([%w]+)')
-    end
-
+    -- lnode -d path/to/app/xxx/lua/app.lua
+    local _, _, appName = cmdline:find('app/([%w]+)/lua/app.lua')
     return appName
 end
 
 -- 返回包含所有正在运行中的应用进程信息的数组
 -- @return {Array} 返回 [{ name = '...', pid = ... }, ... ]
-function exports.processes()
+function exports.processes2()
     local list = {}
     local count = 0
 
@@ -515,8 +510,9 @@ function exports.processes()
         if not fs.existsSync(filename) then
             goto continue
         end
-        local cmdline = fs.readFileSync(filename) or ''
-        --console.log(cmdline)
+
+        local cmdline, err = fs.readFileSync(filename) or ''
+        console.log(filename, cmdline, err)
         --console.log(pathname)
 
         local name = exports.parseName(cmdline)
@@ -525,6 +521,49 @@ function exports.processes()
         end
 
         table.insert(list, {name = name, pid = pid})
+        count = count + 1
+
+        ::continue::
+    end
+
+    return list, count
+end
+
+function exports.processes()
+    local list = {}
+    local count = 0
+
+    local file = io.popen("ps -o pid,args -A", "r")
+	if nil == file then
+		return print("open pipe for ps fail")
+	end
+
+	local content = file:read("*a")
+	if nil == content then
+		return print("read pipe for ps fail")
+	end
+
+    local lines = string.split(content, '\n')
+    
+    for _, line in ipairs(lines) do
+        line = string.trim(line)
+        local tokens = string.split(line, ' ')
+
+        if (tokens[2] ~= 'lnode') then
+            goto continue
+        end
+
+        local pid = tonumber(tokens[1])
+        if (not pid) then
+            goto continue
+        end
+
+        local name = exports.parseName(tokens[4])
+        if (not name) then
+            goto continue
+        end
+
+        table.insert(list, { name = name, pid = pid })
         count = count + 1
 
         ::continue::
@@ -587,82 +626,73 @@ function exports.printProcesses(...)
         return tostring(a.name) < tostring(b.name)
     end)
 
-    -- print process list
-    local grid = exports.table({ 10, 16, 10 })
-    grid.line()
-    grid.cell("name", "pid", 'enable')
-    grid.line()
+    local rows = {}
     for _, proc in ipairs(list) do
         local pids = proc.pids or { '-' }
-        grid.cell(proc.name, table.concat(pids, ","), proc.isEnable and 'Y' or '-')
+        table.insert(rows, {
+            name = proc.name,
+            pid = table.concat(pids, ","),
+            enable = proc.isEnable and 'Y' or '-'
+        })
     end
-    grid.line()
-end
 
+    print(util.formatTable(rows, {"name", "pid", 'enable'}))
+end
 
 -- 重启指定的名称的应用程序
 function exports.restart(name, ...)
     if (not name) then
-        print('missing required argument `name`!\n')
+        return nil, 'missing required argument `name`!\n'
 
     elseif (name == 'all') then
-        print('Restarting all applications...')
         exports.kill('all')
-        exports.start('all')
+        return exports.start('all')
 
     else
-        local list = table.pack(name, ...)
-        for _, name in ipairs(list) do
-            print('Restarting ' .. name .. '...')
-        end
-
-        exports.kill(name)
-        exports.start(name, ...)
-        print("done")
+        return exports.start(name, ...)
     end
 end
 
 -- Start and deamonize specified application
 function exports.start(name, ...)
     if (not name) then
-        return print('missing required argument `name`!\n')
-
-    else
-        local list = table.pack(name, ...)
-
-        for _, name in ipairs(list) do
-            exports.kill(name)
-            exports.daemon(name)
-        end
+        return nil, 'missing required argument `name`!\n'
     end
 
-    setTimeout(100, function()
-        exports.printProcesses()
-    end)
+    local list = table.pack(name, ...)
+
+    for _, app in ipairs(list) do
+        exports.kill(app)
+    end
+
+    local result = {}
+    for _, app in ipairs(list) do
+        local ret, err = exports.daemon(app)
+        result[app] = { ret = ret, error = err }
+    end
+
+    return result
 end
 
 -- 杀掉指定名称的进程，并阻止其在后台继续运行
 function exports.stop(name, ...)
     if (not name) then
-        return print('missing required argument `name`!\n')
-
-    elseif (name == 'all') then
-        exports.kill('all')
-
-    else
-        local list = table.pack(name, ...)
-
-        for _, app in ipairs(list) do
-            updateProcessList(nil, app)
-            exports.kill(app)
-        end
-
-        print("done.")
+        return nil, 'missing required argument `name`!\n'
     end
 
-    setTimeout(100, function()
-        exports.printProcesses()
-    end)
+    local list = table.pack(name, ...)
+    if (name == 'all') then
+        return exports.kill('all')
+    end
+
+    local result = {}
+    for _, app in ipairs(list) do
+        updateProcessList(nil, app)
+        local ret, err, pid = exports.kill(app)
+        result[app] = { ret = ret, error = err, pid = pid }
+    end
+
+    return result
 end
 
 -- 返回当前系统目标平台名称, 一般是开发板的型号或 PC 操作系统的名称
@@ -678,13 +708,15 @@ end
 
 -- 检查是否有另一个进程正在更新系统
 function exports.lock(name)
-    local tmpdir = os.tmpdir or '/tmp'
-    if fs.existsSync('/var/run/') then
-        tmpdir = '/var/run/'
+    local lockdir = os.tmpdir or '/tmp'
+    if fs.existsSync('/var/lock/') then
+        lockdir = '/var/lock/'
     end
 
     local appName = name or exports.appName()
-	local lockname = path.join(tmpdir, '/app_' .. appName .. '.lock')
+    -- console.log('appName', appName)
+
+	local lockname = path.join(lockdir, '/app_' .. appName .. '.lock')
     local lockfd, err = fs.openSync(lockname, 'w+')
     if (lockfd == nil) then
         print("Error: ", err)

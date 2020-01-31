@@ -10,7 +10,7 @@
 
 返回指定名称的文件数据库
 
-- filename {String} 数据库文件名
+- filename {string} 数据库文件名
 
 ```lua
 -- Open a file database
@@ -266,9 +266,9 @@ insert( 3, "Hans",    "France",  "hans@france.com" )
 
 定义用户方法
 
-- name {String} 用户方法的名称
-- num_args {Number} 方法参数数量
-- func {Function} 这个方法本身
+- name {string} 用户方法的名称
+- num_args {number} 方法参数数量
+- func {function} 这个方法本身
 
 ```lua
 function sql_add_ten(a)
@@ -308,9 +308,9 @@ print(max1, max2)       -- 17     5
 
 定义 aggregate 方法
 
-- name {String} 方法的名称
-- num_args {Number} 方法参数数量
-- func {Function} 这个方法本身
+- name {string} 方法的名称
+- num_args {number} 方法参数数量
+- func {function} 这个方法本身
 
 ```lua
 db:exec[[
@@ -347,7 +347,7 @@ print( db:first_cols("SELECT product_sum(num1, num2) FROM numbers") )
 
 设置根踪处理函数, 可以打印所有执行的 SQL 语句
 
-- func {Function} 处理方法
+- func {function} 处理方法
 
 ```lua
 function mytrace(sql_string)
@@ -362,7 +362,7 @@ db:set_trace_handler(mytrace)
 
     db:set_busy_timeout(ms)
 
-- ms {Number} 毫秒
+- ms {number} 毫秒
 
 设置处理超时时间
 
@@ -497,7 +497,7 @@ console.log(rows())
 
 返回结果, 返回的格式为多个返回值
 
-- autoclose {Boolean} 是否自动关闭这个对象
+- autoclose {boolean} 是否自动关闭这个对象
 
 
 ### stmt:irows
@@ -507,7 +507,7 @@ console.log(rows())
 返回结果, 返回的格式为数组
 
 - tab {Table}
-- autoclose {Boolean} 是否自动关闭这个对象
+- autoclose {boolean} 是否自动关闭这个对象
 
 
 ### stmt:rows
@@ -517,7 +517,7 @@ console.log(rows())
 返回结果, 返回的格式为对象
 
 - tab {Table}
-- autoclose {Boolean} 是否自动关闭这个对象
+- autoclose {boolean} 是否自动关闭这个对象
 
 
 ### stmt:first_cols
@@ -526,7 +526,7 @@ console.log(rows())
 
 返回第一行结果, 返回的格式为多个返回值
 
-- autoclose {Boolean} 是否自动关闭这个对象
+- autoclose {boolean} 是否自动关闭这个对象
 
 
 ### stmt:first_irow
@@ -536,7 +536,7 @@ console.log(rows())
 返回第一行结果, 返回的格式为数组
 
 - tab {Table}
-- autoclose {Boolean} 是否自动关闭这个对象
+- autoclose {boolean} 是否自动关闭这个对象
 
 
 ### stmt:first_row
@@ -546,7 +546,7 @@ console.log(rows())
 返回第一行结果, 返回的格式为对象
 
 - tab {Table}
-- autoclose {Boolean} 是否自动关闭这个对象
+- autoclose {boolean} 是否自动关闭这个对象
 
 
 

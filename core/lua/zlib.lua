@@ -243,7 +243,7 @@ function ZipBuilder:build(pathname, skipList)
         if (filedata) then
             local item = fileList[filename]
             if (item) then
-                local md5sum = util.bin2hex(util.md5(filedata))
+                local md5sum = util.md5string(filedata)
                 if (item.md5sum == md5sum) then
                     --print(item.name)
                     return

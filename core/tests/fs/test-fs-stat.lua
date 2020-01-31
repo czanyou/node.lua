@@ -20,7 +20,6 @@ local tap = require('ext/tap')
 local test = tap.test
 
 local fs = require('fs')
-local json = require('json')
 
 test('fs.stat', function()
 	fs.stat('.', function(err, stats)

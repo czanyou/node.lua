@@ -17,8 +17,6 @@ limitations under the License.
 --]]
 local net       = require("net")
 local tls 		= require('lmbedtls.tls')
-local utils 	= require('util')
-local lcrypto 	= require('tls/lcrypto')
 
 local tap = require("ext/tap")
 local test = tap.test

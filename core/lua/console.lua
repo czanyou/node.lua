@@ -474,6 +474,10 @@ end
 --
 
 local function initConsoleStream()
+    if (_G.rawPrint) then
+        return
+    end
+
     -- Print replacement that goes through libuv.  This is useful on windows
     -- to use libuv's code to translate ansi escape codes to windows API calls.
 
@@ -503,7 +507,7 @@ local function initConsoleStream()
 
     local isTTY
     -- Fix: lua stdin bug
-    -- stdin,  isTTY = _initStream(0, true)
+    stdin,  isTTY = _initStream(0, true)
     stderr, isTTY = _initStream(2, false)
     stdout, isTTY = _initStream(1, false)
 
@@ -526,9 +530,10 @@ exports.loadColors()
 -------------------------------------------------------------------------------
 --
 
-exports.stderr      = stderr
-exports.stdin       = stdin
-exports.stdout      = stdout
-exports.theme       = theme
+exports.stderr = stderr
+exports.stdin  = stdin
+exports.stdout = stdout
+exports.theme  = theme
+exports.defaultTheme = defaultTheme
 
 return exports

@@ -16,8 +16,6 @@ limitations under the License.
 
 --]]
 local core  = require('core')
-local url   = require('url')
-local utils = require('util')
 local uv    = require('luv')
 
 local packet = require('mqtt/packet')
@@ -45,43 +43,58 @@ Create an MQTT client instance
 * Automatic reconnections
 * Start publishing before being connected
 
+@param {object} options
+- {string} clientId
+- {number} connectTimeout
+- {number} keepalive
+- {number} port
+- {number} reconnectPeriod
+- {function} callback
+- {string} hostname
+- {string} username
+- {string} password
+- {number} will
+
 --]]
-function MQTTSocket:initialize(options) 
+function MQTTSocket:initialize(options)
     options = options or {}
 
-    self.clientSocket       = nil       -- 相关的 Socket
-    self.connected          = false     -- 当收到了 connect ACK 消息
-    self.connectReady       = false     -- 当 TCP 连接已建立
+    self.clientSocket       = nil       -- 相关的 TCP Socket
+    self.connected          = false     -- 当收到了 connect ACK 消息, 表示 MQTT 已连接
+    self.socketConnected    = false     -- 仅当已建立 TCP 连接
     self.debugEnabled       = false     -- 指出是否显示调试信息
-    self.destroyed          = false     -- 指出这个客户端是否已经被关闭了
- 
-    self.connectAckTimer    = nil       -- 
-    self.keepAliveTimer     = nil       -- 相关的 Timer
+    self.destroyed          = false     -- 指出这个客户端是否已经被关闭了, 将不再重连等
 
-    self._outgoingStore     = {}
+    self.connectAckTimer    = nil       -- 等待 Connect ACK 超时定时器
+    self.keepAliveTimer     = nil       -- Keep Alive 保活 Timer
+
+    self._outgoingStore     = {}        -- 用来存储需要 ACK 确认的请求消息
     self._incomingStore     = {}
 
     local state             = {}
     state.lastActivityIn    = 0         -- 最后收到消息的时间
-    state.lastActivityOut   = 0         -- 最后发出消息的时间 
+    state.lastActivityOut   = 0         -- 最后发出消息的时间
     state.lastConnectTime   = 0         -- 最后一次发起连接的时间
     state.nextMessageId     = 0         -- 下一个消息 ID
     state.reconnecting      = false     -- 正在重连中
-    state.reconnectInterval = 100       -- 当前重连间隔
-    self.state              = state
+    state.reconnectInterval = 1000      -- 当前重连间隔
+    self.state              = state     -- MQTT 客户端状态
 
     local clientId = ("lnode_" .. tostring(process.pid))
 
-
     --options.callback        = options.callback  -- function(topic, payload)
     options.clientId        = options.clientId  or clientId
-    options.connectTimeout  = options.connectTimeout  or 15000
+    options.connectTimeout  = options.connectTimeout or (15 * 1000)
     options.keepalive       = options.keepalive or exports.KEEP_ALIVE_TIME
-    options.port            = options.port      or exports.DEFAULT_PORT
-    options.reconnectPeriod = options.reconnectPeriod or 60000
+    options.port            = options.port or exports.DEFAULT_PORT
+    options.reconnectPeriod = options.reconnectPeriod or (60 * 1000)
     self.options            = options
 end
 
+-- 存储/读取指定 ID 的消息
+-- @param {string} messageId
+-- @param {MQTTPacket} message
+-- @returns {MQTTPacket} message
 function MQTTSocket:outgoingStore(messageId, message)
     if (not messageId) then
         return
@@ -96,19 +109,24 @@ function MQTTSocket:outgoingStore(messageId, message)
     end
 end
 
+-- 弹出指定的 ID 的消息
+-- - 当收到指定的请求 (publish, subscribe, unsubscribe) 的 ACK 消息时，调用这个方法
+-- @param {string} messageId ACK 消息 ID
+-- @returns {MQTTPacket} request 返回相关的请求消息
 function MQTTSocket:popOutgoingMessage(messageId)
     if (not messageId) then
         return
     end
 
-    local message = self._outgoingStore[messageId]
-    if (message) then
+    local request = self._outgoingStore[messageId]
+    if (request) then
         self._outgoingStore[messageId] = nil
     end
-    return message
+
+    return request
 end
 
---[[ 
+--[[
 Close the client, accepts the following options:
 
 * `force`: passing it to true will close the client right away, without
@@ -117,18 +135,18 @@ Close the client, accepts the following options:
 * `callback`: will be called when the client is closed. This parameter is
   optional.
 -- ]]
-  
 function MQTTSocket:close(force, callback)
     -- close(callback)
     if (type(force) == 'funciton') then
         callback = force
-        force    = nil
+        force = nil
     end
 
     if (self.destroyed) then
-        if (callback) then 
-            callback() 
+        if (callback) then
+            callback()
         end
+
         return 0
     end
 
@@ -143,12 +161,13 @@ function MQTTSocket:close(force, callback)
         self.keepAliveTimer = nil
     end
 
-    self.options.callback   = nil
-    self.state.reconnectInterval = 100
-    self.destroyed          = true -- Avoid recursion when _sendMessage() fails
+    -- reset
+    self.options.callback = nil
+    self.state.reconnectInterval = 1000
+    self.destroyed = true -- Avoid recursion when _sendMessage() fails
 
-    if (callback) then 
-        callback() 
+    if (callback) then
+        callback()
     end
 
     return 1
@@ -162,9 +181,9 @@ end
 -- byte  1:   Message type and flags (DUP, QOS level, and Retain) fields
 -- bytes 2-5: Remaining length field (between one and four bytes long)
 -- bytes m- : Optional variable header and payload
--- 
+--
 -- Figure 2.2 - Fixed header format
--- 
+--
 -- | Bit        |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
 -- | - - - - -  | - - - - - - - - - - - | - - | - - - - - | - - |
 -- | byte 1     |  Control Packet type  | DUP |    Qos    | RET |
@@ -173,10 +192,7 @@ end
 -- The message type/flags and remaining length are already parsed and
 -- removed from the message by the time this function is invoked.
 -- Leaving just the optional variable header and payload.
--- @param messageFlags  -- byte
--- @param remainingLength    -- integer
--- @param message             -- string: Optional variable header and payload
-
+-- @param {MQTTPacket} message -- 要处理的 MQTT 消息
 function MQTTSocket:handleMessage(message)
     local messageType = message.messageType
     self.state.lastActivityIn = process.now()
@@ -212,7 +228,7 @@ function MQTTSocket:handleMessage(message)
 end
 
 -- 显示错误消息, 但不会关闭当前连接
--- 
+--
 function MQTTSocket:emitError(errInfo)
     self:_onDebug(errInfo)
 
@@ -222,9 +238,10 @@ end
 -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
 -- MQTT Private Methods
 
--- 
+-- 检查是否已连接
+-- @param {string} name
 function MQTTSocket:_checkConnected(name, callback)
-    if (self.connectReady == false) then
+    if (self.socketConnected == false) then
         local errInfo = "" .. name .. ": Not connected"
         self:emitError(errInfo)
 
@@ -239,44 +256,45 @@ function MQTTSocket:_checkConnected(name, callback)
 end
 
 -- 处理定时器事件, 在定时器事件中可以处理心跳, 重连等工作
--- 
+-- 每隔 1 秒调用一次，直到停止连接
 function MQTTSocket:_checkKeepAlive()
     if (self.destroyed) then
         return
     end
-    
+
     local now = process.now()
     local options = self.options
 
     if (self.connected) then
+        -- 定时发生 ping 消息，并检查会话是否超时
         local lastActivity  = self.state.lastActivityIn
-        local interval      = math.abs(now - lastActivity)
+        local span          = math.abs(now - lastActivity)
         local keepalive     = options.keepalive * 1000
-        --console.log('connected', interval)
+        --console.log('connected', span)
 
-        if (interval > keepalive * 2) then
+        if (span > keepalive * 2) then
             self:_onFailedEvent("session timeout")
 
-        elseif (interval > keepalive) then
+        elseif (span > keepalive) then
             self:_sendPingRequest()
         end
 
     elseif (not self.connectAckTimer) then
+        -- 如果不在连接中，则定时发起重连
         -- reconnect
-        local state         = self.state
-        local interval      = math.abs(now - state.lastConnectTime)
-        --console.log('reconnect', interval, state.reconnectInterval)
+        local state = self.state
+        local span  = math.abs(now - state.lastConnectTime)
 
-        if (interval > state.reconnectInterval) then
+        if (span > state.reconnectInterval) then
+            console.log('reconnect', span, state.reconnectInterval)
             state.reconnectInterval = math.min(state.reconnectInterval * 2, options.reconnectPeriod)
             self:_onReconnect()
-            return
         end
     end
 end
 
 -- 显示调试信息
--- 
+--
 function MQTTSocket:_onDebug(info)
     if (self.debugEnabled) then
         print(info)
@@ -284,13 +302,15 @@ function MQTTSocket:_onDebug(info)
 end
 
 -- 显示严重错误消息, 且关闭当前连接
--- 
+-- @param {string} errInfo
 function MQTTSocket:_onFailedEvent(errInfo)
     self:emit('error', errInfo)
 
     self:_onStopConnect()
 end
 
+-- 重连, 会生产 'reconnect' 事件
+-- - 由 KeepAlive 定时器调用
 function MQTTSocket:_onReconnect()
     self.state.reconnecting = true
     self:emit('reconnect')
@@ -299,10 +319,19 @@ function MQTTSocket:_onReconnect()
     self:_onStartConnect()
 end
 
+-- 当成功建立 Socket 连接
 function MQTTSocket:_onSocketConnected()
-    self.connectReady               = true
-    self.state.reconnectInterval    = 100
-    self.state.lastActivityOut      = process.now()
+    local now = process.now();
+    local state = self.state
+    local options = self.options
+    local span  = math.abs(now - state.lastConnectTime)
+
+    -- 必须大于最大重连间隔才重置重连间隔，避免反复连接和断开的 bug
+    self.socketConnected = true
+    self.state.lastActivityOut = process.now()
+    if (span > options.reconnectPeriod) then
+        self.state.reconnectInterval = 1000
+    end
 
     self.clientSocket:read_start(function(err, chunk)
         if (err) then
@@ -320,10 +349,8 @@ function MQTTSocket:_onSocketConnected()
     self:_sendConnect()
 end
 
+-- 开始连接
 function MQTTSocket:_onStartConnect()
-    --self:_onDebug("connect: " .. self.clientId .. 
-    --   "@" .. self.options.hostname .. ":" .. self.options.port)
-
     -- #1. create socket
     if (self.clientSocket) then
         uv.close(self.clientSocket)
@@ -349,7 +376,7 @@ function MQTTSocket:_onStartConnect()
 
     -- #3. connect
     self.state.lastConnectTime = process.now()
-    local _onConnect = function(err)
+    local _onConnectCallback = function(err)
         if (err) then
             self:_onFailedEvent('connect failed: ' .. err)
         else
@@ -367,27 +394,30 @@ function MQTTSocket:_onStartConnect()
 
         elseif (not self.clientSocket) then
             self:_onFailedEvent('query dns failed: invalid socket')
-            
+
         elseif (not res) or (not res[1]) then
             self:_onFailedEvent('query dns failed: invalid response')
-          
+
         else
             local dest = res[1]
             self.state.address = { dest.addr, dest.port }
-            self.clientSocket:connect(dest.addr, dest.port, _onConnect)
+            self.clientSocket:connect(dest.addr, dest.port, _onConnectCallback)
         end
     end)
 
     return 0
 end
 
+-- 停止连接
+-- - 发生严重错误等时候会调用
+-- @param {string} info 关闭事件消息
 function MQTTSocket:_onStopConnect(info)
     -- close MQTT connection
-    if (self.connected) then 
+    if (self.connected) then
         self.connected = false
         self:emit('close', info)
         self:emit('offline')
-    end 
+    end
 
     -- cancel connect timer
     if (self.connectAckTimer) then
@@ -399,17 +429,17 @@ function MQTTSocket:_onStopConnect(info)
     if (self.clientSocket) then
         uv.close(self.clientSocket)
         self.clientSocket = nil
-    end      
+    end
 
     -- reset
-    self.connectReady   = false
+    self.socketConnected = false
     self._incomingStore = {}
     self._outgoingStore = {}
 end
 
 -- Handle received messages and maintain keep-alive PING messages
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---[[ 
+--[[
 This function must be invoked periodically (more often than the
 exports.KEEP_ALIVE_TIME) which maintains the connection and
 services the incoming subscribed topic messages.
@@ -417,7 +447,7 @@ services the incoming subscribed topic messages.
 Handle messages with backpressure support, one at a time.
 Override at will, but __always call `callback`__, or the client
 will hang.
-
+@param {string} buffer 收到的数据
 ]]
 function MQTTSocket:_handleMessageData(buffer)
     -- Check for available client socket data
@@ -431,24 +461,23 @@ function MQTTSocket:_handleMessageData(buffer)
         self.lastBuffer = nil
     end
 
-    local emitError = function(error) 
+    local emitError = function(error)
         self:emit('error', error)
     end
 
+    -- 检查连接状态
     self:_checkConnected('_handleMessageData')
 
     -- Parse individual messages (each must be at least 2 bytes long)
     -- Decode "remaining length" (MQTT v3.1 specification pages 6 and 7)
     local index = 1
-    local remainingLength = 0
+    local mqttMessage = nil
 
+    -- 解析并处理消息
     while (index < #buffer) do
-        local mqttMessage = nil
         mqttMessage, index = packet.parse(buffer, index, emitError)
-        --print('buffer', index, #buffer)
-        --console.printBuffer(buffer)
-
         if (not mqttMessage) then
+            -- 缓存剩余的数据
             if (index > 1) and (index <= #buffer) then
                 if (self.lastBuffer) then
                     self.lastBuffer = self.lastBuffer .. buffer:sub(index)
@@ -480,7 +509,7 @@ function MQTTSocket:_handleConnectACK(message)
     -- 连接被服务器拒绝
     if (message.returnCode ~= 0) then
         self:_onFailedEvent("Connection refused: " .. tostring(message.errorMessage))
-        return 
+        return
     end
 
     self.state.reconnecting = false
@@ -513,7 +542,7 @@ function MQTTSocket:_handlePublish(message)
     if (callback) then
         callback(message.topic, message.payload)
     end
-    
+
     self:emit('message', message.topic, message.payload)
 end
 
@@ -584,7 +613,7 @@ end
 -- MQTT 3.1 Specification: Section 3.11: UNSUBACK Unsubscription acknowledgement
 --
 -- bytes 1,2: Message Identifier
--- 
+--
 function MQTTSocket:_handleUnsubscribeACK(message)
     local messageId = message.messageId or ''
 
@@ -630,7 +659,6 @@ function MQTTSocket:_sendConnect()
     message.username    = options.username
     message.password    = options.password
 
-
     return self:_sendMQTTPacket(message)
 end
 
@@ -672,16 +700,17 @@ end
 -- byte  1:   Message type and flags (DUP, QOS level, and Retain) fields
 -- bytes 2-5: Remaining length field (between one and four bytes long)
 -- bytes m- : Optional variable header and payload
-
--- messageType  -- enumeration
--- payload      -- string
-
--- return: nil or error message
+-- @param {number} messageType  -- enumeration
+-- @param {string} payload      -- string
+-- @returns nil or error message
 function MQTTSocket:_sendMessage(messageType, payload, callback)
     local message = Packet:new(messageType, payload)
     return self:_sendMQTTPacket(message, callback)
 end
 
+-- 发送 MQTT 消息包
+-- @param {MQTTPacket} message
+-- @param {function} callback
 function MQTTSocket:_sendMQTTPacket(message, callback, ...)
     if (callback) then
         setImmediate(callback)

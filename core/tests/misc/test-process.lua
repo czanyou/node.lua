@@ -1,5 +1,4 @@
 local process 	= require('process')
-local lnode     = require('lnode')
 local assert    = require('assert')
 
 if (process.getgid) then

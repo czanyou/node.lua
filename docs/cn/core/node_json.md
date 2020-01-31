@@ -10,13 +10,13 @@ JSON 比 XML 更小、更快，更易解析。
 
 ## json.decode
 
-    json.decode(data)
+> json.decode(data)
 
 json.parse 方法的别名
 
 ## json.encode
 
-    json.encode(value)
+> json.encode(value)
 
 json.stringify 方法的别名
 
@@ -26,18 +26,18 @@ json.stringify 方法的别名
 
 ## json.parse
 
-    json.parse(data)
+> json.parse(data)
 
 将 JSON 格式字符串解析为 Lua 对象
 
-- data {String} 要解析的 JSON 格式字符串
+- `data` {string} 要解析的 JSON 格式字符串
 
 ## json.stringify
 
-    json.stringify(value)
+> json.stringify(value)
 
 将 Lua 对象编码为 JSON 格式字符串
 
-- value {Object} 要编码的 Lua 对象, 如 table, 字符串, 数值等等
+- `value` {object} 要编码的 Lua 对象, 如 table, 字符串, 数值等等
 
 

@@ -102,7 +102,9 @@ Readable 流有两种“模式”：流动模式和暂停模式。当处于流�
 - 子进程的 stdout 和 stderr
 - process.stdin
 
-#### 事件: 'readable'
+#### 事件
+
+##### 事件: 'readable'
 
 当一个数据块可以从流中被读出时，它会触发一个 'readable' 事件。
 
@@ -117,7 +119,7 @@ end)
 
 当内部缓冲区被排空后，一旦更多数据时，一个 readable 事件会被再次触发。
 
-#### 事件: 'data'
+##### 事件: 'data'
 
 - chunk 数据块。
 
@@ -132,7 +134,7 @@ readable:on('data', function(chunk)
 end)
 ```
 
-#### 事件: 'end'
+##### 事件: 'end'
 
 该事件会在没有更多数据能够提供时被触发。
 
@@ -149,11 +151,11 @@ readable:on('end', function()
 end)
 ```
 
-#### 事件: 'close'
+##### 事件: 'close'
 
 当底层数据源（比如，源头的文件描述符）被关闭时触发。并不是所有流都会触发这个事件。
 
-#### 事件: 'error'
+##### 事件: 'error'
 
 当数据接收时发生错误时触发。
 
@@ -161,8 +163,8 @@ end)
 
     readable.read([size])
 
-- size {Number} 可选参数，指定要读取多少数据。
-- 返回 {String | nil}
+- `size` {number} 可选参数，指定要读取多少数据。
+- 返回 {string}
 
 read() 方法从内部缓冲区中拉取并返回若干数据。当没有更多数据可用时，它会返回 nil。
 
@@ -229,9 +231,9 @@ end)
 
     readable.pipe(destination, [options])
 
-- destination {Writable Stream} 写入数据的目标
-- options {Object} 导流选项
-    + end {Boolean} 在读取者结束时结束写入者。缺省为 true
+- `destination` {WritableStream} 写入数据的目标
+- `options` {object} 导流选项
+    + `end` {boolean} 在读取者结束时结束写入者。缺省为 true
 
 该方法从可读流中拉取所有数据，并写入到所提供的目标。该方法能自动控制流量以避免目标被快速读取的可读流所淹没。
 
@@ -280,7 +282,7 @@ end)
 
     readable.unpipe([destination])
 
-- destination {Writable Stream} 可选，指定解除导流的流
+- `destination` {Writable Stream} 可选，指定解除导流的流
 
 该方法会移除之前调用 pipe() 所设定的钩子。
 
@@ -309,7 +311,7 @@ end, 1000)
 
     readable.unshift(chunk)
 
-- chunk string 要插回读取队列开头的数据块
+- `chunk` string 要插回读取队列开头的数据块
 
 该方法在许多场景中都很有用，比如一个流正在被一个解析器消费，解析器可能需要将某些刚拉取出的数据“逆消费”回来源，以便流能将它传递给其它消费者。
 
@@ -364,7 +366,9 @@ Writable（可写）流接口是对您正在写入数据至一个目标的抽象
 - child process stdin
 - process.stdout, process.stderr
 
-#### 事件: 'drain'
+#### 事件
+
+##### 事件: 'drain'
 
 如果一个 writable.write(chunk) 调用返回 false，那么 drain 事件则表明可以继续向流写入更多数据。
 
@@ -396,7 +400,7 @@ function writeOneMillionTimes(writer, data, encoding, callback) {
 }
 ```
 
-#### 事件: 'finish'
+##### 事件: 'finish'
 
 当 end() 方法被调用，并且所有数据已被写入到底层系统，此事件会被触发。
 
@@ -411,7 +415,7 @@ write.on('finish', function() {
 });
 ```
 
-#### 事件: 'pipe'
+##### 事件: 'pipe'
 
 - src {Readable Stream} 导流到本可写流的来源流
 
@@ -427,7 +431,7 @@ writer.on('pipe', function(src) {
 reader.pipe(writer);
 ```
 
-#### 事件: 'unpipe'
+##### 事件: 'unpipe'
 
 - src {Readable Stream} unpiped 本可写流的来源流
 
@@ -448,10 +452,10 @@ reader.unpipe(writer);
 
 > writable.write(chunk,[callback])
 
-- chunk {String | Buffer} 要写入的数据
-- callback function数据块写入后的回调
+- `chunk` {string} 要写入的数据
+- `callback` {function} 数据块写入后的回调
 
-- 返回: {Boolean} 如果数据已被全部处理则返回 true。
+- 返回: {boolean} 如果数据已被全部处理则返回 true。
 
 该方法向底层系统写入数据，并在数据被处理完毕后调用所给的回调。
 
@@ -478,8 +482,8 @@ reader.unpipe(writer);
 
 > writable.close([chunk], [callback])
 
-- chunk {String | Buffer} 可选，要写入的数据
-- callback function可选，流结束后的回调
+- `chunk` {string} 可选，要写入的数据
+- `callback` {function} 可选，流结束后的回调
 
 当没有更多数据会被写入到流时调用此方法。如果给出，回调会被用作 finish 事件的监听器。
 
@@ -552,9 +556,9 @@ stream.Readable 是一个可被扩展的、实现了底层方法 _read(size) 的
 
     stream.Readable:new([options])
 
-- options {Object}
-    + highWaterMark {Number} 停止从底层资源读取前内部缓冲区最多能存放的字节数。缺省为 16kb，对于 objectMode 流则是 16
-    + objectMode {Boolean} 该流是否应该表现为对象的流。意思是说 stream:read(n) 返回一个单独的对象，而不是大小为 n 的 Buffer
+- `options` {object}
+    + `highWaterMark` {number} 停止从底层资源读取前内部缓冲区最多能存放的字节数。缺省为 16kb，对于 objectMode 流则是 16
+    + `objectMode` {boolean} 该流是否应该表现为对象的流。意思是说 stream:read(n) 返回一个单独的对象，而不是大小为 n 的 Buffer
 
 请确保在扩展 Readable 类的类中调用 Readable 构造函数以便缓冲设定能被正确初始化。
 
@@ -562,7 +566,7 @@ stream.Readable 是一个可被扩展的、实现了底层方法 _read(size) 的
 
     readable:_read(size)
 
-- size {Number} 异步读取的字节数
+- size {number} 异步读取的字节数
 
 注意：实现这个函数，但【不要】直接调用它。
 
@@ -581,7 +585,7 @@ stream.Readable 是一个可被扩展的、实现了底层方法 _read(size) 的
 
     readable:push(chunk)
 
-- chunk {String|nil} 推入读取队列的数据块
+- `chunk` {String|nil} 推入读取队列的数据块
 
 注意：这个函数应该被 Readable 实现者调用，【而不是】Readable 流的消费者。
 
@@ -636,8 +640,8 @@ stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, e
 
 #### stream.Writable:new([options])
 
-- options {Object}
-- highWaterMark {Number} write() 开始返回 false 的缓冲级别。缺省为 16kb，对于 objectMode 流则是 16
+- `options` {object}
+- `highWaterMark` {number} write() 开始返回 false 的缓冲级别。缺省为 16kb，对于 objectMode 流则是 16
 
 请确保在扩充 Writable 类的类中调用构造函数以便缓冲设定能被正确初始化。
 
@@ -645,8 +649,8 @@ stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, e
 
     writable._write(chunk, callback)
 
-- chunk string 要被写入的数据块。
-- callback function当您处理完所给数据块时调用此函数（可选地可附上一个错误参数）。
+- `chunk` {string} 要被写入的数据块。
+- `callback` {function} 当您处理完所给数据块时调用此函数（可选地可附上一个错误参数）。
 
 所有 Writable 流的实现必须提供一个 _write() 方法来将数据发送到底层资源。
 
@@ -660,8 +664,8 @@ stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, e
 
     writable._writev(chunks, callback)
 
-- chunks {Array} 要写入的块。每个块都遵循这种格式：{ chunk: ..., encoding: ... }。
-- callback function当您处理完所给数据块时调用此函数（可选地可附上一个错误参数）。
+- `chunks` {array} 要写入的块。每个块都遵循这种格式：{ chunk: ..., encoding: ... }。
+- `callback` {function} 当您处理完所给数据块时调用此函数（可选地可附上一个错误参数）。
 
 注意：该函数【禁止】被直接调用。它应该被子类所实现，并仅被 Writable 内部方法所调用。
 
@@ -678,8 +682,8 @@ stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, e
 
 #### stream.Duplex:new(options)
 
-- options {Object} Passed to both Writable and Readable constructors. Also has the following fields:
-- allowHalfOpen {Boolean} Default=true. If set to false, then the stream will automatically end the readable side when the writable side ends and vice versa.
+- `options` {object} Passed to both Writable and Readable constructors. Also has the following fields:
+- `allowHalfOpen` {boolean} Default=true. If set to false, then the stream will automatically end the readable side when the writable side ends and vice versa.
 
 请确保在扩充 Duplex 类的类中调用构造函数以便缓冲设定能被正确初始化。
 
@@ -693,7 +697,7 @@ stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, e
 
 #### stream.Transform:new([options])
 
-options {Object} 传递给 Writable 和 Readable 构造函数。
+`options` {object} 传递给 Writable 和 Readable 构造函数。
 
 请确保在扩充 Transform 类的类中调用了构造函数，以使得缓冲设定能被正确初始化。
 
@@ -701,8 +705,8 @@ options {Object} 传递给 Writable 和 Readable 构造函数。
 
     transform._transform(chunk, callback)
 
-- chunk string 要被转换的数据块。
-- callback function
+- `chunk` {string} 要被转换的数据块。
+- `callback` {function}
 - 当您处理完所提供的数据块时调用此函数（可选地附上一个错误参数）。
 
 注意：该函数【禁止】被直接调用。它应该被子类所实现，并仅被 Transform 内部方法所调用。
@@ -721,7 +725,7 @@ _transform 应当承担特定 Transform 类中所有处理被写入的字节、�
 
     transform._flush(callback)
 
-- callback function当您写入完毕剩下的数据后调用此函数（可选地可附上一个错误对象）。
+- `callback` {function} 当您写入完毕剩下的数据后调用此函数（可选地可附上一个错误对象）。
 
 注意：该函数【禁止】被直接调用。它【可以】被子类所实现，并且如果实现，仅被 Transform 内部方法所调用。
 
@@ -736,13 +740,13 @@ _transform 应当承担特定 Transform 类中所有处理被写入的字节、�
 
 ### 缓冲
 
-无论 Writable 或 Readable 流都会在内部分别叫做 _writableState.buffer 和 _readableState.buffer 的对象中缓冲数据。
+无论 Writable 或 Readable 流都会在内部分别叫做 `_writableState.buffer` 和 `_readableState.buffer` 的对象中缓冲数据。
 
 被缓冲的数据量取决于传递给构造函数的 highWaterMark（最高水位线）选项。
 
-Readable 流的滞留发生于当实现调用 stream:push(chunk) 的时候。如果流的消费者没有调用 stream:read()，那么数据将会一直待在内部队列，直到它被消费。
+Readable 流的滞留发生于当实现调用 `stream:push(chunk)` 的时候。如果流的消费者没有调用 `stream:read()`，那么数据将会一直待在内部队列，直到它被消费。
 
-Writable 流的滞留发生于当用户重复调用 stream.write(chunk) 即便此时 write() 返回 false 时。
+Writable 流的滞留发生于当用户重复调用 `stream.write(chunk)` 即便此时 write() 返回 false 时。
 
 流，尤其是 pipe() 方法的初衷，是将数据的滞留量限制到一个可接受的水平，以使得不同速度的来源和目标不会淹没可用内存。
 
@@ -761,7 +765,7 @@ Writable 流的滞留发生于当用户重复调用 stream.write(chunk) 即便�
 
 在极少数情况下，您当时没有数据提供，但您的流的消费者（或您的代码的其它部分）会通过调用 stream.read(0) 得知何时再次检查。在这种情况下，您可以调用 stream.push('')。
 
-到目前为止，这个功能唯一一个使用情景是在 tls.CryptoStream 类中。如果您发现您不得不使用 stream.push('')，请考虑另一种方式，因为几乎可以明确表明这是某种可怕的错误。
+到目前为止，这个功能唯一一个使用情景是在 `tls.CryptoStream` 类中。如果您发现您不得不使用 stream.push('')，请考虑另一种方式，因为几乎可以明确表明这是某种可怕的错误。
 
 ### 对象模式
 
@@ -769,10 +773,10 @@ Writable 流的滞留发生于当用户重复调用 stream.write(chunk) 即便�
 
 处于对象模式的流除了 Buffer 和字符串外还能读出普通的 Lua 值。
 
-一个处于对象模式的 Readable 流调用 stream.read(size) 时总会返回单个项目，无论传入什么 size 参数。
+一个处于对象模式的 Readable 流调用 `stream.read(size)` 时总会返回单个项目，无论传入什么 size 参数。
 
 特殊值 nil 
-在对象模式流中依旧保持它的特殊性。也就说，对于对象模式的可读流，stream.read() 返回 nil 意味着没有更多数据，同时 stream.push(nil) 会告知流数据到达末端（EOF）。
+在对象模式流中依旧保持它的特殊性。也就说，对于对象模式的可读流，`stream.read()` 返回 nil 意味着没有更多数据，同时 `stream.push(nil)` 会告知流数据到达末端（EOF）。
 
 Node 核心不存在对象模式的流，这种设计只被某些用户态流式库所使用。
 
@@ -780,7 +784,7 @@ Node 核心不存在对象模式的流，这种设计只被某些用户态流式
 
 ### 状态对象
 
-Readable 流有一个成员对象叫作 _readableState。 Writable 流有一个成员对象叫作 _writableState。 Duplex 流二者兼备。
+Readable 流有一个成员对象叫作 `_readableState`。 Writable 流有一个成员对象叫作 `_writableState`。 Duplex 流二者兼备。
 
 这些对象通常不应该被子类所更改。然而，如果您有一个 Duplex 或 Transform 流，它的可读端应该是 objectMode，
 但可写端却又不是 objectMode，那么您可以在构造函数里明确地设定合适的状态对象的标记来达到此目的。

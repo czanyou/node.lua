@@ -72,36 +72,13 @@ local function onGetThings(request, response)
     response:json(result)
 end
 
--- default root index.html
-local function onGetRoot(request, response)
-    local result = {}
-    result.version = process.version;
-    result.links = {{
-        name = "Things",
-        description = "instance of things",
-        href = "/things/"
-    }, {
-        name = "Device Status",
-        href = "/status/"
-    }}
-
-    response:json(result)
-end
-
 local function cors(request, response, next)
     response:set('Access-Control-Allow-Origin', '*');
     response:set('Access-Control-Allow-Credentials', 'true');
 end
 
-local function startHttpServer(app)
-    if (not app) then
-        app = express({ })
-        app:listen(WEB_PORT)
-    end
-
+function exports.route(app)
     app:use(cors)
-
-    app:get("/",                onGetRoot)
     app:get("/things",          onGetThings)
     app:get("/things/:thing",   onGetThing)
     return app
@@ -109,7 +86,23 @@ end
 
 function exports.createServer(app)
     print('WoT server started.')
-    return startHttpServer(app)
+    
+    if (not app) then
+        app = express({ })
+        app:listen(WEB_PORT)
+    end
+
+    return exports.route(app)
 end
 
+
+-- local function insertThings()
+--     if (not app) then
+--         app = express({ })
+--         app:listen(WEB_PORT)
+--     end
+--     app:get("/things",          onGetThings)
+--     app:get("/things/:thing",   onGetThing)
+-- end
+-- exports.insertThings = insertThings
 return exports

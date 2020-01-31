@@ -10,15 +10,15 @@
 
 ### 属性 RtspConnection.isStreaming
 
-{Boolean} 指出是否正在发送媒体流
+{boolean} 指出是否正在发送媒体流
 
 ### 属性 RtspConnection.rtspState
 
-{String} 这个连接当前 RTSP 状态
+{string} 这个连接当前 RTSP 状态
 
 ### 属性 RtspConnection.sessionId
 
-{String} 这个连接相关的 RTSP 会话的 ID
+{string} 这个连接相关的 RTSP 会话的 ID
 
 ### RtspConnection:close
 
@@ -26,7 +26,7 @@
 
 关闭这个连接
 
-- errInfo {String} 如果是因为发生错误而关闭连接
+- errInfo {string} 如果是因为发生错误而关闭连接
 
 ### RtspConnection:getSdpString
 
@@ -34,7 +34,7 @@
 
 返回 RTSP 服务器指定的路径的媒体流的 SDP 描述信息，如果不存在则返回 nil
 
-- urlString {String} RTSP 服务器上可供播放的媒体流的路径
+- urlString {string} RTSP 服务器上可供播放的媒体流的路径
 
 ### RtspConnection:processMessage
 

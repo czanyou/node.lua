@@ -25,7 +25,7 @@ end
 local transition, resolve, run
 
 local Promise = {
-  is_promise = true,
+  isPromise = true,
   state = State.PENDING
 }
 Promise.mt = { __index = Promise }
@@ -88,7 +88,7 @@ resolve = function(promise, x)
   end
   
   -- x is a promise in the current implementation
-  if x.is_promise then 
+  if x.isPromise then 
     -- 2.3.2.1 if x is pending, resolve or reject this promise after completion
     if x.state == State.PENDING then
       x:next(

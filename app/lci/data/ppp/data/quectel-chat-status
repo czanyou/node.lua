@@ -1,0 +1,7 @@
+# /etc/ppp/peers/quectel-pppd
+# Usage:root>pppd call quectel-pppd
+#Modem path, like /dev/ttyUSB3,/dev/ttyACM0, depend on your module, default path is /dev/ttyUSB3
+/dev/ttyUSB3 115200
+
+# The chat script, customize your APN in this file
+connect 'chat -s -v -f /etc/ppp/peers/quectel-chat-status'

@@ -57,6 +57,12 @@ function ConsumedThing:initialize(thingInstance)
     self.handlers = {}
     self.instance = thingInstance or {}
     self.id = thingInstance.id
+    self.client = exports.client
+    self.consumed = true
+
+    if (self.client) then
+        self.client.things['@' .. self.id] = self;
+    end
 end
 
 function ConsumedThing:readProperty(name)
@@ -79,8 +85,18 @@ function ConsumedThing:writeMultipleProperties(values)
     
 end
 
-function ConsumedThing:invokeAction(name, params)
-    
+function ConsumedThing:invokeAction(name, params, callback)
+    local client = self.client;
+    if (not client) then
+        return nil, 'Invalid client'
+    end
+
+    local data = {}
+    data[name] = params;
+
+    local options = { did = self.id }
+    local mid, err = client:sendActionMessage(data, options, callback)
+    return mid, err
 end
 
 function ConsumedThing:subscribeProperty(name, listener)
@@ -108,12 +124,12 @@ function ExposedThing:initialize(thingInstance)
     if (type(thingInstance) == 'string') then
         thingInstance = json.parse(thingInstance)
     end
-
+    -- console.log(thingInstance)
     self.client = nil -- MQTT thing client
     self.handlers = {} -- Action handlers
     self.id = thingInstance.id -- Thing ID / DID
     self.instance = thingInstance or {} -- Thing instance
-    self.clientId = (thingInstance.name or 'lnode') .. '-' .. thingInstance.id
+    self.exposed = true
 
     if (thingInstance.clientId) then
         self.clientId = thingInstance.clientId
@@ -145,35 +161,39 @@ function ExposedThing:_onRegister()
         return
     end
 
-    -- console.log('register', self.register.state, self.register.interval, self.register.expires, self.register.updated)
+
     local now = Date.now()
+
+    local description = self.instance
+    local options = { did = self.id, secret = self.sceret }
 
     if (not self.register.state) then
         -- init
         self.register.state = STATE_UNREGISTER
         self.register.time = now
-        client:sendRegister(self.id, self)
+        client:sendRegisterMessage(description, options, 1)
 
     elseif (self.register.state == STATE_REGISTER) then
         -- register
         local span = (now - (self.register.updated or 0)) / 1000
         local expires = self.register.expires or REGISTER_EXPIRES
-        -- console.log('span', span, expires)
+
         if (span >= expires) or (span <= -expires) then
+            console.log('span', span, expires)
             self.register.time = now
-            client:sendRegister(self.id, self)
+            client:sendRegisterMessage(description, options, 2)
         end
 
     else
         -- unregister
         local span = math.abs(now - (self.registerTime or 0)) / 1000
         local registerInterval = self.register.interval or 2
-        -- console.log('span', span, registerInterval)
+        
         if (span >= registerInterval) then
+            -- console.log('span', span, registerInterval,self.registerTime)
             self.register.interval = math.min(REGISTER_EXPIRES, 2 * registerInterval)
             self.register.time = now
-
-            client:sendRegister(self.id, self)
+            client:sendRegisterMessage(description, options, 3)
         end
     end
 end
@@ -222,16 +242,25 @@ function ExposedThing:emitEvent(name, data)
     local events = {}
     events[name] = data;
 
-    client:sendEvent(events, self)
+    local options = { did = self.id }
+    client:sendEventMessage(events, options)
 end
 
-function ExposedThing:sendStream(values)
+function ExposedThing:sendStream(values, options, callback)
     local client = self.client;
     if (not client) or (not values) then
+        if (callback) then
+            setImmediate(callback)
+        end
         return
     end
 
-    client:sendStream(values, self)
+    if (not options) then
+        options = {}
+    end
+
+    options.did = self.id
+    client:sendStreamMessage(values, options, callback)
 end
 
 function ExposedThing:readProperty(name)
@@ -323,6 +352,7 @@ function ExposedThing:expose()
     local promise = Promise.new()
 
     -- console.log(self.instance)
+
     local mqtt = self.instance.url
     if (mqtt) then
         ThingClient.register(mqtt, self)
@@ -385,38 +415,59 @@ function ThingClient:start()
 
     local clientId = self.options.clientId
     if (not clientId) then
-        clientId = 'lnode-' .. (self.options.id or '')
+        clientId = 'lnode_' .. (exports.did or self.options.id or '')
     end
 
     local options = {
         clientId = clientId
     }
 
+    console.log('start', urlString, options)
     local mqttClient = mqtt.connect(urlString, options)
 
     mqttClient:on('connect', function ()
-        -- console.log('connect')
-
+        console.log('connect')
         for did, thing in pairs(self.things) do
-            local topic = 'actions/' .. did
-            mqttClient:subscribe(topic)
-            console.log('subscribe', topic)
-
-            thing:_onRegister()
-            -- self:sendRegister(did, thing)
+            if (thing.register) then
+                local topic = 'actions/' .. did
+                mqttClient:subscribe(topic)
+                console.log('subscribe', topic)
+                thing.isSubscribed = true
+                thing:_onRegister()
+            end
         end
     end)
 
     mqttClient:on('message', function (topic, data)
         -- print(TAG, 'message', topic, data)
-
         local message = json.parse(data)
         if (message) then
             self:processMessage(message, topic)
         end
     end)
 
-    self.mqtt = mqttClient;
+    self.mqtt = mqttClient
+end
+
+function ThingClient:close(callback)
+    local mqttClient = self.mqtt
+
+    for did, thing in pairs(self.things) do
+        if (thing.register) then
+            thing.isSubscribed = false
+            thing.register.interval = REGISTER_MIN_INTERVAL
+            thing.register.state = STATE_UNREGISTER
+        end
+    end
+
+    if (mqttClient) then
+        mqttClient:close(callback)
+
+    elseif (callback) then
+        callback()
+    end
+
+    self.mqtt = nil
 end
 
 function ThingClient:processMessage(message, topic)
@@ -446,6 +497,20 @@ function ThingClient:processMessage(message, topic)
 end
 
 function ThingClient:processActionMessage(message, topic)
+    if (not message) or (not message.did) then
+        return
+    end
+
+    local result = message.result
+    if (result) then
+        local thing = self.things['@' .. message.did]
+        if (thing) then
+            -- console.log(message)
+            thing:emit('result', message)
+        end
+        return
+    end
+
     local data = message.data
     if (not data) then
         return
@@ -514,12 +579,13 @@ function ThingClient:processWriteAction(request, topic)
 end
 
 function ThingClient:processInvokeAction(name, input, request)
-    console.log('processInvokeAction', name, input, request)
+    -- console.log('processInvokeAction', name, input, request)
+    console.log('processInvokeAction', name, input)
 
     -- check name
     if (not name) then
         local err = { code = 400, error = 'Invalid action name' }
-        return self:sendResult(nil, err, request)
+        return self:sendResultMessage(nil, err, request)
     end
 
     -- console.log('processInvokeAction', name, input, request, self.things)
@@ -529,69 +595,95 @@ function ThingClient:processInvokeAction(name, input, request)
     if (not thing) then
         console.log('Invalid thing id')
         local err = { code = 404, error = 'Invalid thing id' }
-        return self:sendResult(name, err, request)
+        return self:sendResultMessage(name, err, request)
     end
 
     -- check handler
     local ret = thing:invokeAction(name, input)
     if (not ret) then
         ret = { code = 0, message = 'result is empty' }
-        return self:sendResult(name, ret, request)
+        return self:sendResultMessage(name, ret, request)
 
     elseif (not ret.next) then
-        return self:sendResult(name, ret, request)
+        return self:sendResultMessage(name, ret, request)
     end
 
     -- next
     local thingClient = self
     ret:next(function(data)
-        thingClient:sendResult(name, data, request)
+        thingClient:sendResultMessage(name, data, request)
 
     end):catch(function(err)
-        thingClient:sendResult(name, err, request)
+        thingClient:sendResultMessage(name, err, request)
     end)
 end
 
-function ThingClient:sendMessage(message, callback)
+-- 发送消息
+-- @param {object} message 要发送的消息
+-- @param {object} options 发送选项
+-- - {number} qos
+-- @param {function} callback 收到确认后调用
+function ThingClient:sendMessage(message, options, callback)
     --console.log('sendMessage', message)
     local client = self.mqtt -- MQTT client
     if (not client) then
-        if (callback) then callback(nil, 'empty mqtt client') end
+        if (callback) then
+            callback(nil, 'empty mqtt client')
+        end
         return
     end
 
-    local topic = 'messages/' .. message.did
+    -- sendMessage(message, callback)
+    if (type(options) == 'function') then
+        callback = options
+        options  = nil
+    end
 
+    local topic = 'messages/' .. message.did
     local data = json.stringify(message)
+
     -- console.log(topic, data)
-    client:publish(topic, data)
+    client:publish(topic, data, options, callback)
 end
 
-function ThingClient:sendRegister(did, thing)
-    local description = thing.instance
+-- 发送注册消息
+-- @param {object} description 要发送的事物描述
+-- @param {object} options 发送选项
+-- - {string} did
+-- - {string} secret
+-- @param {function} callback 收到确认后调用
+function ThingClient:sendRegisterMessage(description, options)
     local data = {}
+    if (description.register) then
+        for key, value in pairs(description.register) do
+            data[key] = value
+        end
+    end
+
     data.version = description.version
-    data['@context'] = description['@context']
-    data['@type'] = description['@type']
 
     local message = {
-        did = did,
+        did = options.did,
         type = 'register',
         data = data
     }
 
-    if (thing.secret) then
-        local signData = did .. ':' .. thing.secret
+    if (options.secret) then
+        local signData = options.did .. ':' .. options.secret
         message.sign = util.md5string(signData) .. ':md5';
     end
 
-    -- console.log('register', did, message)
     self:sendMessage(message)
 end
 
-function ThingClient:sendEvent(events, thing, callback)
+-- 发送事件消息
+-- @param {object} events 要发送的事件
+-- @param {object} options 发送选项
+-- - {string} did
+-- @param {function} callback 收到确认后调用
+function ThingClient:sendEventMessage(events, options, callback)
     local message = {
-        did = thing.id,
+        did = options.did,
         type = 'event',
         data = events
     }
@@ -599,36 +691,46 @@ function ThingClient:sendEvent(events, thing, callback)
     self:sendMessage(message, callback)
 end
 
-function ThingClient:sendStream(streams, thing)
+-- 发送 Action 消息
+-- @param {object} actions 要发送的 action
+-- @param {object} options 发送选项
+-- - {string} did
+-- @param {function} callback 收到确认后调用
+function ThingClient:sendActionMessage(actions, options, callback)
+    local messageId = (self.nextMessageId or 0) + 1
+    self.nextMessageId = messageId;
+
     local message = {
-        did = thing.id,
+        did = options.did,
+        mid = tostring(messageId),
+        type = 'action',
+        data = actions
+    }
+
+    -- console.log('sendActionMessage', message)
+    self:sendMessage(message, callback)
+    return messageId
+end
+
+-- 发送数据流
+-- @param {object} data 要发送的数据
+-- @param {object} options 发送选项
+-- - {string} did
+-- - {string} stream
+-- @param {function} callback 收到确认后调用
+function ThingClient:sendStreamMessage(data, options, callback)
+    local message = {
+        did = options.did,
         type = 'stream',
-        data = streams
+        data = data,
+        stream = options.stream
     }
 
     -- console.log('stream', message)
-    self:sendMessage(message)
+    self:sendMessage(message, callback)
 end
 
-function ThingClient:sendProperty(name, properties, request)
-    if (name) then
-        properties = {
-            [name] = properties
-        }
-    end
-
-    local message = {
-        did = request.did,
-        mid = request.mid,
-        type = 'property',
-        data = properties
-    }
-
-    --console.log('response', response, self.sendMessage)
-    self:sendMessage(message)
-end
-
-function ThingClient:sendResult(name, output, request)
+function ThingClient:sendResultMessage(name, output, request)
     if (not output) then
         output = { code = 0 }
     end
@@ -666,6 +768,7 @@ function ThingClient.register(directory, thing)
         return nil, 'empty thing.id'
     end
 
+    -- console.log(thing)
     local options = {}
     options.url = directory
     options.id = thing.id
@@ -675,6 +778,17 @@ function ThingClient.register(directory, thing)
     thing.client = client;
 
     local onRegister = function()
+        if (not thing.isSubscribed) then
+            local topic = 'actions/' .. options.id
+            local mqttClient = client.mqtt
+            if (mqttClient) then
+                mqttClient:subscribe(topic)
+                console.log('subscribe', topic)
+                thing.isSubscribed = true
+            end
+        end
+
+        -- console.log("subscirbe ", topic)
         thing:_onRegister()
     end
 
