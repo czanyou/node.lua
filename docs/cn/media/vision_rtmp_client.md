@@ -20,28 +20,28 @@ RTMP 客户端模块
 
 #### 属性
 
-- isStartStreaming 是否开始推流
-- videoConfiguration 视频配置信息
-- isPublish 是否为推流模式
-- lastActiveTime 最后活跃时间
-- appName 应用名称，总是为 `live`
-- streamName 流名称
-- streamId RTMP 流 ID
-- urlString URL 字符串
-- urlObject URL 对象
-- connected 是否已连接
-- id ID
-- lastError 最后发生的错误
-- isNotDrain 发送缓存区没有排干
-- videoConfigurationSent 是否已发送
-- startTime 开始时间
-- socket 相关的 Socket
-- windowAckSize
-- peerChunkSize
-- metadata 收到的元数据
-- videoSamples
-- audioSamples
-- state 当前状态
+- appName `string` 应用名称，总是为 `live`
+- audioSamples `integer`
+- connected `boolean` 是否已连接
+- id `string` ID
+- isNotDrain `boolean` 发送缓存区没有排干
+- isPublish `boolean` 是否为推流模式
+- isStartStreaming `boolean` 是否开始推流
+- lastActiveTime `integer` 最后活跃时间
+- lastError `string` 最后发生的错误
+- metadata `table` 收到的元数据
+- peerChunkSize `integer`
+- socket `Socket` 相关的 Socket
+- startTime `integer` 开始时间
+- state `integer` 当前状态
+- streamId `string` RTMP 流 ID
+- streamName `string` 流名称
+- urlObject `URL` URL 对象
+- urlString `string` URL 字符串
+- videoParameterSets `string` 视频配置信息
+- isVideoConfigurationSent `boolean` 是否已发送
+- videoSamples `integer`
+- windowAckSize `integer`
 
 #### 事件
 
@@ -85,6 +85,15 @@ options 选项:
 
 开始连接到指定的服务器
 
+- 创建 Socket 并建立 TCP 连接
+- 握手
+- 创建 RTMP 连接
+- 创建 RTMP 流
+- 开始推流或者拉流
+- 发送/接收媒体元数据
+- 发送/接收视频关键帧
+- 继续发送/接收视频流
+
 > RTMPClient:connect(urlString)
 
 - urlString 服务器 URL 地址
@@ -97,12 +106,38 @@ options 选项:
 
 - state RTMP 状态
 
+#### sendCreateStream
+
+> RTMPClient:sendCreateStream()
+
+发送创建 RTMP 流请求, 在 RTMP 连接建立后以及 publish 或 play 前调用 (STATE_CONNECTED)
+
+#### sendPublish
+
+> RTMPClient:sendPublish()
+
+发送推流请求，在创建 RTMP 流后调用 (STATE_CREATE_STREAM)
+
+#### sendPlay
+
+> RTMPClient:sendPlay()
+
+发送拉流请求，在创建 RTMP 流后调用 (STATE_CREATE_STREAM)
+
+#### sendMetadataMessage
+
+> RTMPClient:sendMetadataMessage()
+
+发送 metadata 消息
+
+这个消息主要用描述音视频编码类型，宽高度等信息
+
 #### sendVideo
 
 发送视频流, 即推流
 
 > RTMPClient:sendVideo(data, timestamp, isSyncPoint)
 
-- data 视频流数据
-- timestamp 视频流时间戳
-- isSyncPoint 是否是同步点
+- data `string` 视频流数据
+- timestamp `integer` 视频流时间戳
+- isSyncPoint `boolean` 是否是同步点

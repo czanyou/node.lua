@@ -8,9 +8,8 @@
 
 测试 actual 的值是不是为 true，等同于 `assert.ok()`。
 
-- `actual` {any} 实际值
-- `message` {string} 要显示的额外消息
-
+- actual `{any}` 实际值
+- message `{string}` 要显示的额外消息
 
 ## assert.fail
 
@@ -18,10 +17,10 @@
 
 显示一个异常，显示用例的实际值 (actual) 和期望值 (expected)，通过分隔符 (operator) 隔开。
 
-- `actual` {any} 实际值
-- `expected` {any} 期望的值
-- `message` {string} 要显示的额外消息
-- `operator` {string} 实际值和期望的值之间的分隔符
+- actual `{any}` 实际值
+- expected `{any}` 期望的值
+- message `{string}` 要显示的额外消息
+- operator `{string}` 实际值和期望的值之间的分隔符
 
 ## assert.ifError
 
@@ -29,7 +28,7 @@
 
 如果指定的值为 `true`, 则产生一个错误
 
-- `value` {any} 要检查的值
+- value `{any}` 要检查的值
 
 ## assert.ok
 
@@ -37,10 +36,10 @@
 
 测试 actual 的值是不是为 `true`。
 
-- `actual` {any} 实际值
-- `message` {string} 要显示的额外消息
+- actual `{any}` 实际值
+- message `{string}` 要显示的额外消息
 
-## 比较
+## 相等测试
 
 ### assert.deepEqual
 
@@ -48,9 +47,9 @@
 
 深度匹配测试。
 
-- `actual` {any} 实际值
-- `expected` {any} 期望的值
-- `message` {string} 要显示的额外消息
+- actual `{any}` 实际值
+- expected `{any}` 期望的值
+- message `{string}` 要显示的额外消息
 
 ### assert.equal
 
@@ -58,9 +57,9 @@
 
 浅相等测试，等同于使用 '==' 进行相等判断。
 
-- `actual` {any} 实际值
-- `expected` {any} 期望的值
-- `message` {string} 要显示的额外消息
+- actual `{any}` 实际值
+- expected `{any}` 期望的值
+- message `{string}` 要显示的额外消息
 
 ### assert.notDeepEqual
 
@@ -68,9 +67,9 @@
 
 深度匹配测试。
 
-- `actual` {any} 实际值
-- `expected` {any} 期望的值
-- `message` {string} 要显示的额外消息
+- actual `{any}` 实际值
+- expected `{any}` 期望的值
+- message `{string}` 要显示的额外消息
 
 ### assert.notEqual
 
@@ -78,7 +77,7 @@
 
 浅不相等测试，等同于使用 '!=' 进行不相等判断。
 
-- `actual` {any} 实际值
-- `expected` {any} 期望的值
-- `message` {string} 要显示的额外消息
+- actual `{any}` 实际值
+- expected `{any}` 期望的值
+- message `{string}` 要显示的额外消息
   

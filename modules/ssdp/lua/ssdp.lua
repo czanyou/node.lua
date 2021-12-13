@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,8 +35,12 @@ exports.UPNP_ROOT_DEVICE = UPNP_ROOT_DEVICE
 exports.INET_ADDR_ANY 	 = INET_ADDR_ANY
 
 local _getIPv4Number = function(ip)
+	local function tointeger(value)
+		return (value and tonumber(value)) or 0
+	end
+
 	local tokens = ip:split('.')
-	local ret = (tokens[1] << 24) + (tokens[2] << 16) + (tokens[3] << 8) + (tokens[4])
+	local ret = (tointeger(tokens[1]) << 24) + (tointeger(tokens[2]) << 16) + (tointeger(tokens[3]) << 8) + tointeger(tokens[4])
 	return math.floor(ret)
 end
 
@@ -45,14 +49,15 @@ local _getBroadcastAddress = function (item)
 	local netmask = _getIPv4Number(item.netmask)
 
 	local broadcast = ip | ~netmask & 0xffffffff
-	return string.format("%d.%d.%d.%d", 
-		(broadcast >> 24) & 0xff, (broadcast >> 16) & 0xff, 
+	return string.format("%d.%d.%d.%d",
+		(broadcast >> 24) & 0xff, (broadcast >> 16) & 0xff,
 		(broadcast >> 8)  & 0xff,  broadcast & 0xff)
 end
 
 -------------------------------------------------------------------------------
 -- SsdpMessage
 
+---@class SsdpMessage
 local SsdpMessage = core.Emitter:extend()
 exports.SsdpMessage = SsdpMessage
 
@@ -79,6 +84,7 @@ end
 -------------------------------------------------------------------------------
 -- SsdpObject
 
+---@class SsdpObject
 local SsdpObject = core.Emitter:extend()
 exports.SsdpObject = SsdpObject
 
@@ -124,11 +130,11 @@ function SsdpObject:_createSocket(host, localPort)
 	socket:on('message',   _onMessage)
 	socket:on('error',     _onError)
 	socket:on('listening', _onListening)
-	
+
 	local port = localPort or self.port or UPNP_PORT
 	socket:bind(port, host)
 
---]]	
+--]]
 end
 
 function SsdpObject:_getLocalAddresses(mode)
@@ -136,7 +142,7 @@ function SsdpObject:_getLocalAddresses(mode)
 
 	local interfaces = os.networkInterfaces()
 	if (not interfaces) then
-		return 
+		return
 	end
 
 	local family = mode or 'inet'
@@ -185,7 +191,7 @@ end
 
 function SsdpObject:_parseMessage(message)
 	self.decode  = codec.decoder()
-	
+
 	local ret, event = pcall(self.decode, message)
 	if (ret) and (event) and(event ~= '') then
   		return SsdpMessage:new(event)
@@ -195,34 +201,37 @@ end
 function SsdpObject:_pareseHeaders( message )
 	-- body
 	local table = {}
-	for i, v in pairs(message) do  
-	    if type(v) == "table" then  
+	for i, v in pairs(message) do
+	    if type(v) == "table" then
 	        table.headers = {}
-	        for new_table_index, new_table_value in pairs(v) do  
-	            -- console.log(new_table_index,new_table_value)  
+	        for new_table_index, new_table_value in pairs(v) do
+	            -- console.log(new_table_index,new_table_value)
 	            if new_table_value[1] == 'HOST' then
-	                table.headers.HOST = new_table_value[2]    
+					table.headers.HOST = new_table_value[2]
+
 	            elseif new_table_value[1] == 'MAN' then
-	                table.headers.MAN = new_table_value[2]
+					table.headers.MAN = new_table_value[2]
+
 	            elseif new_table_value[1] == 'ST' then
-	                table.headers.ST = new_table_value[2]
+					table.headers.ST = new_table_value[2]
+
 	            elseif new_table_value[1] == 'MX' then
 	                table.headers.MX = new_table_value[2]
 	            end
 	            -- parse_head(table,new_table_value)
-	        end  
-	    else  
-	        -- console.log(i,v)  
+	        end
+	    else
+	        -- console.log(i,v)
 	        if i == 'httpVersion' then
-	                table.httpVersion = v   
+	                table.httpVersion = v
 	            elseif i == 'method' then
 	                table.method = v
 	            elseif i == 'url' then
 	                table.url = v
 	            end
 	        -- table.i = v
-	    end  
-	end  
+	    end
+	end
   	-- console.log('table',table)
   	return table
 end
@@ -243,8 +252,8 @@ function SsdpObject:_sendMessage(message, host, port, callback)
 
 	local socket = self.socket
 	if (not socket) then
-		if (callback) then 
-			callback('Bad socket') 
+		if (callback) then
+			callback('Bad socket')
 		end
 		return
 	end

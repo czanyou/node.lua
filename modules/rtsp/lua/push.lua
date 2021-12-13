@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,13 +18,9 @@ limitations under the License.
 local core 	= require('core')
 local net 	= require('net')
 local url 	= require('url')
-local utils = require('util')
 
 local codec 	= require('rtsp/codec')
-local rtp 		= require('rtsp/rtp')
 local rtsp 		= require('rtsp/message')
-local sdp   	= require('rtsp/sdp')
-local session 	= require('media/session')
 
 local TAG = "RtspPusher"
 
@@ -33,7 +29,7 @@ local exports 	= { meta = meta }
 
 
 exports.STATE_STOPPED	= 0
-exports.STATE_INIT 		= 10	-- message sent: SETUP/TEARDOWN 
+exports.STATE_INIT 		= 10	-- message sent: SETUP/TEARDOWN
 exports.STATE_READY		= 20	-- message sent: PLAY/RECORD/TEARDOWN/SETUP
 exports.STATE_PLAYING	= 30	-- message sent: PAUSE/TEARDOWN/PLAY/SETUP
 exports.STATE_RECORDING	= 40
@@ -104,6 +100,28 @@ function RtspPusher:close(errInfo)
 	self.urlString 			= nil
 end
 
+---@param newState integer
+function RtspPusher:getRtspStateString(newState)
+	if (newState == exports.STATE_STOPPED) then
+		return 'stopped'
+
+	elseif (newState == exports.STATE_INIT) then
+		return 'init'
+
+	elseif (newState == exports.STATE_READY) then
+		return 'ready'
+
+	elseif (newState == exports.STATE_PLAYING) then
+		return 'playing'
+
+	elseif (newState == exports.STATE_RECORDING) then
+		return 'recording'
+
+	else
+		return 'state-' .. newState
+	end
+end
+
 function RtspPusher:_getRequest(response)
 	local cseq = response.headers['CSeq'] or 0
 	local request = self.sentRequests[tostring(cseq)]
@@ -115,7 +133,7 @@ function RtspPusher:_getRequest(response)
 end
 
 function RtspPusher:_getSdpString(urlString)
-	if not urlString then 
+	if not urlString then
 		return nil
 	end
 
@@ -141,6 +159,8 @@ function RtspPusher:_initRtspDecoder()
 
 	self.rtspCodec:on('response', function(response)
 		local request = self:_getRequest(response)
+		self:emit('response', request, response)
+
 		if (request) then
 			self:handleResponse(request, response)
 		else
@@ -173,7 +193,7 @@ function RtspPusher:handleResponse(request, response)
 			return
 		end
 
-		if (self.rtspState == exports.STATE_INIT) then	
+		if (self.rtspState == exports.STATE_INIT) then
 			--local sdpString = response.content
 			--self.sdpSession = sdp.decode(sdpString)
 
@@ -188,7 +208,7 @@ function RtspPusher:handleResponse(request, response)
 			self:sendSETUP()
 		end
 
-	elseif (method == 'SETUP') then	
+	elseif (method == 'SETUP') then
 		if (statusCode >= 400) then
 			self:emit('error', response.statusMessage)
 			self:close()
@@ -205,7 +225,7 @@ function RtspPusher:handleResponse(request, response)
 
 		self:_setState(exports.STATE_READY)
 
-		if (self.rtspState == exports.STATE_READY) then	
+		if (self.rtspState == exports.STATE_READY) then
 			self:sendRECORD()
 		end
 
@@ -226,7 +246,7 @@ function RtspPusher:handleResponse(request, response)
 			return
 		end
 
-		self:_setState(exports.STATE_READY)	
+		self:_setState(exports.STATE_READY)
 
 	elseif (method == 'TEARDOWN') then
 		if (statusCode >= 400) then
@@ -270,7 +290,7 @@ function RtspPusher:open(urlString, mediaSession)
     end
 
     print(TAG, 'open', options.port, options.hostname)
-    
+
      -- connect
     self.lastConnectTime = process.now()
 
@@ -282,17 +302,17 @@ function RtspPusher:open(urlString, mediaSession)
         return nil
     end
 
-	socket:on('end', function() 
+	socket:on('end', function()
 		--print(TAG, "socket", "end")
 	    self:close()
 	end)
 
-	socket:on('close', function() 
+	socket:on('close', function()
 		--print(TAG, "socket", "close")
 	    self:close()
 	end)
 
-	socket:on('error', function(err) 
+	socket:on('error', function(err)
 		-- If error, print and close connection
 		--print("RtspConnectin: read error: " .. err)
 
@@ -300,7 +320,7 @@ function RtspPusher:open(urlString, mediaSession)
       	self:close(err)
 	end)
 
-    socket:on('data', function(chunk) 
+    socket:on('data', function(chunk)
 		if (not chunk) then
 	    	-- If data is set the socket has sent data,
 	    	-- if unset the socket has disconnected
@@ -312,16 +332,19 @@ function RtspPusher:open(urlString, mediaSession)
 		self:handleRawData(chunk)
 	end)
 
-	socket:on('drain', function(err) 
+	socket:on('drain', function(err)
 		if (not self.isStreaming) then
 			return
 		end
 
 		if (self.mediaSession) then
 			self.mediaSession:readStart(function(rtpPacket)
-				if (not self:sendRawData(rtpPacket)) then
+				local ret = self:sendRawData(rtpPacket)
+				if (not ret) then
 					self.mediaSession:readStop()
 				end
+
+				return ret
 			end)
 		end
 	end)
@@ -370,7 +393,7 @@ function RtspPusher:sendRECORD()
 end
 
 function RtspPusher:sendSETUP()
-	if (not self.sdpSession) or (not self.sdpSession.medias) then 
+	if (not self.sdpSession) or (not self.sdpSession.medias) then
 		print(TAG, "sendSETUP", "Invalid sdp session!")
 		self:close("Invalid sdp session!")
 		return
@@ -423,7 +446,7 @@ end
 function RtspPusher:sendRequest(request)
 	if not request then return end
 
-	request:setHeader('Client', 'Node RTSP Server 1.0')
+	request:setHeader('Client', 'Node.lua RTSP Client 1.0')
 
 	if (self.sessionId) then
 		request:setHeader('Session', self.sessionId)
@@ -434,7 +457,8 @@ function RtspPusher:sendRequest(request)
 	self.lastCSeq = CSeq + 1
 	self.sentRequests[tostring(CSeq)] = request
 
-	print(TAG, 'sendRequest', request.method)
+	self:emit('request', request)
+	-- print(TAG, 'sendRequest', request.method)
 
 	if (not self.rtspCodec) then
 		self:_initRtspDecoder()
@@ -472,9 +496,12 @@ function RtspPusher:_startStreaming()
 	self.isStreaming = true
 
 	self.mediaSession:readStart(function(rtpPacket)
-		if (not self:sendRawData(rtpPacket)) then
+		local ret = self:sendRawData(rtpPacket)
+		if (not ret) then
 			self.mediaSession:readStop()
 		end
+
+		return ret
 	end)
 end
 

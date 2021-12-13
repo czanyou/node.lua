@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local fs = require('fs')
@@ -52,7 +52,7 @@ end)
   --  data = 'hello world\n'
   --  stream = fs.WriteStream:new(nil, { fd = 2 })
   --  stream:write(data)
-  --  stream:_end()
+  --  stream:finish()
   --  stream:on('finish', expect(onFinish))
   --end)
 

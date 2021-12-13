@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,19 +33,19 @@ exports.KEEP_ALIVE_TIME = 60     -- seconds (maximum is 65535)
 -------------------------------------------------------------------------------
 -- Client
 
+---@class MQTTClient
+---@field connected boolean set to true if the client is connected. false otherwise.
+---@field reconnecting boolean set to true if the client is trying to reconnect to the server. false otherwise.
+-- Client automatically handles the following:
+-- - Regular server pings
+-- - QoS flow
+-- - Automatic reconnections
+-- - Start publishing before being connected
 local Client = mqtt.MQTTSocket:extend()
 exports.Client = Client
 
---[[
--- Transmit MQTT MQTTSocket request a connection to an MQTT broker (server)
--- return: nil or error message
---]]
 function Client:connect()
-    if (self.socketConnected) then
-        self:_onDebug("Already connected")
-        return
-
-    elseif (self.connected) then
+    if (self.connected) then
         self:_onDebug("Already connected")
         return
 
@@ -61,7 +61,7 @@ function Client:connect()
     end
 
     self.destroyed = false
-    return self:_onStartConnect()
+    return self:_onConnect()
 end
 
 -- 销毁这个客户端
@@ -71,29 +71,32 @@ function Client:destroy(force, callback)
     return self:close(force, callback)
 end
 
--- Transmit MQTT Publish message
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- MQTT 3.1 Specification: Section 3.3: Publish message
+-- 发布消息 `data` 到指定的主题 `topic`
 --
--- @param {string} topic 要发布的主题
--- @param {string} data 要发布的数据
--- @param {object} options 发布选项
--- - {number} qos
--- - {boolean} retain
--- @param {function} callback fired on suback
+---@param topic string 要发布的主题
+---@param data string 要发布的数据
+---@param options table 发布选项
+-- - qos integer default 0, QoS 服务质量级别
+-- - retain boolean retain flag, default false
+-- - dup boolean default false, 是否将消息标记为是重发的数据
+---@param callback function(err) 当发送成功或失败时被调用
+---@return table
+---@return string error
 function Client:publish(topic, data, options, callback)
-    if not self:_checkConnected('publish', callback) then
-        return
-    end
-
     -- publish(topic, data, callback)
     if (type(options) == 'function') then
         callback = options
         options  = nil
     end
 
+    -- console.log('publish', options)
+    if (not self.connected) then
+        if (callback) then callback() end
+        return
+    end
+
     if (options == nil) then
-        options = { qos = 0, retain = false }
+        options = { qos = 0, retain = false, dup = false }
     end
 
     -- bytes 1,2: Fixed message header, see MQTTSocket:_sendMessage()
@@ -112,6 +115,10 @@ function Client:publish(topic, data, options, callback)
             message   = "publish",
             topic     = topic,
             messageId = messageId,
+            dup       = options.dup,
+            qos       = options.qos,
+            retain    = options.retain,
+            payload   = data,
             callback  = callback
         })
 
@@ -123,15 +130,11 @@ function Client:publish(topic, data, options, callback)
     end
 end
 
--- Transmit MQTT Subscribe message
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- MQTT 3.1 Specification: Section 3.8: Subscribe to named topics
---
--- @param {string[]} topics table of strings
--- @param {object} options is the options to subscribe with, including:
+-- Subscribe to a topic or topics
+---@param topics string|string[]|table topic or an array of topics to subscribe to
+---@param options table is the options to subscribe with, including:
 --    * `qos` qos subscription level, default 0
--- @param {function} callback fired on suback
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---@param callback function(err, granted) fired on suback
 function Client:subscribe(topics, options, callback)
     self:_checkConnected('subscribe')
 
@@ -165,12 +168,10 @@ function Client:subscribe(topics, options, callback)
     return self:_sendMQTTPacket(message, nil, topics)
 end
 
--- Transmit MQTT Unsubscribe message
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- MQTT 3.1 Specification: Section 3.10: Unsubscribe from named topics
---
--- @param {string[]} topics table of strings
--- @param {function} callback fired on unsuback
+-- Unsubscribe from a topic or topics
+---@param topics string|string[] topic or an array of topics to unsubscribe from
+---@param options table options of unsubscribe
+---@param callback function(err) fired on unsuback. An error occurs if client is disconnecting.
 function Client:unsubscribe(topics, options, callback)
     self:_checkConnected('unsubscribe')
 
@@ -206,26 +207,24 @@ end
 -------------------------------------------------------------------------------
 -- exports
 
---[[
 -- Connects to the broker specified by the given url and options and returns
 -- a Client.
-@param {string} urlString
-@param {object} options
-- {function} `callback`:  function, Invoked when subscribed topic messages received
-- {boolean} `clean`: `true`, set to false to receive QoS 1 and 2 messages while offline
-- {string} `clientId`:  `'mqttjs_' + Math.random().toString(16).substr(2, 8)`
-- {number} `connectTimeout`: `15 * 1000` milliseconds, time to wait before a CONNACK is received
-- {string} `hostname`:  string, Host name or address of the MQTT broker
-- {object} `incomingStore`: a [Store](#store) for the incoming packets
-- {number} `keepalive`: `10` seconds, set to `0` to disable
-- {object} `outgoingStore`: a [Store](#store) for the outgoing packets
-- {string} `password`: the password required by your broker, if any
-- {number} `port`: integer, Port number of the MQTT broker (default: 1883)
-- {string} `protocol`: 'mqtt'
-- {number} `reconnectPeriod`: `60 * 1000` milliseconds, interval between two reconnections
-- {string} `username`: the username required by your broker, if any
-@returns MQTTClient
---]]
+---@param urlString string
+---@param options table
+-- - callback function:  function, Invoked when subscribed topic messages received
+-- - clean boolean: `true`, set to false to receive QoS 1 and 2 messages while offline
+-- - clientId string: `'mqttjs_' + Math.random().toString(16).substr(2, 8)`
+-- - connectTimeout integer: `30 * 1000` milliseconds, time to wait before a CONNACK is received
+-- - hostname string: Host name or address of the MQTT broker
+-- - incomingStore table: a [Store](#store) for the incoming packets
+-- - keepalive integer: `60` seconds, set to `0` to disable
+-- - outgoingStore table: a [Store](#store) for the outgoing packets
+-- - password string: the password required by your broker, if any
+-- - protocol string: 'mqtt'
+-- - reconnectPeriod integer: 1000 milliseconds, interval between two reconnections
+-- - servers url[]: servers
+-- - username string: the username required by your broker, if any
+-- @returns MQTTClient
 function exports.connect(urlString, options)
     if (type(urlString) == 'string') then
         if (type(options) ~= 'table') then
@@ -233,13 +232,12 @@ function exports.connect(urlString, options)
         end
 
         local urlObject  = url.parse(urlString) or {}
-        options.protocol = urlObject.protocol or 'mqtt'
-        options.hostname = urlObject.hostname or '127.0.0.1'
-        options.port     = tonumber(urlObject.port)
+        options.servers = { urlObject }
 
     -- connect(options)
     elseif (type(urlString) == 'table') then
         options = urlString
+        urlString = nil
     end
 
     if (type(options) ~= 'table') then
@@ -247,9 +245,7 @@ function exports.connect(urlString, options)
     end
 
     local client = Client:new(options)
-    if (urlString) then
-        client:connect()
-    end
+    client:connect()
 
     return client
 end

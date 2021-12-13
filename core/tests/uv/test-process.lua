@@ -1,5 +1,5 @@
 local uv    = require('luv')
-local tap   = require('ext/tap')
+local tap   = require('util/tap')
 local test = tap.test
 
 local isWindows = os.platform() == "win32"
@@ -18,12 +18,12 @@ test("process stdout", function (expect, uv)
 		stdio = {nil, stdout},
 
 	}, expect(function (code, signal)
-		p("exit", code, signal)
+		console.log("exit", code, signal)
 		uv.close(handle)
 	end))
 
 	uv.read_start(stdout, expect(function (err, chunk)
-		p("stdout", err, chunk)
+		console.log("stdout", err, chunk)
 		assert(not err, err)
 		uv.close(stdout)
 	end))
@@ -38,13 +38,13 @@ test("spawn and kill by pid", function (expect, uv)
 		args = {1},
 
 	}, expect(function (code, signal)
-		p("exit", handle, code,signal)
+		console.log("exit", handle, code,signal)
 		assert(code == 0)
 		assert(signal == 2)
 		uv.close(handle)
 	end))
 
-	--p{handle=handle,pid=pid}
+	--console.log{handle=handle,pid=pid}
 	uv.kill(pid, "sigint")
 end)
 
@@ -53,13 +53,13 @@ test("spawn and kill by handle", function (expect, uv)
 	handle, pid = uv.spawn("sleep", {
 		args = {1},
 	}, expect(function (code, signal)
-		p("exit", handle, code, signal)
+		console.log("exit", handle, code, signal)
 		assert(code == 0)
 		assert(signal == 15)
 		uv.close(handle)
 	end))
 
-	--p{handle=handle,pid=pid}
+	--console.log{handle=handle,pid=pid}
 	uv.process_kill(handle, "sigterm")
 end)
 
@@ -80,14 +80,14 @@ test("process stdio", function (expect, uv)
 	handle, pid = uv.spawn("cat", {
 		stdio = {stdin, stdout},
 	}, expect(function (code, signal)
-		p("exit", code, signal)
+		console.log("exit", code, signal)
 		uv.close(handle)
 	end))
 
-	--p(handle, pid)
+	--console.log(handle, pid)
 
 	uv.read_start(stdout, expect(function (err, chunk)
-		p("stdout", err, chunk)
+		console.log("stdout", err, chunk)
 		assert(not err, err)
 		uv.close(stdout)
 	end))

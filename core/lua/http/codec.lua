@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014-2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,12 +18,8 @@ limitations under the License.
 --]]
 
 local meta = { }
-meta.name        = "lnode/http/codec"
-meta.version     = "1.0.0-1"
+
 meta.description = "A simple pair of functions for converting between hex and raw strings."
-meta.tags        = { "codec", "http" }
-meta.license     = "Apache 2"
-meta.author      = { name = "Tim Caswell" }
 
 local exports = { meta = meta }
 
@@ -222,16 +218,25 @@ function exports.decoder()
         local _, offset
         local version
 
+        -- `HTTP/1.1 ### xxx\r\n`
         _, offset, version, head.code, head.reason =
             chunk:find("^HTTP/(%d%.%d) (%d+) ([^\r\n]+)\r?\n")
+
+        if (not offset) then
+            -- `HTTP/1.1 ###\r\n`
+            _, offset, version, head.code, head.reason =
+                chunk:find("^HTTP/(%d%.%d) (%d+)\r?\n")
+        end
 
         if offset then
             head.code = tonumber(head.code)
 
         else
+            -- `XXX xxx HTTP/1.1\r\n`
             _, offset, head.method, head.path, version =
-                chunk:find("^([%u-]+) ([^ ]+) HTTP/(%d%.%d)\r?\n")
+                chunk:find("^([%u-]+)[ ]+([^ ]+) HTTP/(%d%.%d)\r?\n")
             if not offset then
+                console.log(chunk)
                 error("expected HTTP data")
             end
         end

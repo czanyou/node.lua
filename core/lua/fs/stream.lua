@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014-2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ limitations under the License.
 
 --]]
 
-local fs        = require('./file')
+local fs        = require('fs/file')
 local bind      = require('util').bind
 
 local Writable  = require('stream').Writable
@@ -71,8 +71,11 @@ end
 
 function WriteStream:_write(data, callback)
     if not self.fd then
-        return self:once('open', bind(self._write, self, data, callback))
+        return self:once('open', function()
+            self:_write(data, callback)
+        end)
     end
+
     fs.write(self.fd, nil, data, function(err, bytes)
         if err then
             self:destroy()
@@ -80,7 +83,7 @@ function WriteStream:_write(data, callback)
         end
         self.bytesWritten = self.bytesWritten + bytes
         callback()
-    end )
+    end)
 end
 
 function WriteStream:close()

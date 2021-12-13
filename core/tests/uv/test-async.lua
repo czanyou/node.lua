@@ -1,18 +1,16 @@
-local tap = require('ext/tap')
-local test = tap.test
+local tap = require('util/tap')
+local uv = require('luv')
 
-test("async", function( ... )
-	
-end)
+local test = tap.test
 
 -- [[
 
-test("test pass async between threads", function(expect, uv)
+test("test async - pass async between threads", function(expect)
 	local before = uv.uptime()
 	local async = nil
 
-	local async_callback = function (a, b, c)
-		console.log('in async notify callback')
+	local asyncCallback = function (a, b, c)
+		console.log('enter async notify callback')
 		--console.log(a, b, c)
 		assert(a == 'a')
 		assert(b == true)
@@ -21,18 +19,17 @@ test("test pass async between threads", function(expect, uv)
 		uv.close(async)
 		async = nil
 
-		--local test = 100 / '34a';		
-		console.log('end async notify callback')
+		console.log('exit async notify callback')
 	end
 
-	async = uv.new_async(expect(async_callback))
+	async = uv.new_async(expect(asyncCallback))
 	--console.log('async', async)
 
 	local args = { 500, 'string', nil, false, 5, "helloworld", async }
 	local unpack = table.unpack
 
-	local thread_func = function(num, s, null, bool, five, hw, async)
-		local uv = require('luv')
+	local threadCallback = function(num, s, null, bool, five, hw, async)
+		local luv = require('luv')
 		local init = require('init')
 
 		assert(type(num) == "number")
@@ -41,22 +38,16 @@ test("test pass async between threads", function(expect, uv)
 		assert(bool == false)
 		assert(five == 5)
 		assert(hw == 'helloworld')
-
-		--console.log('thread async', type(async), async)
-
-		-- 必须将 uv 添加到 package.loaded 中
 		assert(type(async) == 'userdata')
-		uv.sleep(1200)
+		luv.sleep(1200)
 
-		assert(uv.async_send(async, 'a', true, 250) == 0)
+		assert(luv.async_send(async, 'a', true, 250) == 0)
 
-		-- local test = 100 / '34a';		
-		console.log('end thread')
-
-		uv.sleep(200)
+		luv.sleep(200)
+		console.log('exit thread')
 	end
 
-	local thread = uv.new_thread(thread_func, unpack(args))
+	local thread = uv.new_thread(threadCallback, unpack(args))
 	thread:join()
 
 	local elapsed = (uv.uptime() - before) * 1000
@@ -64,5 +55,3 @@ test("test pass async between threads", function(expect, uv)
 end)
 
 --]]
-
-tap.run()

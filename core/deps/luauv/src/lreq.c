@@ -19,7 +19,7 @@
 
 static int luv_check_continuation(lua_State* L, int index) {
   if (lua_isnoneornil(L, index)) return LUA_NOREF;
-  luaL_checktype(L, index, LUA_TFUNCTION);
+  luv_check_callable(L, index);
   lua_pushvalue(L, index);
   return luaL_ref(L, LUA_REGISTRYINDEX);
 }
@@ -66,7 +66,13 @@ static void luv_fulfill_req(lua_State* L, luv_req_t* data, int nargs) {
 static void luv_cleanup_req(lua_State* L, luv_req_t* data) {
   luaL_unref(L, LUA_REGISTRYINDEX, data->req_ref);
   luaL_unref(L, LUA_REGISTRYINDEX, data->callback_ref);
-  luaL_unref(L, LUA_REGISTRYINDEX, data->data_ref);
+  if (data->data_ref == LUV_REQ_MULTIREF) {
+    for (int i = 0; ((int*)(data->data))[i] != LUA_NOREF; i++) {
+      luaL_unref(L, LUA_REGISTRYINDEX, ((int*)(data->data))[i]);
+    }
+  }
+  else
+    luaL_unref(L, LUA_REGISTRYINDEX, data->data_ref);
   free(data->data);
   free(data);
 }

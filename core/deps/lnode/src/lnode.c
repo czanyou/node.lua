@@ -1,5 +1,5 @@
 /**
- *  Copyright 2016 The Node.lua Authors. All Rights Reserved.
+ *  Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,19 +32,28 @@
 #include <errno.h>
 #endif // _WIN32
 
+#ifdef NODE_LUA_RESOURCE
+#include "../../../../build/packages.c"
+#endif
+
 #define WITH_CJSON        1
-#define WITH_ENV          1
-#define WITH_LMESSAGE     1
 #define WITH_LUTILS       1
 #define WITH_MINIZ        1
 
-LUALIB_API int luaopen_cjson        (lua_State* const L);
-LUALIB_API int luaopen_env          (lua_State* const L);
-LUALIB_API int luaopen_lhttp_parser (lua_State* const L);
-LUALIB_API int luaopen_lutils       (lua_State* const L);
-LUALIB_API int luaopen_miniz        (lua_State* const L);
-LUALIB_API int luaopen_lsqlite      (lua_State* const L);
-LUALIB_API int luaopen_snapshot     (lua_State* const L);
+LUALIB_API int luaopen_cjson(lua_State* const L);
+LUALIB_API int luaopen_lsqlite(lua_State* const L);
+LUALIB_API int luaopen_lutils(lua_State* const L);
+LUALIB_API int luaopen_lmbedtls_cipher(lua_State* const L);
+LUALIB_API int luaopen_lmbedtls_md(lua_State* const L);
+LUALIB_API int luaopen_lmbedtls_pk(lua_State* const L);
+LUALIB_API int luaopen_lmbedtls_rng(lua_State* const L);
+LUALIB_API int luaopen_lmbedtls_tls(lua_State* const L);
+LUALIB_API int luaopen_lmbedtls_x509_crl(lua_State* const L);
+LUALIB_API int luaopen_lmbedtls_x509_csr(lua_State* const L);
+LUALIB_API int luaopen_lmbedtls(lua_State* const L);
+LUALIB_API int luaopen_miniz(lua_State* const L);
+LUALIB_API int luaopen_lmodbus(lua_State* const L);
+LUALIB_API int luaopen_snapshot(lua_State* const L);
 
 static int lua_table_set(lua_State *L, const char* key, const char* value)
 {
@@ -53,6 +62,18 @@ static int lua_table_set(lua_State *L, const char* key, const char* value)
   }
 
   lua_pushstring(L, value);
+  lua_setfield(L, -2, key);
+
+  return 0;
+}
+
+static int lua_table_set_data(lua_State *L, const char* key, const char* value, size_t length)
+{
+  if (key == NULL || value == 0) {
+    return -1;
+  }
+
+  lua_pushlstring(L, value, length);
   lua_setfield(L, -2, key);
 
   return 0;
@@ -114,6 +135,30 @@ static int lnode_get_dirname(char* buffer) {
   }
 
   return -1;
+}
+
+/** Prints the current lnode version information. */
+LUALIB_API int lnode_print_version()
+{
+    char buffer[PATH_MAX];
+    memset(buffer, 0, sizeof(buffer));
+
+#ifdef WITH_INIT
+    sprintf(buffer, "lnode %d.%d.%s (Lua %s.%s.%s, libuv %s, build %s %s)",
+            LNODE_MAJOR_VERSION, LNODE_MINOR_VERSION, core_build,
+            LUA_VERSION_MAJOR, LUA_VERSION_MINOR, LUA_VERSION_RELEASE,
+            uv_version_string(), __DATE__, __TIME__);
+#else
+    sprintf(buffer, "lnode %d.%d (Lua %s.%s.%s, libuv %s, build %s %s)",
+            LNODE_MAJOR_VERSION, LNODE_MINOR_VERSION,
+            LUA_VERSION_MAJOR, LUA_VERSION_MINOR, LUA_VERSION_RELEASE,
+            uv_version_string(), __DATE__, __TIME__);
+#endif
+
+    lua_writestring(buffer, strlen(buffer));
+    lua_writeline();
+
+    return 0;
 }
 
 LUALIB_API int lnode_get_filename(const char* path, char* buffer) {
@@ -194,7 +239,10 @@ static int lnode_get_rootpath(char* buffer) {
   lnode_get_exepath(exePath, PATH_MAX); // /path/to/bin/lnode
   lnode_get_dirname(exePath); // /path/to/bin
   lnode_get_dirname(exePath); // /path/to
-  if (lnode_file_exists(exePath, "/lua/init.lua")) { // /path/to/lua/init.lua
+  if (lnode_file_exists(exePath, "/app/lpm")) { // /path/to/app/lpm
+    root = exePath;
+
+  } else if (lnode_file_exists(exePath, "/app/")) { // /path/to/app/
     root = exePath;
   }
 
@@ -206,10 +254,31 @@ static int lnode_get_rootpath(char* buffer) {
 
 #endif
 
+static int lnode_load(lua_State* L) {
+	const char* name = luaL_optstring(L, 1, NULL);
+
+  #ifdef WITH_INIT
+  if (strncmp(name, "init", 4) == 0) {
+    lua_pushlstring(L, init_data, init_size);
+  } else {
+	  lua_pushlstring(L, core_data, core_size);
+  }
+	return 1;
+  #else
+  return 0;
+  #endif
+}
+
+static const luaL_Reg lnode_functions[] = {
+  {"load",	lnode_load},
+  {NULL, NULL}
+};
+
 LUALIB_API int luaopen_lnode(lua_State *L)
 {
   char buffer[1024];
-  lua_newtable(L); // lnode
+  // lua_newtable(L); // lnode
+  luaL_newlib(L, lnode_functions);
 
   // lnode version
 #ifdef LNODE_MAJOR_VERSION
@@ -222,6 +291,16 @@ LUALIB_API int luaopen_lnode(lua_State *L)
   memset(rootPath, 0, sizeof(rootPath));
   lnode_get_rootpath(rootPath);
   lua_table_set(L, "NODE_LUA_ROOT", rootPath);
+  lua_table_set(L, "NODE_LUA_PATH", NODE_LUA_ROOT);
+
+#ifdef NODE_LUA_BOARD
+  lua_table_set(L, "board", NODE_LUA_BOARD);
+#endif
+
+#ifdef WITH_INIT
+  lua_table_set(L, "init", "init");
+  lua_table_set(L, "build", core_build);
+#endif
 
   lua_newtable(L); // versions
 
@@ -445,11 +524,6 @@ LUALIB_API int lnode_openlibs(lua_State *L)
     lua_setfield(L, -2, "cjson");
 #endif
 
-#ifdef WITH_ENV
-    lua_pushcfunction(L, luaopen_env);
-    lua_setfield(L, -2, "env");
-#endif
-
 #ifdef WITH_LUTILS
     lua_pushcfunction(L, luaopen_lutils);
     lua_setfield(L, -2, "lutils");
@@ -465,9 +539,37 @@ LUALIB_API int lnode_openlibs(lua_State *L)
     lua_setfield(L, -2, "miniz");
 #endif
 
-#ifdef LUA_USE_LSQLITE
+#ifdef BUILD_SQLITE
     lua_pushcfunction(L, luaopen_lsqlite);
     lua_setfield(L, -2, "lsqlite");
+#endif
+
+#ifdef BUILD_MODBUS
+    lua_pushcfunction(L, luaopen_lmodbus);
+    lua_setfield(L, -2, "lmodbus");
+#endif
+
+#ifdef BUILD_MBEDTLS
+    lua_pushcfunction(L, luaopen_lmbedtls_pk);
+    lua_setfield(L, -2, "lmbedtls.pk");
+
+    lua_pushcfunction(L, luaopen_lmbedtls_md);
+    lua_setfield(L, -2, "lmbedtls.md");
+
+    lua_pushcfunction(L, luaopen_lmbedtls_rng);
+    lua_setfield(L, -2, "lmbedtls.rng");
+
+    lua_pushcfunction(L, luaopen_lmbedtls_tls);
+    lua_setfield(L, -2, "lmbedtls.tls");
+
+    lua_pushcfunction(L, luaopen_lmbedtls_cipher);
+    lua_setfield(L, -2, "lmbedtls.cipher");
+    
+    lua_pushcfunction(L, luaopen_lmbedtls_x509_crl);
+    lua_setfield(L, -2, "lmbedtls.x509.crl");
+
+    lua_pushcfunction(L, luaopen_lmbedtls_x509_csr);
+    lua_setfield(L, -2, "lmbedtls.x509.csr");
 #endif
 
     // Store lnode module definition at preload.lnode

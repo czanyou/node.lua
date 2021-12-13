@@ -1,0 +1,8 @@
+{
+	"description": "DT02B Gateway",
+	"name": "dt02b",
+	"tags": ["dt02b", "hi3516", "wot", "gateway"],
+    "applications": ["gateway", "lpm", "wotc", "lci"],
+    "libs": ["lmodbus.so", "lmbedtls.so", "lsdl.so"],
+	"target": "arm-linux"
+}

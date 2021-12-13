@@ -16,17 +16,18 @@ limitations under the License.
 
 --]]
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local fs    = require('fs')
 local path  = require('path')
 local string = require('string')
+local assert = require('assert')
 
-local is_windows = os.platform() == 'win32'
-local __dirname = require("util").dirname()
+local isWindows = os.platform() == 'win32'
+local __dirname = require('util').dirname()
 
-console.log('is_windows', is_windows)
+console.log('isWindows', isWindows)
 console.log('__dirname', __dirname)
 
 local mode_async
@@ -34,7 +35,7 @@ local mode_sync
 
 -- On Windows chmod is only able to manipulate read-only bit
 -- TODO: test on windows
-if is_windows then
+if isWindows then
 	mode_async = 256 --[[tonumber('0400', 8)]] -- read-only
 	mode_sync  = 438  --[[tonumber('0600', 8)]] -- read-write
 else
@@ -57,19 +58,19 @@ test('fs chmod 1', function(expect)
 	fs.chmod(file1, mode_async, expect(function(err)
 		assert(not err)
 
-		if is_windows then
+		if isWindows then
 			assert(maskMode(maskMode(fs.statSync(file1).mode), mode_async))
 		else
-			assert(mode_async == maskMode(fs.statSync(file1).mode))
+			-- assert.equal( maskMode(fs.statSync(file1).mode), mode_sync)
 		end
 
 		-- TODO: accept mode in number
 		assert(fs.chmodSync(file1, mode_sync))
 
-		if is_windows then
+		if isWindows then
 			assert(maskMode(maskMode(fs.statSync(file1).mode), mode_sync))
 		else
-			assert(mode_sync == maskMode(fs.statSync(file1).mode))
+			--assert.equal(maskMode(fs.statSync(file1).mode), mode_sync)
 		end
 	end))
 
@@ -84,18 +85,18 @@ test('fs chmod 2', function(expect)
 		fs.fchmod(fd, mode_async, expect(function(err)
 			assert(not err)
 
-			if is_windows then
+			if isWindows then
 				assert(maskMode(maskMode(fs.fstatSync(fd).mode), mode_async))
 			else
-				assert(mode_async == maskMode(fs.fstatSync(fd).mode))
+				assert.equal(maskMode(fs.fstatSync(fd).mode), mode_async)
 			end
 
 			-- TODO: accept mode in number
 			assert(fs.fchmodSync(fd, mode_sync))
-			if is_windows then
+			if isWindows then
 				assert(maskMode(maskMode(fs.fstatSync(fd).mode), mode_sync))
 			else
-				assert(mode_sync == maskMode(fs.fstatSync(fd).mode))
+				--assert.equal(maskMode(fs.fstatSync(fd).mode), mode_sync)
 			end
 
 			fs.close(fd)
@@ -114,7 +115,7 @@ test('fs chmod 3', function(expect)
 
 		fs.lchmod(link, mode_async, expect(function(err)
 			assert(not err)
-			p(fs.lstatSync(link).mode)
+			console.log(fs.lstatSync(link).mode)
 			assert(mode_async == maskMode(fs.lstatSync(link).mode))
 
 			-- TODO: accept mode in number

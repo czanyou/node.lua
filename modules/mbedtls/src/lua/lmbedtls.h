@@ -56,70 +56,70 @@
 #include "mbedtls/x509_csr.h"
 #include "mbedtls/net.h"
 
-#define TOSTRING_MT(L,tname) lua_pushfstring( L, tname ": %p", lua_touserdata( L, 1 ) );
+#define TOSTRING_MT(L, tname) lua_pushfstring(L, tname ": %p", lua_touserdata(L, 1));
 
 // helper functions
 
 typedef char lmbedtls_errbuf_t[BUFSIZ];
 
-static inline void lmbedtls_strerror( int rc, lmbedtls_errbuf_t errbuf )
+static inline void lmbedtls_strerror(int rc, lmbedtls_errbuf_t errbuf)
 {
-    mbedtls_strerror( rc, errbuf, BUFSIZ );
+#if defined(MBEDTLS_ERROR_C)
+    mbedtls_strerror(rc, errbuf, BUFSIZ);
+#endif
 }
 
-static inline void lmbedtls_newmetatable( lua_State *L, const char *tname,
-                                          struct luaL_Reg mmethods[], luaL_Reg methods[] )
+static inline void lmbedtls_newmetatable(lua_State *L, const char *tname,
+                                         struct luaL_Reg mmethods[], luaL_Reg methods[])
 {
     struct luaL_Reg *function = mmethods;
 
     // register metatable
-    luaL_newmetatable( L, tname );
-    while ( function->name ) {
-        lauxh_pushfn2tbl( L, function->name, function->func );
+    luaL_newmetatable(L, tname);
+    while (function->name)
+    {
+        lauxh_pushfn2tbl(L, function->name, function->func);
         function++;
     }
 
     // push methods into __index table
-    lua_pushstring( L, "__index" );
-    lua_newtable( L );
+    lua_pushstring(L, "__index");
+    lua_newtable(L);
     function = methods;
-    while ( function->name ) {
-        lauxh_pushfn2tbl( L, function->name, function->func );
+    while (function->name)
+    {
+        lauxh_pushfn2tbl(L, function->name, function->func);
         function++;
     }
 
-    lua_rawset( L, -3 );
-    lua_pop( L, 1 );
+    lua_rawset(L, -3);
+    lua_pop(L, 1);
 }
 
-
 // define module names
-#define LMBEDTLS_MD_MT          "mbedtls_md_t"
-#define LMBEDTLS_RNG_MT         "mbedtls_rng_t"
-#define LMBEDTLS_CIPHER_MT      "mbedtls_cipher_t"
-#define LMBEDTLS_PK_MT          "mbedtls_pk_t"
-#define LMBEDTLS_X509_CRL_MT    "mbedtls_x509_crl_t"
-#define LMBEDTLS_X509_CSR_MT    "mbedtls_x509_csr_t"
-#define LMBEDTLS_TLS_MT         "mbedtls_tls_t"
-
+#define LMBEDTLS_MD_MT "mbedtls_md_t"
+#define LMBEDTLS_RNG_MT "mbedtls_rng_t"
+#define LMBEDTLS_CIPHER_MT "mbedtls_cipher_t"
+#define LMBEDTLS_PK_MT "mbedtls_pk_t"
+#define LMBEDTLS_X509_CRL_MT "mbedtls_x509_crl_t"
+#define LMBEDTLS_X509_CSR_MT "mbedtls_x509_csr_t"
+#define LMBEDTLS_TLS_MT "mbedtls_tls_t"
 
 // define data types
 
-typedef struct {
+typedef struct
+{
     mbedtls_ctr_drbg_context drbg;
     mbedtls_entropy_context entropy;
 } lmbedtls_rng_t;
 
-
 // define prototypes
-LUALIB_API int luaopen_lmbedtls_md      ( lua_State *L );
-LUALIB_API int luaopen_lmbedtls_rng     ( lua_State *L );
-LUALIB_API int luaopen_lmbedtls_cipher  ( lua_State *L );
-LUALIB_API int luaopen_lmbedtls_pk      ( lua_State *L );
-LUALIB_API int luaopen_lmbedtls_x509_crl( lua_State *L );
-LUALIB_API int luaopen_lmbedtls_x509_csr( lua_State *L );
-LUALIB_API int luaopen_lmbedtls_tls     ( lua_State *L );
-
+LUALIB_API int luaopen_lmbedtls_md(lua_State *L);
+LUALIB_API int luaopen_lmbedtls_rng(lua_State *L);
+LUALIB_API int luaopen_lmbedtls_cipher(lua_State *L);
+LUALIB_API int luaopen_lmbedtls_pk(lua_State *L);
+LUALIB_API int luaopen_lmbedtls_x509_crl(lua_State *L);
+LUALIB_API int luaopen_lmbedtls_x509_csr(lua_State *L);
+LUALIB_API int luaopen_lmbedtls_tls(lua_State *L);
 
 #endif
-

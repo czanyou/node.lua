@@ -1,13 +1,16 @@
 cmake_minimum_required(VERSION 2.8)
 
-message(STATUS "Build: BUILD_BLUETOOTH:     ${BUILD_BLUETOOTH}")
-message(STATUS "Build: BUILD_CAMERA:        ${BUILD_CAMERA}")
-message(STATUS "Build: BUILD_DEVICES:       ${BUILD_DEVICES}")
-message(STATUS "Build: BUILD_MBEDTLS:       ${BUILD_MBEDTLS}")
-message(STATUS "Build: BUILD_MEDIA_TS:      ${BUILD_MEDIA_TS}")
-message(STATUS "Build: BUILD_MESSAGE:       ${BUILD_MESSAGE}")
-message(STATUS "Build: BUILD_MODBUS:        ${BUILD_MODBUS}")
-message(STATUS "Build: BUILD_SQLITE:        ${BUILD_SQLITE}")
+message(STATUS "= BUILD OPTIONS: =========")
+message(STATUS "# BUILD_BLUETOOTH: _______ [${BUILD_BLUETOOTH}]")
+message(STATUS "# BUILD_CAMERA: __________ [${BUILD_CAMERA}]")
+message(STATUS "# BUILD_DEVICES: _________ [${BUILD_DEVICES}]")
+message(STATUS "# BUILD_MBEDTLS: _________ [${BUILD_MBEDTLS}]")
+message(STATUS "# BUILD_MEDIA_TS: ________ [${BUILD_MEDIA_TS}]")
+message(STATUS "# BUILD_MESSAGE: _________ [${BUILD_MESSAGE}]")
+message(STATUS "# BUILD_MODBUS: __________ [${BUILD_MODBUS}]")
+message(STATUS "# BUILD_SQLITE: __________ [${BUILD_SQLITE}]")
+message(STATUS "# ARCH_TYPE: _____________ [${ARCH_TYPE}]")
+message(STATUS "")
 
 # HCI bluetooth
 if (BUILD_BLUETOOTH)
@@ -47,4 +50,8 @@ endif ()
 # Sqlite 3 database
 if (BUILD_SQLITE)
     include(modules/sqlite/make.cmake)
+endif ()
+
+if (BUILD_RTSP)
+    include(modules/rtsp/make.cmake)
 endif ()

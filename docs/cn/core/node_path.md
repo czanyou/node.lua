@@ -4,7 +4,51 @@
 
 通过 `require('path')` 来加载此模块。以下是本模块所提供的方法：
 
-## path.basename
+## path 属性
+
+### path.delimiter
+
+特定平台的路径分隔符, ; 或者 ':'.
+
+*nix 上的例子:
+
+```lua
+process.env.PATH.split(path.delimiter)
+-- returns ['/usr/bin', '/bin', '/usr/sbin', '/sbin', '/usr/local/bin']
+```
+
+Windows 上的例子:
+
+```lua
+print(process.env.PATH)
+-- 'C:\Windows\system32;C:\Windows;C:\Program Files\nodejs\'
+
+process.env.PATH.split(path.delimiter)
+-- returns ['C:\Windows\system32', 'C:\Windows', 'C:\Program Files\nodejs\']
+
+```
+
+### path.sep
+
+特定平台的文件分隔工具. '\' 或者 '/'.
+
+*nix 上的例子:
+
+```lua
+'foo/bar/baz'.split(path.sep)
+-- returns ['foo', 'bar', 'baz']
+```
+
+Windows 上的例子:
+
+```lua
+'foo\\bar\\baz'.split(path.sep)
+-- returns ['foo', 'bar', 'baz']
+```
+
+## path 方法
+
+### path.basename
 
 > path.basename(p, [ext])
 
@@ -17,7 +61,7 @@ path.basename('/foo/bar/baz/asdf/quux.html', '.html')
 -- returns 'quux'
 ```
 
-## path.dirname
+### path.dirname
 
 > path.dirname(p)
 
@@ -30,7 +74,7 @@ path.dirname('/foo/bar/baz/asdf/quux')
 -- returns '/foo/bar/baz/asdf'
 ```
 
-## path.extname
+### path.extname
 
 > path.extname(p)
 
@@ -41,7 +85,7 @@ path.extname('index')
 --returns ''
 ```
 
-## path.isAbsolute
+### path.isAbsolute
 
 > path.isAbsolute(path)
 
@@ -65,7 +109,7 @@ path.isAbsolute('bar\\baz')   -- false
 path.isAbsolute('.')         -- false
 ```
 
-## path.normalize
+### path.normalize
 
 > path.normalize(p)
 
@@ -80,7 +124,7 @@ path.normalize('/foo/bar//baz/asdf/quux/..')
 -- returns '/foo/bar/baz/asdf'
 ```
 
-## path.join
+### path.join
 
 > path.join([path1], [path2], [...])
 
@@ -95,7 +139,7 @@ path.join('foo', {}, 'bar')
 -- 抛出异常 TypeError: Arguments to path.join must be strings
 ```
 
-## path.relative
+### path.relative
 
 > path.relative(from, to)
 
@@ -112,7 +156,7 @@ path.relative('/data/orandea/test/aaa', '/data/orandea/impl/bbb')
 -- returns '../../impl/bbb'
 ```
 
-## path.resolve
+### path.resolve
 
 > path.resolve([from ...], to)
 
@@ -143,44 +187,3 @@ path.resolve('wwwroot', 'static_files/png/', '../gif/image.gif')
 -- 如果当前工作目录为 /home/myself/node，它返回：
 -- '/home/myself/node/wwwroot/static_files/gif/image.gif'
 ```
-
-## path.delimiter
-
-特定平台的路径分隔符, ; 或者 ':'.
-
-*nix 上的例子:
-
-```lua
-process.env.PATH.split(path.delimiter)
--- returns ['/usr/bin', '/bin', '/usr/sbin', '/sbin', '/usr/local/bin']
-```
-
-Windows 上的例子:
-
-```lua
-print(process.env.PATH)
--- 'C:\Windows\system32;C:\Windows;C:\Program Files\nodejs\'
-
-process.env.PATH.split(path.delimiter)
--- returns ['C:\Windows\system32', 'C:\Windows', 'C:\Program Files\nodejs\']
-
-```
-
-## path.sep
-
-特定平台的文件分隔工具. '\' 或者 '/'.
-
-*nix 上的例子:
-
-```lua
-'foo/bar/baz'.split(path.sep)
--- returns ['foo', 'bar', 'baz']
-```
-
-Windows 上的例子:
-
-```lua
-'foo\\bar\\baz'.split(path.sep)
--- returns ['foo', 'bar', 'baz']
-```
-

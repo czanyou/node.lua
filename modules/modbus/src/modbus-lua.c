@@ -13,10 +13,6 @@
 #include <modbus.h>
 #include "modbus-private.h"
 
-#include "luv.h"
-
-#include "lthreadpool.h"
-
 #define LUV_MODBUS "modbus"
 
 enum
@@ -31,7 +27,6 @@ typedef struct l_modbus_t
     modbus_mapping_t *mb_mapping;
     int use_backend;
     int fd;
-    uv_mutex_t lock;
 } l_modbus_t;
 
 static void l_pushtable(lua_State *L, int key, void *value, char *vtype)
@@ -72,43 +67,23 @@ static int lmodbus_version(lua_State *L)
     return 1;
 }
 
-static int lmodbus_new(lua_State *L)
+static int lmodbus_rtu_new(lua_State *L)
 {
-    const char *host = lua_tostring(L, 1);
-    int port = (int)lua_tointeger(L, 2);
+    const char *device = lua_tostring(L, 1);
+    int baudrate = (int)lua_tointeger(L, 2);
     char parity = (char)luaL_optinteger(L, 3, 'N'); // N: 78, O: 79, E: 69
     int data_bit = (int)luaL_optinteger(L, 4, 8);
     int stop_bit = (int)luaL_optinteger(L, 5, 1);
 
     lua_pop(L, 2);
 
-    l_modbus_t *self;
+    l_modbus_t* self = (l_modbus_t *)lua_newuserdata(L, sizeof(l_modbus_t));
+    luaL_getmetatable(L, LUV_MODBUS);
+    lua_setmetatable(L, -2);
 
-    if (port < 9600)
-    {
-        self = (l_modbus_t *)lua_newuserdata(L, sizeof(l_modbus_t));
-
-        luaL_getmetatable(L, LUV_MODBUS);
-        lua_setmetatable(L, -2);
-
-        self->modbus = modbus_new_tcp(host, port);
-        self->mb_mapping = NULL;
-        self->use_backend = TCP;
-    }
-    else
-    {
-        self = (l_modbus_t *)lua_newuserdata(L, sizeof(l_modbus_t));
-
-        luaL_getmetatable(L, LUV_MODBUS);
-        lua_setmetatable(L, -2);
-
-        const char *device = host;
-        int baud = port;
-
-        self->modbus = modbus_new_rtu(device, port, parity, data_bit, stop_bit);
-        self->mb_mapping = NULL;
-        self->use_backend = RTU;
-    }
+    self->modbus = modbus_new_rtu(device, baudrate, parity, data_bit, stop_bit);
+    self->mb_mapping = NULL;
+    self->use_backend = RTU;
 
     if (self->modbus == NULL)
     {
@@ -116,8 +91,36 @@ static int lmodbus_new(lua_State *L)
         return -1;
     }
 
-    uv_mutex_init(&self->lock);
     return 1;
+}
+
+static int lmodbus_tcp_new(lua_State *L)
+{
+    const char *host = lua_tostring(L, 1);
+    int port = (int)lua_tointeger(L, 2);
+
+    lua_pop(L, 2);
+
+    l_modbus_t* self = (l_modbus_t *)lua_newuserdata(L, sizeof(l_modbus_t));
+    luaL_getmetatable(L, LUV_MODBUS);
+    lua_setmetatable(L, -2);
+
+    self->modbus = modbus_new_tcp(host, port);
+    self->mb_mapping = NULL;
+    self->use_backend = TCP;
+
+    if (self->modbus == NULL)
+    {
+        fprintf(stderr, "Modbus init error: %s\n", modbus_strerror(errno));
+        return -1;
+    }
+
+    return 1;
+}
+
+static int lmodbus_new(lua_State *L)
+{
+    return lmodbus_rtu_new(L);
 }
 
 static l_modbus_t *lmodbus_check(lua_State *L, int index)
@@ -173,7 +176,7 @@ static int lmodbus_new_mapping(lua_State *L)
     unsigned int registerCount1 = (unsigned int)luaL_optinteger(L, 3, 10);
 
     unsigned int startAddress2 = (unsigned int)luaL_optinteger(L, 4, 0);
-    unsigned int registerCount2 = (unsigned int)luaL_optinteger(L, 5, 10);
+    unsigned int registerCount2 = (unsigned int)luaL_optinteger(L, 5, 0);
 
     unsigned int startAddress3 = (unsigned int)luaL_optinteger(L, 6, 0);
     unsigned int registerCount3 = (unsigned int)luaL_optinteger(L, 7, 0);
@@ -312,11 +315,19 @@ static int lmodbus_close(lua_State *L)
     {
         modbus_close(self->modbus);
         modbus_free(self->modbus);
-        uv_mutex_destroy(&self->lock);
         self->modbus = NULL;
     }
 
     lua_pushinteger(L, 0);
+    return 1;
+}
+
+static int lmodbus_get_slave(lua_State *L)
+{
+    l_modbus_t *self = lmodbus_check(L, 1);
+
+    int slave = modbus_get_slave(self->modbus);
+    lua_pushinteger(L, slave);
     return 1;
 }
 
@@ -325,50 +336,61 @@ static int lmodbus_set_slave(lua_State *L)
     l_modbus_t *self = lmodbus_check(L, 1);
 
     int slave = (int)lua_tointeger(L, 2);
-    modbus_set_slave(self->modbus, slave);
-
-    lua_pushinteger(L, 0);
+    int ret = modbus_set_slave(self->modbus, slave);
+    lua_pushinteger(L, ret);
     return 1;
 }
 
-static int l_read(lua_State *L)
+static int lmodbus_get_timeout(lua_State *L)
 {
     l_modbus_t *self = lmodbus_check(L, 1);
+    lua_Integer type = lua_tointeger(L, 2);
 
-    int count = lua_rawlen(L, -1);
-    int addresses[256];
-    uint16_t buffer[MODBUS_MAX_ADU_LENGTH];
+    uint32_t to_sec = 0;
+    uint32_t to_usec = 0;
 
-    // 历遍表格
-    int i = 0;
-    lua_pushnil(L);
-    while (lua_next(L, -2))
+    if (type == 1)
     {
-        lua_pushvalue(L, -2);
-        addresses[i] = lua_tointeger(L, -2);
-        lua_pop(L, 2);
-        i++;
+        modbus_get_byte_timeout(self->modbus, &to_sec, &to_usec);
+    }
+    else if (type == 2)
+    {
+        modbus_get_indication_timeout(self->modbus, &to_sec, &to_usec);
+    }
+    else
+    {
+        modbus_get_response_timeout(self->modbus, &to_sec, &to_usec);
+    }
+    
+    lua_Integer timeout = to_sec * 1000 + to_usec / 1000;
+
+    lua_pushinteger(L, timeout);
+    return 1;
+}
+
+static int lmodbus_set_timeout(lua_State *L)
+{
+    l_modbus_t *self = lmodbus_check(L, 1);
+    lua_Integer timeout = lua_tointeger(L, 2);
+    lua_Integer type = lua_tointeger(L, 3);
+
+    uint32_t to_sec = (uint32_t)(timeout / 1000);
+    uint32_t to_usec = (uint32_t)((timeout % 1000) * 1000);
+
+    int ret = 0;
+    if (type == 1) {
+        ret = modbus_set_byte_timeout(self->modbus, to_sec, to_usec);
+    }
+    else if (type == 2)
+    {
+        ret = modbus_set_indication_timeout(self->modbus, to_sec, to_usec);
+    }
+    else
+    {
+        ret = modbus_set_response_timeout(self->modbus, to_sec, to_usec);
     }
 
-    lua_pop(L, 1);
-
-    lua_newtable(L);
-    for (i = 0; i < count; i++)
-    {
-        if (modbus_read_registers(self->modbus, addresses[i], 1, buffer) == -1)
-        {
-            return 0;
-        }
-
-        if (buffer == NULL)
-        {
-            return 0;
-        }
-
-        long int res = (long int)*buffer;
-        l_pushtable(L, addresses[i], &res, "integer");
-    }
-
+    lua_pushinteger(L, ret);
     return 1;
 }
 
@@ -377,6 +399,7 @@ static int lmodbus_read_registers(lua_State *L)
     l_modbus_t *self = lmodbus_check(L, 1);
     int address = lua_tointeger(L, 2);
     int count = lua_tointeger(L, 3);
+    int i = 0;
 
     if (count > MODBUS_MAX_READ_REGISTERS)
     {
@@ -384,19 +407,58 @@ static int lmodbus_read_registers(lua_State *L)
     }
 
     uint16_t buffer[MODBUS_MAX_ADU_LENGTH];
-    uv_mutex_lock(&self->lock);
 
     if (modbus_read_registers(self->modbus, address, count, buffer) == -1)
     {
-        uv_mutex_unlock(&self->lock);
         return lmodbus_error(L, errno);
     }
-    uv_mutex_unlock(&self->lock);
 
     if (buffer == NULL)
     {
         return lmodbus_error(L, errno);
     }
+
+    #if BYTE_ORDER == LITTLE_ENDIAN
+    // printf("BYTE_ORDER is LITTLE_ENDIAN\r\n");
+    for (i = 0; i < count; i++) {
+        buffer[i] = (buffer[i] >> 8) | (buffer[i] << 8);
+    }
+    #endif
+
+    lua_pushlstring(L, (const char *)buffer, count * 2);
+    return 1;
+}
+
+static int lmodbus_read_input_registers(lua_State *L)
+{
+    l_modbus_t *self = lmodbus_check(L, 1);
+    int address = lua_tointeger(L, 2);
+    int count = lua_tointeger(L, 3);
+    int i = 0;
+
+    if (count > MODBUS_MAX_READ_REGISTERS)
+    {
+        count = MODBUS_MAX_READ_REGISTERS;
+    }
+
+    uint16_t buffer[MODBUS_MAX_ADU_LENGTH];
+
+    if (modbus_read_input_registers(self->modbus, address, count, buffer) == -1)
+    {
+        return lmodbus_error(L, errno);
+    }
+
+    if (buffer == NULL)
+    {
+        return lmodbus_error(L, errno);
+    }
+
+    #if BYTE_ORDER == LITTLE_ENDIAN
+    // printf("BYTE_ORDER is LITTLE_ENDIAN\r\n");
+    for (i = 0; i < count; i++) {
+        buffer[i] = (buffer[i] >> 8) | (buffer[i] << 8);
+    }
+    #endif
 
     lua_pushlstring(L, (const char *)buffer, count * 2);
     return 1;
@@ -409,6 +471,31 @@ static int lmodbus_write_register(lua_State *L)
     int value = lua_tointeger(L, 3);
 
     if (modbus_write_register(self->modbus, address, value) == -1)
+    {
+        return lmodbus_error(L, errno);
+    }
+
+    lua_pushinteger(L, 0);
+
+    return 1;
+}
+
+static int lmodbus_write_registers(lua_State *L)
+{
+    l_modbus_t *self = lmodbus_check(L, 1);
+    int address = lua_tointeger(L, 2);
+
+    size_t len = 0;
+    const char *data = lua_tolstring(L, 3, &len);
+    if (data == NULL || len < 2)
+    {
+        lua_pushinteger(L, -1);
+        return 1;
+    }
+
+    int count = len / 2;
+    const uint16_t* value = (const uint16_t*)data;
+    if (modbus_write_registers(self->modbus, address, count, value) == -1)
     {
         return lmodbus_error(L, errno);
     }
@@ -432,59 +519,6 @@ static int lmodbus_get_fd(lua_State *L)
     return 1;
 }
 
-static int lmodbus_write_registers(lua_State *L)
-{
-    l_modbus_t *self = lmodbus_check(L, 1);
-
-    lua_pushvalue(L, -1);
-    int count = 0;
-    lua_pushnil(L);
-    while (lua_next(L, -2))
-    {
-        lua_pushvalue(L, -2);
-        lua_pop(L, 2);
-        count++;
-    }
-
-    lua_pop(L, 1);
-
-    int address[256];
-    int value[256];
-
-    // 历遍表格
-    int i = 0;
-    lua_pushnil(L);
-    while (lua_next(L, -2))
-    {
-        lua_pushvalue(L, -2);
-        address[i] = lua_tointeger(L, -1);
-        value[i] = lua_tointeger(L, -2);
-        lua_pop(L, 2);
-        i++;
-    }
-
-    lua_pop(L, 1);
-
-    lua_newtable(L);
-    int res = 0;
-    for (i = 0; i < count; i++)
-    {
-        if (modbus_write_register(self->modbus, address[i], value[i]) == -1)
-        {
-            res = 0;
-        }
-        else
-        {
-            res = 1;
-        }
-
-        l_pushtable(L, address[i], &res, "boolean");
-    }
-
-    lua_pushinteger(L, 0);
-    return 1;
-}
-
 static int lmodbus_read_bits(lua_State *L)
 {
     l_modbus_t *self = lmodbus_check(L, 1);
@@ -497,13 +531,10 @@ static int lmodbus_read_bits(lua_State *L)
     }
 
     uint8_t buffer[MODBUS_MAX_ADU_LENGTH];
-    uv_mutex_lock(&self->lock);
     if (modbus_read_bits(self->modbus, address, count, buffer) == -1)
     {
-        uv_mutex_unlock(&self->lock);
         return lmodbus_error(L, errno);
     }
-    uv_mutex_unlock(&self->lock);
 
     if (buffer == NULL)
     {
@@ -520,13 +551,11 @@ static int lmodbus_write_bit(lua_State *L)
 
     int address = lua_tointeger(L, 2);
     int value = lua_tointeger(L, 3);
-    uv_mutex_lock(&self->lock);
     if (modbus_write_bit(self->modbus, address, value) == -1)
     {
-        uv_mutex_unlock(&self->lock);
         return lmodbus_error(L, errno);
     }
-    uv_mutex_unlock(&self->lock);
+
     lua_pushinteger(L, 0);
     return 1;
 }
@@ -536,42 +565,39 @@ static const struct luaL_Reg modbus_func[] = {
     {"connect", lmodbus_connect},
     {"getFD", lmodbus_get_fd},
     {"getMapping", lmodbus_get_mapping},
+    {"getSlave", lmodbus_get_slave},
+    {"getTimeout", lmodbus_get_timeout},
     {"listen", lmodbus_listen},
     {"newMapping", lmodbus_new_mapping},
-    {"read", l_read},
     {"readBits", lmodbus_read_bits},
     {"readRegisters", lmodbus_read_registers},
+    {"readInputRegisters", lmodbus_read_input_registers},
     {"receive", lmodbus_receive},
     {"setMapping", lmodbus_set_mapping},
     {"setSlave", lmodbus_set_slave},
-    {"write", lmodbus_write_registers},
+    {"setTimeout", lmodbus_set_timeout},
     {"writeBit", lmodbus_write_bit},
     {"writeRegister", lmodbus_write_register},
-
+    {"writeRegisters", lmodbus_write_registers},
     {NULL, NULL},
 };
 
 static const struct luaL_Reg modbus_lib[] = {
     {"version", lmodbus_version},
     {"new", lmodbus_new},
+    {"open", lmodbus_rtu_new},
+    {"connect", lmodbus_tcp_new},
     {NULL, NULL},
 };
 
 LUALIB_API int luaopen_lmodbus(lua_State *L)
 {
-    /*luaL_newmetatable(L, "modbus");
-    lua_pushvalue(L,-1);
-    lua_setfield(L, -2, "__index");
-    luaL_register(L, NULL, modbus_func);
-    luaL_register(L, "modbus", modbus_lib);*/
-
     luaL_newlib(L, modbus_lib);
 
+    // Modbus class
     luaL_newmetatable(L, LUV_MODBUS);
-
     luaL_newlib(L, modbus_func);
     lua_setfield(L, -2, "__index");
-
     lua_pop(L, 1);
 
     return 1;

@@ -1,5 +1,5 @@
 /**
- *  Copyright 2016 The Node.lua Authors. All Rights Reserved.
+ *  Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -55,6 +55,8 @@ LUALIB_API int lnode_openlibs(lua_State* L);
  * 在后台运行
  */
 LUALIB_API int lnode_run_as_daemon();
+
+LUALIB_API int lnode_print_version();
 
 /**
  * 返回指定的路径中的文件名部分

@@ -15,105 +15,71 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local net = require("net")
+local net = require('net')
+local tap = require('util/tap')
+local test = tap.test
 
 local HOST = "127.0.0.1"
 local PORT = 10089
 
-local isWindows = os.platform() == "win32"
-
-local sockname = "/tmp/test.sock"
-if (isWindows) then
-	sockname = "\\\\?\\pipe\\uv-test"
-end
-
-local tap = require("ext/tap")
-local test = tap.test
-
-test("server", function(expect)
-	local server, client, onServerConnection, onConnect
-	function onServerConnection(client)
+test("net - tcp socket", function(expect)
+	-- server
+	local server
+	local function onServerConnection(connection)
+		console.log("server: connection")
 		local onData
 
 		function onData(chunk)
 			local onWrite
 
 			function onWrite(err)
-				console.log("server:client:write")
+				console.log("server: write")
 				assert(err == nil)
-				client:destroy()
+
+				-- close socket
+				connection:finish()
 			end
 
-			console.log('server:client:on("data")', chunk)
+			console.log('server: data', chunk)
 			assert(chunk == "ping")
-			client:write("pong", onWrite)
+			connection:write("pong", onWrite)
 		end
 
-		client:on("data", expect(onData))
-	end
-
-	function onConnect()
-		console.log('client:on("complete")')
-		local onData, onWrite
-
-		function onData(data)
-			console.log('client:on("data")', data)
-			assert(data == "pong")
-			client:destroy()
-			server:close()
-		end
-
-		function onWrite(err)
-			console.log("client:write")
-			assert(err == nil)
-		end
-
-		client:on("data", expect(onData))
-		client:write("ping", expect(onWrite))
+		connection:on("data", expect(onData))
 	end
 
 	server = net.createServer(onServerConnection)
 	server:listen(PORT, HOST)
 
-	client = net.Socket:new()
-	client:connect(PORT, HOST, onConnect)
-end)
+	server:on("listening", function(error)
+		console.log("server: listening", error)
+	end)
 
-test("unix socket", function(expect)
-	local server, client, onServerConnection, onConnect
-	function onServerConnection(client)
-		local onData
+	server:on("close", function(error)
+		console.log("server: close", error)
+	end)
 
-		function onData(chunk)
-			local onWrite
+	server:on("error", function(error)
+		console.log("server: error", error)
+	end)
 
-			function onWrite(err)
-				console.log("server:client:write")
-				assert(err == nil)
-				client:destroy()
-			end
-
-			console.log('server:client:on("data")', chunk)
-			assert(chunk == "ping")
-			client:write("pong", onWrite)
-		end
-
-		client:on("data", expect(onData))
-	end
-
-	function onConnect()
-		console.log('client:on("complete")')
+	-- client
+	local client
+	local function onConnect()
+		console.log('client: connect')
 		local onData, onWrite
 
 		function onData(data)
-			console.log('client:on("data")', data)
+			console.log('client: data', data)
 			assert(data == "pong")
-			client:destroy()
+			client:finish()
+
+			-- close server
 			server:close()
 		end
 
 		function onWrite(err)
-			console.log("client:write")
+			console.log("client: write")
 			assert(err == nil)
 		end
 
@@ -121,25 +87,41 @@ test("unix socket", function(expect)
 		client:write("ping", expect(onWrite))
 	end
 
-	server = net.createServer(onServerConnection)
-	server:on(
-		"error",
-		function(error)
-			console.log("server error", error)
-		end
-	)
-
-	server:listen(sockname)
-
 	client = net.Socket:new()
-	client:on(
-		"error",
-		function(error)
-			console.log("client error", error)
-		end
-	)
+	client:connect(PORT, HOST, onConnect)
 
-	client:connect(sockname, onConnect)
+	client:on("close", expect(function(error)
+		console.log("client: close", error)
+	end))
+
+	client:on("end", function(error)
+		console.log("client: end", error)
+		client:destroy()
+	end)
+
+	client:on("error", function(error)
+		console.log("client: error", error)
+	end)
+
+	client:on("lookup", function(error)
+		console.log("client: lookup", error)
+	end)
+
+	-- stream
+
+	client:on("finish", function(error)
+		console.log("client: finish", error)
+	end)
+
+	client:on("drain", function(error)
+		console.log("client: drain", error)
+	end)
+
+	client:on("readable", function(error)
+		console.log("client: readable", error)
+	end)
+
+	client:on("_socketEnd", function(error)
+		console.log("client: _socketEnd", error)
+	end)
 end)
-
-tap.run()

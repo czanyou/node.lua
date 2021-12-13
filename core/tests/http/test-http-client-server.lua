@@ -22,7 +22,7 @@ local PORT = process.env.PORT or 10082
 
 local body = "Hello world\n"
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 test("http-client-server", function(expect)
@@ -30,15 +30,15 @@ test("http-client-server", function(expect)
     local client = nil
     
     server = http.createServer(expect(function(request, response)
-            --p('server:onConnection req', request)
-            assert(request.method == "GET")
-            assert(request.url == "/foo")
-            -- Fixed because header parsing is not busted anymore
-            assert(request.headers.bar == "cats")
-            --p('server:onConnection bare resp', response)
-            response:setHeader("Content-Type", "text/plain")
-            response:setHeader("Content-Length", #body)
-            response:finish(body)
+        --console.log('server:onConnection req', request)
+        assert(request.method == "GET")
+        assert(request.url == "/foo")
+        -- Fixed because header parsing is not busted anymore
+        assert(request.headers.bar == "cats")
+        --console.log('server:onConnection bare resp', response)
+        response:setHeader("Content-Type", "text/plain")
+        response:setHeader("Content-Length", #body)
+        response:finish(body)
     end))
     
     server:listen(PORT, HOST, function()
@@ -48,13 +48,13 @@ test("http-client-server", function(expect)
             path = "/foo",
             headers = {{"bar", "cats"}}
         }, expect(function(response)
-                --p('client:onResponse', response)
+                --console.log('client:onResponse', response)
                 assert(response.statusCode == 200)
                 assert(response.httpVersion == '1.1')
                 server:close()
         end))
         req:on('error', function(...)print(...) end)
-        req:done()
+        req:finish()
     end)
 end)
 

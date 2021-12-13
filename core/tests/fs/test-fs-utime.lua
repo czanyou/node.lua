@@ -16,7 +16,7 @@ limitations under the License.
 
 --]]
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local fs = require('fs')
@@ -24,7 +24,11 @@ local math = require('math')
 local os = require('os')
 local string = require('string')
 
-local __filename = require('util').filename()
+local __filename = require('util').dirname() .. '/test-fs.lua'
+local module = {}
+module.path = __filename
+
+console.log(__filename)
 
 test('fs utime', function()
 	local is_windows = os.platform() == 'win32'
@@ -33,28 +37,28 @@ test('fs utime', function()
 	local tests_run = 0
 
 	local function stat_resource(resource)
-	  if type(resource) == 'string' then
-		return fs.statSync(resource)
-	  else
-		-- ensure mtime has been written to disk
-		fs.fsyncSync(resource)
-		return fs.fstatSync(resource)
-	  end
+		if type(resource) == 'string' then
+			return fs.statSync(resource)
+		else
+			-- ensure mtime has been written to disk
+			fs.fsyncSync(resource)
+			return fs.fstatSync(resource)
+		end
 	end
 
 	local function check_mtime(resource, mtime)
-	  local stats = stat_resource(resource)
-	  local real_mtime = stats.mtime
-	  -- check up to single-second precision
-	  -- sub-second precision is OS and fs dependant
-	  return math.floor(mtime) == math.floor(real_mtime.sec)
+		local stats = stat_resource(resource)
+		local real_mtime = stats.mtime
+		-- check up to single-second precision
+		-- sub-second precision is OS and fs dependant
+		return math.floor(mtime) == math.floor(real_mtime.sec)
 	end
 
 	local function expect_errno(syscall, resource, err, errno)
 	  if err and (err.code == errno or err.code == 'ENOSYS') then
 		tests_ok = tests_ok + 1
 	  else
-		p(string.format('FAILED: %s %s %s %s', syscall, resource, tostring(err), errno))
+		console.log(string.format('FAILED: %s %s %s %s', syscall, resource, tostring(err), errno))
 	  end
 	end
 
@@ -63,7 +67,7 @@ test('fs utime', function()
 		  err and err.code == 'ENOSYS' then
 		tests_ok = tests_ok + 1
 	  else
-		p(string.format('expect_ok FAILED: %s %s %s %f %f', syscall, resource, tostring(err), atime, mtime))
+		console.log(string.format('expect_ok FAILED: %s %s %s %f %f', syscall, resource, tostring(err), atime, mtime))
 	  end
 	end
 
@@ -168,7 +172,7 @@ test('fs utime', function()
 	end)
 --[[
 	process:on('exit', function()
-	  p('Tests run / ok:' ..  tests_run .. '/' .. tests_ok)
+	  console.log('Tests run / ok:' ..  tests_run .. '/' .. tests_ok)
 	  assert(tests_ok == tests_run)
 	end)
 --]]

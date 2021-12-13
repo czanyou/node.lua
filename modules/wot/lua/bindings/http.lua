@@ -1,17 +1,20 @@
-local express   = require('express')
-local wot       = require('wot')
-
-local WEB_PORT  = 9100
+local wot = require('wot')
 
 local exports = {}
 
 -------------------------------------------------------------------------------
 -- exports
 
-local function getThing(request)
+function exports.cors(request, response, next)
+    response:set('Access-Control-Allow-Origin', '*');
+    response:set('Access-Control-Allow-Credentials', 'true');
+
+    next()
+end
+
+function exports.getThing(request)
     local params = request.params or {}
-    local client = wot.client
-    local things = client and client.things
+    local things = wot.things()
     if (not things) then
         return
     end
@@ -19,8 +22,8 @@ local function getThing(request)
     return things[params.thing] or {}
 end
 
-local function getThingDescribe(request)
-    local thing = getThing(request)
+function exports.getThingDescribe(request)
+    local thing = exports.getThing(request)
     if (thing) then
         return thing.instance
     end
@@ -28,8 +31,19 @@ local function getThingDescribe(request)
     return {}
 end
 
-local function onGetThingProperties(request, response)
-    local thing = getThing(request)
+function exports.onGetThingActions(request, response)
+    local thing = exports.getThing(request)
+
+    local actions = nil
+    if (thing) then
+        actions = thing.instance.actions
+    end
+
+    response:json(actions or {})
+end
+
+function exports.onGetThingProperties(request, response)
+    local thing = exports.getThing(request)
 
     local properties = nil
     if (thing) then
@@ -39,8 +53,8 @@ local function onGetThingProperties(request, response)
     response:json(properties or {})
 end
 
-local function onGetThingProperty(request, response)
-    local thing = getThing(request)
+function exports.onGetThingProperty(request, response)
+    local thing = exports.getThing(request)
     local name = request.params and request.params['name']
     local value = nil
 
@@ -48,18 +62,12 @@ local function onGetThingProperty(request, response)
         value = thing:readProperty(name)
     end
 
-    response:json(value or {})
+    response:json(value or nil)
 end
 
-local function onGetThing(request, response)
-    local describe = getThingDescribe(request) or {}
-    response:json(describe)
-end
-
-local function onGetThings(request, response)
+function exports.onGetThings(request, response)
     local result = {}
-    local client = wot.client
-    local things = client and client.things
+    local things = wot.things()
     if (not things) then
         return response:json(result)
     end
@@ -72,37 +80,73 @@ local function onGetThings(request, response)
     response:json(result)
 end
 
-local function cors(request, response, next)
-    response:set('Access-Control-Allow-Origin', '*');
-    response:set('Access-Control-Allow-Credentials', 'true');
+function exports.onGetThing(request, response)
+    local describe = exports.getThingDescribe(request) or {}
+    response:json(describe)
+end
+
+function exports.onSetThingProperties(request, response)
+    local thing = exports.getThing(request)
+
+    local properties = nil
+    if (thing) then
+        properties = thing:readAllProperties()
+    end
+
+    response:json(properties or {})
+end
+
+function exports.onSetThingProperty(request, response)
+    local thing = exports.getThing(request)
+    local name = request.params and request.params['name']
+    local value = nil
+
+    if (thing) then
+        value = thing:readProperty(name)
+    end
+
+    response:json(value or nil)
+end
+
+function exports.onThingAction(request, response)
+    local thing = exports.getThing(request)
+    local name = request.params and request.params['name']
+
+    if (not thing) then
+        return response:json({ code = 400, error = "Invalid thing ID" })
+    end
+
+    local body = request.body
+    local input = body and body[name]
+    local ret = thing:invokeAction(name, input)
+    -- console.log('invokeAction', name, body, input, ret, thing)
+
+    if (not ret) then
+        return response:json({ code = 400, error = "Invalid response" })
+
+    elseif (not ret.next) then
+        return response:json(ret)
+    end
+
+    ret:next(function(data)
+        response:json(data)
+
+    end):catch(function(err)
+        response:json(err)
+    end)
 end
 
 function exports.route(app)
-    app:use(cors)
-    app:get("/things",          onGetThings)
-    app:get("/things/:thing",   onGetThing)
+    app:use(exports.cors)
+    app:get("/things",                          exports.onGetThings)
+    app:get("/things/:thing",                   exports.onGetThing)
+    app:get("/things/:thing/actions",           exports.onGetThingActions)
+    app:get("/things/:thing/properties",        exports.onGetThingProperties)
+    app:get("/things/:thing/properties/:name",  exports.onGetThingProperty)
+    app:post("/things/:thing/actions/:name",    exports.onThingAction)
+    app:post("/things/:thing/properties",       exports.onSetThingProperties)
+    app:post("/things/:thing/properties/:name", exports.onSetThingProperty)
     return app
 end
 
-function exports.createServer(app)
-    print('WoT server started.')
-    
-    if (not app) then
-        app = express({ })
-        app:listen(WEB_PORT)
-    end
-
-    return exports.route(app)
-end
-
-
--- local function insertThings()
---     if (not app) then
---         app = express({ })
---         app:listen(WEB_PORT)
---     end
---     app:get("/things",          onGetThings)
---     app:get("/things/:thing",   onGetThing)
--- end
--- exports.insertThings = insertThings
 return exports

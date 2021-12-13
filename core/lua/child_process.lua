@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +17,9 @@ limitations under the License.
 
 --]]
 
-local meta = { }
-meta.name        = "lnode/child_process"
-meta.version     = "1.1.0"
-meta.license     = "Apache 2"
-meta.description = "A port of node.js's child_process module for lnode."
-meta.tags        = { "lnode", "spawn", "process" }
+local meta = {
+    description = "A port of node.js's child_process module for lnode."
+}
 
 local exports = { meta = meta }
 
@@ -37,6 +34,7 @@ local uv    = require('luv')
 -- @event close
 --
 
+---@class ChildProcess
 local ChildProcess = core.Emitter:extend()
 
 function ChildProcess:initialize(stdin, stdout, stderr, handle, pid)
@@ -89,7 +87,7 @@ end
 function ChildProcess:_cleanup(err)
     setImmediate( function()
         if self.stdout then
-            self.stdout:_end(err) -- flush
+            self.stdout:finish(err) -- flush
             self.stdout:destroy(err) -- flush
         end
 

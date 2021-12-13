@@ -41,7 +41,7 @@ HTTP 的消息头 (Headers) 通过如下对象来表示:
 
 ### 属性: http.STATUS_CODES
 
-> {object}
+> STATUS_CODES `{object}`
 
 全部标准 HTTP 响应状态码的集合和简短描述。例如 `http.STATUS_CODES[404] === 'Not Found'`。
 
@@ -65,6 +65,9 @@ HTTP 的消息头 (Headers) 通过如下对象来表示:
 
 因为大部分的请求是没有报文体的 GET 请求，所以 Node 提供了这种便捷的方法。该方法与 http.request() 的唯一区别是它设置的是 GET 方法并自动调用 req.end()。
 
+- options `{object}` 可以是一个对象或一个字符串。如果 options 是一个字符串, 它将自动使用 url.parse() 解析。
+- callback `{function(response)}`
+
 实例：
 
 ```lua
@@ -81,25 +84,26 @@ end);
 
 Node 维护几个连接每个服务器的 HTTP 请求。 这个函数允许后台发布请求。
 
-options 可以是一个对象或一个字符串。如果 options 是一个字符串, 它将自动使用 url.parse() 解析。
+- options `{object}` 可以是一个对象或一个字符串。如果 options 是一个字符串, 它将自动使用 url.parse() 解析。
+- callback `{function(response)}`
 
 Options:
 
-- `host`: 请求发送到的服务器的域名或IP地址。默认为'localhost'。
-- `hostname`: 用于支持url.parse()。hostname比host更好一些
-- `port`: 远程服务器的端口。默认值为80。
-- `localAddress`: 用于绑定网络连接的本地接口。
-- `socketPath`: Unix域套接字 (使用host:port或socketPath) 
-- `method`: 指定HTTP请求方法的字符串。默认为'GET'。
-- `path`: 请求路径。默认为'/'。如果有查询字符串，则需要包含。例如'/index.html?page=12'。请求路径包含非法字符时抛出异常。目前，只否决空格，不过在未来可能改变。
-- `headers`: 包含请求头的对象。
-- `auth`: 用于计算认证头的基本认证，即'user:password'
-- `agent`: 控制Agent的行为。当使用了一个Agent的时候，请求将默认为Connection: - keep-alive。可能的值为: 
-  - undefined (默认) : 在这个主机和端口上使用[全局Agent][]。
-  - Agent对象: 在Agent中显式使用passed。
-  - false: 在对Agent进行资源池的时候，选择停用连接，默认请求为: Connection: close。
-- `keepAlive`: {boolean} 保持资源池周围的套接字在未来被用于其它请求。默认值为false
-- `keepAliveMsecs`: {Integer} 当使用HTTP KeepAlive的时候，通过正在保持活动的套接字发送TCP KeepAlive包的频繁程度。默认值为1000。仅当keepAlive被设置为 true 时才相关。
+- host `{string}` 请求发送到的服务器的域名或IP地址。默认为'localhost'。
+- hostname `{string}` 用于支持url.parse()。hostname比host更好一些
+- port `{number}` 远程服务器的端口。默认值为80。
+- localAddress `{string}` 用于绑定网络连接的本地接口。
+- socketPath `{string}` Unix域套接字 (使用host:port或socketPath) 
+- method `{string}` 指定HTTP请求方法的字符串。默认为'GET'。
+- path `{string}` 请求路径。默认为'/'。如果有查询字符串，则需要包含。例如'/index.html?page=12'。请求路径包含非法字符时抛出异常。目前，只否决空格，不过在未来可能改变。
+- headers `{object}` 包含请求头的对象。
+- auth `{string}` 用于计算认证头的基本认证，即'user:password'
+- agent `{string}` 控制Agent的行为。当使用了一个Agent的时候，请求将默认为Connection: - keep `{}`alive。可能的值为: 
+  - `undefined` (默认) : 在这个主机和端口上使用[全局Agent][]。
+  - `Agent对象` 在Agent中显式使用passed。
+  - `false` 在对Agent进行资源池的时候，选择停用连接，默认请求为: Connection: close。
+- keepAlive `{boolean}` 保持资源池周围的套接字在未来被用于其它请求。默认值为false
+- keepAliveMsecs `{number}` 当使用HTTP KeepAlive的时候，通过正在保持活动的套接字发送TCP KeepAlive包的频繁程度。默认值为1000。仅当keepAlive被设置为 true 时才相关。
 
 http.request() 返回一个 http.ClientRequest 类的实例。ClientRequest 实例是一个可写流对象。如果需要用 POST 请求上传一个文件的话，就将其写入到 ClientRequest 对象。
 
@@ -157,9 +161,9 @@ socket 是导致错误的 net.Socket 对象。
 
 每当客户端发起CONNECT请求时出发。如果未监听该事件，客户端发起CONNECT请求时连接会被关闭。
 
-- `request` 是该HTTP请求的参数，与request事件中的相同。
-- `socket` 是服务端与客户端之间的网络套接字。
-- `head` 是一个Buffer实例，隧道流的第一个包，该参数可能为空。
+- request {} 是该HTTP请求的参数，与request事件中的相同。
+- socket {} 是服务端与客户端之间的网络套接字。
+- head {} 是一个Buffer实例，隧道流的第一个包，该参数可能为空。
 
 在这个事件被分发后，请求的套接字将不会有data事件监听器，也就是说你将需要绑定一个监听器到data事件，来处理在套接字上被发送到服务器的数据。
 
@@ -231,8 +235,8 @@ socket 是导致错误的 net.Socket 对象。
 
 > server:listen(handle, [callback])
 
-- `handle` 处理器
-- `callback` {function} 回调函数 function
+- handle 处理器
+- callback`{function}` 回调函数 function
 
 handle 变量可以被设置为 server 或者 socket (任一以下划线开头的成员 _handle), 或者一个 {fd: <n>} 对象
 
@@ -244,10 +248,10 @@ Windows 不支持监听一个文件描述符。
 
 ### server:setTimeout
 
-    server:setTimeout(msecs, callback)
+> server:setTimeout(msecs, callback)
 
-- `msecs` {number}
-- `callback` {function}
+- msecs `{number}`
+- callback `{function}`
 
 为套接字设定超时值。如果一个超时发生，那么 Server 对象上会分发一个'timeout'事件，同时将套接字作为参数传递。
 
@@ -309,9 +313,9 @@ response:finish()
 
 如果指定了参数 data , 就相当于先调用 `response:write(data)` 之后再调用 response:end().
 
-### response:done
+### response:finish
 
-> response:done([data])
+> response:finish([data])
 
 
 ### response:getHeader
@@ -352,8 +356,8 @@ response:finish()
 
 > response:setTimeout(msecs, callback)
 
-- `msecs` {number}
-- `callback` {function}
+- msecs `{number}`
+- callback `{function}`
 
 设定套接字的超时时间为 msecs。如果提供了回调函数，会将其添加为响应对象的 'timeout' 事件的监听器。
 
@@ -436,7 +440,7 @@ end)
 - options {object} 设置于agent上的配置选项的集合。可以有下列字段：
     - keepAlive {boolean} 保持在资源池周围套接未来字被其它请求使用。默认值为false
     - keepAliveMsecs {Integer} 当使用HTTP KeepAlive时, 通过正在被保持活跃的套接字来发送TCP KeepAlive包的频繁程度。默认值为1000。仅当keepAlive设置为true时有效。
-    - maxSockets {number} 每台主机允许的套接字的数目的最大值。默认值为Infinity。
+    - maxSockets`{number}` 每台主机允许的套接字的数目的最大值。默认值为Infinity。
 在空闲状态下还依然开启的套接字的最大值。仅当keepAlive设置为true的时候有效。默认值为256。
 
 被 http.request 使用的默认的 http.globalAgent 有设置为它们各自的默认值的全部这些值。
@@ -504,9 +508,9 @@ keepAliveAgent:request(options, onResponseCallback)
 
 > function(response, socket, head)
 
-- `response` {http.IncomingMessage}
-- `socket` {net.Socket}
-- `head` {}
+- response `{IncomingMessage}`
+- socket `{Socket}`
+- head {}
 
 每次服务器使用 CONNECT 方法响应一个请求时被触发。如果该事件未被监听，接收 CONNECT 方法的客户端将关闭它们的连接。
 
@@ -520,7 +524,7 @@ local url = require('url');
 -- Create an HTTP tunneling proxy
 local proxy = http.createServer( function(req, res)
   res:writeHead(200, {'Content-Type': 'text/plain'});
-  res:done('okay');
+  res:finish('okay');
 end);
 
 proxy:on('connect', function(req, cltSocket, head)
@@ -548,7 +552,7 @@ proxy:listen(1337, '127.0.0.1', function()
   };
 
   local req = http.request(options);
-  req:done();
+  req:finish();
 
   req:on('connect', function(res, socket, head)
     console.log('got connected!');
@@ -581,9 +585,9 @@ end);
 
 Options:
 
-- `host`: 请求要发送的域名或服务器的IP地址。
-- `port`: 远程服务器的端口。
-- `socketPath`: Unix Domain Socket  (使用 host:port 和 socketPath 其中之一) 
+- host: 请求要发送的域名或服务器的IP地址。
+- port: 远程服务器的端口。
+- socketPath: Unix Domain Socket  (使用 host:port 和 socketPath 其中之一) 
 
 #### 事件: 'socket'
 
@@ -614,9 +618,9 @@ Options:
 
 终止一个请求.
 
-### request:done
+### request:close
 
-> request.done([data])
+> request.close([data])
 
 结束发送请求。如果请求体的某些部分还发送，该函数将会把它们 flush 到流中。如果该请求是分块的，该方法将会发送终结符 `0\r\n\r\n`。
 
@@ -658,7 +662,7 @@ chunk 参数必须是 Buffer 或者 string.
 
 > function() end
 
-表示在 response:done() 被调用或强制刷新之前，底层的连接已经被终止了。
+表示在 response:finish() 被调用或强制刷新之前，底层的连接已经被终止了。
 
 跟 'end' 一样，这个事件对于每个应答只会触发一次。详见 http.ServerResponse 的 'close' 事件。
 
@@ -778,8 +782,8 @@ require('url').parse('/status?name=ryan', true)
 
 > message:setTimeout(msecs, callback)
 
-- `msecs` {number}
-- `callback` {function}
+- msecs `{number}`
+- callback `{function}`
 
 调用 `message.connection:setTimeout(msecs, callback)`
 

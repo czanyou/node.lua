@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@ limitations under the License.
 local core   = require('core')
 local utils  = require('util')
 
-local meta 		= { }
-local exports 	= { meta = meta }
+local exports 	= {}
 
 -------------------------------------------------------------------------------
 -- Methods
@@ -197,6 +196,7 @@ exports.RtspHeaderMeta = RtspHeaderMeta
 -------------------------------------------------------------------------------
 -- RtspMessage
 
+---@class RtspMessage
 local RtspMessage = core.Object:extend()
 exports.RtspMessage = RtspMessage
 
@@ -261,14 +261,16 @@ function RtspMessage:setAuthorization(params, username, password)
         sb:append(response)
 
     else
+        local uriString = self.uriString or self.path or ''
+
         sb:append(params.METHOD):append(' ')
         sb:append('username="'):append(username  or ''):append('", ')
         sb:append('realm="'):append(params.realm or ''):append('", ')
         sb:append('nonce="'):append(params.nonce or ''):append('", ')
-        sb:append('uri="'):append(self.uriString or ''):append('", ')
+        sb:append('uri="'):append(uriString or ''):append('", ')
 
         local ha1 = _hash(username, params.realm, password)
-        local ha2 = _hash(self.method, self.uriString)
+        local ha2 = _hash(self.method, uriString)
         local ha3 = _hash(ha1, params.nonce, ha2)
 
         sb:append('response="'):append(ha3 or ''):append('"')
@@ -298,6 +300,7 @@ function exports.newRequest(method, path)
     request.method  = method or 'OPTIONS'
     request.path    = path or '/'
     request.version = 1.0
+    request.uriString = request.path
     return request
 end
 
@@ -309,25 +312,26 @@ function exports.newResponse(statusCode, statusMessage)
     return response
 end
 
+---@param value string
 function exports.parseAuthenticate(value)
-    local s, n = value:find(' ')
+    local pos, _ = value:find(' ')
     --print('value', s, n)
-    if (not s) then
+    if (not pos) then
         return nil
     end
 
-    local method = value:sub(1, s - 1)
-    value = value:sub(s + 1)
+    local method = value:sub(1, pos - 1)
+    value = value:sub(pos + 1)
 
     local params = {}
 
     --print('value', method, value)
     local tokens = value:split(",")
     for _, v in pairs(tokens) do
-        local s, n = v:find('=')
-        if (s) then
-            local key = v:sub(1, s - 1):trim()
-            local data = _parseQString(v:sub(s + 1):trim())
+        local start, _ = v:find('=')
+        if (start) then
+            local key = v:sub(1, start - 1):trim()
+            local data = _parseQString(v:sub(start + 1):trim())
 
             params[key] = data
         end

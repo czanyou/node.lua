@@ -30,14 +30,14 @@ local function testEncoder(encoder, inputs)
     return outputs
 end
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 test("server encoder", function()
     local output = testEncoder(encoder, {
         {code = 200}
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         "HTTP/1.1 200 OK\r\n\r\n"
     }, output))
@@ -52,7 +52,7 @@ test("server encoder - Keepalive", function()
         "",
         {code = 304},
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\n",
         "Hello World\n",
@@ -70,7 +70,7 @@ test("server encoder - Chunked Encoding, explicit end", function()
         "",
         {code = 304},
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n",
         "c\r\nHello World\n\r\n",
@@ -88,7 +88,7 @@ test("server encoder - Chunked Encoding, auto end", function()
         "Hello World\n",
         "Another Chunk",
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n",
         "c\r\nHello World\n\r\n",
@@ -106,7 +106,7 @@ test("server encoder - Chunked Encoding, auto keepalive end", function()
         "Another Chunk",
         {code = 304},
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n",
         "c\r\nHello World\n\r\n",
@@ -131,7 +131,7 @@ test("client encoder", function()
             {"Authorization", "token 6d2fc6ae08215d69d693f5ca76ea87c7780a4275"},
         }
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         "GET /my-resource HTTP/1.1\r\nAccept: */*\r\n\r\n",
         "GET /favicon.ico HTTP/1.1\r\nAccept: */*\r\n\r\n",

@@ -19,26 +19,27 @@ limitations under the License.
 local http = require('http')
 local request = require('http/request')
 
+local tap = require('util/tap')
+local test = tap.test
+
 local HOST = "127.0.0.1"
 local PORT = process.env.PORT or 10082
 
 local body = "Hello world\n"
-
-require('ext/tap')(function(test)
 
 test("request.get", function(expect)
     local server = nil
     local client = nil
 
     server = http.createServer(expect(function(request, response)
-      --p('server:onConnection req', request)
+      --console.log('server:onConnection req', request)
       assert(request.method == "GET")
       assert(request.url == "/foo")
       -- Fixed because header parsing is not busted anymore
       -- console.log(request.headers)
 
       assert(request.headers.bar == "cats")
-      --p('server:onConnection bare resp', response)
+      --console.log('server:onConnection bare resp', response)
       response:setHeader("Content-Type", "text/plain")
       response:setHeader("Content-Length", #body)
       response:finish(body)
@@ -68,7 +69,7 @@ test("request.post.json", function(expect)
     local client = nil
 
     server = http.createServer(expect(function(request, response)
-      --p('server:onConnection req', request)
+      --console.log('server:onConnection req', request)
       assert(request.method == "POST")
       assert(request.url == "/foo")
       -- Fixed because header parsing is not busted anymore
@@ -77,7 +78,7 @@ test("request.post.json", function(expect)
       assert(request.headers.bar == "cats")
       assert(request.headers['Content-Type'] == "application/json")
 
-      --p('server:onConnection bare resp', response)
+      --console.log('server:onConnection bare resp', response)
       response:setHeader("Content-Type", "text/plain")
       response:setHeader("Content-Length", #body)
       response:finish(body)
@@ -109,7 +110,7 @@ test("request.put.data", function(expect)
     local client = nil
 
     server = http.createServer(expect(function(request, response)
-      --p('server:onConnection req', request)
+      --console.log('server:onConnection req', request)
       assert(request.method == "PUT")
       assert(request.url == "/foo")
       -- Fixed because header parsing is not busted anymore
@@ -119,7 +120,7 @@ test("request.put.data", function(expect)
       assert(request.headers['Content-Type'] == "application/octet-stream")
       assert(tonumber(request.headers['Content-Length']) == #body)      
 
-      --p('server:onConnection bare resp', response)
+      --console.log('server:onConnection bare resp', response)
       response:setHeader("Content-Type", "text/plain")
       response:setHeader("Content-Length", #body)
       response:finish(body)
@@ -155,7 +156,7 @@ test("request.delete.form", function(expect)
     local client = nil
 
     server = http.createServer(expect(function(request, response)
-      --p('server:onConnection req', request)
+      --console.log('server:onConnection req', request)
       assert(request.method == "DELETE")
       assert(request.url == "/foo")
       -- Fixed because header parsing is not busted anymore
@@ -164,7 +165,7 @@ test("request.delete.form", function(expect)
       assert(request.headers.bar == "cats")
       assert(request.headers['Content-Type'] == "application/x-www-form-urlencoded")
 
-      --p('server:onConnection bare resp', response)
+      --console.log('server:onConnection bare resp', response)
       response:setHeader("Content-Type", "text/plain")
       response:setHeader("Content-Length", #body)
       response:finish(body)
@@ -194,6 +195,4 @@ test("request.delete.form", function(expect)
             server:close()
         end))
     end)
-end)
-
 end)

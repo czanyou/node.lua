@@ -28,6 +28,8 @@
 
 #include <sys/statfs.h>
 #include <sys/reboot.h>
+#include <sys/ioctl.h>
+#include <linux/watchdog.h>
 
 #elif defined(__APPLE__)
 # define PLATFORM_ID "darwin"
@@ -200,9 +202,10 @@ static int luv_os_statfs(lua_State* L) {
 		luv_os_push_statfs_table(L, &fs);
 		return 1;
 	}
-#endif
+#else
 
 	return 0;
+#endif
 }
 
 static int luv_os_reboot(lua_State* L) {
@@ -215,6 +218,77 @@ static int luv_os_reboot(lua_State* L) {
 #endif
 
 	return 0;
+}
+
+static int luv_os_watchdog_feed(lua_State* L) {
+#if defined(__linux__) || defined(__linux)
+	int watchdog = luaL_checkinteger(L, 1);
+	int ret = write(watchdog, "\0", 1);
+
+	lua_pushinteger(L, ret);
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+static int luv_os_watchdog_timeout(lua_State* L) {
+#if defined(__linux__) || defined(__linux)
+	int watchdog = luaL_checkinteger(L, 1);
+	int timeout = luaL_optinteger(L, 2, 0);
+	if (timeout > 0) {
+		int ret = ioctl(watchdog, WDIOC_SETTIMEOUT, &timeout);
+		lua_pushinteger(L, timeout);
+
+	} else {
+		timeout = 0;
+		ioctl(watchdog, WDIOC_GETTIMEOUT, &timeout);
+		lua_pushinteger(L, timeout);
+	}
+
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+static int luv_os_watchdog_enable(lua_State* L) {
+#if defined(__linux__) || defined(__linux)
+	int watchdog = luaL_checkinteger(L, 1);
+	int enable = luaL_optinteger(L, 2, 0);
+
+	if (enable > 0) {
+		int option = (enable == 1) ? WDIOS_ENABLECARD : WDIOS_DISABLECARD;
+		int ret = ioctl(watchdog, WDIOC_SETOPTIONS, &option);
+		lua_pushinteger(L, ret);
+
+	} else {
+		int status = WDIOS_DISABLECARD;
+		ioctl(watchdog, WDIOC_GETSTATUS, &status);
+		enable = (status == WDIOS_ENABLECARD);
+		lua_pushinteger(L, enable);
+	}
+
+	return 1;
+#endif
+
+	return 0;
+}
+
+static int luv_os_env_keys(lua_State* L) {
+	int envcount = 0;
+	int i = 0;
+	uv_env_item_t* envitems;
+  	int ret = uv_os_environ(&envitems, &envcount);
+  
+	lua_createtable(L, envcount, 0);
+	for (i = 0; i < envcount; i++) {
+		lua_pushstring(L, envitems[i].name);
+		lua_rawseti(L, -2, i + 1);
+	}
+
+	uv_os_free_environ(envitems, envcount);
+	return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

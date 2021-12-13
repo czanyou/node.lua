@@ -1,7 +1,7 @@
 local exec  = require('child_process').exec
 local execFile  = require('child_process').execFile
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 test("exec", function ()

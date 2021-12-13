@@ -1,4 +1,4 @@
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local path = require('path')
 local sqlite3 = require('sqlite3')
 

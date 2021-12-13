@@ -28,7 +28,7 @@ static int luv_crc32(lua_State *L) {
   const char *message = luaL_checklstring(L, 1, &len);
   if (message) {
     uint32_t result = lutils_crc32(message, len);
-    lua_pushnumber(L, result);
+    lua_pushinteger(L, result);
   } else {
     lua_pushnil(L);
   }
@@ -38,9 +38,20 @@ static int luv_crc32(lua_State *L) {
 static int luv_crc16(lua_State *L) {
   size_t len;
   const char *message = luaL_checklstring(L, 1, &len);
-  if (message) {
-    uint32_t result = lutils_crc16(message, len);
-    lua_pushnumber(L, result);
+	lua_Integer offset = luaL_optinteger(L, 2, 0);
+	lua_Integer size = luaL_optinteger(L, 3, 0);
+  offset = (offset > 0) ? (offset - 1) : 0; // lua offset to c offset
+    
+  if (message && offset < len) {
+    const char *p = message + offset;
+    len -= offset;
+
+    if (size < 1 || size > len) {
+      size = len;
+    }
+
+    uint32_t result = lutils_crc16(p, size);
+    lua_pushinteger(L, result);
   } else {
     lua_pushnil(L);
   }
@@ -213,6 +224,10 @@ static const luaL_Reg lutils_functions[] = {
   { "os_platform",      luv_os_platform },
   { "os_statfs",        luv_os_statfs },
   { "os_reboot",        luv_os_reboot },
+  { "os_env_keys",      luv_os_env_keys },
+  { "watchdog_feed",    luv_os_watchdog_feed },
+  { "watchdog_timeout", luv_os_watchdog_timeout },
+  { "watchdog_enable",  luv_os_watchdog_enable },
   
   // misc
   { "crc32",            luv_crc32 },

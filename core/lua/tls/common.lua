@@ -1,13 +1,13 @@
 --[[
 
 Copyright 2014-2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS-IS" BASIS,
@@ -16,55 +16,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-
-local Object  = require('core').Object
-local Error   = require('core').Error
-local fs      = require('fs')
-local net     = require('net')
-local path    = require('path')
-local timer   = require('timer')
-local utils   = require('util')
-local uv      = require('luv')
-local tls     = require('lmbedtls.tls')
-
-local _, openssl = pcall(require, 'ssl')
+local Object = require('core').Object
+local Error = require('core').Error
+local net = require('net')
+local timer = require('timer')
+local utils = require('util')
+local uv = require('luv')
+local tls = require('lmbedtls.tls')
 
 local exports = {}
+
 local DEFAULT_CIPHERS = 'ECDHE-RSA-AES128-SHA256:AES128-GCM-SHA256:' .. -- TLS 1.2
-                        'RC4:HIGH:!MD5:!aNULL:!EDH'                     -- TLS 1.0
+    'RC4:HIGH:!MD5:!aNULL:!EDH' -- TLS 1.0
 exports.DEFAULT_CIPHERS = DEFAULT_CIPHERS
-
-local MBEDTLS_ERR_SSL_WANT_READ   = -0x6900 -- 26800 /**< Connection requires a read call. */
-
--------------------------------------------------------------------------------
-
-local getSecureOptions = function(protocol, flags)
-    local ssl = openssl.ssl
-    return ssl.no_sslv2 | ssl.no_sslv3 | ssl.no_compression | (flags or 0)
-end
-
--------------------------------------------------------------------------------
-
-if (module) then
-    --local data = module:load("root_ca.dat")
-    local filename = path.join("E:\\newwork\\main\\node.lua\\bin", "root_ca.dat")
-    local data = fs.readFileSync(filename)
-
-    exports.DEFAULT_CA_STORE = openssl.x509.store:new()
-    local index = 1
-    local len = #data
-    while index < len do
-        local len = ((data:byte(index) << 8) | data:byte(index + 1))
-        index = index + 2
-        local cert = assert(openssl.x509.read(data:sub(index, index + len)))
-        index = index + len
-        assert(exports.DEFAULT_CA_STORE:add(cert))
-    end
-end
 
 -------------------------------------------------------------------------------
 -- Credential
 
+---@class Credential
 local Credential = Object:extend()
 
 function Credential:initialize(secureProtocol, defaultCiphers, flags, rejectUnauthorized, context)
@@ -77,31 +46,28 @@ function Credential:initialize(secureProtocol, defaultCiphers, flags, rejectUnau
         --  defaultCiphers or DEFAULT_CIPHERS)
         --self.context:mode(true, 'release_buffers')
         --self.context:options(getSecureOptions(secureProtocol, flags))
-    end
+        end
 end
 
 function Credential:addRootCerts()
-    --self.context:cert_store(exports.DEFAULT_CA_STORE)
+--self.context:cert_store(exports.DEFAULT_CA_STORE)
 end
 
---[[
-
-]]
 function Credential:setCA(certs)
     if not self.store then
         --self.store = openssl.x509.store:new()
         --self.context:cert_store(self.store)
-    end
+        end
 
     if type(certs) == 'table' then
         for _, v in pairs(certs) do
             --local cert = assert(openssl.x509.read(v))
             --assert(self.store:add(cert))
-        end
+            end
     else
         --local cert = assert(openssl.x509.read(certs))
         --assert(self.store:add(cert))
-    end
+        end
 end
 
 function Credential:setKeyCert(key, cert)
@@ -114,37 +80,40 @@ exports.Credential = Credential
 
 -------------------------------------------------------------------------------
 -- TLSSocket
-
 -- @event secureConnect
 -- @event OCSPResponse
-
 local TLSSocket = net.Socket:extend()
 
 function TLSSocket:initialize(socket, options)
-
+    local socketOptions
     if socket then
-        net.Socket.initialize(self, { handle = socket._handle })
-
-    else
-        net.Socket.initialize(self)
+        -- server socket
+        socketOptions = {handle = socket._handle}
     end
 
-    self.options    = options
-    self.ctx        = options.secureContext
-    self.server     = options.isServer
+    net.Socket.initialize(self, socketOptions)
+
+    -- options
+    self.options = options
+    self.ctx = options.secureContext
+    self.server = options.isServer
     self.requestCert = options.requestCert
     self.rejectUnauthorized = options.rejectUnauthorized
 
     if self._handle == nil then
-        self:once('connect', utils.bind(self._init, self))
+        -- client socket
+        self:once('connect', function() self:onConnect() end)
     else
-        self:_init()
+        -- server socket
+        self:onConnect()
     end
 
+    -- state
     self._connected = false
-    self.encrypted  = true
-    self.readable   = true
-    self.writable   = true
+    self.encrypted = true
+    self.readable = true
+    self.writable = true
+    self.readBuffer = ''
 
     if self.server then
         self._connecting = false
@@ -159,96 +128,81 @@ function TLSSocket:initialize(socket, options)
         self._connecting = socket._connecting
     end
 
-    self:once('end', function()
-        self:destroy()
+    self:once('close', function()
+        -- console.log('tls.close')
     end)
 
-    self:read(0)
+    self:once('end', function()
+        -- console.log('tls.end')
+        self:destroy()
+    end)
 end
 
-function TLSSocket:_init()
-    console.log('_init');
+function TLSSocket:onConnect()
+    -- console.log('tls.connect');
 
-    self.ctx = self.options.secureContext or
-               self.options.credentials or
-               exports.createCredentials(self.options)
-    --self.inp = openssl.bio.mem(8192)
-    --self.out = openssl.bio.mem(8192)
-    --self.ssl = self.ctx.context:ssl(self.inp, self.out, self.server)
-
-    local lastdata = ''
+    local MBEDTLS_ERR_SSL_WANT_READ = -0x6900 -- 26800 /**< Connection requires a read call. */
 
     local function onWrite(err)
-        --console.log("write")
-        --assert(err == nil)
+
     end
 
-    local function callback(data, len)
+    -- write to low layer raw socket
+    local function _tlsWrite(data)
+        --net.Socket._write(self, data, onWrite)
+        -- console.log('write', ret, #data)
+
+        local ret = net.Socket.write(self, data, onWrite)
+        self._needDrain = ret
+        return #data
+    end
+
+    -- read from low layer raw socket
+    local function _tlsRead(len)
+        -- console.log('read', len)
+        local readBuffer = self.readBuffer
+
+        if (#readBuffer >= len) then
+            local data = readBuffer:sub(1, len)
+            self.readBuffer = readBuffer:sub(len + 1)
+
+            return #data, data
+        end
+
+        return MBEDTLS_ERR_SSL_WANT_READ
+    end
+
+    local function _tlsCallback(data, len)
         if (len) then
-            --console.log('callback.recv', len)
-
-            if (#lastdata >= len) then
-                local data = lastdata:sub(1, len)
-                lastdata = lastdata:sub(len + 1)
-
-                return #data, data
-            end
-
-            return MBEDTLS_ERR_SSL_WANT_READ
+            return _tlsRead(len)
 
         else
-            --console.log('send', #data)
-            --console.printBuffer(data)
-
-            net.Socket._write(self, data, onWrite)
-            return #data
+            return _tlsWrite(data)
         end
     end
 
     local options = self.options
     local hostname = options.host or options.servername
-
-    console.log('hostname', hostname)
+    -- console.log('hostname', hostname)
 
     self.ssl = tls.new()
-    self.ssl:config(hostname, 0, callback)
+    self.ssl:config(hostname, 0, _tlsCallback)
 
-    local function onData(err, data)
-        if (not data) then
-            return
-        end
-
-        --console.log('data', #data)
-
-        lastdata = lastdata .. data
-   
-        if (not self.isHandshake) then
-            local ret = self.ssl:handshake()
-            if (ret == 0) then
-                self:emit('secureConnection', self)
-                self.isHandshake = true
-            end
-        else
-            local size, text = self.ssl:read();
-            console.log('data2', size, text);
-        end
-    end
-
-    self._reading = true
-    uv.read_start(self._handle, onData)
-
+    self:read(0)
     self.ssl:handshake()
 end
 
 -- Returns an object representing the peer's certificate.
 function TLSSocket:getPeerCertificate()
-    --return self.ssl:peer()
+
 end
 
 function TLSSocket:_verifyClient()
+    console.log('_verifyClient')
+
     if self.ssl:session_reused() then
         self.sessionReused = true
-        self:emit('secureConnection', self)
+        self:emit('secureConnect', self)
 
     else
         local verifyError, verifyResults
@@ -256,7 +210,7 @@ function TLSSocket:_verifyClient()
         verifyError, verifyResults = self.ssl:getpeerverification()
         if verifyError then
             self.authorized = true
-            self:emit('secureConnection', self)
+            self:emit('secureConnect', self)
         else
             self.authorized = false
             self.authorizationError = verifyResults[1].error_string
@@ -264,13 +218,15 @@ function TLSSocket:_verifyClient()
                 local err = Error:new(self.authorizationError)
                 self:destroy(err)
             else
-                self:emit('secureConnection', self)
+                self:emit('secureConnect', self)
             end
         end
     end
 end
 
 function TLSSocket:_verifyServer()
+    console.log('_verifyServer')
+
     if self.requestCert then
         local peer, verify, err
         peer = self.ssl:peer()
@@ -288,7 +244,7 @@ function TLSSocket:_verifyServer()
     end
 
     if not self.destroyed then
-        self:emit('secureConnection', self)
+        self:emit('secureConnect', self)
     end
 end
 
@@ -296,59 +252,59 @@ function TLSSocket:destroy(err)
 
     local hasShutdown = false
     local reallyShutdown = function()
-      if hasShutdown then return end
-      hasShutdown = true
-      net.Socket.destroy(self, err)
+        if hasShutdown then return end
+        hasShutdown = true
+        net.Socket.destroy(self, err)
     end
 
     local shutdown = nil
-    
+
     shutdown = function()
-      timer.active(self)
-      if self._shutdown then
-        local _, shutdown_err = self.ssl:shutdown()
-        if shutdown_err == "want_read" or shutdown_err == "want_write" or shutdown_err == "syscall" then
-          local r = self.out:pending()
-          if r > 0 then
-            timer.active(self._shutdownTimer)
-            net.Socket._write(self, self.out:read(), function(err)
-              timer.active(self._shutdownTimer)
-              if err then
+        timer.active(self)
+        if self._shutdown then
+            local _, shutdown_err = self.ssl:shutdown()
+            if shutdown_err == "want_read" or shutdown_err == "want_write" or shutdown_err == "syscall" then
+                local r = self.out:pending()
+                if r > 0 then
+                    timer.active(self._shutdownTimer)
+                    net.Socket._write(self, self.out:read(), function(err)
+                        timer.active(self._shutdownTimer)
+                        if err then
+                            self._shutdown = false
+                            return reallyShutdown()
+                        end
+                        shutdown()
+                    end)
+                end
+            else
                 self._shutdown = false
                 return reallyShutdown()
-              end
-              shutdown()
-            end)
-          end
-        else
-          self._shutdown = false
-          return reallyShutdown()
+            end
         end
-      end
     end
 
     local onShutdown = function(read_err, data)
-      timer.active(self)
-      if read_err or not data then
-        return reallyShutdown()
-      end
-      timer.active(self._shutdownTimer)
-      self.inp:write(data)
-      shutdown()
+        timer.active(self)
+        if read_err or not data then
+            return reallyShutdown()
+        end
+        timer.active(self._shutdownTimer)
+        self.inp:write(data)
+        shutdown()
     end
 
     if self.destroyed or self._shutdown then return end
     if self.ssl and self.authorized then
-      if not self._shutdownTimer then
-        self._shutdownTimer = timer.setTimeout(5000, reallyShutdown)
-      end
-      self._shutdown = true
-      uv.read_stop(self._handle)
-      uv.read_start(self._handle, onShutdown)
-      self:emit('shutdown')
-      shutdown()
+        if not self._shutdownTimer then
+            self._shutdownTimer = timer.setTimeout(5000, reallyShutdown)
+        end
+        self._shutdown = true
+        uv.read_stop(self._handle)
+        uv.read_start(self._handle, onShutdown)
+        self:emit('shutdown')
+        shutdown()
     else
-      reallyShutdown()
+        reallyShutdown()
     end
 end
 
@@ -361,100 +317,87 @@ function TLSSocket:connect(...)
         args[#args] = nil
     end
 
-    self:on('secureConnection', secureCallback)
+    self:on('secureConnect', secureCallback)
     net.Socket.connect(self, table.unpack(args))
 end
 
-function TLSSocket:sni(hosts)
-    if self.server then
-        local maps = {}
-        for k,v in pairs(hosts) do
-            local ctx = exports.createCredentials(v)
-            maps[k] = ctx.context
-        end
-        self.ctx.context:set_servername_callback(maps)
+function TLSSocket:write(chunk, callback)
+    if type(callback) ~= 'function' then
+        callback = function() end
     end
-end
 
-function TLSSocket:_write(data, callback)
-    console.log('_write', #data)
+    if self.writableEnded then
+        local err = Error:new('write after end')
+        self:emit('error', err)
+        setImmediate(function() callback(err) end)
 
-    self.ssl:write(data)
+    elseif (chunk ~= nil) and (type(chunk) ~= 'string') then
+        local err = Error:new('Invalid non-string chunk')
+        self:emit('error', err)
+        setImmediate(function() callback(err) end)
+    end
+
+    local ret = self.ssl:write(chunk)
+    if (callback) then callback() end
+
+    return self._needDrain
 end
 
 function TLSSocket:_read(n)
---[[
-    local onHandshake, onData, handshake
+    -- console.log('_read', n)
 
-    local onData = function(err, cipherText)
+    local function onRawData(err, data)
         timer.active(self)
+
         if err then
             return self:destroy(err)
-        elseif cipherText then
-            if self.inp:write(cipherText) then
-                repeat
-                    local plainText, op = self.ssl:read()
-                    if not plainText then
-                        if op == 0 then
-                          return net.Socket.destroy(self)
-                        else
-                          return
-                        end
-                    else
-                        self:push(plainText)
-                    end
-                until not plainText
-            end
-        else
-            self.ssl = nil
+
+        elseif (not data) then
             self:push(nil)
             self:emit('_socketEnd')
+            return
+        end
+
+        --console.log('data', #data)
+        self.readBuffer = self.readBuffer .. data
+
+        if (self.isHandshake) then
+            while (true) do
+                local size, raw = self.ssl:read();
+                if (size <= 0) then
+                    break
+                end
+
+                -- console.log('tls.data', size, #raw, raw)
+                self:push(raw)
+            end
+
+        else
+            -- handshake
+            local ret = self.ssl:handshake()
+            if (ret == 0) then
+                -- console.log('handshake is done')
+                self:emit('secureConnect', self)
+                self.isHandshake = true
+            end
         end
     end
 
-    local handshake = function()
-        if not self._connected then
-          local ret, err = self.ssl:handshake()
-        end
-    end
-
-    local onHandshake = function(err, data)
-        timer.active(self)
-        if err then
-          return net.Socket.destroy(self, err)
-        end
-        if not data then
-          return net.Socket.destroy(self)
-        end
-        self.inp:write(data)
-        handshake()
-    end
-
-    if self._connecting then
-        self:once('connect', utils.bind(self._read, self, n))
-
-    elseif not self._reading and not self._handshake_complete then
+    if not self._reading then
         self._reading = true
-        uv.read_start(self._handle, onHandshake)
-        handshake()
-
-    elseif not self._reading then
-        self._reading = true
-        uv.read_start(self._handle, onData)
+        uv.read_start(self._handle, onRawData)
     end
-    --]]
-
-    --local onData = function(err, cipherText)
 end
 
 exports.TLSSocket = TLSSocket
 
 -------------------------------------------------------------------------------
-local VERIFY_PEER       = { "peer" }
-local VERIFY_PEER_FAIL  = { "peer", "fail_if_no_peer_cert" }
-local VERIFY_NONE       = { "none" }
 
 function exports.createCredentials(options, context)
+    local VERIFY_PEER = {"peer"}
+    local VERIFY_PEER_FAIL = {"peer", "fail_if_no_peer_cert"}
+    local VERIFY_NONE = {"none"}
+
     local ctx, returnOne
 
     options = options or {}
@@ -482,19 +425,18 @@ function exports.createCredentials(options, context)
     if options.server then
         if options.requestCert then
             if options.rejectUnauthorized then
-              ctx.context:verify_mode(VERIFY_PEER_FAIL, returnOne)
+                ctx.context:verify_mode(VERIFY_PEER_FAIL, returnOne)
             else
-              ctx.context:verify_mode(VERIFY_PEER, returnOne)
+                ctx.context:verify_mode(VERIFY_PEER, returnOne)
             end
         else
             ctx.context:verify_mode(VERIFY_NONE, returnOne)
         end
     else
         --ctx.context:verify_mode(VERIFY_NONE, returnOne)
-    end
+        end
 
     return ctx
 end
 
 return exports
-

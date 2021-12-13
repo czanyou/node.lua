@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014-2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,12 +22,9 @@ The net module provides you with an asynchronous network wrapper. It contains
 functions for creating both servers and clients (called streams). You can
 include this module with require('net');.
 --]]
-local meta = { }
-meta.name        = "lnode/net"
-meta.version     = "1.2.1"
-meta.license     = "Apache 2"
-meta.description = "Node-style net client and server module for lnode"
-meta.tags        = { "lnode", "tcp", "pipe", "stream" }
+local meta = {
+    description = "Node-style net client and server module for lnode"
+}
 
 local exports = { meta = meta }
 
@@ -41,6 +38,7 @@ local Duplex  = require('stream').Duplex
 -------------------------------------------------------------------------------
 --[[ Socket ]]--
 
+---@class Socket
 local Socket = Duplex:extend()
 exports.Socket = Socket
 
@@ -69,23 +67,35 @@ function Socket:initialize(options)
 
     self._connecting = false
     self._reading    = false
-    self._destroyed  = false
+    self.destroyed  = false
+    self.connecting = false
 
-    self:on('finish', util.bind(self._onSocketFinish, self))
-    self:on('_socketEnd', util.bind(self._onSocketEnd, self))
+    self:on('finish', function()
+        self:_onSocketFinish()
+    end)
+
+    self:on('_socketEnd', function()
+        self:_onSocketEnd()
+    end)
 end
 
 function Socket:address()
-    return uv.tcp_getpeername(self._handle)
+    if (self._handle) then
+        return uv.tcp_getpeername(self._handle)
+    end
 end
 
-function Socket:bind(ip, port)
-    --console.log(self._handle, ip, port)
+function Socket:bind(address, port)
+    if (not self._handle) then
+        return
+    end
+
+    --console.log(self._handle, address, port)
     if (self.is_pipe) then
         return self._handle:bind(port)
     end
 
-    return uv.tcp_bind(self._handle, ip, tonumber(port))
+    return uv.tcp_bind(self._handle, address, tonumber(port))
 end
 
 function Socket:connect(...)
@@ -140,7 +150,7 @@ function Socket:connect(...)
             self:emit('connect')
 
             if callback then callback() end
-        end )
+        end)
 
         return self
     end
@@ -155,7 +165,7 @@ function Socket:connect(...)
     end
 
     --console.log(options)
-    uv.getaddrinfo(options.host, options.port, { socktype = "stream" }, function(err, res)
+    uv.getaddrinfo(options.host, options.port, { socktype = "stream", family = "inet" }, function(err, res)
         timer.active(self)
         if err then
             return self:destroy(err)
@@ -170,6 +180,12 @@ function Socket:connect(...)
         --print('Socket:connect', rinfo.addr, rinfo.port)
         if self.destroyed then return end
 
+        if (not rinfo.address) then
+            rinfo.address = rinfo.addr
+        end
+
+        self:emit('lookup', rinfo)
+
         uv.tcp_connect(self._handle, rinfo.addr, rinfo.port, function(err)
             --print('Socket:connect', err)
             if err then
@@ -179,17 +195,36 @@ function Socket:connect(...)
             self._connecting = false
             self:emit('connect')
             if callback then callback() end
-        end )
-    end )
+        end)
+    end)
 
     return self
 end
 
-function Socket:done(callback)
-    return self:destroy(nil, callback)
+---@param data string
+---@param callback function
+function Socket:finish(data, callback)
+    if (type(data) == 'string') then
+        self:write(data)
+
+    elseif (type(data) == 'function') then
+        callback = data
+        data = nil
+    end
+
+    self:shutdown(function()
+        -- alies
+        -- fixit
+        Duplex.finish(self, callback)
+    end)
 end
 
-function Socket:destroy(exception, callback)
+function Socket:close(callback)
+    self:finish()
+    self:destroy(callback)
+end
+
+function Socket:destroy(error, callback)
     callback = callback or function() end
     if self.destroyed == true or self._handle == nil then
         return callback()
@@ -204,15 +239,15 @@ function Socket:destroy(exception, callback)
         timer.setImmediate(callback)
     else
         uv.close(self._handle, function()
-            self:emit('close')
+            self:_onClose()
             callback()
-        end )
+        end)
     end
 
-    if exception then
+    if error then
         timer.setImmediate( function()
-            self:emit('error', exception)
-        end )
+            self:emit('error', error)
+        end)
     end
 end
 
@@ -222,10 +257,6 @@ function Socket:getsockname()
     end
 
     return uv.tcp_getsockname(self._handle)
-end
-
-function Socket:keepalive(enable, delay)
-    uv.tcp_keepalive(self._handle, enable, delay)
 end
 
 function Socket:listen(backlog)
@@ -252,16 +283,10 @@ function Socket:listen(backlog)
     return uv.listen(self._handle, backlog, _onListen)
 end
 
-function Socket:nodelay(enable)
-    uv.tcp_nodelay(self._handle, enable)
-end
-
-function Socket:_onSocketFinish()
-    if self._connecting then
-        return self:once('connect', util.bind(self._onSocketFinish, self))
-    end
-    if not self.readable then
-        return self:destroy()
+function Socket:_onClose(hadError)
+    if (not self._isClosed) then
+        self._isClosed = true
+        self:emit('close')
     end
 end
 
@@ -271,11 +296,14 @@ function Socket:_onSocketEnd()
     end)
 end
 
-function Socket:pause()
-    Duplex.pause(self)
-    if not self._handle then return end
-    self._reading = false
-    uv.read_stop(self._handle)
+function Socket:_onSocketFinish()
+    if self._connecting then
+        return self:once('connect', util.bind(self._onSocketFinish, self))
+    end
+
+    if not self.readable then
+        return self:destroy()
+    end
 end
 
 function Socket:_read(n)
@@ -304,23 +332,61 @@ function Socket:_read(n)
     end
 end
 
+function Socket:_write(data, callback)
+    if (not self._handle) or (not data) then
+        return
+    end
+
+    -- fixit
+    uv.write(self._handle, data, function(err)
+        if err then
+            self:destroy(err)
+            return callback(err)
+        end
+
+        callback()
+    end)
+end
+
+function Socket:pause()
+    Duplex.pause(self)
+    if not self._handle then return end
+    self._reading = false
+    uv.read_stop(self._handle)
+end
+
 function Socket:resume()
     Duplex.resume(self)
     self:_read(0)
 end
 
-function Socket:setTimeout(msecs, callback)
-    if msecs > 0 then
-        timer.enroll(self, msecs)
+function Socket:setKeepAlive(enable, initialDelay)
+    if (self._handle) then
+        uv.tcp_keepalive(self._handle, enable, initialDelay)
+    end
+end
+
+function Socket:setNoDelay(enable)
+    if (self._handle) then
+        uv.tcp_nodelay(self._handle, enable)
+    end
+end
+
+function Socket:setTimeout(timeout, callback)
+    if timeout > 0 then
+        timer.enroll(self, timeout)
         timer.active(self)
-        if callback then self:once('timeout', callback) end
-        
-    elseif msecs == 0 then
+        if callback then
+            self:once('timeout', callback)
+        end
+
+    elseif timeout == 0 then
         timer.unenroll(self)
     end
 end
 
 function Socket:shutdown(callback)
+    callback = callback or function() end
     if self.destroyed == true then
         return callback()
     end
@@ -332,25 +398,17 @@ function Socket:shutdown(callback)
     uv.shutdown(self._handle, callback)
 end
 
-function Socket:_write(data, callback)
-    if not self._handle then return end
-    uv.write(self._handle, data, function(err)
-        if err then
-            self:destroy(err)
-            return callback(err)
-        end
-        callback()
-    end )
-end
-
 -------------------------------------------------------------------------------
 -- Server
 
+---@class Server
 local Server = Emitter:extend()
 exports.Server = Server
 
+---@param options table
+---@param callback function - 'connection' listener
 function Server:init(options, callback)
-    -- init(callback)
+    -- init(callback:function)
     if type(options) == 'function' then
         callback = options
         options  = {}
@@ -368,21 +426,31 @@ end
 
 function Server:address()
     if self._handle then
-        return self._handle:getsockname()
+        local address = self._handle:getsockname()
+        if (address) and (not address.address) then
+            address.address = address.ip
+        end
+        return address
     end
 end
 
 function Server:close(callback)
     self:destroy(nil, callback)
+    return self
 end
 
 function Server:destroy(err, callback)
     self._handle:destroy(err, callback)
-    self:emit('close')
+    self:_onClose()
+    return self
 end
 
+---@param port integer
+---@param host string
+---@param backlog integer
+---@param callback function
 function Server:listen(port, host, backlog, callback)
-    -- listen(path, backlog, callback)
+    -- listen(path:string, backlog:integer, callback:function)
     if (tonumber(port) == nil) then
         -- TODO: unix socket
         self.is_pipe = true
@@ -392,26 +460,26 @@ function Server:listen(port, host, backlog, callback)
         host     = nil
     end
 
-    -- listen(port, callback)
+    -- listen(port:integer, callback:function)
     if (type(host) == 'function') then
         callback = host
         host     = nil
         backlog  = nil
 
-    -- listen(port, host, callback)
+    -- listen(port:integer, host:string, callback:function)
     elseif (type(backlog) == 'function') then
         callback = backlog
         backlog  = nil
     end
 
     host    = host or '0.0.0.0'
-    backlog = backlog or 128
+    backlog = backlog or 511
 
+    -- create stream handle
     if not self._handle then
         local handle = nil
         if (self.is_pipe) then
             handle = uv.new_pipe(false)
-            --console.log(handle)
         else
             handle = uv.new_tcp()
         end
@@ -424,17 +492,16 @@ function Server:listen(port, host, backlog, callback)
     serverSocket.is_pipe = self.is_pipe
     ret, message, err = serverSocket:bind(host, port)
     if (not ret) then
-        --console.log(message, err)
         self:emit('error', message, err)
         self:destroy(err, callback)
-        return
+        return self
     end
 
     ret, message, err = serverSocket:listen(backlog)
     if (not ret) then
         self:emit('error', message, err)
         self:destroy(err, callback)
-        return
+        return self
     end
 
     serverSocket:on('connection', function(client)
@@ -442,31 +509,47 @@ function Server:listen(port, host, backlog, callback)
     end)
 
     serverSocket:on('error', function(err)
+        self.listening = false
         self:emit('error', err)
     end)
 
     serverSocket:on('close', function()
-        self:emit('close')
+        self.listening = false
+        self:_onClose()
     end)
 
-    self:emit('listening')
+    self.listening = true
+    setImmediate(function()
+        self:emit('listening')
+    end)
 
     if callback then
-        timer.setImmediate(callback)
+        setImmediate(callback)
     end
 
     return self
 end
 
+function Server:_onClose()
+    if (not self._isClosed) then
+        self._isClosed = true
+        self:emit('close')
+    end
+end
+
 -------------------------------------------------------------------------------
 -- Exports
 
+---@param port integer|table
+---@param host string
+---@param callback function
+---@return Socket
 function exports.createConnection(port, host, callback)
-    -- connect(options, callback)
+    -- connect(options:table, callback:function)
     if type(port) == 'table' then
         local options = port
-        port    = options.port
-        host    = options.host
+        port = options.port
+        host = options.host
         callback = host
     end
 
@@ -475,13 +558,15 @@ function exports.createConnection(port, host, callback)
     return socket
 end
 
-exports.connect = exports.createConnection
-
--- callback: 'connection' listener
+---@param options table
+---@param callback function - 'connection' listener
+---@return Server
 function exports.createServer(options, callback)
     local server = Server:new()
     server:init(options, callback)
     return server
 end
+
+exports.connect = exports.createConnection
 
 return exports

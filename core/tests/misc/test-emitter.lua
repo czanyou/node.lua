@@ -15,24 +15,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("test listenerCount", function()
 	assert(
 		2 ==
-			require("core").Emitter:new():on("foo", function(a) end
+			require('core').Emitter:new():on("foo", function(a) end
 			):on("foo", function(a, b) end
 			):on("bar", function(a, b) end
 			):listenerCount("foo")
 	)
 
-	assert(0 == require("core").Emitter:new():listenerCount("non-exist"))
+	assert(0 == require('core').Emitter:new():listenerCount("non-exist"))
 end)
 
 test("chaining",
 function(expect)
-	require("core").Emitter:new():on(
+	require('core').Emitter:new():on(
 		"foo",
 		expect(
 			function(x)
@@ -43,7 +43,7 @@ function(expect)
 end)
 
 test("removal", function(expect)
-	local e1 = require("core").Emitter:new()
+	local e1 = require('core').Emitter:new()
 	local cnt = 0
 	local function incr()
 		cnt = cnt + 1
@@ -61,7 +61,7 @@ test("removal", function(expect)
 end)
 
 test("once removal", function(expect)
-	local e1 = require("core").Emitter:new()
+	local e1 = require('core').Emitter:new()
 	local cnt = 0
 	local function incr()
 		cnt = cnt + 1
@@ -79,7 +79,7 @@ test("once removal", function(expect)
 end)
 
 test("remove all listeners", function(expect)
-	local em = require("core").Emitter:new()
+	local em = require('core').Emitter:new()
 	em:on("data",
 		function()
 		end)

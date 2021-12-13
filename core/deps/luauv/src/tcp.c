@@ -32,7 +32,21 @@ static int luv_new_tcp(lua_State* L) {
     ret = uv_tcp_init(ctx->loop, handle);
   }
   else {
-    ret = uv_tcp_init_ex(ctx->loop, handle, lua_tointeger(L, 1));
+    unsigned int flags = AF_UNSPEC;
+    if (lua_isnumber(L, 1)) {
+      flags = lua_tointeger(L, 1);
+    }
+    else if (lua_isstring(L, 1)) {
+      const char* family = lua_tostring(L, 1);
+      flags = luv_af_string_to_num(family);
+      if (!flags) {
+        luaL_argerror(L, 1, lua_pushfstring(L, "invalid or unknown address family: '%s'", family));
+      }
+    }
+    else {
+      luaL_argerror(L, 1, "expected string or integer");
+    }
+    ret = uv_tcp_init_ex(ctx->loop, handle, flags);
   }
   if (ret < 0) {
     lua_pop(L, 1);
@@ -46,9 +60,7 @@ static int luv_tcp_open(lua_State* L) {
   uv_tcp_t* handle = luv_check_tcp(L, 1);
   uv_os_sock_t sock = luaL_checkinteger(L, 2);
   int ret = uv_tcp_open(handle, sock);
-  if (ret < 0) return luv_error(L, ret);
-  lua_pushinteger(L, ret);
-  return 1;
+  return luv_result(L, ret);
 }
 
 static int luv_tcp_nodelay(lua_State* L) {
@@ -57,9 +69,7 @@ static int luv_tcp_nodelay(lua_State* L) {
   luaL_checktype(L, 2, LUA_TBOOLEAN);
   enable = lua_toboolean(L, 2);
   ret = uv_tcp_nodelay(handle, enable);
-  if (ret < 0) return luv_error(L, ret);
-  lua_pushinteger(L, ret);
-  return 1;
+  return luv_result(L, ret);
 }
 
 static int luv_tcp_keepalive(lua_State* L) {
@@ -72,9 +82,7 @@ static int luv_tcp_keepalive(lua_State* L) {
     delay = luaL_checkinteger(L, 3);
   }
   ret = uv_tcp_keepalive(handle, enable, delay);
-  if (ret < 0) return luv_error(L, ret);
-  lua_pushinteger(L, ret);
-  return 1;
+  return luv_result(L, ret);
 }
 
 static int luv_tcp_simultaneous_accepts(lua_State* L) {
@@ -83,9 +91,7 @@ static int luv_tcp_simultaneous_accepts(lua_State* L) {
   luaL_checktype(L, 2, LUA_TBOOLEAN);
   enable = lua_toboolean(L, 2);
   ret = uv_tcp_simultaneous_accepts(handle, enable);
-  if (ret < 0) return luv_error(L, ret);
-  lua_pushinteger(L, ret);
-  return 1;
+  return luv_result(L, ret);
 }
 
 static int luv_tcp_bind(lua_State* L) {
@@ -105,9 +111,7 @@ static int luv_tcp_bind(lua_State* L) {
     lua_pop(L, 1);
   }
   ret = uv_tcp_bind(handle, (struct sockaddr*)&addr, flags);
-  if (ret < 0) return luv_error(L, ret);
-  lua_pushinteger(L, ret);
-  return 1;
+  return luv_result(L, ret);
 }
 
 static void parse_sockaddr(lua_State* L, struct sockaddr_storage* address) {
@@ -152,7 +156,6 @@ static int luv_tcp_getpeername(lua_State* L) {
   return 1;
 }
 
-
 static void luv_connect_cb(uv_connect_t* req, int status) {
   luv_req_t* data = (luv_req_t*)req->data;
   lua_State* L = data->ctx->L;
@@ -162,6 +165,7 @@ static void luv_connect_cb(uv_connect_t* req, int status) {
   req->data = NULL;
 }
 
+// deprecated by luv_stream_get_write_queue_size
 static int luv_write_queue_size(lua_State* L) {
   uv_tcp_t* handle = luv_check_tcp(L, 1);
   lua_pushinteger(L, handle->write_queue_size);
@@ -192,3 +196,25 @@ static int luv_tcp_connect(lua_State* L) {
   }
   return 1;
 }
+
+#if LUV_UV_VERSION_GEQ(1, 32, 0)
+static void luv_close_reset_cb(uv_handle_t* handle) {
+  lua_State* L;
+  luv_handle_t* data = (luv_handle_t*)handle->data;
+  if (!data) return;
+  L = data->ctx->L;
+  luv_call_callback(L, data, LUV_RESET, 0);
+  luv_unref_handle(L, data);
+}
+
+static int luv_tcp_close_reset(lua_State* L) {
+  int ret;
+  uv_tcp_t* handle = luv_check_tcp(L, 1);
+  if (!lua_isnoneornil(L, 2)) {
+    luv_check_callback(L, (luv_handle_t*)handle->data, LUV_RESET, 2);
+  }
+  ret = uv_tcp_close_reset(handle, luv_close_reset_cb);
+  return luv_result(L, ret);
+}
+#endif
+

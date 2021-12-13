@@ -1,12 +1,11 @@
 local snapshot = require("snapshot")
-local json = require("json")
-local snapshot_utils = require("./utils")
-local print_r = require("./print_r")
+local json = require('json')
 
-local construct_indentation = snapshot_utils.construct_indentation
+local indentation = require("util/snapshot").indentation
 
 local S1 = snapshot()
 
+-- [[
 local tmp = {
     player = {
         uid = 1,
@@ -23,6 +22,8 @@ local tmp = {
     },
 }
 
+--]]
+
 local a = {}
 local c = {}
 a.b = c
@@ -37,19 +38,26 @@ local co = coroutine.create(function ()
     print("hello world")
 end)
 
+collectgarbage()
 local S2 = snapshot()
 
-local diff = {}
-for k,v in pairs(S2) do
-	if not S1[k] then
-        diff[k] = v
-	end
+local function getDiff(s1, s2)
+    local diff = {}
+    for k,v in pairs(s2) do
+        if not s1[k] then
+            diff[k] = v
+        end
+    end
+
+    return diff
 end
 
+local diff = getDiff(S1, S2)
 console.log(diff)
+
 print("===========================")
 
-local result = construct_indentation(diff)
+local result = indentation(diff)
 console.log(result)
 
 --[[

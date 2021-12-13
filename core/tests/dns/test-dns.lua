@@ -16,129 +16,133 @@ limitations under the License.
 
 --]]
 local dns = require("dns")
-local path = require("path")
+local assert = require('assert')
 
 -- Appveyor is failing builds randomly... need to re-enable
 if os.getenv("APPVEYOR") then
     return
 end
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 test("localhost", function(expect)
     dns.resolve4("localhost", expect(function(err, answers)
-            --assert(not err, err)
-            --assert(#answers > 0)
-            p(err, answers)
+        if (err) then console.log(err) end
+        --assert(not err)
+        --assert(#answers > 0)
+        console.log(err, answers)
     end))
 end)
 
 test("resolve4", function(expect)
     dns.resolve4("luvit.io", expect(function(err, answers)
-        assert(not err, err)
+        if (err) then console.log(err) end
+        assert(not err)
         assert(#answers > 0)
-        p(answers)
+        console.log(answers)
+    end))
+end)
+
+test("lookup", function(expect)
+    dns.lookup("luvit.io", expect(function(err, answers)
+        if (err) then console.log(err) end
+        assert(not err)
+        assert(#answers > 0)
+        console.log(answers)
+    end))
+end)
+
+--[[
+test("resolve6", function(expect)
+    dns.resolve6("luvit.io", expect(function(err, answers)
+        if (err) then console.log(err) end
+        assert(not err)
+        console.log(answers)
+        assert(#answers > 0)
     end))
 end)
 
 test("resolve6", function(expect)
     dns.resolve6("luvit.io", expect(function(err, answers)
-        assert(not err, err)
-        p(answers)
-        assert(#answers > 0)
-    end))
-end)
-
-test("resolve6", function(expect)
-    dns.resolve6("luvit.io", expect(function(err, answers)
-        assert(not err, err)
-        p(answers)
+        if (err) then console.log(err) end
+        assert(not err)
+        console.log(answers)
         assert(#answers > 0)
     end))
 end)
 
 test("resolveSrv", function(expect)
     dns.resolveSrv("_https._tcp.luvit.io", expect(function(err, answers)
+        if (err) then console.log(err) end
         assert(not err)
-        p(answers)
+        console.log(answers)
         assert(#answers > 0)
     end))
 end)
 
 test("resolveMx", function(expect)
     dns.resolveMx("luvit.io", expect(function(err, answers)
+        if (err) then console.log(err) end
         assert(not err)
-        p(answers)
+        console.log(answers)
         assert(#answers > 0)
     end))
 end)
+
 test("resolveNs", function(expect)
-    dns.resolveNs("luvit.io", expect(
-        function(err, answers)
-            assert(not err, err)
-            p(answers)
-            assert(#answers > 0)
-        end))
+    dns.resolveNs("luvit.io", expect(function(err, answers)
+        if (err) then console.log(err) end
+        assert(not err)
+        console.log(answers)
+        assert(#answers > 0)
+    end))
 end)
 
 test("resolveCname", function(expect)
-    dns.resolveCname(
-        "try.luvit.io",
-        expect(
-            function(err, answers)
-                assert(not err)
-                p(answers)
-                assert(#answers > 0)
-            end))
+    dns.resolveCname("try.luvit.io", expect(function(err, answers)
+        if (err) then console.log(err) end
+        assert(not err)
+        console.log(answers)
+        assert(#answers > 0)
+    end))
 end)
 
 test("resolveTxt", function(expect)
-    dns.resolveTxt(
-        "google._domainkey.luvit.io",
-        expect(function(err, answers)
-            assert(not err)
-            p(answers)
-            assert(#answers > 0)
-        end))
+    dns.resolveTxt("google._domainkey.luvit.io", expect(function(err, answers)
+        if (err) then console.log(err) end
+        assert(not err)
+        console.log(answers)
+        assert(#answers > 0)
+    end))
 end)
 
 test("resolveTxtTimeout", function(expect)
     dns.setServers({{["host"] = "127.0.0.1", ["port"] = 53234}})
     dns.setTimeout(200)
-    dns.resolveTxt(
-        "google._domainkey.luvit.io",
-        expect(function(err, answers)
-            assert(err)
-        end))
+    dns.resolveTxt("google._domainkey.luvit.io", expect(function(err, answers)
+        if (err) then console.log(err) end
+        assert(err)
+    end))
 end)
 
 test("resolveTxtTCP", function(expect)
     dns.setTimeout(2000)
     dns.setServers({{["host"] = "8.8.8.8", ["port"] = 53, ["tcp"] = true}})
-    dns.resolveTxt("google._domainkey.luvit.io",
-        expect(function(err, answers)
-            assert(not err, err)
-        end))
+    dns.resolveTxt("google._domainkey.luvit.io", expect(function(err, answers)
+        if (err) then console.log(err) end
+        assert(not err)
+    end))
 end)
-
-test("load resolver", function()
-    if os.platform() == "win32" then
-        return
-    end
-    local servers = dns.loadResolver({file = path.join(module.dir, "resolve.conf")})
-    assert(#servers == 3)
-    assert(servers[1].host == "192.168.0.1")
-    assert(servers[2].host == "::1")
-    assert(servers[3].host == "::2")
-    dns.setDefaultServers()
-end)
+--]]
 
 test("bad address", function(expect)
     dns.resolve4("luvit.not_a_domain", expect(function(err)
+        if (err) then console.log(err) end
         assert(err)
         assert(err.code > 0)
     end))
 end)
+
 
 tap.run()

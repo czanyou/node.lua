@@ -1,9 +1,0 @@
-{
-	"depends": [],
-	"description": "Temperature & humidity sensor application",
-	"title": "Humiture",
-	"name": "humiture",
-	"icon": "thermometer",
-	"tags": ["sensor", "temperature", "humidity", "humiture"],
-	"version": "2.0.0"
-}

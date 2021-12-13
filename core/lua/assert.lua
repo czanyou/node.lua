@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@ limitations under the License.
 
 --]]
 
-local meta = {}
-meta.name        = "lnode/assert"
-meta.version     = "1.0.1"
-meta.license     = "Apache 2"
-meta.tags        = { "lnode", "assert", "test" }
-meta.description = "Provides a simple set of assertion tests that can be used to test invariants."
+local meta = {
+    description = "Provides a simple set of assertion tests that can be used to test invariants."
+}
 
 -------------------------------------------------------------------------------
 -- Assertion Testing

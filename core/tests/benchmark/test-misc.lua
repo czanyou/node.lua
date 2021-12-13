@@ -1,4 +1,4 @@
-local tap 		= require('ext/tap')
+local tap 		= require('util/tap')
 
 local test = tap.test
 
@@ -165,7 +165,6 @@ test("test table insert & remove", function ()
 
 	print(#list)
 end)
-
 
 test("test table insert & remove", function ()
 	console.time('test table 7')

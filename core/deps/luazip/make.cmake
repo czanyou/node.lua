@@ -10,6 +10,10 @@ include_directories(
 )
 
 set(SOURCES
+  ${LUAZIPDIR}/src/miniz_tdef.c
+  ${LUAZIPDIR}/src/miniz_tinfl.c
+  ${LUAZIPDIR}/src/miniz_zip.c
+  ${LUAZIPDIR}/src/miniz.c
   ${LUAZIPDIR}/src/lminiz.c
 )
 

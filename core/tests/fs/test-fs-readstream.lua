@@ -16,7 +16,7 @@ limitations under the License.
 
 --]]
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local path = require('path')
@@ -52,7 +52,7 @@ test('fs.readstream length', function(expect)
 	local function onEnd()
 		local expected = string.sub(text, 1, options.length)
 		local readString = table.concat(sink.str, "")
-		p(expected, readString)
+		console.log(expected, readString)
 		assert(expected == readString)
 		fs.unlinkSync(tmp_file)
 	end
@@ -82,7 +82,7 @@ test('fs.readstream offset and length', function(expect)
 	local function onEnd()
 		local expected = string.sub(text, options.offset + 1, options.length + options.offset)
 		local readString = table.concat(sink.str, "")
-		p(expected, readString)
+		console.log(expected, readString)
 		assert(expected == readString)
 		fs.unlinkSync(tmp_file)
 	end

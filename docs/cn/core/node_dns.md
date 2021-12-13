@@ -1,9 +1,10 @@
 # DNS
 
-显示原文其他翻译纠错
 使用 require('dns') 引入此模块。dns 模块中的所有方法都使用了 C-Ares，除了 dns.lookup 使用了线程池中的 getaddrinfo(3)。C-Ares 比 getaddrinfo 要快得多，但系统解析器相对于其它程序的操作要更固定。当一个用户使用 net.connect(80, 'google.com') 或 http.get({ host: 'google.com' }) 时会使用 dns.lookup 方法。如果用户需要进行大量的快速查询，则最好使用 C-Ares 提供的方法。
 
-## dns.lookup
+## dns 方法
+
+### dns.lookup
 
 > dns.lookup(domain, [family], callback)
 
@@ -13,7 +14,8 @@
 
 当错误发生时，err 为一个 Error 对象，其中 err.code 为错误代码。请记住 err.code 被设定为 'ENOENT' 的情况不仅是域名不存在，也可能是查询在其它途径出错，比如没有可用文件描述符时。
 
-## dns.resolve
+
+### dns.resolve
 
 > dns.resolve(domain, [rrtype], callback)
 
@@ -24,14 +26,14 @@
 当出错时，err 参数为一个 Error 对象，其中 err.code 为下文所列出的错误代码之一。
 
 
-## dns.resolve4
+### dns.resolve4
 
 > dns.resolve4(domain, callback)
 
 于 dns.resolve() 一样，但只用于查询 IPv4（A 记录）。addresses 是一个 IPv4 地址的数组（比如 ['74.125.79.104', '74.125.79.105', '74.125.79.106']）。
 
 
-## dns.resolve6
+### dns.resolve6
 
 > dns.resolve6(domain, callback)
 

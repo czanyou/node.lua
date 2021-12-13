@@ -10,6 +10,17 @@
 
 第三章节深入讲解了流的工作方式，包括一些内部机制和函数，除非您明确知道您在做什么，否则尽量不要改动它们。
 
+## 流的类型
+
+Node.lua 中有四种基本的流类型：
+
+- `Writable` - 可写入数据的流（例如 `fs.createWriteStream()`。
+- `Readable` - 可读取数据的流（例如 `fs.createReadStream()`）。
+- `Duplex` - 可读又可写的流（例如 `net.Socket`）。
+- `Transform` - 在读写过程中可以修改或转换数据的 `Duplex` 流（例如 `zlib.createDeflate()`）。
+
+此外，该模块还包括实用函数 `stream.pipeline()`、`stream.finished()`) 和 `stream.Readable.from()`。
+
 ## 面向流消费者的 API
 
 流可以是可读（Readable）或可写（Writable），或者兼具两者（Duplex，双工）的。
@@ -163,8 +174,8 @@ end)
 
     readable.read([size])
 
-- `size` {number} 可选参数，指定要读取多少数据。
-- 返回 {string}
+- size `{number}` 可选参数，指定要读取多少数据。
+- 返回 `{string}`
 
 read() 方法从内部缓冲区中拉取并返回若干数据。当没有更多数据可用时，它会返回 nil。
 
@@ -231,9 +242,9 @@ end)
 
     readable.pipe(destination, [options])
 
-- `destination` {WritableStream} 写入数据的目标
-- `options` {object} 导流选项
-    + `end` {boolean} 在读取者结束时结束写入者。缺省为 true
+- destination `{WritableStream}` 写入数据的目标
+- options `{object}` 导流选项
+    + end `{boolean}` 在读取者结束时结束写入者。缺省为 true
 
 该方法从可读流中拉取所有数据，并写入到所提供的目标。该方法能自动控制流量以避免目标被快速读取的可读流所淹没。
 
@@ -271,7 +282,7 @@ r.pipe(z).pipe(w)
 
 reader:pipe(writer, { end = false })
 reader:on('end', function() 
-  writer:_end('Goodbye\n')
+  writer:finish('Goodbye\n')
 end)
 
 ```
@@ -282,7 +293,7 @@ end)
 
     readable.unpipe([destination])
 
-- `destination` {Writable Stream} 可选，指定解除导流的流
+- destination {Writable Stream} 可选，指定解除导流的流
 
 该方法会移除之前调用 pipe() 所设定的钩子。
 
@@ -302,7 +313,7 @@ setTimeout(function()
   console.log('停止写入到 file.txt')
   readable:unpipe(writable)
   console.log('自行关闭文件流')
-  writable:_end()
+  writable:finish()
 end, 1000)
 
 ```
@@ -311,7 +322,7 @@ end, 1000)
 
     readable.unshift(chunk)
 
-- `chunk` string 要插回读取队列开头的数据块
+- chunk ``{string}`` 要插回读取队列开头的数据块
 
 该方法在许多场景中都很有用，比如一个流正在被一个解析器消费，解析器可能需要将某些刚拉取出的数据“逆消费”回来源，以便流能将它传递给其它消费者。
 
@@ -368,23 +379,29 @@ Writable（可写）流接口是对您正在写入数据至一个目标的抽象
 
 #### 事件
 
+##### 事件: 'close'
+
+当流或其底层资源（比如文件描述符）被关闭时触发。 表明不会再触发其他事件，也不会再发生操作。
+
+如果使用 `emitClose` 选项创建[可写流](http://nodejs.cn/s/9JUnJ8)，则它将会始终发出 `'close'` 事件。
+
 ##### 事件: 'drain'
 
-如果一个 writable.write(chunk) 调用返回 false，那么 drain 事件则表明可以继续向流写入更多数据。
+如果一个 `writable.write(chunk)` 调用返回 false，那么 drain 事件则表明可以继续向流写入更多数据。
 
 ```js
 // 向所给可写流写入 1000000 次数据。
 // 注意后端压力。
 function writeOneMillionTimes(writer, data, encoding, callback) {
-  var i = 1000000;
+  local i = 1000000;
   write();
   function write() {
-    var ok = true;
+    local ok = true;
     do {
       i -= 1;
       if (i === 0) {
         // 最后一次！
-        writer.write(data, encoding, callback);
+        writer:write(data, encoding, callback);
       } else {
         // 检查我们应该继续还是等待
         // 不要传递回调，因为我们还没完成。
@@ -394,11 +411,19 @@ function writeOneMillionTimes(writer, data, encoding, callback) {
     if (i > 0) {
       // 不得不提前停止！
       // 一旦它排空，继续写入数据
-      writer.once('drain', write);
+      writer:once('drain', write);
     }
   }
 }
 ```
+
+##### 事件: 'error'
+
+如果在写入或管道数据时发生错误，则会触发 `'error'` 事件。 当调用时，监听器回调会传入一个 `Error` 参数。
+
+除非在创建流时将 `autoDestroy` 选项设置为 `false`，否则在触发 `'error'` 事件时流会被关闭。
+
+在 `'error'` 之后，除 `'close'` 事件外，不应再触发其他事件（包括 `'error'` 事件）。
 
 ##### 事件: 'finish'
 
@@ -438,24 +463,66 @@ reader.pipe(writer);
 该事件发生于可读流的 unpipe() 方法被调用并将本可写流从它的目标移除时。
 
 ```js
-var writer = getWritableStreamSomehow();
-var reader = getReadableStreamSomehow();
-writer.on('unpipe', function(src) {
+local writer = getWritableStreamSomehow();
+local reader = getReadableStreamSomehow();
+writer:on('unpipe', function(src) {
   console.error('某写东西停止导流到 writer 了');
   assert.equal(src, reader);
 });
-reader.pipe(writer);
-reader.unpipe(writer);
+reader:pipe(writer);
+reader:unpipe(writer);
 ```
+
+#### 属性
+
+##### 属性 writable.destroyed
+
+在调用了 `writable.destroy()` 之后为 `true`。
+
+##### 属性 writable
+
+如果调用 writable.write() 是安全的（这意味着流没有被破坏、报错、或结束），则为 true。
+
+##### 属性 writableEnded
+
+在调用了 writable.end() 之后为 true。 此属性不表明数据是否已刷新，对此请使用 writable.writableFinished。
+
+##### 属性 writableCorked
+
+为了完全 uncork 流所需要调用的 writable.uncork() 的次数。
+
+##### 属性 writableFinished
+
+在触发 'finish' 事件之前立即设置为 true。
+
+##### 属性 writableHighWaterMark
+
+返回构造可写流时传入的 highWaterMark 的值。
+
+##### 属性 writableLength
+
+此属性包含准备写入的队列中的字节数（或对象）。 该值提供有关 highWaterMark 状态的内省数据。
+
+##### 属性 writableObjectMode
+
+获取用于给定 Writable 流的 objectMode 属性。
+
+#### writable.destroy
+
+销毁流。 可选地触发 `'error'`，并且触发 `'close'` 事件（除非将 `emitClose` 设置为 `false`）。 调用该方法后，可写流就结束了，之后再调用 `write()` 或 `end()` 都会导致 `ERR_STREAM_DESTROYED` 错误。 这是销毁流的最直接的方式。 前面对 `write()` 的调用可能没有耗尽，并且可能触发 `ERR_STREAM_DESTROYED` 错误。 如果数据在关闭之前应该刷新，则使用 `end()` 而不是销毁，或者在销毁流之前等待 `'drain'` 事件。
+
+一旦调用 `destroy()`，则不会再执行任何其他操作，并且除了 `_destroy` 以外的其他错误都不会作为 `'error'` 触发。
+
+实现者不应该重写此方法，而应该实现 [`writable._destroy()`](http://nodejs.cn/s/7DTgUP)。
 
 #### writable.write
 
 > writable.write(chunk,[callback])
 
-- `chunk` {string} 要写入的数据
-- `callback` {function} 数据块写入后的回调
+- chunk `{string}` 要写入的数据
+- callback `{function}` 数据块写入后的回调
 
-- 返回: {boolean} 如果数据已被全部处理则返回 true。
+- 返回: `{boolean}` 如果数据已被全部处理则返回 true。
 
 该方法向底层系统写入数据，并在数据被处理完毕后调用所给的回调。
 
@@ -482,8 +549,8 @@ reader.unpipe(writer);
 
 > writable.close([chunk], [callback])
 
-- `chunk` {string} 可选，要写入的数据
-- `callback` {function} 可选，流结束后的回调
+- chunk `{string}` 可选，要写入的数据
+- callback `{function}` 可选，流结束后的回调
 
 当没有更多数据会被写入到流时调用此方法。如果给出，回调会被用作 finish 事件的监听器。
 
@@ -554,19 +621,19 @@ stream.Readable 是一个可被扩展的、实现了底层方法 _read(size) 的
 
 #### Readable:new
 
-    stream.Readable:new([options])
+> stream.Readable:new([options])
 
-- `options` {object}
-    + `highWaterMark` {number} 停止从底层资源读取前内部缓冲区最多能存放的字节数。缺省为 16kb，对于 objectMode 流则是 16
-    + `objectMode` {boolean} 该流是否应该表现为对象的流。意思是说 stream:read(n) 返回一个单独的对象，而不是大小为 n 的 Buffer
+- options `{object}`
+    + highWaterMark `{number}` 停止从底层资源读取前内部缓冲区最多能存放的字节数。缺省为 16kb，对于 objectMode 流则是 16
+    + objectMode `{boolean}` 该流是否应该表现为对象的流。意思是说 stream:read(n) 返回一个单独的对象，而不是大小为 n 的 Buffer
 
 请确保在扩展 Readable 类的类中调用 Readable 构造函数以便缓冲设定能被正确初始化。
 
 #### readable._read
 
-    readable:_read(size)
+> readable:_read(size)
 
-- size {number} 异步读取的字节数
+- size `{number}` 异步读取的字节数
 
 注意：实现这个函数，但【不要】直接调用它。
 
@@ -576,16 +643,16 @@ stream.Readable 是一个可被扩展的、实现了底层方法 _read(size) 的
 
 该方法以下划线开头是因为它对于定义它的类是内部的，并且不应该被用户程序直接调用。但是，你应当在您的扩充类中覆盖这个方法。
 
-当数据可用时，调用 readable.push(chunk) 将它加入到读取队列。如果 push 返回 false，那么您应该停止读取。当 _read 被再次调用，您应该继续推出更多数据。
+当数据可用时，调用 `readable.push(chunk)` 将它加入到读取队列。如果 push 返回 false，那么您应该停止读取。当 _read 被再次调用，您应该继续推出更多数据。
 
 参数 size 仅作查询。“read” 调用返回数据的实现可以通过这个参数来知道应当抓取多少数据；其余与之无关的实现，
-比如 TCP 或 TLS，则可忽略这个参数，并在可用时返回数据。例如，没有必要“等到” size 个字节可用时才调用 stream.push(chunk)。
+比如 TCP 或 TLS，则可忽略这个参数，并在可用时返回数据。例如，没有必要“等到” size 个字节可用时才调用 `stream.push(chunk)`。
 
 #### readable.push
 
-    readable:push(chunk)
+> readable:push(chunk)
 
-- `chunk` {String|nil} 推入读取队列的数据块
+- chunk `{string|nil}` 推入读取队列的数据块
 
 注意：这个函数应该被 Readable 实现者调用，【而不是】Readable 流的消费者。
 
@@ -593,7 +660,7 @@ stream.Readable 是一个可被扩展的、实现了底层方法 _read(size) 的
 
 Readable 类的工作方式是，将数据读入一个队列，当 'readable' 事件发生、调用 read() 方法时，数据会被从队列中取出。
 
-push() 方法会明确地向读取队列中插入一些数据。如果调用它时传入了 null 参数，那么它会触发数据结束信号（EOF）。
+push() 方法会明确地向读取队列中插入一些数据。如果调用它时传入了 `nil` 参数，那么它会触发数据结束信号（EOF）。
 
 这个 API 被设计成尽可能地灵活。比如说，您可以包装一个低级别的具备某种暂停/恢复机制和数据回调的数据源。这种情况下，您可以通过这种方式包装低级别来源对象：
 
@@ -634,23 +701,24 @@ end
 
 ### 类: stream.Writable
 
-stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, encoding, callback) 的抽象类。
+stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, callback) 的抽象类。
 
 请阅读前文面向流消费者的 API 章节了解如何在您的程序中消费可读流。下文将解释如何在您的程序中自己实现 Writable 流。
 
 #### stream.Writable:new([options])
 
-- `options` {object}
-- `highWaterMark` {number} write() 开始返回 false 的缓冲级别。缺省为 16kb，对于 objectMode 流则是 16
+- options `{object}`
+  - highWaterMark `{number}` write() 开始返回 false 的缓冲级别。缺省为 16kb，对于 objectMode 流则是 16
+  - objectMode `{boolean}`
 
 请确保在扩充 Writable 类的类中调用构造函数以便缓冲设定能被正确初始化。
 
 #### writable._write
 
-    writable._write(chunk, callback)
+> writable._write(chunk, callback)
 
-- `chunk` {string} 要被写入的数据块。
-- `callback` {function} 当您处理完所给数据块时调用此函数（可选地可附上一个错误参数）。
+- chunk `{string}` 要被写入的数据块。
+- callback `{function}` 当您处理完所给数据块时调用此函数（可选地可附上一个错误参数）。
 
 所有 Writable 流的实现必须提供一个 _write() 方法来将数据发送到底层资源。
 
@@ -662,10 +730,10 @@ stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, e
 
 #### writable._writev
 
-    writable._writev(chunks, callback)
+> writable._writev(chunks, callback)
 
-- `chunks` {array} 要写入的块。每个块都遵循这种格式：{ chunk: ..., encoding: ... }。
-- `callback` {function} 当您处理完所给数据块时调用此函数（可选地可附上一个错误参数）。
+- chunks `{array}` 要写入的块。
+- callback `{function}` 当您处理完所有数据块时调用此函数（可选地可附上一个错误参数）。
 
 注意：该函数【禁止】被直接调用。它应该被子类所实现，并仅被 Writable 内部方法所调用。
 
@@ -682,8 +750,8 @@ stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, e
 
 #### stream.Duplex:new(options)
 
-- `options` {object} Passed to both Writable and Readable constructors. Also has the following fields:
-- `allowHalfOpen` {boolean} Default=true. If set to false, then the stream will automatically end the readable side when the writable side ends and vice versa.
+- options `{object}` Passed to both Writable and Readable constructors. Also has the following fields:
+- allowHalfOpen `{boolean}` Default=true. If set to false, then the stream will automatically end the readable side when the writable side ends and vice versa.
 
 请确保在扩充 Duplex 类的类中调用构造函数以便缓冲设定能被正确初始化。
 
@@ -697,7 +765,7 @@ stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, e
 
 #### stream.Transform:new([options])
 
-`options` {object} 传递给 Writable 和 Readable 构造函数。
+`options` `{object}` 传递给 Writable 和 Readable 构造函数。
 
 请确保在扩充 Transform 类的类中调用了构造函数，以使得缓冲设定能被正确初始化。
 
@@ -705,8 +773,8 @@ stream.Writable 是一个可被扩充的、实现了底层方法 _write(chunk, e
 
     transform._transform(chunk, callback)
 
-- `chunk` {string} 要被转换的数据块。
-- `callback` {function}
+- chunk `{string}` 要被转换的数据块。
+- callback `{function}`
 - 当您处理完所提供的数据块时调用此函数（可选地附上一个错误参数）。
 
 注意：该函数【禁止】被直接调用。它应该被子类所实现，并仅被 Transform 内部方法所调用。
@@ -723,9 +791,9 @@ _transform 应当承担特定 Transform 类中所有处理被写入的字节、�
 
 #### transform._flush
 
-    transform._flush(callback)
+> transform._flush(callback)
 
-- `callback` {function} 当您写入完毕剩下的数据后调用此函数（可选地可附上一个错误对象）。
+- callback `{function}` 当您写入完毕剩下的数据后调用此函数（可选地可附上一个错误对象）。
 
 注意：该函数【禁止】被直接调用。它【可以】被子类所实现，并且如果实现，仅被 Transform 内部方法所调用。
 

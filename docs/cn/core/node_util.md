@@ -12,13 +12,13 @@ util 提供一些便利的方法, 模块主要用于支持 Node.lua 内部开发
 
 创建一个协程来执行指定的函数. 和 await 配合使用.
 
-- `func` {function} 要在协程中的运行的函数
-- `...` 执行这个函数时的参数
+- func `{function}` 要在协程中的运行的函数
+- ... 执行这个函数时的参数
 
 返回 co, err
 
-- `co` {object} 相关的协程对象
-- `err` {string} 如果运行中发生错误
+- co `{object}` 相关的协程对象
+- err `{string}` 如果运行中发生错误
 
 
 ### util.await
@@ -27,8 +27,8 @@ util 提供一些便利的方法, 模块主要用于支持 Node.lua 内部开发
 
 异步等待, 用来执行异步方法, 必须在协程内调用这个方法, func 函数的最后一个参数必须是回调函数. 和 async 配合使用.
 
-- `func` {function} 要调用的异步函数, 函数的最后一个参数必须是回调函数.
-- `...` 调用这个函数的参数
+- func `{function}` 要调用的异步函数, 函数的最后一个参数必须是回调函数.
+- ... 调用这个函数的参数
 
 这个方法可把异步函数改为同步风格来调用, 这样  方法会直接返回回调函数参数, 使代码更好读避免陷入回调地狱.
 
@@ -84,8 +84,8 @@ end, 10)
 
 通过 util.bind 可以将类的成员方法变为可用的回调方法
 
-- `func` {function}
-- `self` {object}
+- func `{function}`
+- self `{object}`
 
 ```lua
 
@@ -118,7 +118,7 @@ test(100, util.bind(object.onTest, object))
 
 将 BASE64 编码字符串解码。
 
-- `encodedData` {string} BASE64 编码字符串
+- encodedData `{string}` BASE64 编码字符串
 
 返回解码后字符串
 
@@ -129,7 +129,7 @@ test(100, util.bind(object.onTest, object))
 
 将字符串以 BASE64 编码。
 
-- `data` {string} 字符串
+- data `{string}` 字符串
 
 返回编码后的字符串
 
@@ -147,7 +147,7 @@ test(100, util.bind(object.onTest, object))
 
 将二进位字符串转成十六进位字符串。
 
-- `data` {string} 二进位字符串
+- data `{string}` 二进位字符串
 
 返回编码后的字符串
 
@@ -157,7 +157,7 @@ test(100, util.bind(object.onTest, object))
 
 将十六进位字符串转成二进位字符串。
 
-- `data` {string} 十六进位字符串
+- data `{string}` 十六进位字符串
 
 返回解码后的字符串
 
@@ -175,7 +175,7 @@ test(100, util.bind(object.onTest, object))
 
 返回当前脚本的文件名.
 
-- `index` 调用堆栈索引
+- index 调用堆栈索引
 
 ## 哈希值
 
@@ -185,7 +185,7 @@ test(100, util.bind(object.onTest, object))
 
 计算字符串的 MD5 散列值。
 
-- `data` {string} 字符串
+- data `{string}` 字符串
 
 返回一个 16 字节长度的原始二进制格式散列值。
 
@@ -195,7 +195,7 @@ test(100, util.bind(object.onTest, object))
 
 计算字符串的 MD5 散列值。
 
-- `data` {string} 原始字符串
+- data `{string}` 原始字符串
 
 返回一个 32 字符长度的十六进制数字形式散列值。
 
@@ -214,7 +214,7 @@ assert.equal(util.md5String(data), '1f3870be274f6c49b3e31a0c6728957f')
 
 计算字符串的 SHA1 散列值。
 
-- `data` {string} 原始字符串
+- data `{string}` 原始字符串
 
 返回一个 20 字节长度的原始二进制格式散列值。
 
@@ -224,7 +224,7 @@ assert.equal(util.md5String(data), '1f3870be274f6c49b3e31a0c6728957f')
 
 计算字符串的 SHA1 散列值。
 
-- `data` {string} 原始字符串
+- data `{string}` 原始字符串
 
 返回一个 40 字符长度的十六进制数字形式散列值。
 

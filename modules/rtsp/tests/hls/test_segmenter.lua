@@ -3,7 +3,7 @@ local utils 	= require('util')
 local url   	= require('url')
 local fs    	= require('fs')
 local uv 		= require('luv')
-local tap 		= require("ext/tap")
+local tap 		= require('util/tap')
 
 local segmenter = require('hls/segmenter')
 local tsReader	= require('hls/reader')

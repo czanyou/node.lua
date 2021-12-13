@@ -19,7 +19,7 @@ limitations under the License.
 local dump = console.dump
 local strip = console.strip
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("Recursive values", function()
@@ -38,28 +38,28 @@ end)
 test("string escapes", function()
 	local tests = {
 		"\000\001\002\003\004\005\006\a\b\t\n\v\f\r\014\015",
-		"'.......\\a\\b\\t\\n\\v\\f\\r..'",
+		".......\\a\\b\\t\\n\\v\\f\\r..",
 		"\016\017\018\019\020\021\022\023\024\025\026\027\028\029\030\031",
-		"'................'",
+		"................",
 		' !"#$%&\'()*+,-./',
-		'\' !"#$%&\\\'()*+,-./\'',
+		' !"#$%&\'()*+,-./',
 		"0123456789:;<=>?",
-		"'0123456789:;<=>?'",
+		"0123456789:;<=>?",
 		"@ABCDEFGHIJKLMNO",
-		"'@ABCDEFGHIJKLMNO'",
+		"@ABCDEFGHIJKLMNO",
 		"PQRSTUVWXYZ[\\]^_",
-		"'PQRSTUVWXYZ[\\]^_'", -- "'PQRSTUVWXYZ[\\\\]^_'",
+		"PQRSTUVWXYZ[\\]^_", -- "'PQRSTUVWXYZ[\\\\]^_",
 		"`abcdefghijklmno",
-		"'`abcdefghijklmno'",
+		"`abcdefghijklmno",
 		"pqrstuvwxyz{|}",
-		"'pqrstuvwxyz{|}'"
+		"pqrstuvwxyz{|}"
 	}
 
 	for i = 1, 16, 2 do
 		local out = dump(tests[i])
 		local stripped = strip(out)
 		print('out      ', out)
-		print('stripped ', stripped)
+		print('stripped ', stripped, tests[i + 1])
 		assert(stripped == tests[i + 1], stripped)
 	end
 end)
@@ -67,11 +67,11 @@ end)
 test("Smart quotes in string escapes", function()
 	local tests = {
 		"It's a wonderful life",
-		'"It\'s a wonderful life"',
+		'It\'s a wonderful life',
 		'To "quote" or not to "quote"...',
-		'\'To "quote" or not to "quote"...\'',
+		'To "quote" or not to "quote"...',
 		'I\'ve always liked "quotes".',
-		'\'I\\\'ve always liked "quotes".\''
+		'I\'ve always liked "quotes".'
 	}
 
 	for i = 1, 6, 2 do

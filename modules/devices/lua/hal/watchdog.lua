@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,15 +18,16 @@ limitations under the License.
 
 local core 	 = require('core')
 local fs 	 = require('fs')
+local lutils = require('lutils')
 
 local exports = {}
 
+---@class Watchdog
 local Watchdog = core.Emitter:extend()
 exports.Watchdog = Watchdog
 
 function Watchdog:initialize()
 	self.watchdog = -1
-
 end
 
 --[[
@@ -40,7 +41,7 @@ function Watchdog:close(flags)
 	end
 
 	if (flags) then
-		fs.writeSync(self.watchdog,-1, 'V');
+		fs.writeSync(self.watchdog, nil, 'V');
 	end
 
 	fs.closeSync(self.watchdog)
@@ -52,9 +53,8 @@ function Watchdog:feed()
 		return false
 	end
 
-	fs.writeSync(self.watchdog,-1, '\0');
-
-	return true
+	-- return fs.writeSync(self.watchdog, nil, '\0');
+	return lutils.watchdog_feed(self.watchdog)
 end
 
 -- Turns on and enables the watchdog device.
@@ -64,7 +64,7 @@ function Watchdog:open(timeout)
 	end
 
 	local deviceName = "/dev/watchdog"
-	self.watchdog = fs.openSync(deviceName,'w')
+	self.watchdog = fs.openSync(deviceName, 'w') or -1
 
 	if (timeout and timeout > 0) then
 		self:timeout(timeout)
@@ -72,15 +72,21 @@ function Watchdog:open(timeout)
 	end
 end
 
--- Indicates whether the watchdog has been enabled, 
+-- Indicates whether the watchdog has been enabled,
 -- or FALSE if the device is not turned on.
 function Watchdog:enable(enable)
-
+	return lutils.watchdog_enable(self.watchdog, enable and 1)
 end
 
 -- Returns the watchdog time-out
 function Watchdog:timeout(timeout)
+	return lutils.watchdog_timeout(self.watchdog, timeout)
+end
 
+function exports.open()
+	local watchdog = Watchdog:new()
+	watchdog:open()
+	return watchdog
 end
 
 return exports

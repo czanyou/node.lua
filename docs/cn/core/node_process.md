@@ -2,7 +2,9 @@
 
 process 对象是一个全局对象，可以在任何地方访问到它。它是 EventEmitter 的一个实例。
 
-## 事件: 'exit'
+## 事件
+
+### 事件: 'exit'
 
 当进程将要退出时触发。这是一个在固定时间检查模块状态（如单元测试）的好时机。需要注意的是 'exit' 的回调结束后，主事件循环将不再运行，所以计时器也会失效。
 
@@ -19,7 +21,7 @@ end)
 ```
 
 
-## Signal Events
+### Signal Events
 
 当进程接收到信号时触发。信号列表详见 POSIX 标准的 sigaction（2）如 SIGINT、SIGUSR1 等。
 
@@ -37,25 +39,25 @@ end)
 
 ## process.abort
 
-    process.abort()
+> process.abort()
 
 这将导致 Node 触发一个 abort 事件，这会导致 Node 退出并且创建一个核心文件。
 
 ## process.exit
 
-    process.exit([code])
+> process.exit([code])
 
 终止当前进程并返回给定的 code。如果省略了 code，退出是会默认返回成功的状态码('success' code) 也就是 0。
 
 退出并返回失败的状态 ('failure' code):
 
-    process.exit(1)
+> process.exit(1)
 
 执行上述代码，用来执行 node 的 shell 就能收到值为 1 的 exit code
 
 ## process.kill
 
-    process.kill(pid, [signal])
+> process.kill(pid, [signal])
 
 向进程发送一个信号。 pid 是进程的 id 而 signal 则是描述信号的字符串名称。信号的名称都形似 'SIGINT' 或者 'SIGUSR1'。如果没有指定参数则会默认发送 'SIGTERM' 信号，更多信息请查看 kill(2) 。
 
@@ -63,13 +65,13 @@ end)
 
 向当前进程发送信号的示例：
 
-    process.kill(process.pid, 'SIGHUP'); 
+> process.kill(process.pid, 'SIGHUP'); 
 
 ## process.nextTick
 
-    process.nextTick(callback)
+> process.nextTick(callback)
 
-- callback {function}
+- callback `{function}`
 
 在事件循环的下一次循环中调用 callback 回调函数。
 
@@ -77,13 +79,13 @@ end)
 
 ### process.chdir
 
-    process.chdir(directory)
+> process.chdir(directory)
 
 改变进程的当前进程的工作目录，若操作失败则抛出异常。
 
 ### process.setgid
 
-    process.setgid(id)
+> process.setgid(id)
 
 注意： 该函数仅适用于遵循 POSIX 标准的系统平台如 Unix、Linux等 而 Windows、 Android 等则不适用。
 
@@ -92,7 +94,7 @@ end)
 
 ### process.setuid
 
-    process.setuid(id)
+> process.setuid(id)
 
 注意： 该函数仅适用于遵循 POSIX 标准的系统平台如 Unix、Linux等 而 Windows、 Android 等则不适用。
 
@@ -100,7 +102,7 @@ end)
 
 ### process.umask
 
-    process.umask([mask])
+> process.umask([mask])
 
 设置或者读取进程的文件模式的创建掩码。子进程从父进程中继承这个掩码。如果设定了参数 mask 那么返回旧的掩码，否则返回当前的掩码。
 

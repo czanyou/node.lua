@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014-2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,18 +16,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
+local meta = {
+    description = "A node-style tls module for lnode."
+}
 
-local exports = {}
-exports.name        = "lnode/tls"
-exports.version     = "1.3.2"
-exports.license     = "Apache 2"
-exports.description = "A node-style tls module for lnode."
-exports.tags        = {"lnode", "tls"}
+local exports = { meta = meta }
 
-local _common_tls = require('tls/common')
+local common = require('tls/common')
 local net = require('net')
-
-local DEFAULT_CIPHERS = _common_tls.DEFAULT_CIPHERS
 
 local extend = function(...)
     local args = {...}
@@ -46,17 +42,17 @@ function Server:init(options, connectionListener)
     options = options or {}
     options.server = true
 
-    local sharedCreds = _common_tls.createCredentials(options)
+    local sharedCreds = common.createCredentials(options)
     net.Server.init(self, options, function(raw_socket)
         local socket
-        socket = _common_tls.TLSSocket:new(raw_socket, {
+        socket = common.TLSSocket:new(raw_socket, {
             secureContext   = sharedCreds,
             isServer        = true,
             requestCert     = options.requestCert,
             rejectUnauthorized = options.rejectUnauthorized,
         })
 
-        socket:on('secureConnection', function()
+        socket:on('secureConnect', function()
             connectionListener(socket)
         end)
 
@@ -76,9 +72,8 @@ function Server:sni(hosts)
 end
 
 local DEFAULT_OPTIONS = {
-    ciphers = DEFAULT_CIPHERS,
-    rejectUnauthorized = true,
-    -- TODO checkServerIdentity
+    ciphers = common.DEFAULT_CIPHERS,
+    rejectUnauthorized = true
 }
 
 function exports.connect(options, callback)
@@ -89,9 +84,9 @@ function exports.connect(options, callback)
     port = options.port
     hostname = options.host or options.servername
 
-    console.log(hostname, port, options);
+    -- console.log('options', hostname, port, options);
 
-    socket = _common_tls.TLSSocket:new(nil, options)
+    socket = common.TLSSocket:new(nil, options)
     socket:connect(port, hostname, callback)
     return socket
 end
@@ -102,8 +97,8 @@ function exports.createServer(options, secureCallback)
     return server
 end
 
-exports.TLSSocket = _common_tls.TLSSocket
+exports.TLSSocket = common.TLSSocket
 
-exports.createCredentials = _common_tls.createCredentials
+exports.createCredentials = common.createCredentials
 
 return exports

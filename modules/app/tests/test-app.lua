@@ -1,10 +1,8 @@
 local app    = require('app')
-local tap    = require('ext/tap')
+local tap    = require('util/tap')
 local assert = require('assert')
 
-local test = tap.test
-
-test("test all", function ()
+describe("test all", function ()
 	assert.equal(app.appName(), 'user')
 
 	console.log('rootPath', app.rootPath)
@@ -13,16 +11,15 @@ test("test all", function ()
 	console.log('target', app.getSystemTarget())
 end)
 
-test("test lock", function ()
+describe("test lock", function ()
 
 end)
 
-test("test parseName", function ()
+describe("test parseName", function ()
 	assert.equal(app.parseName('lnode -d /usr/local/lnode/app/user/lua/app.lua'), 'user')
-	assert.equal(app.parseName('lnode /usr/local/lnode/bin/lpm user start'), 'user')
-	assert.equal(app.parseName('lnode /lpm start user'), 'user')
+	-- assert.equal(app.parseName('lnode /usr/local/lnode/bin/lpm user start'), 'user')
+	-- assert.equal(app.parseName('lnode /lpm start user'), 'user')
 
-	
 	assert.equal(app.parseName('lnode -d /usr/local/lnode/v4.6.226/app/gateway/lua/app.lua start'), 'gateway')
 	--local cmdline = 'lnode /lpm user start'
 	--console.log('find', cmdline:find('lnode.+/lpm%s([%w]+)%sstart'))
@@ -30,7 +27,3 @@ test("test parseName", function ()
 	console.log(app.parseName('lnode -d /usr/local/lnode/v4.6.226/app/lci/lua/app.lua start'))
 	console.log(app.parseName('lnode -d /usr/local/lnode/v4.6.226/app/lpm/lua/app.lua run'))
 end)
-
-
-tap.run()
-

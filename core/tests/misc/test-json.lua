@@ -16,12 +16,12 @@ limitations under the License.
 
 --]]
 --local json = require('json')
-local deepEqual = require("assert").isDeepEqual
+local deepEqual = require('assert').isDeepEqual
 
-local json = require("json")
+local json = require('json')
 local cjson = require("cjson")
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test(

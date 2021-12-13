@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local net = require('net')
@@ -50,7 +50,7 @@ test("tls http parse error", function()
             port = PORT,
             path = '/'
         }, function(res)
-            p(res)
+            console.log(res)
         end)
 
         req:on("error", function(err)
@@ -66,7 +66,7 @@ test("tls http parse error", function()
             end
         end)
 
-        req:done()
+        req:finish()
     end)
 
 end)

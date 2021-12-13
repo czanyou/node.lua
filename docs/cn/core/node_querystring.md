@@ -4,7 +4,9 @@
 
 > local querystring = require('querystring')
 
-## querystring.escape
+## querystring 方法
+
+### querystring.escape
 
 > querystring.escape(str)
 
@@ -12,20 +14,20 @@
 
 供 querystring.stringify 使用的转意函数，在必要的时候可被重写。
 
-- `str` {string}
+- str `{string}`
 
-## querystring.parse
+### querystring.parse
 
 > querystring.parse(str, [sep], [eq], [options])
 
 将一个 query string 解析为一个包含键值对的表。可以选择是否覆盖默认的分割符（'&'）和分配符（'='）。
 
-- `str` {string} 要解析的 URL query 字符串
-- `sep` {string} 用来分隔键值对的符号，默认为 '&'
-- `eq`  {string} 用来分隔键和值的符号，默认为 '='
-- `options` {object} 对象可能包含 
-  + `maxKeys` {number} (默认为 1000), 它可以用来限制处理过的键 (key)的数量. 设为 0 可以去除键 (key) 的数量限制.
-  + `decodeURIComponent` {function} 用来替代默认的 querystring.unescape 方法
+- str `{string}` 要解析的 URL query 字符串
+- sep `{string}` 用来分隔键值对的符号，默认为 '&'
+- eq `{string}` 用来分隔键和值的符号，默认为 '='
+- options `{object}` 对象可能包含 
+  + maxKeys `{number}` (默认为 1000), 它可以用来限制处理过的键 (key)的数量. 设为 0 可以去除键 (key) 的数量限制.
+  + decodeURIComponent `{function}` 用来替代默认的 querystring.unescape 方法
 
 实例：
 
@@ -34,17 +36,17 @@
     -- returns { foo: 'bar', baz: ['qux', 'quux'], corge: '' }
 ```
 
-## querystring.stringify
+### querystring.stringify
 
 > querystring.stringify(obj, [sep], [eq], [options])
 
 序列化一个包含键值对的表到一个 query 字符串。可以选择是否覆盖默认的分割符（'&'）和分配符（'='）。
 
-- `obj` {object} 要序列化为 URL query 字符串的对象
-- `sep` {string} 用来分隔键值对的符号，默认为 '&'
-- `eq`  {string} 用来分隔键和值的符号，默认为 '='
-- `options` {object} 对象可能包含 
-  + `encodeURIComponent` {function} 用来替代默认的 querystring.escape 方法
+- obj `{object}` 要序列化为 URL query 字符串的对象
+- sep `{string}` 用来分隔键值对的符号，默认为 '&'
+- eq  `{string}` 用来分隔键和值的符号，默认为 '='
+- options `{object}` 对象可能包含 
+  + encodeURIComponent `{function}` 用来替代默认的 querystring.escape 方法
 
 实例：
 
@@ -56,7 +58,7 @@
     -- 返回如下字串: 'foo:bar;baz:qux'
 ```
 
-## querystring.unescape
+### querystring.unescape
 
 > querystring.unescape(str)
 
@@ -64,4 +66,4 @@
 
 供 querystring.parse 使用的反转意函数，在必要的时候可被重写。
 
-- `str` {string} 
+- str `{string}` 

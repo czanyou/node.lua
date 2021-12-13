@@ -1,8 +1,5 @@
 # Node.lua
 
-> - Author：ChengZhen (anyou@qq.com)
-> - Version：4.8
-
 Platform for Internet of Things with Lua.
 Modern IoT device embedded software development platform.
 

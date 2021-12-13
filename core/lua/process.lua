@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,23 +21,38 @@ limitations under the License.
 The process object is a global object and can be accessed from anywhere. It is
 an instance of EventEmitter.
 --]]
+local meta = {
+    description = "Node-style process module for lnode"
+}
 
-local meta = { }
-meta.description = "Node-style process module for lnode"
-meta.license     = "Apache 2"
-meta.name        = "lnode/process"
-meta.tags        = { "lnode", "process" }
-meta.version     = "1.0.1"
-
-local env       = require('env')
 local uv        = require('luv')
-local Emitter   = require('core').Emitter
 local lutils    = require('lutils')
 local lnode     = require('lnode')
 local version   = require('@version')
 
 local process   = { meta = meta }
 local exports   = process
+
+-------------------------------------------------------------------------------
+-- stream
+
+if (not exports._stdin) then
+    local _initStream = function(fd, mode)
+        if uv.guess_handle(fd) == 'tty' then
+            local stream = uv.new_tty(fd, mode)
+            return stream, true
+
+        else
+            local stream = uv.new_pipe(false)
+            uv.pipe_open(stream, fd)
+            return stream, false
+        end
+    end
+
+    exports._stdin, exports.isTTY = _initStream(0, true)
+    exports._stderr = _initStream(2, false)
+    exports._stdout = _initStream(1, false)
+end
 
 -------------------------------------------------------------------------------
 -- env
@@ -48,32 +63,38 @@ function lenv.get(key)
 end
 
 setmetatable(lenv, {
-    __pairs = function(table)
-        local keys = env.keys() or {}
+    __pairs = function(env)
+        local environ = uv.os_environ()
+        local keys = {}
+        for key, value in pairs(environ) do
+            table.insert(keys, key)
+        end
+
         local index = 0
         return function(...)
             index = index + 1
             local name = keys[index]
             if name then
-                return name, table[name]
+                return name, environ[name]
             end
         end
     end,
 
-    __index = function(table, key)
-        return env.get(key)
+    __index = function(env, key)
+        return uv.os_getenv(key)
     end,
 
-    __newindex = function(table, key, value)
+    __newindex = function(env, key, value)
         if value then
-            env.set(key, value, 1)
+            uv.os_setenv(key, value, 1)
         else
-            env.unset(key)
+            uv.os_unsetenv(key)
         end
     end
-} )
+})
 
 -------------------------------------------------------------------------------
+-- misc
 
 local timer = nil
 
@@ -89,6 +110,12 @@ function process.kill(pid, signal)
     uv.kill(pid, signal or 'sigterm')
 end
 
+function process.memoryUsage()
+    return {
+        rss = uv.resident_set_memory()
+    }
+end
+
 -------------------------------------------------------------------------------
 -- emitter
 
@@ -101,6 +128,7 @@ function process:emit(event, ...)
         self.emitter:emit(event, ...)
     end
 end
+
 
 function process:exit(code)
     local left = 2
@@ -124,7 +152,7 @@ function process:exit(code)
     local stdout = rawget(self, 'stdout')
     if (stdout) then
         stdout:once('finish', _onFinish)
-        stdout:_end()
+        stdout:finish()
 
     else
         _onFinish()
@@ -133,7 +161,7 @@ function process:exit(code)
     local stderr = rawget(self, 'stderr')
     if (stderr) then
         stderr:once('finish', _onFinish)
-        stderr:_end()
+        stderr:finish()
 
     else
         _onFinish()
@@ -141,6 +169,7 @@ function process:exit(code)
 end
 
 function process:on(event, listener)
+    local Emitter   = require('core').Emitter
     if (not self.emitter) then
         self.emitter = Emitter:new()
     end
@@ -164,6 +193,11 @@ function process:on(event, listener)
 end
 
 function process:once(event, listener)
+    local Emitter   = require('core').Emitter
+    if (not self.emitter) then
+        self.emitter = Emitter:new()
+    end
+
     local emitter = self.emitter
     if (emitter) then
         emitter:once(event, listener)
@@ -186,106 +220,7 @@ function process:removeListener(event, listener)
 end
 
 -------------------------------------------------------------------------------
---
-
-exports.arch        = lutils.os_arch    --
-exports.argv        = arg               --
-exports.chdir       = uv.chdir          -- Changes the current working directory of the process or throws an exception if that fails
-exports.cwd         = uv.cwd            -- Returns the current working directory of the process.
-exports.env         = lenv              -- An object containing the user environment. See environ(7).
-exports.execPath    = uv.exepath()      --
-exports.exitCode    = 0                 --
-exports.getgid      = uv.getgid         --
-exports.getuid      = uv.getuid         --
-exports.hrtime      = uv.hrtime         -- Returns the current high-resolution real time
-exports.now         = uv.now            --
-exports.pid         = uv.getpid()       -- The PID of the process.
-exports.platform    = lutils.os_platform
-exports.rootPath    = lnode.NODE_LUA_ROOT
-exports.setgid      = uv.setgid         --
-exports.setuid      = uv.setuid         --
-exports.umask       = lutils.umask      --
-exports.uptime      = uv.uptime         -- Number of seconds Node.lua has been running.
-exports.version     = lnode.version     -- A compiled-in property that exposes NODE_VERSION.
-exports.versions    = lnode.versions    -- A property exposing version strings of Node.lua and its dependencies.
-
---
-
-exports.version = exports.version .. '.' .. version.build
-
--------------------------------------------------------------------------------
 -- stream
-
-local console = require('console')
-
-local UvStreamWritable = nil
-
-local function _newWritable(pipe)
-    if (UvStreamWritable) then
-        return UvStreamWritable:new(pipe)
-    end
-
-    local Writable  = require('stream').Writable
-
-    UvStreamWritable = Writable:extend()
-
-    function UvStreamWritable:initialize(handle)
-        Writable.initialize(self)
-        self.handle = handle
-    end
-
-    function UvStreamWritable:_write(data, callback)
-        uv.write(self.handle, data, callback)
-    end
-
-    return UvStreamWritable:new(pipe)
-end
-
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-
-local UvStreamReadable = nil
-
-local function _newReadable(pipe)
-    if (UvStreamReadable) then
-        return UvStreamReadable:new(pipe)
-    end
-
-    local Readable  = require('stream').Readable
-    local utils     = require('util')
-
-    UvStreamReadable = Readable:extend()
-    function UvStreamReadable:initialize(handle)
-        Readable.initialize(self, { highWaterMark = 0 })
-        self._readableState.reading = false
-        self.reading = false
-        self.handle  = handle
-        self:on('pause', utils.bind(self._onPause, self))
-    end
-
-    function UvStreamReadable:_onPause()
-        self._readableState.reading = false
-        self.reading = false
-        uv.read_stop(self.handle)
-    end
-
-    function UvStreamReadable:_read(n)
-        local _onRead = function (err, data)
-            if err then
-                return self:emit('error', err)
-            end
-            self:push(data)
-        end
-
-        if not uv.is_active(self.handle) then
-            self.reading = true
-            uv.read_start(self.handle, _onRead)
-        end
-    end
-
-    return UvStreamReadable:new(pipe)
-end
-
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
 
 local metatable = {}
 
@@ -304,13 +239,16 @@ metatable.__index = function(self, key)
     end
 
     if (key == 'stdin') then
-        ret = _newReadable(console.stdin)
+        local tty = require('tty')
+        ret = tty.createReadStream(process._stdin)
 
     elseif (key == 'stdout') then
-        ret = _newWritable(console.stdout)
+        local tty = require('tty')
+        ret = tty.createWriteStream(process._stdout)
 
     elseif (key == 'stderr') then
-        ret = _newWritable(console.stderr)
+        local tty = require('tty')
+        ret = tty.createWriteStream(process._stderr)
     end
 
     if (ret) then
@@ -322,6 +260,33 @@ end
 
 setmetatable(process, metatable)
 
--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+-------------------------------------------------------------------------------
+--
+
+exports.arch        = lutils.os_arch    --
+exports.argv        = arg               --
+exports.chdir       = uv.chdir          -- Changes the current working directory of the process or throws an exception if that fails
+exports.cwd         = uv.cwd            -- Returns the current working directory of the process.
+exports.env         = lenv              -- An object containing the user environment. See environ(7).
+exports.execPath    = uv.exepath()      --
+exports.exitCode    = 0                 --
+exports.getgid      = uv.getgid         --
+exports.getuid      = uv.getuid         --
+exports.hrtime      = uv.hrtime         -- Returns the current high-resolution real time
+exports.now         = uv.now            --
+exports.pid         = uv.getpid()       -- The PID of the process.
+exports.platform    = lutils.os_platform
+exports.rootPath    = lnode.NODE_LUA_ROOT
+exports.nodePath    = lnode.NODE_LUA_PATH
+exports.setgid      = uv.setgid         --
+exports.setuid      = uv.setuid         --
+exports.umask       = lutils.umask      --
+exports.uptime      = uv.uptime         -- Number of seconds Node.lua has been running.
+exports.version     = lnode.version     -- A compiled-in property that exposes NODE_VERSION.
+exports.versions    = lnode.versions    -- A property exposing version strings of Node.lua and its dependencies.
+
+--
+
+exports.version = exports.version .. '.' .. version.build
 
 return exports

@@ -16,7 +16,7 @@ limitations under the License.
 
 --]]
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local fs = require('fs')
@@ -24,7 +24,6 @@ local uv = require('luv')
 local path = require('path')
 local util = require('util')
 
-local f =  uv.cwd() --module.path
 local dirname = util.dirname()
 local tmp = os.tmpdir
 

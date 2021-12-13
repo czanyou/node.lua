@@ -1,4 +1,4 @@
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local uv  = require('luv')
 
 local test = tap.test
@@ -28,7 +28,7 @@ test("simple interval (3 times)", function (expect)
 	end)
 
 	local function onInterval()
-		console.log("interval", timer)
+		-- console.log("interval", timer)
 		count = count - 1
 		if count == 0 then
 			uv.close(timer, onClose)
@@ -62,7 +62,7 @@ test("shrinking interval (4 times)", function (expect)
 	local timer = uv.new_timer()
 	uv.timer_start(timer, 10, 0, expect(function ()
 		local r = uv.timer_get_repeat(timer)
-		console.log("interval", timer, r)
+		-- console.log("interval", timer, r)
 		if r == 0 then
 			uv.timer_set_repeat(timer, 8)
 			uv.timer_again(timer)
@@ -82,7 +82,7 @@ test("shrinking interval using methods (4 times)", function (expect)
 	local timeout = 10
 	timer:start(timeout, 0, expect(function()
 		local r = timer:get_repeat()
-		console.log("interval", timer, r)
+		-- console.log("interval", timer, r)
 
 		if r == 0 then
 			timer:set_repeat(8)

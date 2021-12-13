@@ -1,8 +1,8 @@
-local thread = require("thread")
-local fs = require("fs")
+local thread = require('thread')
+local fs = require('fs')
 local printr = console.printr
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("main", function()
@@ -14,8 +14,8 @@ end)
 test("thread", function()
     local thr = thread.start(function(a, b, c)
         local printr = console.printr
-        local thread = require("thread")
-        local fs = require("fs")
+        local thread = require('thread')
+        local fs = require('fs')
 
         assert(a + b == c)
         print(string.format("%d+%d=%d", a, b, c))
@@ -37,14 +37,14 @@ end)
 
 test("threadpool", function()
     local work = thread.work(function(n)
-        local thread = require("thread")
+        local thread = require('thread')
 
         local self = tostring(thread.self())
         return self, n, n * n
     end,
     function(id, n, r)
         print(id, n, r)
-        p("work result cb", id, n * n == r)
+        console.log("work result cb", id, n * n == r)
     end)
 
     thread.queue(work, 2)

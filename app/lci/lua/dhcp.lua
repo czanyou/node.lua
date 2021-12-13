@@ -1,6 +1,3 @@
-#!/usr/bin/env lnode
-
-local conf  = require('app/conf')
 local path  = require('path')
 local fs    = require('fs')
 local json  = require('json')
@@ -10,14 +7,8 @@ local json  = require('json')
 -- - 这个方法将获取到新地址等保存到 network.conf 配置文件中
 -- TODO: 改为保存到临时目录
 
-local function onDhcpBound()
+local function start()
     local function saveConfig(data)
-        conf.load("network", function(ret, profile)
-            profile:set("dhcp", data)
-            profile:set("updated", Date.now())
-            profile:commit()
-        end)
-
         local filename = path.join(os.tmpdir, 'run/dhcp.json')
         local filedata = json.stringify(data)
         fs.writeFile(filename, filedata)
@@ -29,7 +20,7 @@ local function onDhcpBound()
     config.netmask = os.getenv("subnet")
     config.broadcast = os.getenv("broadcast")
 
-    config.interface  = os.getenv("interface")
+    config.ifname  = os.getenv("interface")
     config.dns = os.getenv("dns")
     config.domain = os.getenv("domain")
     config.ntpsrv = os.getenv("ntpsrv")
@@ -37,7 +28,13 @@ local function onDhcpBound()
 
     if (config.ip) then
         saveConfig(config)
+    else
+        print('dhcp: invalid ip params')
     end
 end
 
-onDhcpBound()
+local function stop()
+
+end
+
+start()

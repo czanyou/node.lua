@@ -1,6 +1,6 @@
 local http = require('http')
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 test('http-timeout', function(expect)

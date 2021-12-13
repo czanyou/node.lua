@@ -1,9 +1,0 @@
-#header { background: white; }
-#header .header-inner { min-width: 300px; height: 72px; 
-	position: relative; margin: 0 auto; }
-
-#header h1 { font-size: 200%; display: inline-block; color: #666; padding: 8px 27px; line-height: 56px; }
-#header a:hover { text-decoration: none; }
-
-#header .header-right { float: right; margin-right: 5px; width: auto; padding: 8px 0; }
-#header .header-right a { color: #999; font-size: 1em; line-height: 56px; padding: 0 8px; }

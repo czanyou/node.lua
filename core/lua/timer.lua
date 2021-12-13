@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014-2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local meta = { }
-meta.name        = "lnode/timer"
-meta.version     = "1.0.0-4"
-meta.license     = "Apache 2"
-meta.description = "Javascript style setTimeout and setInterval for lnode"
-meta.tags        = { "lnode", "timer" }
+local meta = {
+    description = "Javascript style setTimeout and setInterval for lnode"
+}
 
 local exports = { meta = meta }
 
@@ -33,6 +30,7 @@ local bind   = require('util').bind
 -------------------------------------------------------------------------------
 --- Timer
 
+---@class Timer
 local Timer = Object:extend()
 
 function Timer:initialize()

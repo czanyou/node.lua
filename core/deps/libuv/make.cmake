@@ -20,6 +20,7 @@ set(SOURCES
   ${LIBUVDIR}/src/idna.c
   ${LIBUVDIR}/src/inet.c
   ${LIBUVDIR}/src/queue.h
+  ${LIBUVDIR}/src/random.c
   ${LIBUVDIR}/src/strscpy.c
   ${LIBUVDIR}/src/threadpool.c
   ${LIBUVDIR}/src/timer.c
@@ -92,6 +93,10 @@ else()
     ${LIBUVDIR}/src/unix/pipe.c
     ${LIBUVDIR}/src/unix/poll.c
     ${LIBUVDIR}/src/unix/process.c
+    ${LIBUVDIR}/src/unix/random-devurandom.c
+    ${LIBUVDIR}/src/unix/random-getentropy.c
+    ${LIBUVDIR}/src/unix/random-getrandom.c
+    ${LIBUVDIR}/src/unix/random-sysctl-linux.c
     ${LIBUVDIR}/src/unix/signal.c
     ${LIBUVDIR}/src/unix/spinlock.h
     ${LIBUVDIR}/src/unix/stream.c
@@ -159,30 +164,30 @@ if(APPLE)
   )
 endif()
 
-add_library(uv STATIC ${SOURCES})
-set_property(TARGET uv PROPERTY POSITION_INDEPENDENT_CODE ON)
+add_library(libuv STATIC ${SOURCES})
+set_property(TARGET libuv PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
-  target_link_libraries(uv pthread kvm)
+  target_link_libraries(libuv pthread kvm)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-  target_link_libraries(uv pthread)
+  target_link_libraries(libuv pthread)
 endif()
 
 if(WIN32)
-  target_link_libraries(uv ws2_32.lib shell32.lib psapi.lib iphlpapi.lib advapi32.lib Userenv.lib)
+  target_link_libraries(libuv ws2_32.lib shell32.lib psapi.lib iphlpapi.lib advapi32.lib Userenv.lib)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
-  target_link_libraries(uv kstat socket sendfile)
+  target_link_libraries(libuv kstat socket sendfile)
 endif()
 
 if(APPLE)
   find_library(FOUNDATION_LIBRARY Foundation)
   find_library(CORESERVICES_LIBRARY CoreServices)
   find_library(APPLICATION_SERVICES_LIBRARY ApplicationServices)
-  target_link_libraries(uv
+  target_link_libraries(libuv
     ${FOUNDATION_LIBRARY}
     ${CORESERVICES_LIBRARY}
     ${APPLICATION_SERVICES_LIBRARY}

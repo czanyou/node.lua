@@ -2,5 +2,6 @@
 	"description": "Node.lua package & process manager",
 	"title": "lnode package manager",
 	"name": "lpm",
-	"version": "3.0.0"
+	"version": "3.0.0",
+	"target": "x64-linux"
 }

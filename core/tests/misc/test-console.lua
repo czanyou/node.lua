@@ -1,4 +1,4 @@
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("console.printBuffer", function()
@@ -24,6 +24,16 @@ end)
 test("console.write", function()
 	local data = {}
 	console.write(data, "test", nil, 100, true, false, "\n")
+
+	data = console.dump(100)
+	console.printBuffer(data)
+	console.print(data:sub(2))
+
+	console.print('\27[04m====')
+	console.print('\27[0m----')
+
+	local uv = require('luv')
+	console.log(console.winsize())
 end)
 
 test("console.write", function()
@@ -37,12 +47,6 @@ test("console.write", function()
 			clearInterval(timerId)
 		end
 	end)
-end)
-
-test("console.stdio", function()
-	console.log(console.stdin);
-	console.log(console.stdout);
-	console.log(console.stderr);
 end)
 
 tap.run()

@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,12 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local util 		= require('util')
-local http 		= require('http')
 local json  	= require('json')
 local fs        = require('fs')
-
-local request 	= require('http/request')
+local uv        = require('luv')
 
 local isWindows = os.platform() == "win32"
 
@@ -29,30 +26,14 @@ if (isWindows) then
     BASE_SOCKET_NAME = "\\\\?\\pipe\\uv-"
 end
 
--------------------------------------------------------------------------------
--- ServerResponse
-
-local ServerResponse  = http.ServerResponse
-
-function ServerResponse:json(data)
-    local content = json.stringify(data)
-
-    if (not content) then
-        self:status(400)
-
-        content = '{error="Bad request body."}'
-    end
-
-    self:setHeader("Content-Type", "application/json")
-    self:setHeader("Content-Length", #content)
-
-    self:write(content)
-end
+local MAX_MESSAGE_SIZE = 640 * 1024
 
 -------------------------------------------------------------------------------
 -- exports
 
 local exports = {}
+
+exports.inFlight = 0
 
 -- bind remote methods
 function exports.bind(url, ...)
@@ -86,142 +67,269 @@ function exports.bind(url, ...)
 end
 
 -- call remote method
--- @param url {String|Number}
--- @param method {String} remote method name
--- @param params {Array} method args
--- @param callback {Function} - function(err, result)
-function exports.call(url, method, params, callback)
+---@param name string
+---@param method string remote method name
+---@param params any[] method args
+---@param options table
+---@param callback fun(err:string, result:any)
+---@return Pipe
+function exports.call(name, method, params, options, callback)
     if (type(params) ~= 'table') then
         params = { params }
     end
 
-    -- call(port, method, params, callback)
-    if (tonumber(url) ~= nil) then
-        url = 'http://127.0.0.1:' .. tostring(url)
-
-    elseif (not url:startsWith('http')) then
-        url = 'rpc://rpc' .. BASE_SOCKET_NAME .. url .. ".sock"
+    if (type(options) == 'function') then
+        callback = options
+        options = nil
     end
 
-    --console.log(url, method, params)
-    callback = callback or function() end
+    options = options or {}
 
     local id = nil
     local body = { jsonrpc = 2.0, method = method, params = params, id = id }
-
-    local options = {}
-    options.data = json.stringify(body)
-    options.contentType = "application/json"
+    local data = json.stringify(body)
 
     --console.log('body', options.data)
-    request.post(url, options, function(err, response, body)
-        --console.log(err, response, body)
-        if (err) then
-            callback(err)
-            return
+    local filename = BASE_SOCKET_NAME .. name .. ".sock"
+
+    ---@class Pipe
+    local client = uv.new_pipe(false)
+    local timeoutTimer
+
+    local function onClose()
+        if (timeoutTimer) then
+            clearTimeout(timeoutTimer)
+            timeoutTimer = nil
         end
 
-        local data = json.parse(body)
-        if (not data) then
-            callback('invalid response')
-            return
+        if (client) then
+            client:read_stop()
+            client:close()
+            client = nil
         end
+    end
 
-        callback(data.error, data.result)
+    exports.inFlight = (exports.inFlight or 0) + 1
+
+    local function onError(error)
+        if (callback) then
+            callback(error)
+            callback = nil
+
+            exports.inFlight = (exports.inFlight or 0) - 1
+        end
+    end
+
+    local timeout = options.timeout or 5000
+    timeoutTimer = setTimeout(timeout, function()
+        timeoutTimer = nil
+        onClose()
+
+        onError({ code = -32408, message = 'timeout' })
     end)
+
+    local function handleRpcMessage(message)
+        onClose()
+
+        local response = json.parse(message)
+        if (not response) then
+            onError({ code = -32500, message = 'invalid response format'})
+            return
+        end
+
+        if (callback) then
+            callback(response.error, response.result)
+            callback = nil
+
+            exports.inFlight = (exports.inFlight or 0) - 1
+        end
+    end
+
+    local readBuffer
+    local function onRead(err, data)
+        if (err) or (not data) then
+            onClose()
+            onError({ code = -32400, message = err or 'pipe closed'})
+            return
+        end
+
+        if (readBuffer and #readBuffer > 0) then
+            readBuffer = readBuffer .. data
+        else
+            readBuffer = data
+        end
+
+        while (readBuffer and #readBuffer >= 4) do
+            local type, length = string.unpack('>BI3', readBuffer)
+            if (not length) or (length <= 0) then
+                onClose()
+                onError({ code = -32400, message = 'invlaid message length'})
+                return
+            end
+
+            if (length > MAX_MESSAGE_SIZE) then
+                onClose()
+                onError({ code = -32400, message = 'message length too large'})
+                return
+            end
+
+            local leftover = #readBuffer - 4
+            if (leftover < length) then
+                break
+            end
+
+            local message = readBuffer:sub(5, length + 4)
+            readBuffer = readBuffer:sub(length + 5)
+
+            handleRpcMessage(message)
+            break
+        end
+    end
+
+    local function onConnect(err)
+        if (err) then
+            onClose()
+
+            onError(err)
+            return
+        end
+
+        client:read_start(onRead)
+
+        local contentLength = #data
+        local messageType = 1
+        local header = string.pack('>BI3', messageType, contentLength)
+        client:write(header)
+        client:write(data)
+    end
+
+    client:connect(filename, onConnect)
+    return client
 end
 
 -- create a IPC server
--- @param {string} port/name IPC server listen port
--- @param {function} callback - function(event, data)
-function exports.server(port, handler, callback)
-    port = port or 9001
-    callback = callback or function() end
+---@param name string IPC server listen port
+---@param handler table
+function exports.server(name, handler)
+    name = name or 'rpc-server'
 
     if (not handler) then
-        return callback('error', 'invalid handler')
+        return
     end
 
     if (not fs.existsSync('/tmp/sock/')) then
         fs.mkdirSync('/tmp/sock/')
     end
 
-    local function handleRpcRequest(request, response)
-        local body = json.parse(request.body)
+    local function sendReponse(connection, response)
+        local data = json.stringify(response)
+
+        local contentLength = #data
+        local messageType = 2
+        local header = string.pack('>BI3', messageType, contentLength)
+        connection:write(header)
+        connection:write(data)
+    end
+
+    local function handleRpcMessage(message, connection)
+        local request = json.parse(message)
 
         -- bad request
-        if (not body) then
-            response:json({jsonrpc = 2.0, error = {
-                code = -32700, message = 'Parse error'}})
-            return
+        if (not request) then
+            return sendReponse(connection, {
+                jsonrpc = 2.0,
+                error = {code = -32700, message = 'Parse error'}
+            })
         end
 
-        local id = body.id
+        local id = request.id
 
         -- invalid method
-        local method = handler[body.method]
+        local method = handler[request.method]
         if (not method) then
-            response:json({jsonrpc = 2.0, id = id, error = {
-                code = -32601, message = 'Method not found'}})
-            return
+            return sendReponse(connection, {
+                jsonrpc = 2.0,
+                id = id,
+                error = {code = -32601, message = 'Method not found'}
+            })
         end
 
-        local ret, result = pcall(method, handler, table.unpack(body.params))
-        if (not ret) then
-            response:json({jsonrpc = 2.0, id = id, error = {
-                code = -32000, message = result}})
-
-            console.log('pcall error: ', result)
-            return
+        local success, result = pcall(method, handler, table.unpack(request.params))
+        if (not success) then
+            return sendReponse(connection, {
+                jsonrpc = 2.0,
+                id = id,
+                error = {code = -32000, message = result}
+            })
         end
 
-        response:json({jsonrpc = 2.0, id = id, result = result})
+        sendReponse(connection, {jsonrpc = 2.0, id = id, result = result})
     end
 
-    local function handleRequest(request, response)
-        local sb = StringBuffer:new()
+    --local server = net.createServer(onServerConnection)
+    local server = uv.new_pipe(false)
 
-        request:on('data', function(data)
-            sb:append(data)
-        end)
+    local function onServerConnection()
+        local readBuffer
 
-        request:on('end', function(data)
-            sb:append(data)
-            request.body = sb:toString()
+        local connection = uv.new_pipe(false)
+        server:accept(connection)
 
-            handleRpcRequest(request, response)
-        end)
+        local function onClose(err)
+            if (connection) then
+                connection:read_stop()
+                connection:close()
+                connection = nil
+            end
+        end
+
+        local function onRead(err, data)
+            if (err) or (not data) then
+                return onClose(err or 'pipe closded')
+            end
+
+            -- buffer
+            if (readBuffer and #readBuffer > 0) then
+                readBuffer = readBuffer .. data
+            else
+                readBuffer = data
+            end
+
+            -- parse
+            while (readBuffer and #readBuffer >= 4) do
+                -- packet header
+                local type, length = string.unpack('>BI3', readBuffer)
+                if (length > MAX_MESSAGE_SIZE) then
+                    return onClose('message length too large')
+                end
+
+                if (not length) or (length <= 0) then
+                    return onClose('invlaid message length')
+                end
+
+                -- packet data
+                local leftover = #readBuffer - 4
+                if (leftover < length) then
+                    break
+                end
+
+                local message = readBuffer:sub(5, length + 4)
+                readBuffer = readBuffer:sub(length + 5)
+
+                handleRpcMessage(message, connection)
+            end
+        end
+
+        connection:read_start(onRead)
     end
 
-    local server = http.createServer(function(request, response)
-        handleRequest(request, response)
-    end)
+    local filename = BASE_SOCKET_NAME .. name .. ".sock"
+    os.remove(filename)
 
-    server:on('error', function(err, name)
-        callback('error', err, name)
-    end)
+    server:bind(filename)
+    server:listen(128, onServerConnection)
 
-    server:on('close', function()
-        callback('close')
-    end)
-
-    server:on('listening', function()
-        callback('listening')
-    end)
-
-    if (tonumber(port) == nil) then
-        local filename = BASE_SOCKET_NAME .. port .. ".sock"
-        os.remove(filename)
-
-        server:listen(filename)
-        print("RPC server listening at " .. filename)
-
-    else
-        local IPC_HOST = '127.0.0.1'
-        server:listen(port, IPC_HOST)
-        print("RPC server listening at http://" .. IPC_HOST .. ":" .. port)
-    end
-
+    -- print("RPC: rpc:" .. filename)
     return server
 end
 

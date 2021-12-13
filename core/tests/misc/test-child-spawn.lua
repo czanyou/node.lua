@@ -1,9 +1,9 @@
-local spawn = require("child_process").spawn
+local spawn = require('child_process').spawn
 
-local net = require("net")
+local net = require('net')
 local uv = require('luv')
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("environment subprocess", function(expect)

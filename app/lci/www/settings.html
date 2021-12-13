@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Gateway Settings</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <link rel="shortcut icon" href="/favicon.ico?v=20200710" type="image/x-icon" />
+  <link rel="stylesheet" href="css/wot-design.css?v=20200710" />
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script src="js/polyfill.js?v=20200710"></script>
+  <script src="js/vue.min.js?v=20200710"></script>
+</head>
+
+<body class="settings-body">
+  <div id="app-block">
+    <header id="header" class="header">
+      <div class="header-inner" v-show="lang" style="display:none;">
+        <div class="header-left">
+          <label class="header-brand header-bars" @click="showMenu=!showMenu">
+            <i class="fa fa-bars"></i> {{lang.menu_gateway_console}}</label>
+          <label class="header-brand" id="header-brand">
+            <i class="fa fa-bars"></i> {{lang.menu_gateway_console}}</label>
+        </div>
+
+        <div class="header-right">
+          <a class="nav-item" href="#logout" @click="onLogoutClick"><i class="fa fa-sign-out"></i>
+            {{lang.menu_exit}}</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <div class="left-navbar" :class="{show: showMenu}" @click="showMenu=false" v-show="showLeftNavbar" style="display:none;">
+        <h5 class="nav-title">{{lang.menu_settings}}</h5>
+        <ul>
+          <li class="nav-item" @click="onTabClick('overview')">
+            <span :class="{active: currentTab=='overview'}"><i class="fa fa-dashboard"></i>
+              {{lang.menu_overview}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('network')" v-if="systemOptions.network">
+            <span :class="{active: currentTab=='network'}"><i class="fa fa-wifi"></i> {{lang.menu_network}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('register')" v-if="systemOptions.register">
+            <span :class="{active: currentTab=='register'}"><i class="fa fa-cloud"></i> {{lang.menu_register}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('firmware')" v-if="systemOptions.firmware">
+            <span :class="{active: currentTab=='firmware'}"><i class="fa fa-microchip"></i>
+              {{lang.menu_firmware}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('gateway')" v-if="systemOptions.gateway">
+            <span :class="{active: currentTab=='gateway'}"><i class="fa fa-hdd-o"></i>
+              {{lang.menu_gateway_config}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('peripherals')" v-if="systemOptions.peripherals">
+            <span :class="{active: currentTab=='peripherals'}"><i class="fa fa-sitemap"></i>
+              {{lang.menu_peripherals_config}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('script')" v-if="systemOptions.script">
+            <span :class="{active: currentTab=='script'}"><i class="fa fa-code"></i> {{lang.menu_script}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('uart')" v-if="systemOptions.uart">
+            <span :class="{active: currentTab=='uart'}"><i class="fa fa-random"></i> {{lang.menu_uarts}} </span>
+          </li>
+          <li class="nav-item" @click="onTabClick('lora')" v-if="systemOptions.lora">
+            <span :class="{active: currentTab=='lora'}"><i class="fa fa-rss"></i> {{lang.menu_lora}} </span>
+          </li>
+          <li class="nav-item" @click="onTabClick('modbus')" v-if="systemOptions.modbus">
+            <span :class="{active: currentTab=='modbus'}"><i class="fa fa-external-link-square"></i>
+              {{lang.menu_modbus}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('bluetooth')" v-if="systemOptions.bluetooth">
+            <span :class="{active: currentTab=='bluetooth'}"><i class="fa fa-bluetooth"></i>
+              {{lang.menu_bluetooth}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('media')" v-if="systemOptions.media">
+            <span :class="{active: currentTab=='media'}"><i class="fa fa-image"></i> {{lang.menu_media}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('things')" v-if="systemOptions.things">
+            <span :class="{active: currentTab=='things'}"><i class="fa fa-list"></i> {{lang.menu_things}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('logs')" v-if="systemOptions.logs">
+            <span :class="{active: currentTab=='logs'}"><i class="fa fa-file-text-o"></i> {{lang.menu_logs}}</span>
+          </li>
+          <li class="nav-item" @click="onTabClick('status')" v-if="systemOptions.status">
+            <span :class="{active: currentTab=='status'}"><i class="fa fa-info-circle"></i> {{lang.menu_status}}</span>
+          </li>
+        </ul>
+      </div>
+
+      <overview-block ref="overviewBlock" :active="currentTab=='overview'">
+      </overview-block>
+
+      <network-block ref="networkBlock" :active="currentTab=='network'">
+      </network-block>
+
+      <register-block ref="registerBlock" :active="currentTab=='register'">
+      </register-block>
+
+      <firmware-block ref="firmwareBlock" :active="currentTab=='firmware'">
+      </firmware-block>
+
+      <gateway-block ref="gatewayBlock" :active="currentTab=='gateway'">
+      </gateway-block>
+
+      <peripherals-block ref="peripheralsBlock" :active="currentTab=='peripherals'">
+      </peripherals-block>
+
+      <script-block ref="scriptBlock" :active="currentTab=='script'">
+      </script-block>
+
+      <uart-block ref="uartBlock" :active="currentTab=='uart'">
+      </uart-block>
+
+      <lora-block ref="loraBlock" :active="currentTab=='lora'">
+      </lora-block>
+
+      <modbus-block ref="modbusBlock" :active="currentTab=='modbus'">
+      </modbus-block>
+
+      <bluetooth-block ref="bluetoothBlock" :active="currentTab=='bluetooth'">
+      </bluetooth-block>
+
+      <media-block ref="mediaBlock" :active="currentTab=='media'">
+      </media-block>
+
+      <things-block ref="thingsBlock" :active="currentTab=='things'">
+      </things-block>
+
+      <logs-block ref="logsBlock" :active="currentTab=='logs'">
+      </logs-block>
+
+      <status-block ref="statusBlock" :active="currentTab=='status'">
+      </status-block>
+    </main>
+  </div>
+
+  <footer id="footer"></footer>
+  <foot>
+    <template id="overview-block-template">
+      <section class="section-overview form-content" v-show="active" style="display: none;">
+
+        <div class="form-header">
+          <h3 class="form-title">{{lang.device_information}}</h3>
+        </div>
+
+        <div class="form-body" v-if="device">
+          <ul class="property-list">
+            <li class="property-item" v-if="device.modelNumber">
+              <label class="property-label">{{lang.device_model_number}}:</label>
+              <span type="text" name="version" v-text="device.modelNumber" class="property-value"></span>
+            </li>
+
+            <li class="property-item" v-if="device.manufacturer">
+              <label class="property-label">{{lang.device_manufacturer}}:</label>
+              <span type="text" name="manufacturer" v-text="device.manufacturer" class="property-value"></span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="form-body" v-if="status">
+          <ul class="property-list">
+            <li class="property-item">
+              <label class="property-label">{{lang.device_software_version}}:</label>
+              <span type="text" name="version" v-text="status.version" class="property-value"></span>
+            </li>
+
+            <li class="property-item" v-if="status.hardwareVersion">
+              <label class="property-label">{{lang.device_hardware_version}}:</label>
+              <span type="text" name="hardwareVersion" v-text="status.hardwareVersion" class="property-value"></span>
+            </li>
+
+            <li class="property-item" v-if="status.firmwareVersion">
+              <label class="property-label">{{lang.device_firmware_version}}:</label>
+              <span type="text" name="firmwareVersion" v-text="status.firmwareVersion" class="property-value"></span>
+            </li>
+
+            <li class="property-item" v-if="status.serialNumber">
+              <label class="property-label">{{lang.device_serial_number}}:</label>
+              <span type="text" name="serialNumber" v-text="status.serialNumber" class="property-value"></span>
+            </li>
+
+            <li class="property-item" v-if="status.modelNumber">
+              <label class="property-label">{{lang.device_model_number}}:</label>
+              <span type="text" name="modelNumber" v-text="status.modelNumber" class="property-value"></span>
+            </li>
+
+            <li class="property-item">
+              <label class="property-label">{{lang.device_system_time}}:</label>
+              <span type="text" name="datetime" v-text="status.datetime" class="property-value"></span>
+            </li>
+
+            <li class="property-item">
+              <label class="property-label">{{lang.device_system_uptime}}:</label>
+              <span type="text" name="uptime" v-text="status.uptime" class="property-value"></span>
+            </li>
+
+            <li class="property-item" v-if="status.memory">
+              <label class="property-label">{{lang.device_memory}}:</label>
+              <span type="text" name="memory" v-text="status.memory.free + '/' + status.memory.total"
+                class="property-value"></span>
+            </li>
+
+            <li class="property-item" v-if="status.uname">
+              <label class="property-label">{{lang.device_uname}}:</label>
+              <span type="text" name="uname" class="property-value">
+                <span v-text="status.uname.sysname"></span>
+                <span v-text="status.uname.machine"></span>
+                <span v-text="status.uname.release"></span></span>
+            </li>
+          </ul>
+        </div>
+
+        <template v-if="lanStatus">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.network_lan_status}}</h3>
+          </div>
+
+          <div class="form-body">
+            <ul class="property-list">
+              <li class="property-item">
+                <label class="property-label">{{lang.network_mac}}:</label>
+                <span type="text" name="mac" v-text="lanStatus.mac" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="lanStatus.ip">
+                <label class="property-label">{{lang.network_ip}}:</label>
+                <span type="text" name="ip" v-text="lanStatus.ip" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="lanStatus.netmask">
+                <label class="property-label">{{lang.network_netmask}}:</label>
+                <span type="text" name="netmask" v-text="lanStatus.netmask" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="lanStatus.router">
+                <label class="property-label">{{lang.network_gateway}}:</label>
+                <span type="text" name="router" v-text="lanStatus.router" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="lanStatus.dns">
+                <label class="property-label">{{lang.network_dns}}:</label>
+                <span type="text" name="dns" v-text="lanStatus.dns" class="property-value"></span>
+              </li>
+            </ul>
+          </div>
+        </template>
+
+        <template v-if="wanStatus && wanStatus.operater">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.network_wan_status}}</h3>
+          </div>
+
+          <div class="form-body">
+            <ul class="property-list">
+              <li class="property-item">
+                <label class="property-label">{{lang.network_operater}}:</label>
+                <span type="text" name="operater" v-text="wanStatus.operater" class="property-value"></span>
+              </li>
+
+              <li class="property-item">
+                <label class="property-label">{{lang.network_ip}}:</label>
+                <span type="text" name="ip" v-text="wanStatus.ip || '-'" class="property-value"></span>
+              </li>
+
+              <li class="property-item">
+                <label class="property-label">ICCID:</label>
+                <span type="text" name="iccid" v-text="wanStatus.iccid" class="property-value"></span>
+              </li>
+
+              <li class="property-item">
+                <label class="property-label">IMSI:</label>
+                <span type="text" name="imsi" v-text="wanStatus.imsi" class="property-value"></span>
+              </li>
+
+              <li class="property-item">
+                <label class="property-label">{{lang.network_signal_strength}}:</label>
+                <span type="text" name="signalStrength" v-text="wanStatus.signalStrength" class="property-value"></span>
+              </li>
+            </ul>
+          </div>
+        </template>
+
+        <div class="form-header settings-right-sidebar" v-if="updateStatus">
+          <h3 class="form-title">System Error</h3>
+          <pre v-text="updateStatus" style="padding: 8px 16px;"></pre>
+        </div>
+
+      </section>
+    </template>
+
+    <template id="network-block-template">
+      <section class="section-network form-content" v-show="active" style="display: none;">
+
+        <form ref="networkForm" id="network-form" @submit="onNetworkConfigSubmit();" onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.network_cellular}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_cellular}} (4G):</label>
+              <select name="wan_proto" v-model="network.wan_proto" class="form-control">
+                <option value="none">{{lang.network_cellular_wired}}</option>
+                <option value="ppp">{{lang.network_cellular_ppp}}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-header">
+            <h3 class="form-title">{{lang.network_ethernet}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_ip_mode}}:</label>
+              <select id="proto" name="proto" v-model="network.proto" class="form-control">
+                <option value="dhcp">{{lang.network_dhcp}}</option>
+                <option value="static">{{lang.network_static}}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_ip}}:</label>
+              <input id="ip" type="text" name="ip" data-format="ip" v-model="network.ip"
+                class="form-control form-control-s" :readonly="network.proto!='static'"
+                :required="network.proto=='static'">
+            </div>
+
+            <div class="form-group">
+              <label for="message-text" class="col-form-label">{{lang.network_netmask}}:</label>
+              <input id="netmask" type="text" name="netmask" data-format="ip" v-model="network.netmask"
+                class="form-control form-control-s" :readonly="network.proto!='static'"
+                :required="network.proto=='static'">
+            </div>
+
+            <div class="form-group">
+              <label for="message-text" class="col-form-label">{{lang.network_router}}:</label>
+              <input id="router" type="text" name="router" data-format="ip" v-model="network.router"
+                class="form-control form-control-s" :readonly="network.proto!='static'"
+                :required="network.proto=='static'">
+            </div>
+
+            <div class="form-group">
+              <label for="message-text" class="col-form-label">{{lang.network_dns}} 1:</label>
+              <input id="dns1" type="text" name="dns1" data-format="ip" v-model="network.dns1"
+                class="form-control form-control-s" :readonly="network.proto!='static'"
+                :required="network.proto=='static'">
+            </div>
+
+            <div class="form-group">
+              <label for="message-text" class="col-form-label">{{lang.network_dns}} 2:</label>
+              <input id="dns2" type="text" name="dns2" data-format="ip" v-model="network.dns2"
+                class="form-control form-control-s" :readonly="network.proto!='static'"
+                :required="network.proto=='static'">
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="submit" style="display: none">{{lang.action_submit}}</button>
+            <button type="button" class="btn btn-primary" @click="onNetworkConfigSubmit()">{{lang.action_save}}</button>
+            <label v-show="updateStatus" v-html="updateStatus"></label>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="register-block-template">
+      <section class="section-register form-content" v-show="active" style="display: none;">
+        <form ref="registerForm" id="register-form" @submit="onNetworkConfigSubmit();" onsubmit="return false">
+
+          <div class="form-header">
+            <h3 class="form-title">{{lang.network_register}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_did}}:</label>
+              <input type="text" name="did" v-model="register.did" class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_device_secret}}:</label>
+              <input type="text" name="secret" v-model="register.secret" class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_server1}}:</label>
+              <input type="text" name="server" v-model="register.server" class="form-control form-control-l">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_server2}}:</label>
+              <input type="url" name="mqtt" v-model="register.mqtt" class="form-control form-control-l">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_base_url}}:</label>
+              <input type="url" name="base" v-model="register.base" class="form-control form-control-l">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_username}}:</label>
+              <input type="text" name="username" v-model="register.username" class="form-control form-control-l">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_password}}:</label>
+              <input type="text" name="password" v-model="register.password" class="form-control form-control-l">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.network_lifetime}} (s):</label>
+              <input type="number" name="lifetime" v-model="register.lifetime" class="form-control form-control-l">
+            </div>
+
+            <div class="">
+              <a class="nav-item" target="_activate"
+                href="/default.html?v=20200710">{{lang.network_register_default}}</a>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="submit" style="display: none">{{lang.action_submit}}</button>
+            <button type="button" class="btn btn-primary"
+              @click="onRegisterConfigSubmit()">{{lang.action_save}}</button>
+            <label v-show="updateStatus" v-html="updateStatus"></label>
+          </div>
+
+          <div v-if="registerStatus && registerStatus.id" class="form-right">
+            <div class="form-header">
+              <h3 class="form-title">{{lang.network_register_status}}</h3>
+            </div>
+
+            <div class="form-body">
+              <ul class="property-list">
+                <li class="property-item">
+                  <label class="property-label">{{lang.register_id}}:</label>
+                  <span type="text" name="did" v-text="registerStatus.id" class="property-value"></span>
+                </li>
+
+                <li class="property-item">
+                  <label class="property-label">{{lang.register_connected}}:</label>
+                  <span type="text" name="did" v-text="registerStatus.isConnected" class="property-value"></span>
+                </li>
+
+                <li class="property-item">
+                  <label class="property-label">{{lang.register_server}}:</label>
+                  <span type="text" name="did" v-text="registerStatus.server" class="property-value"></span>
+                </li>
+                                                
+                <template v-if="registerStatus.register">
+                  <li class="property-item">
+                    <label class="property-label">{{lang.register_state}}:</label>
+                    <span type="text" name="state" v-text="getRegisterState(registerStatus.register)"
+                      class="property-value"></span>
+                  </li>
+
+                  <li class="property-item" v-show="registerStatus.register.expires!=null">
+                    <label class="property-label">{{lang.register_expires}}:</label>
+                    <span type="text" name="expires" v-text="getExpiresTime(registerStatus.register)"
+                      class="property-value"></span>
+                  </li>
+
+                  <li class="property-item" v-show="registerStatus.register.lastSentTime!=null">
+                    <label class="property-label">{{lang.register_updated}}:</label>
+                    <span type="text" name="updated" class="property-value">{{getTimeSpan(registerStatus.register.lastSentTime)}}</span>
+                  </li>
+
+                  <li class="property-item" v-show="registerStatus.register.error">
+                    <label class="property-label">{{lang.register_error}}:</label>
+                    <span type="text" name="error" v-text="registerStatus.register.error" class="property-value"></span>
+                  </li>
+
+                  <li class="property-item" v-show="registerStatus.register.tryTimes">
+                    <label class="property-label">{{lang.register_try_times}}:</label>
+                    <span type="text" name="tryTimes" v-text="registerStatus.register.tryTimes"
+                      class="property-value"></span>
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="firmware-block-template">
+      <section class="section-firmware form-content" v-show="active" style="display: none;">
+        <form id="firmware-status-form">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.firmware_update}}</h3>
+          </div>
+
+          <div class="form-body">
+            <ul class="property-list">
+
+              <li class="property-item" v-if="current.version">
+                <label class="property-label">{{lang.firmware_current_version}}:</label>
+                <span type="text" name="current_version" v-text="current.version || '-'" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="firmware.version">
+                <label class="property-label">{{lang.firmware_version}}:</label>
+                <span type="text" name="version" v-text="firmware.version || '-'" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="firmware.description">
+                <label class="property-label">{{lang.firmware_description}}:</label>
+                <span type="text" name="description" v-text="firmware.description || '-'" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="status.state">
+                <label class="property-label">{{lang.firmware_state}}:</label>
+                <span type="text" name="state" v-text="getUpdateState(status.state)" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="status.result">
+                <label class="property-label">{{lang.firmware_result}}:</label>
+                <span type="text" name="result" v-text="getUpdateResult(status.result)" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="status.updated">
+                <label class="property-label">{{lang.firmware_updated}}:</label>
+                <span type="text" name="updated" v-text="getUpdateTime(status.updated)" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="status.error">
+                <label class="property-label">{{lang.firmware_error}}:</label>
+                <span type="text" name="error" v-text="status.error" class="property-value"></span>
+              </li>
+            </ul>
+
+            <div class="form-group">
+              <button type="button" class="btn btn-primary"
+                @click="onSystemUpdate()">{{lang.firmware_action_update}}</button>
+              <button type="button" class="btn btn-primary"
+                @click="onSystemUpgrade()">{{lang.firmware_action_upgrade}}</button>
+              <label v-show="updateStatus" v-text="updateStatus"></label>
+            </div>
+          </div>
+        </form>
+
+        <form id="firmware-form" enctype="multipart/form-data">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.firmware_upload}}</h3>
+          </div>
+
+          <div class="form-body">
+            <ul class="property-list">
+              <li class="property-item" v-if="upload.version">
+                <label class="property-label">{{lang.firmware_version}}:</label>
+                <span type="text" name="version" v-text="upload.version || '-'" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="upload.filename">
+                <label class="property-label">{{lang.firmware_file_name}}:</label>
+                <span type="text" name="filename" v-text="upload.filename" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="upload.size">
+                <label class="property-label">{{lang.firmware_file_size}}:</label>
+                <span type="text" name="size" v-text="upload.size" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="upload.error">
+                <label class="property-label">{{lang.firmware_error}}:</label>
+                <span type="text" name="error" v-text="upload.error" class="property-value"></span>
+              </li>
+
+              <li class="property-item" v-if="upload.updated">
+                <label class="property-label">{{lang.firmware_file_updated}}:</label>
+                <span type="text" name="updated" v-text="getUpdateTime(upload.updated)" class="property-value"></span>
+              </li>
+            </ul>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.firmware_file}}:</label>
+              <input type="file" name="file" class="form-control form-control-l form-file">
+            </div>
+
+            <div class="form-group">
+              <button type="button" class="btn btn-primary"
+                @click="onFirmwareUpload()">{{lang.firmware_action_upload}}</button>
+              <button type="button" class="btn btn-primary"
+                @click="onFirmwareInstall()">{{lang.firmware_action_install}}</button>
+              <label v-show="firmwareUploadStatus" v-text="firmwareUploadStatus"></label>
+            </div>
+          </div>
+        </form>
+
+        <div class="form-header">
+          <h3 class="form-title">{{lang.management_device}}</h3>
+        </div>
+
+        <div class="form-body">
+          <div class="form-group">
+            <label class="col-form-label">{{lang.management_reboot}}</label>
+            <button type="button" class="btn btn-primary"
+              @click="onSystemReboot()">{{lang.management_action_reboot}}</button>
+          </div>
+
+          <div class="form-group">
+            <label class="col-form-label">{{lang.management_restore}}</label>
+            <button type="button" class="btn btn-primary"
+              @click="onSystemReset()">{{lang.management_action_restore}}</button>
+          </div>
+
+        </div>
+
+        <section class="session-status settings-right-sidebar" v-if="responseData">
+          <div class="form-header">
+            <button style="float:right;" class="btn btn-primary"
+              @click="responseData=null">{{lang.action_close}}</button>
+            <h3 class="form-title">{{lang.tip_response_data}}</h3>
+            <pre v-text="responseData" style="padding: 8px 16px;"></pre>
+          </div>
+        </section>
+      </section>
+    </template>
+
+    <template id="gateway-block-template">
+      <section class="section-gateway form-content" v-show="active" style="display: none;">
+        <form @submit="onConfigSubmit()" onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.gateway_config}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group" v-if="!showSourceCode">
+              <table class="table">
+                <tr>
+                  <th>{{lang.label_index}}</th>
+                  <th>DID</th>
+                  <th>{{lang.gateway_type}}</th>
+                  <th>{{lang.gateway_protocol}}</th>
+                  <th>{{lang.gateway_address}}</th>
+                  <th>{{lang.gateway_username}}</th>
+                  <th>{{lang.gateway_password}}</th>
+                </tr>
+                <tr v-for="peripheral in peripherals">
+                  <td v-text="peripheral.index"></td>
+                  <td><a href="#" @click="onEntityClick(peripheral)">{{peripheral.did || '-'}}</a></td>
+                  <td v-text="peripheral.type"></td>
+                  <td v-text="peripheral.protocol || '-'"></td>
+                  <td v-text="peripheral.address || '-'"></td>
+                  <td v-text="peripheral.username || '-'"></td>
+                  <td v-text="peripheral.password ? '******' : '-'"></td>
+                </tr>
+
+                <tr>
+                  <td class="empty-list-block" colspan="12" v-else>{{lang.tip_list_is_empty}}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="form-group" v-else>
+              <textarea class="form-control" v-model="configString" rows="24"
+                style="height: calc(100vh - 230px); min-height: 200px; "></textarea>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="button" class="btn btn-primary" @click="onConfigReload()">{{lang.action_reload}}</button>
+            <button type="button" class="btn btn-primary" @click="onRefreshClick()">{{lang.action_refresh}}</button>
+            <button type="button" class="btn btn-primary" @click="onConfigSubmit()">{{lang.action_save}}</button>
+            <button type="button" class="btn btn-primary"
+              @click="showSourceCode=!showSourceCode">{{lang.gateway_source_code}}</button>
+            <label v-show="updateStatus" v-html="updateStatus"></label>
+          </div>
+        </form>
+
+        <section class="session-status">
+          <div class="form-header settings-right-sidebar" v-if="responseData">
+            <button style="float:right;" class="btn btn-primary"
+              @click="responseData=null">{{lang.action_close}}</button>
+            <h3 class="form-title">{{lang.tip_response_data}}</h3>
+            <pre v-text="responseData" style="padding: 8px 16px;"></pre>
+          </div>
+        </section>
+
+        <section class="session-status settings-right-sidebar" v-if="showSidebar">
+          <div class="form-header">
+            <button style="float:right;" class="btn btn-primary"
+              @click="showSidebar=false">{{lang.action_close}}</button>
+            <h3 class="form-title">{{lang.gateway_things}}</h3>
+
+            <div class="form-group" v-if="currentEntity">
+              <pre>{{currentEntity}}</pre>
+            </div>
+          </div>
+        </section>
+      </section>
+    </template>
+
+    <template id="peripherals-block-template">
+      <section class="section-peripherals form-content" v-show="active" style="display: none;">
+        <form @submit="onConfigSubmit()" onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.peripherals_config}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group">
+              <textarea class="form-control" v-model="peripheralsConfig" rows="24"
+                style="height: calc(100vh - 230px); min-height: 200px; "></textarea>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="button" class="btn btn-primary" @click="onConfigReload()">{{lang.action_reload}}</button>
+            <button type="button" class="btn btn-primary" @click="onConfigSubmit()">{{lang.action_save}}</button>
+            <label v-show="updateStatus" v-html="updateStatus"></label>
+          </div>
+        </form>
+
+        <section class="session-status">
+          <div class="form-header settings-right-sidebar" v-if="responseData">
+            <button style="float:right;" class="btn btn-primary" @click="responseData=null">{{lang.close}}</button>
+            <h3 class="form-title">Response Data</h3>
+            <pre v-text="responseData" style="padding: 8px 16px;"></pre>
+          </div>
+        </section>
+      </section>
+    </template>
+
+    <template id="script-block-template">
+      <section class="section-script form-content" v-show="active" style="display: none;">
+        <form @submit="onConfigSubmit()" onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">Script Config</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group">
+              <textarea class="form-control" v-model="scriptConfig" rows="24"
+                style="height: calc(100vh - 230px); min-height: 200px; "></textarea>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="button" class="btn btn-primary" @click="onConfigSubmit()">{{lang.action_save}}</button>
+            <label v-show="updateStatus" v-html="updateStatus"></label>
+          </div>
+        </form>
+
+        <section class="session-status">
+          <div class="form-header settings-right-sidebar" v-if="responseData">
+            <button style="float:right;" class="btn btn-primary" @click="responseData=null">{{lang.close}}</button>
+            <h3 class="form-title">Response Data</h3>
+            <pre v-text="responseData" style="padding: 8px 16px;"></pre>
+          </div>
+        </section>
+      </section>
+    </template>
+
+    <template id="uart-block-template">
+      <section class="section-uart form-content" v-show="active" style="display: none;">
+        <form @submit="onConfigSubmit()" onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.uart}} 1</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_port}}:</label>
+              <input name="device" class="form-control form-control-s" value="/dev/ttyAMA1" readonly />
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_baudrate}}:</label>
+              <select name="baudrate" v-model="uart1.baudrate" class="form-control">
+                <option value="115200">115200</option>
+                <option value="57600">57600</option>
+                <option value="56000">56000</option>
+                <option value="38400">38400</option>
+                <option value="19200">19200</option>
+                <option value="14400">14400</option>
+                <option value="9600">9600</option>
+                <option value="4800">4800</option>
+                <option value="2400">2400</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_data_bits}}:</label>
+              <select name="databits" v-model="uart1.databits" class="form-control">
+                <option value="8">8</option>
+                <option value="7">7</option>
+                <option value="6">6</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_stop_bits}}:</label>
+              <select name="stopbits" v-model="uart1.stopbits" class="form-control">
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_parity}}:</label>
+              <select name="parity" v-model="uart1.parity" class="form-control">
+                <option value="78">{{lang.uart_parity_none}}</option>
+                <option value="69">{{lang.uart_parity_even}}</option>
+                <option value="79">{{lang.uart_parity_odd}}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-header">
+            <h3 class="form-title">{{lang.uart}} 2</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_port}}:</label>
+              <input name="device" class="form-control form-control-s" value="/dev/ttyAMA2" readonly />
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_baudrate}}:</label>
+              <select name="baudrate" v-model="uart2.baudrate" class="form-control">
+                <option value="115200">115200</option>
+                <option value="57600">57600</option>
+                <option value="56000">56000</option>
+                <option value="38400">38400</option>
+                <option value="19200">19200</option>
+                <option value="14400">14400</option>
+                <option value="9600">9600</option>
+                <option value="4800">4800</option>
+                <option value="2400">2400</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_data_bits}}:</label>
+              <select name="databits" v-model="uart2.databits" class="form-control">
+                <option value="8">8</option>
+                <option value="7">7</option>
+                <option value="6">6</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_stop_bits}}:</label>
+              <select name="stopbits" v-model="uart2.stopbits" class="form-control">
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.uart_parity}}:</label>
+              <select name="parity" v-model="uart2.parity" class="form-control">
+                <option value="78">{{lang.uart_parity_none}}</option>
+                <option value="69">{{lang.uart_parity_even}}</option>
+                <option value="79">{{lang.uart_parity_odd}}</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="form-footer">
+            <button type="button" class="btn btn-primary" @click="onConfigSubmit()">{{lang.action_save}}</button>
+            <label v-show="updateStatus" v-html="updateStatus"></label>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="modbus-block-template">
+      <section class="section-modbus form-content" v-show="active" style="display: none;">
+        <form onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.modbus_master}}</h3>
+          </div>
+
+          <template v-if="!isEmpty(modbus)">
+            <div class="form-body" v-for="(device, key) in modbus">
+              <div class="form-header">
+                <h3 class="form-title">DID: <span v-text="key"></span></h3>
+              </div>
+
+              <table class="table">
+                <template v-if="device.modbus && device.modbus.properties">
+                  <tr>
+                    <th colspan="15">{{lang.modbus_properties}}</th>
+                  </tr>
+                  <tr>
+                    <th>{{lang.modbus_name}}</th>
+                    <th>{{lang.modbus_address}}</th>
+                    <th>{{lang.modbus_code}}</th>
+
+                    <th>{{lang.modbus_register}}</th>
+                    <th>{{lang.modbus_quantity}}</th>
+                    <th>{{lang.modbus_flags}}</th>
+
+                    <th>{{lang.modbus_type}}</th>
+                    <th>{{lang.modbus_scale}}</th>
+                    <th>{{lang.modbus_offset}}</th>
+                    <th>{{lang.modbus_decimals}}</th>
+                    <th>{{lang.modbus_timeout}} </th>
+                    <th>{{lang.modbus_interval}}</th>
+
+                    <th>{{lang.modbus_value}}</th>
+                    <th>{{lang.modbus_reads}}</th>
+                    <th>{{lang.modbus_duration}}</th>
+                  </tr>
+                  <tr v-for="property in getProperties(device)">
+                    <td v-text="property.name"></td>
+                    <td v-text="property.address"></td>
+                    <td v-text="property.code"></td>
+                    <td v-text="property.register"></td>
+                    <td v-text="property.quantity"></td>
+                    <td v-text="property.flags"></td>
+                    <td v-text="property.type"></td>
+                    <td v-text="property.scale"></td>
+                    <td v-text="property.offset"></td>
+                    <td v-text="property.decimals"></td>
+                    <td v-text="property.timeout"></td>
+                    <td v-text="property.interval"></td>
+
+                    <td v-text="property.value"></td>
+                    <td>{{property.readed || 0}}/{{property.reads || 0}}</td>
+                    <td v-text="property.duration"></td>
+                  </tr>
+                </template>
+
+                <template v-if="!isEmpty(device.modbus && device.modbus.actions)">
+
+                  <tr>
+                    <th colspan="15">{{lang.modbus_actions}}</th>
+                  </tr>
+                  <tr>
+                    <th>{{lang.modbus_name}}</th>
+                    <th>{{lang.modbus_address}}</th>
+                    <th>{{lang.modbus_code}}</th>
+                    <th>{{lang.modbus_register}}</th>
+                    <th>{{lang.modbus_quantity}}</th>
+                    <th>{{lang.modbus_flags}}</th>
+                    <th>{{lang.modbus_type}}</th>
+                    <th>{{lang.modbus_scale}}</th>
+                    <th>{{lang.modbus_offset}}</th>
+                    <th>{{lang.modbus_timeout}} </th>
+                  </tr>
+                  <tr v-for="property in toArray(device.modbus && device.modbus.actions)">
+                    <td v-text="property.name"></td>
+                    <td v-text="property.address"></td>
+                    <td v-text="property.code"></td>
+                    <td v-text="property.register"></td>
+                    <td v-text="property.quantity"></td>
+                    <td v-text="property.flags"></td>
+                    <td v-text="property.type"></td>
+                    <td v-text="property.scale"></td>
+                    <td v-text="property.offset"></td>
+                    <td v-text="property.timeout"></td>
+                  </tr>
+                </template>
+              </table>
+            </div>
+          </template>
+
+          <template v-else>
+            <div class="form-body">
+              <div class="empty-list-block">{{lang.tip_list_is_empty}}</div>
+            </div>
+          </template>
+        </form>
+      </section>
+    </template>
+
+    <template id="lora-block-template">
+      <section class="section-lora form-content" v-show="active" style="display: none;">
+        <form @submit="onLoRAConfigSubmit()" onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.lora}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group">
+              <label class="col-form-label">{{lang.lora_port}}:</label>
+              <input name="device" class="form-control form-control-s" value="/dev/ttyAMA2" readonly />
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.lora_enable}}:</label>
+              <select name="enable" v-model="lora.enable" class="form-control">
+                <option value="0">OFF</option>
+                <option value="1">ON</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.lora_local_address}}:</label>
+              <input type="number" name="address" v-model="lora.address" class="form-control form-control-s" min="0"
+                max="65535" maxlength="5">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.lora_rate}}:</label>
+              <select name="rate" v-model="lora.rate" class="form-control">
+                <option value="0">122</option>
+                <option value="1">149</option>
+                <option value="2">407</option>
+                <option value="3">487</option>
+                <option value="4">732</option>
+                <option value="5">867</option>
+                <option value="6">1302</option>
+                <option value="7">2278</option>
+                <option value="8">4557</option>
+                <option value="9">9114</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.lora_frequency}} (100,000Hz):</label>
+              <input type="number" name="frequency" v-model="lora.frequency" class="form-control form-control-s" min="0"
+                max="65535" maxlength="5">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.lora_tx_power}} (0~20):</label>
+              <input type="number" name="tpl" v-model="lora.tpl" class="form-control form-control-s" min="0" max="20"
+                maxlength="2">
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">{{lang.lora_network_id}} (1~254):</label>
+              <input type="number" name="network" v-model="lora.network" class="form-control form-control-s" min="1"
+                max="254" maxlength="3">
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button type="button" class="btn btn-primary" @click="onLoRAConfigSubmit()">{{lang.action_save}}</button>
+            <label v-show="updateStatus" v-html="updateStatus"></label>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="bluetooth-block-template">
+      <section class="section-bluetooth form-content" v-show="active" style="display: none;">
+        <form onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.bluetooth_status}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group" v-if="!isEmpty(beacons)">
+              <table class="table">
+                <tr>
+                  <th>MAC</th>
+                  <th>{{lang.bluetooth_name}}</th>
+                  <th>RSSI</th>
+                  <th>{{lang.bluetooth_tx_power}}</th>
+                  <th>{{lang.bluetooth_updated}}</th>
+                </tr>
+                <tr v-for="(beacon, name) in beacons">
+                  <td v-text="name"></td>
+                  <td v-text="beacon.name || '-'"></td>
+                  <td v-text="beacon.rssi || '-'"></td>
+                  <td v-text="beacon.txPower != null ? beacon.txPower : '-'"></td>
+                  <td v-text="getTimeSpan(beacon.updated) || '-'"></td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="empty-list-block" v-else>{{lang.tip_list_is_empty}}</div>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="media-block-template">
+      <section class="section-media form-content" v-show="active" style="display: none;">
+        <form onsubmit="return false" @click="currentDevice=null">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.media_status}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group" v-if="!isEmpty(media)">
+              <table class="table">
+                <tr>
+                  <th>DID</th>
+                  <th>{{lang.media_address}}</th>
+                  <th>{{lang.media_channel}}</th>
+                  <th>{{lang.media_protocol}}</th>
+                  <th>{{lang.media_username}}</th>
+                  <th>{{lang.media_main_stream}}</th>
+                  <th>{{lang.media_sub_stream}}</th>
+                  <th>{{lang.device_version}}</th>
+                  <th>{{lang.device_manufacturer}}</th>
+
+                </tr>
+                <tr v-for="(device, name) in media">
+                  <td @click.stop="onDeviceClick(name)"><a href="#" v-text="name || '-'"></a></td>
+                  <template v-if="device.options">
+                    <td v-text="device.options.address || '-'"></td>
+                    <td v-text="device.options.channel || '-'"></td>
+                    <td v-text="device.options.protocol || '-'"></td>
+                    <td v-text="device.options.username || '-'"></td>
+                  </template>
+                  <td v-text="device.mainStream || '-'"></td>
+                  <td v-text="device.subStream || '-'"></td>
+                  <td v-text="device.version || '-'"></td>
+                  <td v-text="device.manufacturer || '-'"></td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="empty-list-block" v-else>{{lang.tip_list_is_empty}}</div>
+          </div>
+        </form>
+
+        <section class="session-status settings-right-sidebar" v-if="currentDevice">
+          <div class="form-header">
+            <button style="float:right;" class="btn btn-primary"
+              @click="currentDevice=null">{{lang.action_close}}</button>
+            <h3 class="form-title">{{lang.media_details}}</h3>
+            <pre v-text="currentDevice" style="padding: 8px 16px;"></pre>
+          </div>
+        </section>
+      </section>
+    </template>
+
+    <template id="things-block-template">
+      <section class="section-things form-content" v-show="active" style="display: none;">
+        <form onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.thing_status}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div class="form-group">
+              <table class="table">
+                <tr>
+                  <th>Index</th>
+                  <th>DID</th>
+                  <th>Register</th>
+                  <th>Interval</th>
+                  <th>Try Times</th>
+                  <th>Error</th>
+                  <th>Expires</th>
+
+                  <th>Updated</th>
+                  <th>Last Send Time</th>
+                </tr>
+
+                <template v-if="!isEmpty(things)">
+                  <tr v-for="(peripheral, did, index) in things">
+                    <td v-text="index"></td>
+                    <td v-text="peripheral.id || '-'"></td>
+
+                    <td v-text="getRegisterState(peripheral.register) || '-'"></td>
+                    <td v-text="peripheral.register.interval || '-'"></td>
+                    <td v-text="peripheral.register.tryTimes || '0'"></td>
+                    <td v-text="peripheral.register.error || '-'"></td>
+                    <td v-text="getExpiresTime(peripheral.register) || '-'"></td>
+                    <td v-text="getTimeSpan(peripheral.register.updated) || '-'"></td>
+                    <td v-text="getTimeSpan(peripheral.register.lastSentTime) || '-'"></td>
+                  </tr>
+                </template>
+
+                <template v-else>
+                  <tr>
+                    <td class="empty-list-block" colspan="12">{{lang.tip_list_is_empty}}</td>
+                  </tr>
+                </template>
+              </table>
+            </div>
+          </div>
+
+        </form>
+      </section>
+    </template>
+
+    <template id="logs-block-template">
+      <section class="section-logs form-content" v-show="active" style="display: none;">
+        <form onsubmit="return false">
+          <div class="form-header">
+            <h3 class="form-title">{{lang.log_logs}}</h3>
+          </div>
+
+          <div class="form-body">
+            <div>
+              <button type="button" class="btn btn-primary"
+                @click="onStartDebugClick()">{{lang.log_start_debug}}</button>
+              <button type="button" class="btn btn-primary" @click="onStopDebugClick()">{{lang.log_stop_debug}}</button>
+              <span v-html="updateStatus"></span>
+            </div>
+            <div class="form-group">
+              <table class="table">
+                <tr>
+                  <th>{{lang.label_index}}</th>
+                  <th>{{lang.label_date}}</th>
+                  <th>{{lang.label_time}}</th>
+                  <th>{{lang.log_level}}</th>
+                  <th>{{lang.log_file}}</th>
+                  <th>{{lang.log_message}}</th>
+                </tr>
+                <template v-if="!isEmpty(logs)">
+                  <tr v-for="(log, index) in logs">
+                    <td v-text="index + 1"></td>
+                    <td v-text="log.date || '-'"></td>
+                    <td v-text="log.time || '-'"></td>
+                    <td v-text="log.level || '-'"></td>
+                    <td v-text="log.file || '-'"></td>
+                    <td v-text="log.message || '-'"></td>
+                  </tr>
+                </template>
+                <tr v-else>
+                  <td colspan="6" class="empty-list-block">
+                    <div>{{lang.tip_list_is_empty}}</div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <template id="status-block-template">
+      <section class="session-status form-content" v-show="active" style="display: none;">
+        <div class="form-header">
+          <h3 class="form-title">{{lang.system_status}}</h3>
+        </div>
+
+        <div class="form-body">
+          <form id="status-form" enctype="multipart/form-data">
+
+            <div class="form-group">
+              <label class="col-form-label">WoT client status:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/wotc/status');">GET /status/wotc/status</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Network status:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/lci/status');">GET /status/lci/status</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Bluetooth status:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/gateway/bluetooth');">GET
+                /status/gateway/bluetooth</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Bluetooth devices:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/gateway/beacons');">GET /status/gateway/beacons</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">GPIO status:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/gateway/gpio');">GET /status/gateway/gpio</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Modbus status:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/gateway/modbus');">GET /status/gateway/modbus</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Media status:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/gateway/media');">GET /status/gateway/media</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">RS485 status:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/gateway/rs485');">GET /status/gateway/rs485</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Gateway status:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/gateway/status');">GET /status/gateway/status</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Things:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/gateway/things');">GET /status/gateway/things</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Logs:</label>
+              <a href="javascript:;" @click="onStatusClick('/status/gateway/logs');">GET /status/gateway/logs</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Activate Status:</label>
+              <a href="javascript:;" @click="onStatusClick('/system/activate');">GET /system/activate</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Application Status:</label>
+              <a href="javascript:;" @click="onStatusClick('/system/applications');">GET /system/applications</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">System Status:</label>
+              <a href="javascript:;" @click="onStatusClick('/system/status');">GET /system/status</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Firmaware Status:</label>
+              <a href="javascript:;" @click="onStatusClick('/firmware/status');">GET /firmware/status</a>
+            </div>
+
+            <div class="form-group">
+              <label class="col-form-label">Device Information:</label>
+              <a href="javascript:;" @click="onStatusClick('/device/info');">GET /device/info</a>
+            </div>
+          </form>
+        </div>
+
+        <div class="form-footer"></div>
+
+        <section class="session-status settings-right-sidebar" v-if="responseData">
+          <div class="form-header">
+            <button style="float:right;" class="btn btn-primary"
+              @click="responseData=null">{{lang.action_close}}</button>
+            <h3 class="form-title">{{lang.title_details}}</h3>
+            <pre v-text="responseData" style="padding: 8px 16px;"></pre>
+          </div>
+        </section>
+      </section>
+    </template>
+
+  </foot>
+  <script src="js/index.js?v=20200710"></script>
+  <script src="js/locate.en-US.js?v=20200710"></script>
+  <script src="js/locate.zh-CN.js?v=20200710"></script>
+  <script>
+    $wot.init();
+  </script>
+</body>
+
+</html>

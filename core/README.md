@@ -1,8 +1,5 @@
 # Node.lua
 
-> - Author: ChengZhen (anyou@qq.com)
-> - Version: 4.6
-
 ## Overview
 
 A framework for Internet of Things

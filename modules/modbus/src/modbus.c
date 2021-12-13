@@ -1381,10 +1381,17 @@ int modbus_write_registers(modbus_t *ctx, int addr, int nb, const uint16_t *src)
     byte_count = nb * 2;
     req[req_length++] = byte_count;
 
+#if 0
     for (i = 0; i < nb; i++) {
         req[req_length++] = src[i] >> 8;
         req[req_length++] = src[i] & 0x00FF;
     }
+#else
+    for (i = 0; i < nb; i++) {
+        req[req_length++] = src[i] & 0x00FF;
+        req[req_length++] = src[i] >> 8;
+    }
+#endif
 
     rc = send_msg(ctx, req, req_length);
     if (rc > 0) {

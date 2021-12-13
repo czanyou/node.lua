@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014-2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local meta = { }
-meta.name        = "lnode/util"
-meta.version     = "1.0.0-4"
-meta.license     = "Apache 2"
-meta.description = "Wrapper around pretty-print with extra tools for lnode"
-meta.tags        = { "lnode", "bind", "adapter" }
+local meta = {
+    description = "Wrapper around pretty-print with extra tools for lnode"
+}
 
 local exports = { meta = meta }
 
 local lutils = require('lutils')
+local uv = require('luv')
 
 local Error  = require('core').Error
 local Object = require('core').Object
@@ -157,6 +155,9 @@ function exports.dirname()
     elseif (pathname:startsWith('/')) then
         return pathname
 
+    elseif (pathname:startsWith('$app/')) then
+        return pathname
+
     else
         return path.join(process.cwd(), pathname)
     end
@@ -191,6 +192,7 @@ end
 -------------------------------------------------------------------------------
 -- StringBuffer
 
+---@class StringBuffer
 local StringBuffer = Object:extend()
 exports.StringBuffer = StringBuffer
 
@@ -232,12 +234,50 @@ exports.sha1            = lutils.sha1
 exports.crc32           = lutils.crc32
 exports.crc16           = lutils.crc16
 
-exports.md5string = function(data)
+function exports.md5string (data)
     return lutils.hex_encode(lutils.md5(data))
 end
 
-exports.sha1string = function(data)
+function exports.sha1string (data)
     return lutils.hex_encode(lutils.sha1(data))
+end
+
+function exports.random(size, callback)
+    -- local text = uv.random(size)
+
+    math.randomseed(os.time())
+    local data = {}
+    for i = 1, size do
+        data[i] = string.char(math.random(1, 255))
+    end
+
+    local text = table.concat(data)
+    if callback then
+        callback(text)
+    end
+
+    return text
+end
+
+function exports.randomString(size, callback)
+    local text = exports.hexEncode(exports.random(size))
+
+    if callback then
+        callback(text)
+    end
+
+    return text
+end
+
+---@param value any
+---@return integer
+function exports.tointeger(value)
+    value = tonumber(value)
+    if (value ~= nil) then
+        value = math.floor(value)
+    end
+
+    return value
 end
 
 -------------------------------------------------------------------------------
@@ -288,6 +328,48 @@ function exports.formatBytes(bytes)
     end
 end
 
+function exports.formatDuration(duration, options)
+    duration = tonumber(duration)
+    if (not duration) then
+        return
+    end
+
+    -- seconds
+    if (duration < 60) then
+        return duration .. 's'
+    end
+
+    -- minutes
+    duration = math.floor(duration / 60)
+    if (duration < 60) then
+        return duration .. 'm'
+    end
+
+    -- hours
+    duration = math.floor(duration / 60)
+    if (duration < 24) then
+        return duration .. 'h'
+    end
+
+    -- days
+    duration = math.floor(duration / 24)
+    if (duration < 30) then
+        return duration .. 'd'
+    end
+
+    return duration .. 'd'
+end
+
+-- Format the floating-point number
+function exports.formatFloat(value, size)
+    value = tonumber(value)
+    if (not value) then
+        return
+    end
+
+    return string.format("%." .. (size or 1) .. "f", value)
+end
+
 function exports.formatNumber(value)
     value = tonumber(value)
     if (not value) then
@@ -302,16 +384,8 @@ function exports.formatNumber(value)
     end
 end
 
--- Format the floating-point number
-function exports.formatFloat(value, size)
-    value = tonumber(value)
-    if (not value) then
-        return
-    end
-
-    return string.format("%." .. (size or 1) .. "f", value)
-end
-
+---@param data table[]
+---@param columns string[]
 function exports.formatTable(data, columns)
     local cols = {}
     local rows = {}
@@ -377,6 +451,17 @@ function exports.formatTable(data, columns)
     return table.concat(output)
 end
 
+-- --------------------------------
+-- table functions
+
+function exports.assign(dist, source)
+    for k, v in pairs(source) do
+        dist[k] = v
+    end
+
+    return dist
+end
+
 function exports.clone(data)
     local function copy(org, res)
         for k, v in pairs(org) do
@@ -397,18 +482,6 @@ function exports.clone(data)
 
     local result = {}
     copy(data, result)
-    return result
-end
-
-function exports.keys(data)
-    if (type(data) ~= "table") then
-        return data
-    end
-
-    local result = {}
-    for k, v in pairs(data) do
-        table.insert(result, k)
-    end
     return result
 end
 
@@ -441,6 +514,18 @@ function exports.diff(table1, table2)
     end
 
     return result, sub
+end
+
+function exports.keys(data)
+    if (type(data) ~= "table") then
+        return data
+    end
+
+    local result = {}
+    for k, v in pairs(data) do
+        table.insert(result, k)
+    end
+    return result
 end
 
 function exports.size(data)

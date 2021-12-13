@@ -2,10 +2,10 @@ local utils  = require('util')
 local assert = require('assert')
 local uv     = require('luv')
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
-test("fs.read a file sync", function (expect, uv)
+test("fs.read - sync", function (expect, uv)
 	local fd = assert(uv.fs_open('run.lua', 'r', tonumber('644', 8)))
 	--print('fd', fd)
 
@@ -16,10 +16,10 @@ test("fs.read a file sync", function (expect, uv)
 	assert(#chunk == stat.size)
 	assert(uv.fs_close(fd))
 
-	print('chunk.length', #chunk)
+	console.log('chunk.length', #chunk)
 end)
 
-test("fs.read a file async", function (expect, uv)
+test("fs.read - async", function (expect, uv)
 	uv.fs_open('run.lua', 'r', tonumber('644', 8), expect(function (err, fd)
 		assert(not err, err)
 		--print('fd', fd)
@@ -28,7 +28,7 @@ test("fs.read a file async", function (expect, uv)
 			--print('stat.size', stat.size)
 			uv.fs_read(fd, stat.size, 0, expect(function (err, chunk)
 				assert(not err, err)
-				print('chunk.length', #chunk)
+				console.log('chunk.length', #chunk)
 				assert(#chunk == stat.size)
 				uv.fs_close(fd, expect(function (err)
 					assert(not err, err)
@@ -38,7 +38,7 @@ test("fs.read a file async", function (expect, uv)
 	end))
 end)
 
-test("fs.write sync", function (expect, uv)
+test("fs.write - sync", function (expect, uv)
 	local temp = uv.os_tmpdir() or '/tmp'
 
 	local path = temp .. "/_test_"
@@ -48,40 +48,40 @@ test("fs.write sync", function (expect, uv)
 	uv.fs_close(fd)
 
 	local stat = assert(uv.fs_stat(path))
-	assert(stat.size)
+	assert.equal(stat.size, 28)
 
 	uv.fs_unlink(path)
 
-	print('path', path, stat.size)
+	console.log('path', path, stat.size)
 end)
 
-test("fs.stat sync", function (expect, uv)
+test("fs.stat - sync", function (expect, uv)
 	local stat = assert(uv.fs_stat("run.lua"))
 	assert(stat.size)
-	print('stat.size: ', stat.size)
+	console.log('stat.size', stat.size)
 end)
 
-test("fs.stat async", function (expect, uv)
+test("fs.stat - async", function (expect, uv)
 	assert(uv.fs_stat("run.lua", expect(function (err, stat)
-	assert(not err, err)
-	assert(stat.size)
-	print('stat.size: ', stat.size)
+		assert(not err, err)
+		assert(stat.size)
+		console.log('stat.size', stat.size)
 	end)))
 end)
 
-test("fs.stat sync error", function (expect, uv)
+test("fs.stat - sync error", function (expect, uv)
 	local stat, err, code = uv.fs_stat("BAD_FILE!")
-	print('err:', err, code)
+	console.log('error', code, err)
 	assert(not stat)
 	assert(err)
 	assert(code == "ENOENT")
 end)
 
-test("fs.stat async error", function (expect, uv)
+test("fs.stat - async error", function (expect, uv)
 	assert(uv.fs_stat("BAD_FILE@", expect(function (err, stat)
-	print('err:', err)
-	assert(err)
-	assert(not stat)
+		console.log('error', err)
+		assert(err)
+		assert(not stat)
 	end)))
 end)
 
@@ -94,14 +94,13 @@ test("fs.scandir", function (expect, uv)
 	local index = 0
 	local found = false
 
-	for name,type in iter do
-		--print(name,type)
+	for name, type in iter do
+		print(type, name)
 		assert(name)
-		-- assert(type) -- TODO: find out why this fails on travis containers.
 
 		if (name == 'test-fs.lua') then
-		found = true
-		assert.equal(type, 'file')
+			found = true
+			assert.equal(type, 'file')
 		end
 
 		index = index + 1
@@ -115,15 +114,13 @@ test("fs.realpath", function (expect, uv)
 	assert(uv.fs_realpath('.'))
 	assert(uv.fs_realpath('.', expect(function (err, path)
 		assert(not err, err)
-		print('.', '=', path)
+		console.log('realpath', path)
 	end)))
 end)
 
-
 test("read a file async in thread", function ()
 	local await = utils.await
-	local async_func = function(param) 
-		--print('in read_async:', await, thread, test)
+	local async_func = function(param)
 		assert.equal('test', param)
 
 		local err, fd = await(uv.fs_open, 'run.lua', 'r', tonumber('644', 8))
@@ -131,17 +128,13 @@ test("read a file async in thread", function ()
 
 		local err, stat = await(uv.fs_fstat, fd)
 		assert(not err, err)
-		--print('stat.size', stat.size)
 
 		local err, chunk = await(uv.fs_read, fd, stat.size, 0);
 		assert(not err, err)
-		--print('chunk.length', #chunk)
 		assert(#chunk == stat.size, #chunk)  
 
 		local err = await(uv.fs_close, fd)
 		assert(not err, err)
-
-		--print('fs_close', err)
 
 		return 0
 	end

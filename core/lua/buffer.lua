@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,12 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-
-local meta = { }
-meta.name        = "lnode/buffer"
-meta.version     = "1.0.1-3"
-meta.description = "A mutable buffer for lnode."
-meta.tags        = { "lnode", "buffer" }
+local meta = {
+    description = "A mutable buffer for lnode."
+}
 
 local core   = require('core')
 local lutils = require('lutils')
@@ -48,6 +45,7 @@ end
 -- @param str String 分配一个新的 buffer，其中包含着给定的 str 字符串
 --
 
+---@class Buffer
 local Buffer = core.Object:extend()
 exports.Buffer = Buffer
 

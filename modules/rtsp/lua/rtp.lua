@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@ limitations under the License.
 --]]
 local core = require('core')
 
-local meta 		= { }
-local exports 	= { meta = meta }
+local exports 	= {}
 
 exports.RTP_MAX_SIZE 	= 1450
 exports.RTP_PACKET_HEAD	= 0x80
@@ -32,7 +31,7 @@ local function toBoolean(value)
 
 	elseif (value == 0) or (value == '') then
 		return false
-		
+
 	else
 		return true
 	end
@@ -43,6 +42,7 @@ end
 
 -- 这个类主要用来解析和生成 RTP 包
 
+---@class RtpSession
 local RtpSession = core.Object:extend()
 exports.RtpSession = RtpSession
 
@@ -51,6 +51,9 @@ function RtpSession:initialize()
 	self.rtpSsrc = 0x33445566
 end
 
+---@param packet string
+---@param offset integer
+---@return RtpPacket
 function RtpSession:decode(packet, offset)
 	if (not offset) or (offset < 1) then
 		offset = 1
@@ -64,7 +67,15 @@ function RtpSession:decode(packet, offset)
 	end
 
 	-- parse packet data
-	offset = offset + 12 -- RTP header size == 12
+	offset = offset + 12 -- RTP fixed header size == 12
+
+	if (sample.extend) then
+		local profile, length = string.unpack(">I2I2", packet, offset)
+
+		-- console.log('sample', sample, profile, length)
+		offset = offset + 4 + length * 4
+	end
+
 	local data = {}
 
 	if (total >= offset + 1) then
@@ -116,28 +127,27 @@ function RtpSession:decode(packet, offset)
 	return sample
 end
 
---[[
-
-]]
+---@param packet string
+---@param offset integer
+---@return RtpPacket
 function RtpSession:decodeHeader(packet, offset)
 	local head, payload, sequence, ssrc, rtpTime = string.unpack(">BBI2I4I4", packet, offset)
 
-	local buffer = {}
-	buffer.payload 		= payload & 0x7F
-	buffer.marker  		= toBoolean(payload & 0x80)
-	buffer.sequence 	= sequence
-	buffer.rtpTime  	= rtpTime
-	buffer.sampleTime  	= math.floor(rtpTime / 90)
-	buffer.padding      = toBoolean(head & 0x20)
-	
-	return buffer
+	---@class RtpPacket
+	local rtpPacket = {}
+	rtpPacket.payload 		= payload & 0x7F
+	rtpPacket.marker  		= toBoolean(payload & 0x80)
+	rtpPacket.sequence 		= sequence
+	rtpPacket.rtpTime  		= rtpTime
+	rtpPacket.sampleTime  	= math.floor(rtpTime / 90)
+	rtpPacket.padding     	= toBoolean(head & 0x20)
+	rtpPacket.extend     	= toBoolean(head & 0x10)
+	return rtpPacket
 end
 
---[[
-把指定的流编码成 RTP 包
-@param data
-@param timestamp，单位为毫秒 (1/1000)
-]]
+-- 把指定的流编码成 RTP 包
+---@param data string
+---@param timestamp integer，单位为毫秒 (1/1000)
 function RtpSession:encode(data, timestamp)
 	local list = {}
 
@@ -168,11 +178,11 @@ function RtpSession:encode(data, timestamp)
 
 		if (isEnd) then
 			isMaker = true
-		end	
+		end
 
 		-- fu header
 		local fu1 = (nalHeader & 0x60) | kFuNaluType
-		local fu2 = (nalHeader & 0x1f) 
+		local fu2 = (nalHeader & 0x1f)
 
 		if (isStart) then
 			fu2 = fu2 | kFuStartBit
@@ -180,7 +190,7 @@ function RtpSession:encode(data, timestamp)
 
 		if (isEnd) then
 			fu2 = fu2 | kFuEndBit
-		end	
+		end
 
 		-- packet
 		local packet = {}
@@ -188,8 +198,8 @@ function RtpSession:encode(data, timestamp)
 		table.insert(packet, string.pack(">BB", fu1, fu2))
 		table.insert(packet, data:sub(offset, offset + size - 1))
 		table.insert(list, packet)
-		
-		-- 
+
+		--
 		offset   = offset   + size
 		leftover = leftover - size
 		isStart  = false
@@ -198,10 +208,9 @@ function RtpSession:encode(data, timestamp)
 	return list
 end
 
---[[
-@param timestamp 时间戳，单位为毫秒 (1/1000)
-@param isMaker 指出是否是一帧的最后一个包
-]]
+---@param timestamp integer 时间戳，单位为毫秒 (1/1000)
+---@param isMaker boolean 指出是否是一帧的最后一个包
+---@return string
 function RtpSession:encodeHeader(timestamp, isMaker)
 	local rtpHead 	= exports.RTP_PACKET_HEAD or 0x80	-- 16 bits
 	local payload 	= (self.payload  or 0) & 0x7F 		-- 0 ~ 6 bit
@@ -217,12 +226,11 @@ function RtpSession:encodeHeader(timestamp, isMaker)
 	return string.pack(">BBI2I4I4", rtpHead, payload, sequence, rtpSsrc, rtpTime)
 end
 
---[[
-把指定的 TS 流编码成 RTP 包
-@param packets 包含 TS 包的列表
-@param timestamp，单位为毫秒 (1/1000)
-@param isMaker 指出是否是一帧的最后一个包
-]]
+
+-- 把指定的 TS 流编码成 RTP 包
+---@param packets string[] 包含 TS 包的列表
+---@param timestamp integer 单位为毫秒 (1/1000)
+---@param isMaker boolean 指出是否是一帧的最后一个包
 function RtpSession:encodeTS(packets, timestamp, isMaker)
 	local rtpPacket = {}
 	table.insert(rtpPacket, self:encodeHeader(timestamp, isMaker))
@@ -233,6 +241,8 @@ function RtpSession:encodeTS(packets, timestamp, isMaker)
 	return rtpPacket
 end
 
+---@param data string
+---@return integer
 function RtpSession:getNaluStartLength(data)
 	if (data == nil or type(data) ~= 'string') then
 		return 0
@@ -241,7 +251,7 @@ function RtpSession:getNaluStartLength(data)
 	if (data:byte(1) ~= 0x00) then
 		return 0
 
-	elseif (data:byte(2) ~= 0x00) then	
+	elseif (data:byte(2) ~= 0x00) then
 		return 0
 	end
 
@@ -260,6 +270,7 @@ end
 -------------------------------------------------------------------------------
 -- exports
 
+---@return RtpSession
 function exports.newSession()
 	return RtpSession:new()
 end

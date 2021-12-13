@@ -1,18 +1,20 @@
 local fs = require('fs')
+local json = require('json')
 
 local exports = {}
 
 -- Log levels
+local LEVEL_DEBUG = 0
 local LEVEL_INFO  = 1
 local LEVEL_WARN  = 2
 local LEVEL_ERROR = 3
 
 -- Redirect log information to the WoT server
--- @param level {number} Log level
--- @param line {number} Line number of the source code
--- @param message {string} Message text
+---@param level number Log level
+---@param line string Line number of the source code
+-- @param message string Message text
 function exports.log(level, line, ...)
-    local at = os.date('%Y-%m-%d,%H:%M:%S')
+    local at = os.date('%Y-%m-%d, %H:%M:%S')
 
     -- print to console
     -- console.log(at, level, line, message, ...)
@@ -22,21 +24,26 @@ function exports.log(level, line, ...)
     end
 
     -- write to file
-    local data = { at, level, line }
+    local message = {}
 
     for _, value in ipairs(args) do
         if (value ~= nil) then
             local valueType = type(value)
             if (valueType == 'boolean') then
-                table.insert(data, value and 'true' or 'false')
-            elseif (valueType ~= 'table') then
-                table.insert(data, value)
+                table.insert(message, value and 'true' or 'false')
+
+            elseif (valueType == 'table') then
+                table.insert(message, json.stringify(value))
+
+            else
+                table.insert(message, value)
             end
         end
     end
 
     local LOG_MAX_SIZE = 1024 * 64 -- in bytes
-    local logMessage = table.concat(data, ',') .. '\r\n'
+    local data = { at, level, line, table.concat(message, ' ') }
+    local logMessage = table.concat(data, ', ') .. '\r\n'
     local filename = "/tmp/log/wotc.log"
     fs.stat(filename, function(err, stat)
         if (stat and stat.size > LOG_MAX_SIZE) then
@@ -50,8 +57,7 @@ function exports.log(level, line, ...)
 end
 
 -- Init log module
--- @param client {Thing} WoT client
-function exports.init(client)
+function exports.init(config)
     console.error = function (message, ...)
         exports.log(LEVEL_ERROR, console.getFileLine(), message, ...)
     end
@@ -62,6 +68,14 @@ function exports.init(client)
 
     console.info = function (message, ...)
         exports.log(LEVEL_INFO, console.getFileLine(), message, ...)
+    end
+
+    local level = config and tonumber(config.level)
+    if (level and (level == 0)) then
+        print('log: Start debug...')
+        console.log = function (message, ...)
+            exports.log(LEVEL_DEBUG, console.getFileLine(), message, ...)
+        end
     end
 end
 

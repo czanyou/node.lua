@@ -8,17 +8,24 @@ local PORT = 8877
 -- Tunnel client
 -- 用于和云服务器建议 TCP/IP 隧道，充许外网的客户端访问本地的服务
 
-exports.createSession = function(serverPort, serverAddress, localPort, localAddress, sessionId)
-    local function createLocalClient(localPort, localHost, callback)
+exports.createSession = function(options, sessionId)
+    -- 创建和本地服务的连接
+    ---@param localPort integer
+    ---@param localAddress string
+    ---@param callback function
+    local function createLocalClient(localPort, localAddress, callback)
         local localClient = nil
         local buffer = nil
 
         -- localClient
         localClient = net.Socket:new()
+
+        -- error
         localClient:on("error", function(error)
             console.log("local client error", error)
         end)
 
+        -- end
         localClient:on("end", function(error)
             console.log("on client local end", error)
 
@@ -30,30 +37,31 @@ exports.createSession = function(serverPort, serverAddress, localPort, localAddr
             end
         end)
 
-        local function onLocalConnect()
-            console.log('on client local connect')
+        -- data
+        local onData = function(chunk)
+            -- console.log('on client local data', chunk)
 
-            local onData = function(chunk)
-                -- console.log('on client local data', chunk)
-
-                local remoteClient = localClient.remoteClient
-                if (remoteClient) then
-                    if (buffer) then
-                        remoteClient:write(buffer)
-                        buffer = nil
-                    end
-
-                    remoteClient:write(chunk)
-                    return
-                end
-
+            local remoteClient = localClient.remoteClient
+            if (remoteClient) then
                 if (buffer) then
-                    buffer = buffer .. chunk
-                else
-                    buffer = chunk
+                    remoteClient:write(buffer)
+                    buffer = nil
                 end
+
+                remoteClient:write(chunk)
+                return
             end
 
+            if (buffer) then
+                buffer = buffer .. chunk
+            else
+                buffer = chunk
+            end
+        end
+
+        -- connected
+        local function onLocalConnect()
+            console.log('on client local connect')
             localClient:on("data", onData)
 
             if (callback) then
@@ -61,25 +69,35 @@ exports.createSession = function(serverPort, serverAddress, localPort, localAddr
             end
         end
 
-        console.log('createLocalClient', localPort, localHost)
+        -- connect
+        console.log('createLocalClient', localPort, localAddress)
+        localClient:connect(localPort, localAddress, onLocalConnect)
 
-        localClient:connect(localPort, localHost, onLocalConnect)
+        localClient.localPort = localPort
+        localClient.localAddress = localAddress
         return localClient
     end
 
-    local function createRemoteClient(remotePort, remoteHost, sessionId, localClient)
+    -- 创建和远端代理服务器的连接
+    ---@param serverPort integer
+    ---@param serverAddress string
+    ---@param sessionId string
+    ---@param localClient any
+    local function createRemoteClient(serverPort, serverAddress, sessionId, localClient)
         local remoteClient = nil
 
-        console.log('createRemoteClient', remotePort, remoteHost)
-    
         -- remoteClient
         remoteClient = net.Socket:new()
+
+        -- error
         remoteClient:on("error", function(error)
             console.log("remote client error", error)
         end)
 
+        -- end
         remoteClient:on("end", function(error)
             console.log("on client remote end", error)
+            remoteClient.isEnd = true
 
             if (localClient) then
                 localClient:close()
@@ -87,30 +105,35 @@ exports.createSession = function(serverPort, serverAddress, localPort, localAddr
             end
         end)
 
+        -- data
+        local onRemoteData = function(data)
+            -- console.log('on client remote data', data)
+
+            localClient:write(data)
+        end
+
+        -- connected
         local function onRemoteConnect()
             console.log('on client remote connect')
             localClient.remoteClient = remoteClient
+            remoteClient.connected = true
 
-            local onData = function(data)
-                -- console.log('on client remote data', data)
-
-                localClient:write(data)
-            end
-
-            remoteClient:on("data", onData)
+            remoteClient:on("data", onRemoteData)
             remoteClient:write("tunnel\n" .. sessionId .. "\n\n")
         end
 
-        remoteClient:connect(remotePort, remoteHost, onRemoteConnect)
+        -- connect
+        console.log('createRemoteClient', serverPort, serverAddress)
+        remoteClient:connect(serverPort, serverAddress, onRemoteConnect)
     end
 
-    local remotePort = serverPort
-    local remoteHost = serverAddress
+    local serverPort = options.serverPort
+    local serverAddress = options.serverAddress
 
+    -- connect
     console.log('createSession', serverPort, serverAddress)
-
-    local localClient = createLocalClient(localPort, localAddress, function(localClient)
-        createRemoteClient(remotePort, remoteHost, sessionId, localClient)
+    local localClient = createLocalClient(options.localPort, options.localAddress, function(localClient)
+        createRemoteClient(serverPort, serverAddress, sessionId, localClient)
     end)
 
     return localClient
@@ -121,55 +144,72 @@ end
 -- @param {String} serverAddress 隧道服务器地址
 -- @param {Number} localPort 要代理的本地服务器端口
 -- @param {String} localAddress 要代理的本地服务器地址
-exports.createClient = function(serverPort, serverAddress, localPort, localAddress, callback)
-    localAddress = localAddress or '127.0.0.1'
-
-	local client = net.Socket:new()
-	client:on("error", function(error)
+-- serverPort, serverAddress, localPort, localAddress,
+exports.createClient = function(options, callback)
+	local tunnelClient = net.Socket:new()
+	tunnelClient:on("error", function(error)
         console.log("client error", error)
     end)
 
-    client.connections = {}
+    tunnelClient.connections = {}
+    tunnelClient.isEnd = false
+    tunnelClient.serverConnected = false
 
+    local remotePort = options.remotePort
+
+    -- ping
     local function onPingTimer()
 		local function onWrite(err)
-			
+
         end
-        
-        client:write("ping\n\n", onWrite)
+
+        local request = "ping\n"
+        if (remotePort) then
+            request = request .. remotePort .. "\n"
+        end
+
+        request = request .. "\n"
+        console.log('ping', remotePort, request)
+
+        tunnelClient:write(request, onWrite)
     end
 
     local function onRequestMessage(lines)
         local sessionId = lines[2]
-        local connection = client.connections[sessionId]
+        local connection = tunnelClient.connections[sessionId]
         if (connection) then
             return connection
         end
 
-        connection = exports.createSession(serverPort, serverAddress, localPort, localAddress, sessionId)
+        connection = exports.createSession(options, sessionId)
         if (connection) then
-            client.connections[sessionId] = connection
+            tunnelClient.connections[sessionId] = connection
         end
 
         return connection
     end
 
+    -- pong
     local function onPongMessage(lines)
         local port = lines[2]
         local token = lines[3]
-        client.port = port
-        client.token = token
+        tunnelClient.port = port
+        tunnelClient.token = token
+        tunnelClient.lastPongTime = Date.now()
 
         if (callback) then
             callback(port, token)
         end
     end
 
+    -- connect
     local function onClientConnect()
-        console.log('tunnel client on connect')
-        
+        console.log('tunnel client - on connect')
+
+        tunnelClient.serverConnected = true
         local buffer
 
+        -- message
         local function onMessage(message)
             -- console.log('client message', message)
             local lines = string.split(message, '\n')
@@ -187,6 +227,7 @@ exports.createClient = function(serverPort, serverAddress, localPort, localAddre
             end
         end
 
+        -- data
         local function onData(chunk)
             -- console.log('data', chunk)
 
@@ -195,7 +236,7 @@ exports.createClient = function(serverPort, serverAddress, localPort, localAddre
             else
                 buffer = chunk
             end
-            
+
             while (buffer and #buffer > 0) do
                 local position = string.find(buffer, '\n\n')
                 if (not position) then
@@ -206,61 +247,110 @@ exports.createClient = function(serverPort, serverAddress, localPort, localAddre
                 buffer = string.sub(buffer, position + 2)
 
                 onMessage(message)
-                -- console.log('message', message, buffer)            
+                -- console.log('message', message, buffer)
             end
 		end
 
         local function onEnd(err)
             console.log("tunnel client:end", err)
-            client.isEnd = true
+            tunnelClient.isEnd = true
         end
 
-        client:on("data", onData)
-        client:on("end", onEnd)
+        tunnelClient:on("data", onData)
+        tunnelClient:on("end", onEnd)
 
         onPingTimer()
 
-        if (not client.pingTimer) then
-            client.pingTimer = setInterval(10000, onPingTimer)
+        if (not tunnelClient.pingTimer) then
+            tunnelClient.pingTimer = setInterval(10 * 1000, onPingTimer)
         end
-	end
-
-    client:connect(serverPort, serverAddress, onClientConnect)
-    return client
-end
-
-exports.start = function(localPort, localAddress, callback)
-    local client = exports.client
-    if (client) then
-        if (callback) then
-            callback(client.port, client.token)
-        end
-        return client
     end
 
-    localPort = tonumber(localPort or 80)
-    localAddress = localAddress or '127.0.0.1'
-    console.log('start tunnel (local address)', localAddress, localPort)
+    tunnelClient.remotePort = options.remotePort
+    tunnelClient.serverPort = options.serverPort
+    tunnelClient.serverAddress = options.serverAddress
 
-    local remotePort = PORT
-    local remoteAddress = 'www.wotcloud.cn'
-    client = exports.createClient(remotePort, remoteAddress, localPort, localAddress, function(port, token)
+    tunnelClient:connect(options.serverPort, options.serverAddress, onClientConnect)
+    return tunnelClient
+end
+
+exports.getStatus = function()
+    local status = { code = 0 }
+
+    local client = exports.client
+    -- console.log('client', client)
+
+    if (client) then
+        status.port = client.port
+        status.token = client.token
+        status.destroyed = client.destroyed
+        status.isEnd = client.isEnd
+        status.lastPongTime = client.lastPongTime
+
+        status.serverPort = client.serverPort
+        status.serverAddress = client.serverAddress
+        status.serverConnected = client.serverConnected
+    end
+
+    status.sessions = {}
+    local sessions = client and client.connections
+    if (sessions) then
+        for name, session in pairs(sessions) do
+            local info = {
+                localPort = session.localPort,
+                localAddress = session.localAddress
+            }
+
+            local remoteClient = session.remoteClient
+            if (remoteClient) then
+                info.remoteConnected = remoteClient.connected
+            end
+
+            status.sessions[name] = info
+        end
+    end
+
+    return status
+end
+
+exports.start = function(options, callback)
+    local tunnelClient = exports.client
+    if (tunnelClient) then
+        if (callback) then
+            callback(tunnelClient.port, tunnelClient.token)
+        end
+        return tunnelClient
+    end
+
+    exports.options = options
+
+    options.localPort = tonumber(options.localPort) or 80
+    options.localAddress = options.localAddress or '127.0.0.1'
+    console.log('start tunnel (local address)', options.localAddress, options.localPort)
+
+    options.remotePort = tonumber(options.remotePort) or 40000
+    options.remoteAddress = options.remoteAddress or 'iot.wotcloud.cn'
+
+    options.serverPort = tonumber(options.serverPort) or PORT
+    options.serverAddress = options.remoteAddress or 'iot.wotcloud.cn'
+
+    tunnelClient = exports.createClient(options, function(port, token)
         if (callback) then
             callback(port, token)
             callback = nil
         end
     end)
 
-    exports.client = client
+    exports.client = tunnelClient
 
-    return client
+    return tunnelClient
 end
 
 exports.stop = function()
-    local client =  exports.client
+    local tunnelClient =  exports.client
     exports.client = nil
-    if (client) then
-        local connections = client.connections or {}
+    if (tunnelClient) then
+        local connections = tunnelClient.connections or {}
         for index, connection in ipairs(connections) do
             local remoteClient = connection.remoteClient
             connection.remoteClient = nil
@@ -271,8 +361,8 @@ exports.stop = function()
             connection:close()
         end
 
-        client.connections = {}
-        client:close()
+        tunnelClient.connections = {}
+        tunnelClient:close()
     end
 end
 

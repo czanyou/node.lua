@@ -1,11 +1,13 @@
 # 核心 (Core)
 
-## core.instanceof(obj, class)
+## core.instanceof
+
+> core.instanceof(obj, class)
 
 判断指定的对象是否是指定的类的实例
 
-- `obj` {object} 对象
-- `class` {Class} 类
+- obj `{object}` 对象
+- class `{Class}` 类
 
 
 ## 对象 (Object)
@@ -47,22 +49,17 @@ EventEmitter 会在添加 listener 时触发 'newListener' 事件，删除 liste
 
 #### 事件: 'newListener'
 
-- `event` {string} 事件名
-- `listener` {function} 事件处理函数
+- event `{string}` 事件名
+- listener `{function}` 事件处理函数
 
 在添加 listener 时会发生该事件。 此时无法确定 listener 是否在 emitter.listeners(event) 返回的列表中。
 
 #### 事件: 'removeListener'
 
-- `event` {string} 事件名
-- `listener` {function} 事件处理函数
+- event `{string}` 事件名
+- listener `{function}` 事件处理函数
 
 在移除 listener 时会发生该事件。此时无法确定 listener 是否在 emitter.listeners(event) 返回的列表中。
-
-### emitter.addListener
-
-emitter.on 方法别名
-
 
 ### emitter.emit
 
@@ -70,7 +67,7 @@ emitter.on 方法别名
 
 使用提供的参数按顺序执行指定事件的 listener
 
-- `event` {string} 事件名
+- event `{string}` 事件名
 
 若事件有 listeners 则返回 true 否则返回 false。
 
@@ -81,7 +78,7 @@ emitter.on 方法别名
 
 返回指定事件的 listener 数组
 
-- `event` {string} 事件名
+- event `{string}` 事件名
 
 ```lua
 server:on('connection', function (stream) 
@@ -98,8 +95,8 @@ print(server:listeners('connection')); -- [ [Function] ]
 
 添加一个 listener 至特定事件的 listener 数组尾部。
 
-- `event` {string} 事件名
-- `listener` {function} 事件处理函数
+- event `{string}` 事件名
+- listener `{function}` 事件处理函数
 
 ```lua
 server:on('connection', function (stream) 
@@ -116,8 +113,8 @@ end);
 
 添加一个一次性 listener，这个 listener 只会在下一次事件发生时被触发一次，触发完成后就被删除。
 
-- `event` {string} 事件名
-- `listener` {function} 事件处理函数
+- event `{string}` 事件名
+- listener `{function}` 事件处理函数
 
 ```lua
 server:once('connection', function (stream) 
@@ -134,8 +131,8 @@ end)
 
 从一个事件的 listener 数组中删除一个 listener, 注意：此操作会改变 listener 数组中在当前 listener 后的 listener 的位置下标
 
-- `event` {string} 事件名
-- `listener` {function} 事件处理函数
+- event `{string}` 事件名
+- listener `{function}` 事件处理函数
 
 ```lua
 local callback = function(stream) 
@@ -158,7 +155,7 @@ server:removeListener('connection', callback)
 
 删除所有 listener，或者删除某些事件 (event) 的 listener
 
-- `event` {string} 事件名
+- event `{string}` 事件名
 
 返回 emitter，方便链式调用。
 
@@ -169,7 +166,7 @@ server:removeListener('connection', callback)
 
 在默认情况下，EventEmitter 会在多于 10 个 listener 监听某个事件的时候出现警告，此限制在寻找内存泄露时非常有用。 显然，也不是所有的 Emitter 事件都要被限制在 10 个 listener 以下，在这种情况下可以使用这个函数来改变这个限制。设置 0 这样可以没有限制。
 
-- `n` {number} 
+- n `{number}` 
   
 返回 emitter，方便链式调用。
 
@@ -180,4 +177,4 @@ server:removeListener('connection', callback)
 
 返回指定事件的 listeners 个数
 
-- `event` {string} 事件名
+- event `{string}` 事件名

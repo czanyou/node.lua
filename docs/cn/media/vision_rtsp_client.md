@@ -73,34 +73,36 @@
 
 ## 类 `RtspClient`
 
-### 事件 'connect'
+### 事件
+
+#### 事件 'connect'
 
 当连接到 RTSP 服务器时
 
-### 事件 'close'
+#### 事件 'close'
 
 当这个 RTSP 客户端关闭时
 
-### 事件 'describe'
+#### 事件 'describe'
 
 当收到 SDP 描述信息时
 
-- sdpString {string} SDP 字符串
+- sdpString `{string}` SDP 字符串
 
-### 事件 'error'
+#### 事件 'error'
 
 当发生连接等错误时
 
-- error {string} 错误信息
+- error `{string}` 错误信息
 
-### 事件 'response'
+#### 事件 'response'
 
 当收到应答消息时
 
-- request {object} 相关的请求消息
-- response {object} 收到的应答消息
+- request `{object}` 相关的请求消息
+- response `{object}` 收到的应答消息
 
-### 事件 'sample'
+#### 事件 'sample'
 
 当收到新的数据包时
 
@@ -121,16 +123,16 @@
 }
 ```
 
-- data {array} 这个 Sample 的有效负载内容
-- isEnd {boolean} 这个 Sample 的分片结束标记，源自 RTP 包
-- isFragment {boolean} 这个 Sample 的分片标记，源自 RTP 包
-- isStart {boolean} 这个 Sample 的分片开始标记，源自 RTP 包
-- isVideo {boolean} 指出这个 Sample 是否属视频流
-- marker {boolean} 这个 Sample 的 marker 标记，表示是否是一帧的最后一个包，源自 RTP 包
-- payload {number} 这个 Sample 的 RTP 负载格式，源自 RTP 包
-- rtpTime {number} 这个 Sample 的 RTP 时间，源自 RTP 包
-- sampleTime {number} 这个 Sample 的时间戳，单位为 1/1000 秒
-- sequence {number} 这个 Sample 的序列号，源自 RTP 包
+- data `{array}` 这个 Sample 的有效负载内容
+- isEnd `{boolean}` 这个 Sample 的分片结束标记，源自 RTP 包
+- isFragment `{boolean}` 这个 Sample 的分片标记，源自 RTP 包
+- isStart `{boolean}` 这个 Sample 的分片开始标记，源自 RTP 包
+- isVideo `{boolean}` 指出这个 Sample 是否属视频流
+- marker `{boolean}` 这个 Sample 的 marker 标记，表示是否是一帧的最后一个包，源自 RTP 包
+- payload `{number}` 这个 Sample 的 RTP 负载格式，源自 RTP 包
+- rtpTime `{number}` 这个 Sample 的 RTP 时间，源自 RTP 包
+- sampleTime `{number}` 这个 Sample 的时间戳，单位为 1/1000 秒
+- sequence `{number}` 这个 Sample 的序列号，源自 RTP 包
 
 H.264 NALU 是 H.264 图像帧的基本组成部分，一帧视频由 1 到多个 NALU 组成。
 
@@ -186,11 +188,11 @@ NALU 会被分成多个小于 1500 的分片来传输，isStart 表示这个 NAL
     end)
 ```
 
-### 事件 'state'
+#### 事件 'state'
 
 当连接状态发生改变时
 
-- state {string} 连接状态
+- state `{string}` 连接状态
 
 状态列表:
 
@@ -200,15 +202,15 @@ NALU 会被分成多个小于 1500 的分片来传输，isStart 表示这个 NAL
 - STATE_PLAYING = 30 -- message sent: PAUSE/TEARDOWN/PLAY/SETUP
 - STATE_RECORDING = 40
 
-### 事件 'ts'
+#### 事件 'ts'
 
 处理收到的 TS 流数据包
 
 当客户端收到的是 TS 流, 它不会解析流的内容, 而是直接将数据包转交给上层处理.
 
-- rtpInfo {object} RTP 包头信息, 一般可以忽略，因为 TS 流本身包含了足够多的信息。
-- packet {string} 包含 TS 流数据包的缓存区对象
-- offset {number} 有效数据偏移位置
+- rtpInfo `{object}` RTP 包头信息, 一般可以忽略，因为 TS 流本身包含了足够多的信息。
+- packet `{string}` 包含 TS 流数据包的缓存区对象
+- offset `{number}` 有效数据偏移位置
 
 packet 中包含了多个 TS 包，每个包的长度固定为 188, 开始位置为 offset。
 
@@ -234,15 +236,17 @@ packet 中包含了多个 TS 包，每个包的长度固定为 188, 开始位置
 
 ```
 
-### RtspClient.rtspState
+### 属性
+
+#### RtspClient.rtspState
 
 这个客户端当前会话状态
 
-### RtspClient.isMpegTSMode
+#### RtspClient.isMpegTSMode
 
 指出这个客户端接收的是否是 TS 流
 
-### RtspClient.mediaTracks
+#### RtspClient.mediaTracks
 
 当前打开的 URL 包含的媒体轨道信息数组, 如视频流, 音频流
 
@@ -285,10 +289,23 @@ packet 中包含了多个 TS 包，每个包的长度固定为 188, 开始位置
 
 关闭这个 RTSP 客户端
 
+### RtspClient:getParameterSets
+
+> RtspClient:getParameterSets()
+
+
 ### RtspClient:open
 
 > RtspClient:open(url)
 
 打开指定的 RTSP URL 地址
 
-- url {string} RTSP URL 地址, 比如 'rtsp://test.com:554/live.mp4'
+- url `{string}` RTSP URL 地址, 比如 'rtsp://test.com:554/live.mp4'
+
+
+### RtspClient:sendPLAY
+
+> RtspClient:sendPLAY(scale)
+
+- scale `integer`
+

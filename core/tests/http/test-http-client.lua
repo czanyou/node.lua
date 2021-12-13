@@ -17,7 +17,8 @@ limitations under the License.
 --]]
 local test_url = 'http://www.baidu.com'
 
-local tap = require('ext/tap')
+local util = require('util')
+local tap = require('util/tap')
 local test = tap.test
 
 local fs = require('fs')
@@ -30,10 +31,10 @@ test("http-client", function(expect)
         assert(res.statusCode == 200)
         assert(res.httpVersion == '1.1')
         res:on('data', function(chunk)
-            p("ondata", {chunk = #chunk})
+            console.log("ondata", {chunk = #chunk})
         end)
         res:on('end', expect(function()
-            p('stream ended')
+            console.log('stream ended')
         end))
     end))
 end)
@@ -49,7 +50,8 @@ end)
 
 test("http-client stream file", function(expect)
     local port = 50010
-    
+
+    -- emit
     local function interceptEmit(stream, logString)
         local oldEmit = stream.emit
         stream.emit = function(self, type, ...)
@@ -57,21 +59,39 @@ test("http-client stream file", function(expect)
             return oldEmit(self, type, ...)
         end
     end
-    
-    local filename = path.join(process.cwd(), 'test-http-client.lua')
-    
+
+    local filename = path.join(util.dirname(), 'test-http-client.lua')
+    console.log('filename', filename)
+
+    -- server
     local server
     server = http.createServer(function(req, res)
         local fileInput = fs.createReadStream(filename)
-        interceptEmit(fileInput, 'readable: ')
+        interceptEmit(fileInput, 'filestream: ')
         interceptEmit(res, 'response: ')
-        res:on('close', function()print('response: close(r)')server:destroy() end)
+
+        -- TODO: close EVENT
+        res:on('close', function()
+            print('response: close(r)')
+            server:destroy()
+        end)
+
+        res:on('end', function()
+            print('response: end(r)')
+            server:destroy()
+        end)
+
         fileInput:pipe(res)
-    
-    end):listen(port, function()
+    end)
+
+    -- client
+    server:listen(port, function()
         print('Server running ' .. port)
         http.get('http://127.0.0.1:' .. port, function(res)
-            res:on('data', function(data)print('data', #data) end)
+            res:on('data', function(data)
+                print('data', #data)
+            end)
+
             assert(res.statusCode == 200, 'validate status code')
         end)
     end)

@@ -12,4 +12,5 @@
 
 - [lnode 主程序](vision_lnode.md)
 - [lpm 命令行工具](vision_lpm.md)
+- [lci 命令行配置工具](vision_lci.md)
 - [lbuild 打包工具](vision_lbuild.md)

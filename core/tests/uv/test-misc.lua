@@ -1,4 +1,7 @@
-local tap = require("ext/tap")
+local tap = require('util/tap')
+local util = require('util')
+local assert = require('assert')
+local lutils = require('lutils')
 local test = tap.test
 
 test("uv.guess_handle", function(expect, uv)
@@ -7,8 +10,8 @@ test("uv.guess_handle", function(expect, uv)
         assert(uv.guess_handle(1)),
         assert(uv.guess_handle(2))
 	}
-	
-    console.log("stdio fd types: ", table.unpack(types))
+
+    console.log("stdio types", table.unpack(types))
 end)
 
 test("uv.version and uv.version_string", function(expect, uv)
@@ -23,20 +26,21 @@ test("memory size", function(expect, uv)
     local rss = uv.resident_set_memory()
     local total = uv.get_total_memory()
     local free = uv.get_free_memory()
-    
+
     assert(rss < total)
-    
-    console.log("memory.size: rss/free/total: ", rss, free, total)
+
+    console.log("memory: rss/free/total: ", rss, free, total)
 end)
 
 test("uv.uptime", function(expect, uv)
     local uptime = assert(uv.uptime())
-    console.log{"uv.uptime:", uptime}
+    console.log("uptime", uptime)
 end)
 
 test("uv.getrusage", function(expect, uv)
     local rusage = assert(uv.getrusage())
     console.log("rusage.maxrss:", rusage.maxrss)
+    -- console.log("rusage:", rusage)
 end)
 
 test("uv.cpu_info", function(expect, uv)
@@ -48,72 +52,92 @@ end)
 test("uv.interface_addresses", function(expect, uv)
     local addresses = assert(uv.interface_addresses())
     for name, info in pairs(addresses) do
-        --p('interface', name, addresses[name])
+        --console.log('interface', name, addresses[name])
         console.log("interface", name)
-    --p('info', info)
+        --console.log('info', info)
     end
 end)
 
 test("uv.loadavg", function(expect, uv)
-    local avg = {assert(uv.loadavg())}
+    local avg = { uv.loadavg() }
     console.log("loadavg", avg[1], avg[2], avg[3])
     assert(#avg == 3)
 end)
 
 test("uv.exepath", function(expect, uv)
-    local path = assert(uv.exepath())
-    console.log("exepath", path)
+    local exepath = assert(uv.exepath())
+    console.log("exepath", exepath)
 end)
 
 test("uv.os_homedir", function(expect, uv)
-    local path = assert(uv.os_homedir())
-    console.log("os_homedir", path)
+    local homedir = assert(uv.os_homedir())
+    console.log("homedir", homedir)
 end)
 
 test("uv.os_tmpdir", function(expect, uv)
-    local path = assert(uv.os_tmpdir())
-    console.log("os_tmpdir", path)
+    local tmpdir = assert(uv.os_tmpdir())
+    console.log("tmpdir", tmpdir)
 end)
 
 test("uv.os_gethostname", function(expect, uv)
-    local path = assert(uv.os_gethostname())
-    console.log("os_gethostname", path)
+    local hostname = assert(uv.os_gethostname())
+    console.log("hostname", hostname)
+end)
+
+test("uv.os_env_keys", function(expect, uv)
+    local keys = assert(lutils.os_env_keys())
+    console.log("os_env_keys", table.concat(keys, ','))
 end)
 
 test("uv.os_getenv", function(expect, uv)
-    local path = assert(uv.os_getenv("PATH"))
-    console.log("os_getenv", path)
+    local shell = uv.os_getenv("SHELL")
+    console.log("SHELL", shell)
+    assert(shell)
+
+    local path = uv.os_getenv("PATH")
+    console.log("PATH", path)
+    assert(path)
 end)
 
 test("uv.os_setenv", function(expect, uv)
-    uv.os_setenv("TEST", "TEST")
-    local path = assert(uv.os_getenv("TEST"))
-    p("os_setenv", path)
+    uv.os_setenv("TEST", "test")
+    local value = assert(uv.os_getenv("TEST"))
+    console.log("TEST", value)
+    assert.equal(value, 'test')
 end)
 
 test("uv.os_unsetenv", function(expect, uv)
     uv.os_unsetenv("TEST")
     local path = uv.os_getenv("TEST")
     console.log("os_unsetenv", path)
+    assert(not path)
 end)
 
 test("uv.cwd and uv.chdir", function(expect, uv)
     local old = assert(uv.cwd())
-    --p('old chdir', old)
+    -- console.log('old chdir', old)
     assert(uv.chdir("/"))
     local cwd = assert(uv.cwd())
-    console.log("new chdir", cwd)
+    -- console.log("new chdir", cwd)
     assert(cwd ~= old)
     assert(uv.chdir(old))
 end)
 
 test("uv.hrtime", function(expect, uv)
-    local time = assert(uv.hrtime())
-    console.log("hrtime", time)
+    local hrtime = assert(uv.hrtime())
+    console.log("hrtime", hrtime)
 end)
 
 test("test_getpid", function(expect, uv)
-    assert(uv.getpid())
+    local pid = uv.getpid()
+    assert(pid)
+    console.log('pid', pid)
+end)
+
+test("test_random", function(expect, uv)
+    local ret = uv.random(32)
+    console.log(#ret, util.hexEncode(ret))
+    assert(#ret == 32)
 end)
 
 tap.run()

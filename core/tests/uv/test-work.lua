@@ -1,5 +1,5 @@
 local uv = require('luv')
-local tap = require('ext/tap')
+local tap = require('util/tap')
 
 tap.test("test uv.new_work", function()
 	print('Please be patient, the test cost a lots of time')

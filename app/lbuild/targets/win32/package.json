@@ -4,6 +4,5 @@
 	"tags": ["win32", "core"],
     "applications": ["lhttpd", "lpm"],
 	"files": ["install.bat"],
-    "libs": ["lts.dll", "lsqlite.dll"],
-	"version": "0.0.1"
+    "libs": ["lts.dll", "lsqlite.dll"]
 }

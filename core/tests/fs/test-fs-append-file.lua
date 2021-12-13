@@ -29,7 +29,7 @@ local fileData2 = '南越国是前203年至前111年存在于岭南地区的一�
 		'历经五代君主。南越国是岭南地区的第一个有记载的政权国家，采用封建制和郡县制并存的制度，' ..
 		'它的建立保证了秦末乱世岭南地区社会秩序的稳定，有效的改善了岭南地区落后的政治、##济现状。\n'
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local dirname = require('util').dirname()

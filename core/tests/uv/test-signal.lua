@@ -1,5 +1,5 @@
-local uv    = require('luv')
-local tap   = require('ext/tap')
+local assert = require('assert')
+local tap   = require('util/tap')
 local test = tap.test
 
 local isWindows = os.platform() == "win32"
@@ -33,11 +33,12 @@ test("Catch SIGINT", function (expect, uv)
 		args = {"-"},
 		stdio = { stdin, 1, 2 }
 	}
-	
+
 	local callback = function (code, signal)
-		p("exit", {code=code, signal=signal}, {pid=pid})
-		assert(code == 7)
-		assert(signal == 0)
+		console.log("exit", { code = code, signal = signal }, { pid = pid })
+		assert.equal(signal, 0)
+		assert.equal(code, 7)
+
 		uv.close(stdin)
 		uv.close(child)
 	end
@@ -50,10 +51,8 @@ test("Catch SIGINT", function (expect, uv)
 	-- send sigint
 	local timer = uv.new_timer()
 	uv.timer_start(timer, 200, 0, expect(function ()
-		--print("Sending child SIGINT")
+		-- print("Sending child SIGINT")
 		uv.process_kill(child, "sigint")
 		uv.close(timer)
 	end))
 end)
-
-tap.run()

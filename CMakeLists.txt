@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 project(Node.lua)  # Project Name
 
 # Project Version Code
-set(LNODE_MAJOR_VERSION 4)
-set(LNODE_MINOR_VERSION 8)
+set(LNODE_MAJOR_VERSION 5)
+set(LNODE_MINOR_VERSION 0)
 
 set(LNODE_VERSION ${LNODE_MAJOR_VERSION}.${LNODE_MINOR_VERSION})
 add_definitions(-DLNODE_MAJOR_VERSION=${LNODE_MAJOR_VERSION})
@@ -14,14 +14,6 @@ add_definitions(-DLNODE_MINOR_VERSION=${LNODE_MINOR_VERSION})
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
   set(LINUX ON)
 endif ()
-
-message(STATUS "Build: LNODE_VERSION=${LNODE_VERSION}  ")
-message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
-message(STATUS "CMAKE_SYSTEM_VERSION: ${CMAKE_SYSTEM_VERSION}")
-message(STATUS "CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
-message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
-message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
-
 
 ###############################################################################
 # Build Options
@@ -40,6 +32,7 @@ elseif (LINUX)
 
 endif ()
 
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 ###############################################################################
 # Cross compiler options
@@ -52,9 +45,10 @@ endif ()
 
 include(config/${BOARD_TYPE}.cmake)
 
-message(STATUS "Build: BOARD_TYPE: ${BOARD_TYPE}")
-message(STATUS "Build: CC: ${CMAKE_C_COMPILER}")
-
+message(STATUS "# LNODE_VERSION: ${LNODE_VERSION}  ")
+message(STATUS "# BOARD_TYPE: ${BOARD_TYPE}")
+message(STATUS "# CC: ${CMAKE_C_COMPILER}")
+message(STATUS "")
 
 ###############################################################################
 # OS build options
@@ -86,9 +80,15 @@ elseif (LINUX)
 
   # Retain function names, etc., to facilitate dlopen or debugging
   add_definitions("-rdynamic")
-
 endif ()
 
+message(STATUS "= CMAKE OPTIONS: =========")
+message(STATUS "# CMAKE_SYSTEM_NAME: [${CMAKE_SYSTEM_NAME}]")
+message(STATUS "# CMAKE_SYSTEM_VERSION: [${CMAKE_SYSTEM_VERSION}]")
+message(STATUS "# CMAKE_SYSTEM_PROCESSOR: [${CMAKE_SYSTEM_PROCESSOR}]")
+message(STATUS "# CMAKE_C_FLAGS: [${CMAKE_C_FLAGS}]")
+message(STATUS "# CMAKE_CXX_FLAGS: [${CMAKE_CXX_FLAGS}]")
+message(STATUS "")
 
 ###############################################################################
 # build sub directory

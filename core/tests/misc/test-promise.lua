@@ -2,7 +2,7 @@ local assert    = require('assert')
 local Promise   = require('promise')
 local util      = require('util')
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("test promise.new", function()
@@ -190,7 +190,7 @@ test("test util.promisify - fulfill", function(expect, ...)
         assert(false)
     end)):catch(expect(function(error)
         console.log('error', error)
-        setImmediate(function() assert(false) end)
+        -- setImmediate(function() assert(false) end)
     end))
 end)
 

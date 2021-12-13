@@ -1,8 +1,9 @@
 local fs = require('fs')
-local rtmp = require('rtmp')
 local assert = require('assert')
 
-local exports = {}
+local tap = require('util/tap')
+local rtmp = require('rtmp')
+
 local flv = rtmp.flv
 
 local function loadFlv()
@@ -41,17 +42,17 @@ local function loadFlv()
         -- console.log('tag', index, tag)
 
         if (tag.tagType == 0x09) then
-            local result = flv.decodeVideoTag(tagData)
+            local result = flv.parseVideoTag(tagData)
             -- console.log(result)
 
             tags[#tags + 1] = tag
 
         elseif (tag.tagType == 0x08) then
-            local result = flv.decodeAudioTag(tagData)
+            local result = flv.parseAudioTag(tagData)
             --console.log(result)
 
         elseif (tag.tagType == 0x12) then
-            local result = flv.decodeMetadataTag(tagData)
+            local result = flv.parseMetadataTag(tagData)
             -- console.log(result)
 
             tags[#tags + 1] = tag
@@ -112,14 +113,14 @@ local function saveFlv(tags)
     stream:finish()
 end
 
--- 测试 encodeVideoConfiguration & decodeVideoTag
+-- 测试 encodeVideoConfiguration & parseVideoTag
 local function test_flv()
     local sps = 'aaaaaaa'
     local pps = '1111111'
     local data = flv.encodeVideoConfiguration(sps, pps)
     console.printBuffer(data)
 
-    local result = flv.decodeVideoTag(data)
+    local result = flv.parseVideoTag(data)
     console.log(result)
 
     assert.equal(result.sps, sps)
@@ -127,7 +128,6 @@ local function test_flv()
 end
 
 test_flv()
-
 
 local tags = loadFlv()
 console.log('tags.size', #tags)

@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,17 +19,15 @@ limitations under the License.
 local fs		= require('fs')
 local json		= require('json')
 local path		= require('path')
-local conf		= require('app/conf')
 local app		= require('app')
+
+local config    = require('./config')
 
 -------------------------------------------------------------------------------
 -- meta
 
 local meta = { }
-meta.name        = "lpm"
-meta.version     = "3.0.2"
 meta.description = "Lua package manager (Node.lua command-line tool)."
-meta.tags        = { "lpm", "package", "command-line" }
 
 -------------------------------------------------------------------------------
 -- exports
@@ -40,125 +38,6 @@ exports.rootPath = app.rootPath
 
 -------------------------------------------------------------------------------
 -- config
-
-local config = {}
-
-local function getProfile(key)
-	local pos = key:find(':')
-	local module = nil
-	if (pos) then
-		module = key:sub(1, pos - 1)
-		key = key:sub(pos + 1)
-	end
-
-	return conf(module or 'user'), key
-end
-
--- 打印指定名称的配置参数项的值
-function config.get(key)
-	if (not key) then
-		print("\nError: missing required argument `key`.")
-		print('\nUsage: lpm get <key>')
-		return
-	end
-
-	local profile, name = getProfile(key)
-	if (name == '*') then
-		console.printr(profile.settings)
-
-	else
-		console.printr(profile:get(name))
-	end
-end
-
-function config.help()
-	local text = [[
-
-Manage the lpm configuration files
-
-Usage:
-  lpm config get <key>         - Get value for <key>.
-  lpm config list              - List all config files
-  lpm config set <key> <value> - Sets the specified config <key> <value>.
-  lpm config setjson <key> <json> - Sets the specified config <key> <json>.
-  lpm config unset <key>       - Clears the specified config <key>.
-  lpm get <key>                - Get value for <key>.
-  lpm set <key> <value>        - Sets the specified config <key> <value>.
-
-Aliases: c, conf
-
-]]
-
-	print(console.colorful(text))
-end
-
-function config.list(name)
-	if (not name) then
-		name = 'user'
-	end
-
-	local profile = conf(name)
-
-	print(profile.filename .. ': ')
-	console.printr(profile.settings)
-end
-
--- 设置指定名称的配置参数项的值
-function config.set(key, value)
-	if (not key) or (not value) then
-		print("\nError: missing required argument `key` and `value`.")
-		print('\nUsage: lpm set <key> <value>')
-		return
-	end
-
-	local profile, name = getProfile(key)
-	local oldValue = profile:get(name)
-	if (not oldValue) or (value ~= oldValue) then
-		profile:set(name, value)
-		profile:commit()
-	end
-
-	print('set `' .. tostring(name) .. '` = `' .. tostring(value) .. '`')
-end
-
-function config.setjson(key, value)
-	if (not key) or (not value) then
-		print("\nError: missing required argument `key` and `value`.")
-		print('\nUsage: lpm set <key> <value>')
-		return
-	end
-
-	value = json.parse(value)
-	if (value == nil) then
-		print('Invalid JSON text')
-		return
-	end
-
-	local profile, name = getProfile(key)
-	local oldValue = profile:get(name)
-	if (not oldValue) or (value ~= oldValue) then
-		profile:set(name, value)
-		profile:commit()
-	end
-
-	print('set `' .. tostring(name) .. '` = `' .. tostring(value) .. '`')
-end
-
--- 删除指定名称的配置参数项的值
-function config.unset(key)
-	if (not key) then
-		print("\nError: missing required argument `key`.")
-		print('\nUsage: lpm config unset <key>')
-		return
-	end
-
-	local profile, name = getProfile(key)
-	if (profile:set(name, nil)) then
-		profile:commit()
-
-		print('unset `' .. tostring(name) .. '`')
-	end
-end
 
 function exports.config(action, ...)
 	local method = config[action or 'help']
@@ -195,11 +74,6 @@ local _executeApplication = function (name, action, ...)
 	end
 end
 
--- Display lpm bin path
-function exports.bin()
-	console.printr(path.join(exports.rootPath, 'bin'))
-end
-
 -- Stop and delete the specified process
 function exports.delete(...)
 	local ret, err = app.delete(...)
@@ -222,34 +96,82 @@ function exports.ls(...)
 	app.printList(...)
 end
 
+function exports.open(pathname, ...)
+	local filename = pathname
+	if (not filename:startsWith('/')) then
+		filename = path.join(process.cwd(), pathname)
+	end
+
+	local miniz = require('miniz')
+	local reader = miniz.createReader(filename)
+	local name = 'lua/app.lua'
+	local data = reader:readFile(name)
+	if (not data) then
+		return -3, '"' .. name .. '" not exists!'
+	end
+
+	local basename = path.basename(filename, '.zip')
+	console.log('basename', basename)
+
+	if (not package.apps) then
+		package.apps = {}
+	end
+
+	package.apps[basename] = reader
+
+    --console.log(package.path)
+	local script, err = load(data, '@$app/' .. basename .. '/' .. name)
+	if (err) then
+		error(err)
+		return -4, err
+	end
+
+	console.log(process.argv)
+	_G.arg = table.pack(...)
+	script(...)
+end
+
 -- List all application processes
 function exports.ps(...)
 	app.printProcesses(...)
 end
 
 -- Restart the specified process
-function exports.restart(...)
-	local ret, err = app.restart(...)
-	console.printr(err or ret or '')
-end
+function exports.restart(name, ...)
+	local ret, err = app.restart(name, ...)
+	local result = ret and ret[name]
+	err = err or (result and result.error)
+	if (err) then
+		return console.printr('restart failed: ', err)
+	end
 
--- Display lpm root path
-function exports.root()
-	console.printr(exports.rootPath)
+	console.printr('restarted: ', name, result)
 end
 
 -- Start and daemonize an application
-function exports.start(...)
-	console.log('start', ...)
+function exports.start(name, ...)
+	-- console.log('start', name, ...)
 
-	local ret, err = app.start(...)
-	console.printr(err or ret or '')
+	local ret, err = app.start(name, ...)
+	local result = ret and ret[name]
+	err = err or (result and result.error)
+	if (err) then
+		return console.printr('start failed: ', err)
+	end
+
+	console.printr('started: ', name, result)
 end
 
 -- Stop the specified process
-function exports.stop(...)
-	local ret, err = app.stop(...)
-	console.printr(err or ret or '')
+function exports.stop(name, ...)
+	local ret, err = app.stop(name, ...)
+	local result = ret and ret[name]
+	err = err or (result and result.error)
+	if (err) then
+		return console.printr('stop failed: ', err)
+	end
+
+	console.printr('stopped: ', name, result)
 end
 
 function exports.watch(...)
@@ -259,160 +181,161 @@ end
 -------------------------------------------------------------------------------
 -- package & upgrade
 
-function exports.colors()
-	console.colors()
-end
-
 function exports.install(...)
-	require('lpm/update').install(...)
+	require('app/update').install(...)
 end
 
 -- Retrieve new lists of packages
 function exports.update(...)
-	require('lpm/update').update(...)
+	require('app/update').update(...)
 end
 
 function exports.upgrade(...)
-	require('lpm/update').upgrade(...)
+	require('app/update').upgrade(...)
 end
 
 -------------------------------------------------------------------------------
--- misc
+-- print
 
--- Scanning for nearby devices
-function exports.scan(timeout, serviceType)
-	local err, ssdp = pcall(require, 'ssdp')
-	if (not ssdp) then
-		return
-	end
-
-	local list = {}
-	print("Start scaning...")
-
-	local ssdpClient = ssdp.client({}, function(response, rinfo)
-		if (list[rinfo.ip]) then
-			return
-		end
-
-		local headers   = response.headers
-		local item      = {}
-		item.remote     = rinfo
-		item.usn        = headers["usn"] or ''
-
-		list[rinfo.ip] = item
-
-		--console.log(headers)
-
-		local model = headers['X-DeviceModel']
-		local name = rinfo.ip .. ' ' .. item.usn
-		if (model) then
-			name = name .. ' ' .. model
-		end
-
-		console.write('\r')  -- clear current line
-		print(rinfo.ip, item.usn, model)
-	end)
-
-	-- search for a service type
-	-- urn:schemas-webofthings-org:device
-	serviceType = serviceType or 'urn:schemas-upnp-org:service:cmpp-iot'
-	ssdpClient:search(serviceType)
-
-	local scanCount = 0
-	local scanTimer = nil
-	local scanMaxCount = tonumber(timeout) or 10
-
-	scanTimer = setInterval(500, function()
-		ssdpClient:search(serviceType)
-		console.write("\r " .. string.rep('.', scanCount))
-
-		scanCount = scanCount + 1
-		if (scanCount >= scanMaxCount) then
-			clearInterval(scanTimer)
-			scanTimer = nil
-
-			ssdpClient:stop()
-
-			console.write('\r') -- clear current line
-			print("End scaning...")
-		end
-	end)
+-- Display lpm bin path
+function exports.bin()
+	console.printr(path.join(exports.rootPath, 'bin'))
 end
+
+function exports.colors()
+	console.colors()
+end
+
+
+-- Display the help information
+function exports.help()
+	local fmt = [[
+
+lpm - lnode package manager.
+
+${braces}This is the CLI for Node.lua, Node.lua is a 'universal' platform work across
+many different systems, enabling install, configure, running and remove
+applications and utilities for Internet of Things.${normal}
+
+${highlight}usage: lpm <command> [args]${normal}
+
+where <command> is one of:
+
+${string}Configuration Commands:${normal}
+
+- config <args>     ${braces}Manager Node.lua configuration options. ${normal}
+- get <key>         ${braces}Get value for <key>. ${normal}
+- set <key> <value> ${braces}Set the specified config <key> <value>. ${normal}
+- unset <key>       ${braces}Clears the specified config <key>. ${normal}
+
+${string}Application Commands:${normal}
+
+- list <name>       ${braces}List all installed applications ${normal}
+- ps                ${braces}List running applications ${normal}
+- restart <name>    ${braces}Restart an application ${normal}
+- start <name>      ${braces}Start and daemonize an application ${normal}
+- stop <name>       ${braces}Stop an running application ${normal}
+
+${string}Update Commands:${normal}
+
+- update            ${braces}Retrieve new packages of applications ${normal}
+- upgrade system    ${braces}Perform an system upgrade ${normal}
+
+${string}Other Commands:${normal}
+
+- help              ${braces}Get help on lpm ${normal}
+- info              ${braces}Prints Node.lua system informations ${normal}
+- root              ${braces}Display Node.lua root path ${normal}
+- scan <timeout>    ${braces}Scan devices that support SSDP protocol. ${normal}
+- version           ${braces}Prints version informations ${normal}
+
+]]
+
+	print(console.colorful(fmt))
+	print('lpm@' .. process.version .. ' at ' .. app.rootPath)
+end
+
 
 function exports.info(...)
-	local path = package.path
-	local list = path:split(';')
-	print(console.colorful('${string}package.path:${normal}'))
-	for i = 1, #list do
-		print(list[i])
+	local function printInfo(name, value)
+		print(console.colorful('${braces}' .. name .. '      ${normal}') .. tostring(value))
 	end
 
-	print(console.colorful('${string}package.cpath:${normal}'))
-	local path = package.cpath
-	local list = path:split(';')
-	for i = 1, #list do
-		print(list[i])
+	local function printPath(name, value)
+		local list = value:split(';')
+		print(console.colorful('${string}' .. name .. ':${normal}'))
+		for i = 1, #list do
+			print(list[i])
+		end
 	end
 
-	print(console.colorful('${string}app.rootPath: ${normal}') .. (app.rootPath or '-'))
-	print(console.colorful('${string}app.nodePath: ${normal}') .. (app.nodePath or '-'))
-	print(console.colorful('${string}app.target:   ${normal}') .. (app.getSystemTarget() or '-'))
+	-- path
+	print('Node.lua runtime information:\r\n')
+	printPath('package.path', package.path)
+	printPath('package.cpath', package.cpath)
+
+	print(console.colorful('${string}app:${normal}'))
+	printInfo('rootPath', (app.rootPath or '-'))
+	printInfo('nodePath', (app.nodePath or '-'))
+	printInfo('target  ', (app.getSystemTarget() or '-'))
 	print();
 
-	print(console.colorful('${string}os.arch:      ${normal}') .. os.arch())
-	print(console.colorful('${string}os.time:      ${normal}') .. os.time())
-	print(console.colorful('${string}os.uptime:    ${normal}') .. os.uptime())
-	print(console.colorful('${string}os.clock:     ${normal}') .. os.clock())
-	print(console.colorful('${string}os.homedir:   ${normal}') .. os.homedir())
-	print(console.colorful('${string}os.hostname:  ${normal}') .. os.hostname())
-	print(console.colorful('${string}os.tmpdir:    ${normal}') .. os.tmpdir)
-	print(console.colorful('${string}os.platform:  ${normal}') .. os.platform())
-	print(console.colorful('${string}Date.now:     ${normal}') .. Date.now())
+	print(console.colorful('${string}os:${normal}'))
+	printInfo('arch    ', os.arch())
+	printInfo('time    ', os.time())
+	printInfo('uptime  ', os.uptime())
+	printInfo('clock   ', os.clock())
+	printInfo('homedir ', os.homedir())
+	printInfo('hostname', os.hostname())
+	printInfo('tmpdir  ', os.tmpdir)
+	printInfo('platform', os.platform())
+	printInfo('Date.now', Date.now())
 	print();
 
-	print(console.colorful('${string}process.cwd:      ${normal}') .. process.cwd())
-	print(console.colorful('${string}process.execPath: ${normal}') .. process.execPath)
-	print(console.colorful('${string}process.now:      ${normal}') .. process.now())
-	print(console.colorful('${string}process.hrtime:   ${normal}') .. process.hrtime())
-	print(console.colorful('${string}process.rootPath: ${normal}') .. process.rootPath)
+	print(console.colorful('${string}process:${normal}'))
+	printInfo('cwd     ', process.cwd())
+	printInfo('execPath', process.execPath)
+	printInfo('now     ', process.now())
+	printInfo('hrtime  ', process.hrtime())
+	printInfo('rootPath', process.rootPath)
 	print();
 
-	print(console.colorful('${string}console.stderr:  ${normal}'), console.stderr)
-	print(console.colorful('${string}console.stdin:   ${normal}'), console.stdin)
-	print(console.colorful('${string}console.stdout:  ${normal}'), console.stdout)
-	print(console.colorful('${string}console.theme:   ${normal}'), console.defaultTheme)
+	print(console.colorful('${string}console:${normal}'))
+	printInfo('theme   ', (console.defaultTheme or '-'))
 	print();
 end
 
-function exports.wget(url, name)
-	if (not url) then
-		print('empty url string')
-		return
-	end
-
-	local request = require('http/request')
-	request.download(url, {}, function(err, percent, response)
-		if (percent <= 100) then
-			console.write('\rDownloading: (' .. percent .. '%)...  ')
-		end
-
-		if (percent < 100) or (not response) then
-			return
-		end
-
-		-- write to a temp file
-		console.write('\rDownloading: Done        \r\n')
-		fs.writeFile(os.tmpdir .. '/' .. (name or 'file'), response.body)
-	end)
+-- Display lpm root path
+function exports.root()
+	console.printr(exports.rootPath)
 end
 
-function exports.test()
-	local stdout = process.stdout;
-	console.log(stdout)
+function exports.usage()
+	local appPath = path.join( app.rootPath, 'app')
+	local fmt = [[
 
-	stdout = process.stdout;
-	console.log(stdout)
+This is the CLI for Node.lua.
 
+Usage: ${highlight}lpm <command> [args]${normal}
+${braces}
+where <command> is one of:
+	config, get, set, unset
+	list, ls, ps, restart, start, stop,
+	update, upgrade
+	help, info, root, scan, version ${normal}
+
+   or: ${highlight}lpm <name> <command> [args]${normal}
+${braces}
+where <name> is the name of the application, located in
+	']] .. appPath .. [[', the supported values of <command>
+	depend on the invoked application.${normal}
+
+Start with 'lpm list' to list all installed applications.
+	]]
+
+	print(console.colorful(fmt))
+	print('Try `lpm help` for more options.')
+	print('lpm - v' .. process.version)
 end
 
 -- Display the version information
@@ -435,7 +358,7 @@ function exports.version()
 		end
 	end
 
-	local filename = path.join(os.tmpdir, 'update/update.json')
+	local filename = path.join(os.tmpdir, 'update/firmware.json')
 	local packageInfo = json.parse(fs.readFileSync(filename))
 	if (not packageInfo) then
 		return
@@ -451,83 +374,8 @@ Firmware information:
 	]], packageInfo.name, packageInfo.size, packageInfo.md5sum))
 end
 
-function exports.init()
-	local appPath = path.join( app.rootPath, 'app')
-	local fmt = [[
-
-This is the CLI for Node.lua.
-
-Usage: ${highlight}lpm <command> [args]${normal}
-${braces}
-where <command> is one of:
-	config, get, set, unset
-	list, ls, ps, restart, start, stop,
-	update, upgrade
-	help, info, root, scan, version ${normal}
-
-   or: ${highlight}lpm <name> <command> [args]${normal}
-${braces}
-where <name> is the name of the application, located in
-	']] .. appPath .. [[', the supported values of <command>
-	depend on the invoked application.${normal}
-
-Start with 'lpm list' to see installed applications.
-	]]
-
-	print(console.colorful(fmt))
-	print('lpm - v' .. process.version)
-end
-
--- Display the help information
-function exports.help()
-	local fmt = [[
-
-lpm - lnode package manager.
-
-${braces}This is the CLI for Node.lua, Node.lua is a 'universal' platform work across
-many different systems, enabling install, configure, running and remove
-applications and utilities for Internet of Things.${normal}
-
-${highlight}usage: lpm <command> [args]${normal}
-
-where <command> is one of:
-
-${string}Configuration Commands:${normal}
-
-- config <args>     ${braces}Manager Node.lua configuration options.${normal}
-- get <key>         ${braces}Get value for <key>.${normal}
-- set <key> <value> ${braces}Set the specified config <key> <value>.${normal}
-- unset <key>       ${braces}Clears the specified config <key>.${normal}
-
-${string}Application Commands:${normal}
-
-- list <name>       ${braces}List all installed applications${normal}
-- ps                ${braces}List all application processes${normal}
-- restart <name>    ${braces}Restart an application process${normal}
-- start <name>      ${braces}Start and daemonize an application${normal}
-- stop <name>       ${braces}Stop an application process${normal}
-
-${string}Update Commands:${normal}
-
-- update            ${braces}Retrieve new packages of applications${normal}
-- upgrade system    ${braces}Perform an system upgrade${normal}
-
-${string}Other Commands:${normal}
-
-- help              ${braces}Get help on lpm${normal}
-- info              ${braces}Prints system informations${normal}
-- root              ${braces}Display Node.lua root path${normal}
-- scan <timeout>    ${braces}Scan all devices that support SSDP.${normal}
-- version           ${braces}Prints version informations${normal}
-
-]]
-
-	print(console.colorful(fmt))
-	print('lpm@' .. process.version .. ' at ' .. app.rootPath)
-end
-
 -------------------------------------------------------------------------------
--- call
+-- misc
 
 function exports.call(command, ...)
 	local func = exports[command or 'init']
@@ -545,6 +393,52 @@ function exports.call(command, ...)
 		_executeApplication(command, ...)
 	end
 end
+
+function exports.init()
+	exports.usage()
+end
+
+-- Scanning for nearby devices
+function exports.scan(timeout, serviceType)
+	local ssdp = require('ssdp')
+	if (ssdp) then
+		ssdp.scan(timeout, serviceType)
+	end
+end
+
+-- 通过 http 下载文件
+---@param url string HTTP URL
+---@param name string 保存文件名
+function exports.wget(url, name)
+	if (not url) then
+		print('wget: missing URL parameter')
+
+		print('Usage: wget <URL> [name]')
+		return
+	end
+
+	local request = require('http/request')
+	request.download(url, {}, function(err, percent, response)
+		if (err) then
+			return print(err)
+		end
+
+		if (percent <= 100) then
+			console.write('\rDownloading: (' .. percent .. '%)...  ')
+		end
+
+		if (percent < 100) or (not response) then
+			return
+		end
+
+		-- write to a temp file
+		console.write('\rDownloading: Done        \r\n')
+		fs.writeFile(os.tmpdir .. '/' .. (name or 'file'), response.body)
+	end)
+end
+
+-------------------------------------------------------------------------------
+-- call
 
 setmetatable(exports, {
 	__call = function(self, arg)

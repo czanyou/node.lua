@@ -19,7 +19,11 @@ elseif (LINUX)
   add_definitions(-DLUA_USE_POSIX -DLUA_USE_DLOPEN)
 
   # The install path
-  add_definitions(-DNODE_LUA_ROOT="/usr/local/lnode")
+  if (NODE_LUA_ROOT)
+    add_definitions(-DNODE_LUA_ROOT="${NODE_LUA_ROOT}")
+  else ()
+    add_definitions(-DNODE_LUA_ROOT="/usr/local/lnode")
+  endif()
 
 endif ()
 
@@ -35,5 +39,4 @@ include(core/deps/luajson/make.cmake)
 include(core/deps/luautils/make.cmake)
 include(core/deps/luauv/make.cmake)
 include(core/deps/luazip/make.cmake)
-
 include(core/deps/lnode/make.cmake)

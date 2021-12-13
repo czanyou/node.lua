@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ limitations under the License.
 This module is for various classes and utilities that don't need their own
 module.
 ]]
-local meta = { }
-meta.name        = "lnode/core"
-meta.version     = "1.0.7"
-meta.license     = "Apache 2"
-meta.description = "Core object model for lnode using simple prototypes and inheritance."
-meta.tags        = { "lnode", "objects", "inheritance" }
+
+local uv = require('luv')
+
+local meta = {
+    description = "Core object model for lnode using simple prototypes and inheritance."
+}
 
 local exports = { meta = meta }
 
@@ -94,23 +94,6 @@ function string.padRight(text, min, max)
 
     if (len < min) then
         return text .. string.rep(' ', min - len)
-    end
-
-    return text
-end
-
-function string.padLeft(text, min, max)
-    if (type(text) ~= 'string') then
-        text = tostring(text)
-    end
-
-    local len = #text
-    if (max and len > max) then
-        return text:sub(1, max)
-    end
-
-    if (len < min) then
-        return string.rep(' ', min - len) .. text
     end
 
     return text
@@ -220,7 +203,7 @@ Creates a new instance and calls `obj:initialize(...)` if it exists.
       return self.w * self.h
     end
     local rect = Rectangle:new(3, 4)
-    p(rect:getArea())
+    console.log(rect:getArea())
 ]]
 function Object:new(...)
     local instance = self:create()
@@ -279,6 +262,8 @@ the beginning its parameter list.
     emitter:on('end', utils.bind(some_func, emitter))
     emitter:emit('end', 'a', 'b', 'c')
 ]]
+
+---@class Emitter
 local Emitter = Object:extend()
 exports.Emitter = Emitter
 
@@ -331,6 +316,10 @@ function Emitter:on(name, callback)
         handlers_for_type = { }
         rawset(handlers, name, handlers_for_type)
     end
+
+    --if (#handlers_for_type > 10) then
+    --    console.log('handlers_for_type', #handlers_for_type, name)
+    --end
 
     table.insert(handlers_for_type, callback)
     return self
@@ -454,17 +443,22 @@ first argument (`err`) is re-routed to the "error" event instead.
     end
 ]]
 function Emitter:wrap(name)
-    local fn = self[name]
+    local func = self[name]
     self[name] = function(err, ...)
-        if (err) then return self:emit("error", err) end
-        return fn(self, ...)
+        if (err) then
+            return self:emit("error", err)
+        end
+
+        return func(self, ...)
     end
 end
 
 -- Propagate the event to another emitter.
 function Emitter:propagate(eventName, target)
     if (target and target.emit) then
-        self:on(eventName, function(...) target:emit(eventName, ...) end)
+        self:on(eventName, function(...)
+            target:emit(eventName, ...)
+        end)
         return target
     end
 
@@ -475,6 +469,7 @@ end
 -- Error
 
 -- This is for code that wants structured error messages.
+---@class Error
 local Error = Object:extend()
 exports.Error = Error
 
@@ -488,6 +483,119 @@ function Error:initialize(message)
     if message then
         self.code = tonumber(message:match('([^:]+): '))
     end
+end
+
+-------------------------------------------------------------------------------
+-- Date
+
+local Date = {}
+
+Date.now = function()
+    local sec, usec = uv.gettimeofday()
+    return math.floor(sec * 1000 + (usec / 1000))
+end
+
+function Date:new(time)
+    local date = {}
+
+    function date:setTime(time)
+        self.time = time or Date.now()
+        self.value = os.date("*t", math.floor(self.time / 1000))
+    end
+
+    function date:setDate(day)
+        self.value.day = day
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setMonth(month)
+        self.value.month = month
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setYear(year)
+        self.value.year = year
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setHours(hour)
+        self.value.hour = hour
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setMinutes(min)
+        self.value.min = min
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setSeconds(sec)
+        self.value.sec = sec
+        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
+    end
+
+    function date:setMilliseconds(milliSeconds)
+        self.time = math.floor(self.time / 1000) * 1000 + milliSeconds
+    end
+
+    function date:getTime()
+        return self.time
+    end
+
+    function date:toString()
+        return os.date("%c", math.floor(self.time / 1000))
+    end
+
+    function date:toDateString()
+        return os.date("%F", math.floor(self.time / 1000))
+    end
+
+    function date:toTimeString()
+        return os.date("%T", math.floor(self.time / 1000))
+    end
+
+    function date:toISOString()
+        local msec = self:getMilliseconds() .. 'Z'
+        return os.date("!%FT%T", math.floor(self.time / 1000)) .. "." .. msec:padLeft(4, 4, '0');
+    end
+
+    function date:getDay()
+        return self.value.wday - 1
+    end
+
+    function date:getDate()
+        return self.value.day
+    end
+
+    function date:getMonth()
+        return self.value.month
+    end
+
+    function date:getYear()
+        return self.value.year
+    end
+
+    function date:getHours()
+        return self.value.hour
+    end
+
+    function date:getMinutes()
+        return self.value.min
+    end
+
+    function date:getSeconds()
+        return self.value.sec
+    end
+
+    function date:getMilliseconds()
+        return self.time % 1000
+    end
+
+    date:setTime(time)
+    return date
+end
+
+if (not _G.Date) then
+    _G.Date = Date
 end
 
 -------------------------------------------------------------------------------

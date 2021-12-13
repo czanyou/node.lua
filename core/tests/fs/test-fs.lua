@@ -15,21 +15,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local fs = require('fs')
 local dirname = require('util').dirname()
 
+local module = {}
+module.path = dirname
+
 test("readfile with callbacks", function (expect)
 	local path = dirname .. "/fixtures/x.txt"
 	fs.open(path, "r", expect(function (err, fd)
 		assert(not err, err)
-		--p{fd=fd}
+		--console.log{fd=fd}
 
 		fs.fstat(fd, expect(function (err, stat)
 			assert(not err, err)
-			--p(stat)
+			--console.log(stat)
 
 			fs.read(fd, stat.size, expect(function (err, data)
 				assert(not err, err)
@@ -47,9 +50,9 @@ end)
 test("readfile sync", function ()
 	local path = dirname .. "/fixtures/x.txt"
 	local fd = assert(fs.openSync(path))
-	--p{fd=fd}
+	--console.log{fd=fd}
 	local stat = assert(fs.fstatSync(fd))
-	--p(stat)
+	--console.log(stat)
 	local chunk = assert(fs.readSync(fd, stat.size))
 	assert(stat.size == #chunk)
 	console.log({chunk=#chunk, size=stat.size})
@@ -61,14 +64,14 @@ test("readfile coroutine", function (expect)
 	coroutine.wrap(function ()
 		fs = fs.wrap()
 		local thread = coroutine.running()
-		--p{thread=thread}
+		--console.log{thread=thread}
 		local path = dirname .. "/fixtures/x.txt"
 		local fd = assert(fs.open(path, "r", thread))
-		--p{fd=fd}
+		--console.log{fd=fd}
 		local stat = assert(fs.fstat(fd, thread))
-		--p(stat)
+		--console.log(stat)
 		local chunk = assert(fs.read(fd, stat.size, thread))
-		p{chunk=#chunk, size=stat.size}
+		console.log{chunk=#chunk, size=stat.size}
 		assert(fs.close(fd, thread))
 		finish()
 	end)()
@@ -76,7 +79,7 @@ end)
 
 test("file not found", function (expect)
 	fs.stat("bad-path", expect(function (err, stat)
-		p{err=err,stat=stat}
+		console.log{err=err,stat=stat}
 		assert(not stat)
 		assert(string.match(err, "^ENOENT:"))
 	end))
@@ -107,20 +110,20 @@ end)
 test("readdir", function (expect)
 	fs.readdir(dirname, expect(function (err, files)
 		assert(not err, err)
-		--p(files)
+		--console.log(files)
 		assert(type(files) == 'table')
 		assert(type(files[1] == 'string'))
 
-		p('scandir count:', #files)
+		console.log('scandir count:', #files)
 	end))
 end)
 
 test("readdir sync", function ()
 	local files = assert(fs.readdirSync(dirname))
-	--p(files)
+	--console.log(files)
 	assert(type(files) == 'table')
 	assert(type(files[1] == 'string'))
-	p('scandir count:', #files)
+	console.log('scandir count:', #files)
 end)
 
 test("scandir callback", function (expect)
@@ -128,10 +131,10 @@ test("scandir callback", function (expect)
 		assert(not err, err)
 		local count = 0
 		for k, v in it do
-			--p{name=k,type=v}
+			--console.log{name=k,type=v}
 			count = count + 1
 		end
-		p('scandir count:', count)
+		console.log('scandir count:', count)
 	end))
 end)
 
@@ -142,10 +145,10 @@ test("scandir coroutine", function (expect)
 		local thread = coroutine.running()
 		local count = 0
 		for k,v in fs.scandir(dirname, thread) do
-			--p{name=k,type=v}
+			--console.log{name=k,type=v}
 			count = count + 1
 		end
-		p('scandir count:', count)
+		console.log('scandir count:', count)
 		done()
 	end)()
 end)
@@ -153,18 +156,18 @@ end)
 test("scandir sync", function ()
 	local count = 0
 	for k,v in fs.scandirSync(dirname) do
-	  	--p{name=k,type=v}
+	  	--console.log{name=k,type=v}
 	  	count = count + 1
 	end
 
-	p('scandir count:', count)
+	console.log('scandir count:', count)
 end)
 
 test('access', function (expect)
 	local left = 3
 	local result = {}
 	local done = expect(function ()
-		--p(result)
+		--console.log(result)
 		assert(type(result.read) == "boolean")
 		assert(type(result.write) == "boolean")
 		assert(type(result.execute) == "boolean")
@@ -201,7 +204,7 @@ test('access coroutine', function ()
 			write = fs.access(module.path, "w", thread),
 			execute = fs.access(module.path, "x", thread),
 		}
-		--p(result)
+		--console.log(result)
 		assert(type(result.read) == "boolean")
 		assert(type(result.write) == "boolean")
 		assert(type(result.execute) == "boolean")
@@ -215,7 +218,7 @@ test('access sync', function ()
 		execute = fs.accessSync(module.path, "x"),
 	}
 
-	--p(result)
+	--console.log(result)
 	assert(type(result.read) == "boolean")
 	assert(type(result.write) == "boolean")
 	assert(type(result.execute) == "boolean")

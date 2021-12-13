@@ -9,7 +9,6 @@ include_directories(
 set(SOURCES
   ${LUAUTILSDIR}/src/base64.c
   ${LUAUTILSDIR}/src/hex.c
-  ${LUAUTILSDIR}/src/lenv.c
   ${LUAUTILSDIR}/src/crc.c
   ${LUAUTILSDIR}/src/md5.c
   ${LUAUTILSDIR}/src/sha1.c

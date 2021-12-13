@@ -6,7 +6,7 @@ if (process.getgid) then
 	console.log('uid', process.getuid())
 end
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("test hrtime", function()
@@ -34,7 +34,7 @@ end)
 test("test platform", function()
 	assert.equal(type(process.platform()), 'string')
 	assert(process.platform())
-end)	
+end)
 
 test("test cwd", function()
 	assert.equal(type(process.cwd()), 'string')
@@ -62,6 +62,12 @@ test("test versions", function()
 	assert(process.versions.uv)
 end)
 
+test("test title", function()
+	console.log(process.title)
+	console.log(process.isTTY)
+	console.log(process.memoryUsage())
+end)
+
 test("test stdin", function()
 	assert.equal(type(process.stdin), 'table')
 end)
@@ -74,16 +80,16 @@ end)
 test("test stderr", function()
 	assert.equal(type(process.stderr), 'table')
 	process.stderr:write("test stderr\r\n")
-end)	
+end)
 
 test('signal usr1,usr2,hup', function(expect)
 	local onHUP, onUSR1, onUSR2
-	if os.platform() == 'win32' then 
+	if os.platform() == 'win32' then
 		assert(true)
 
-		return 
+		return
 	end
-	
+
 	function onHUP()  print('sighup');  process:removeListener('sighup',  onHUP)  end
 	function onUSR1() print('sigusr1'); process:removeListener('sigusr1', onUSR1) end
 	function onUSR2() print('sigusr2'); process:removeListener('sigusr2', onUSR2) end
@@ -96,5 +102,5 @@ test('signal usr1,usr2,hup', function(expect)
 	process.kill(process.pid, 'sigusr1')
 	process.kill(process.pid, 'sigusr2')
 end)
-	
+
 tap.run()

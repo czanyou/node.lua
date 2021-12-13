@@ -1,8 +1,8 @@
-local utils = require("util")
-local assert = require("assert")
-local Object = require("core").Object
+local utils = require('util')
+local assert = require('assert')
+local Object = require('core').Object
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("test utils.dirname", function(expect)
@@ -12,7 +12,7 @@ test("test utils.dirname", function(expect)
 end)
 
 test("test utils.filename", function(expect)
-	local path = require("path")
+	local path = require('path')
 	local ret = utils.filename()
 	assert.equal(path.basename(ret), "test-util.lua")
 	print("utils.filename", ret)
@@ -217,7 +217,7 @@ test("utils.bind", function(expect)
 	local s = console.dump(tblB, true, true)
 	--assert(s == "{ { 1, 2, 3 }, 'test1', 'test2', { { 1, 2, 3 } } }")
 
-	local Error = require("core").Error
+	local Error = require('core').Error
 	local MyError = Error:extend()
 	assert(pcall(console.dump, MyError))
 end)
@@ -317,6 +317,11 @@ test("test diff", function ()
 
 	add, sub = utils.diff(data1, nil)
 	console.printr(add, sub)
+end)
+
+test("test random", function ()
+	console.log(utils.random(32))
+	console.log(utils.randomString(32))
 end)
 
 tap.run()

@@ -4,10 +4,10 @@
 # tmpfs
 mount -t tmpfs -o size=16m tmpfs /tmp/
 
-mkdir -p /tmp/run
 mkdir -p /tmp/lock
 mkdir -p /tmp/log
-mkdir -p /tmp/lock
+mkdir -p /tmp/run
+mkdir -p /tmp/sock
 
 # network
 lnode -l lci/mac
@@ -20,11 +20,5 @@ hostname dt02
 
 telnetd &
 
-# nfs
-# mount -t nfs -o nolock 192.168.1.38:/mnt/nfs /mnt/nfs
-
 # lpm
 lpm start lci wotc gateway lpm
-
-
-# cd /mnt/dt02/node.lua/app/gateway/lua/lora/

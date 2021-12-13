@@ -16,40 +16,48 @@ limitations under the License.
 
 --]]
 
-local net = require("net")
+local net = require('net')
+local tap = require('util/tap')
+local test = tap.test
 
-local function createTestServer(port, host, listenCallback)
-	local server =
-		net.createServer(
-		function(client)
-			client:pipe(client)
-		end
-	)
-	server:listen(port, host, listenCallback)
-	server:on(
-		"error",
-		function(err)
-			assert(err)
-		end
-	)
+local function createTestServer(port, host, callback)
+	local server = net.createServer(function(connection)
+		connection:pipe(connection)
+	end)
+
+	server:listen(port, host, callback)
+	server:on("error", function(err)
+		assert(err)
+	end)
+
 	return server
 end
 
-local tap = require("ext/tap")
-local test = tap.test
-
-test("simple server", function(expect)
+test("server - simple server", function(expect)
 	local port = 10081
 	local host = "127.0.0.1"
 	local server
 	server = createTestServer(port, host, expect(function()
+		-- console.log('listening', server.listening)
+		local address = server:address()
+		-- console.log('address', address)
+		assert(address)
+		assert(address.address == host)
+		assert(address.port == port)
+		assert(address.family == 'inet')
+		assert(server.listening)
+
 		local client
 		client = net.createConnection(port, host, expect(function()
 			client:on("data", expect(function(data)
 				assert(#data == 5)
 				assert(data == "hello")
 				client:destroy()
-				server:close()
+
+				server:close(expect(function()
+					-- console.log('listening', server.listening)
+					assert(not server.listening)
+				end))
 			end))
 
 			client:write("hello")
@@ -57,7 +65,7 @@ test("simple server", function(expect)
 	end))
 end)
 
-test("keepalive server", function(expect)
+test("server - setKeepAlive ", function(expect)
 	local port = 10082
 	local host = "127.0.0.1"
 	local server
@@ -67,10 +75,12 @@ test("keepalive server", function(expect)
 			if err then
 				assert(err)
 			end
-			client:keepalive(true, 10)
+
+			client:setKeepAlive(true, 10)
 			assert(type(client:getsockname()) == "table")
-			client:on("data",expect(function(data)
-				client:keepalive(true, 10)
+
+			client:on("data", expect(function(data)
+				client:setKeepAlive(true, 10)
 				assert(#data == 5)
 				assert(data == "hello")
 				client:destroy()
@@ -82,15 +92,16 @@ test("keepalive server", function(expect)
 	end))
 end)
 
-test("nodelay server", function(expect)
+test("server - setNoDelay", function(expect)
 	local port = 10083
 	local host = "127.0.0.1"
 	local server
 	server = createTestServer(port, host, expect(function()
 		local client
 		client = net.createConnection(port, host, expect(function()
-			client:nodelay(true)
+			client:setNoDelay(true)
 			assert(type(client:getsockname()) == "table")
+
 			client:on("data", expect(function(data)
 				assert(#data == 5)
 				assert(data == "hello")
@@ -103,7 +114,7 @@ test("nodelay server", function(expect)
 	end))
 end)
 
-test("timeout client", function(expect)
+test("client - timeout", function(expect)
 	local port = 10083
 	local host = "127.0.0.1"
 	local timeout = 1
@@ -131,5 +142,3 @@ test("timeout client", function(expect)
 	server = net.createServer(onClient)
 	server:listen(port, host, expect(onListen))
 end)
-
-tap.run()

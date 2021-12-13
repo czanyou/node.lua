@@ -125,8 +125,12 @@ LUALIB_API int luaopen_luv (lua_State *L);
 /* From stream.c */
 static uv_stream_t* luv_check_stream(lua_State* L, int index);
 static void luv_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
-static void luv_check_buf(lua_State *L, int idx, uv_buf_t *pbuf);
-static uv_buf_t* luv_prep_bufs(lua_State* L, int index, size_t *count);
+
+/* From misc.c */
+static void luv_prep_buf(lua_State *L, int idx, uv_buf_t *pbuf);
+static uv_buf_t* luv_prep_bufs(lua_State* L, int index, size_t *count, int **refs);
+static uv_buf_t* luv_check_bufs(lua_State* L, int index, size_t *count, luv_req_t* req_data);
+static uv_buf_t* luv_check_bufs_noref(lua_State* L, int index, size_t *count);
 
 /* from tcp.c */
 static void parse_sockaddr(lua_State* L, struct sockaddr_storage* address);
@@ -142,6 +146,9 @@ static int luv_sock_string_to_num(const char* string);
 static const char* luv_sock_num_to_string(const int num);
 static int luv_sig_string_to_num(const char* string);
 static const char* luv_sig_num_to_string(const int num);
+
+/* from util.c */
+static int luv_optboolean(lua_State*L, int idx, int defaultval);
 #endif
 
 typedef lua_State* (*luv_acquire_vm)();

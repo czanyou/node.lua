@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 local dgram = require("dgram")

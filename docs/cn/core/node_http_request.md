@@ -12,10 +12,10 @@ function callback(err, response, body)
 
 这个客户端的相关方法的回调函数。
 
-- err {string} 如果发生错误, 这个值将不为空
-- response {HttpResponse Object} 相关的应答消息对象
-  + statusCode {number} 状态码
-- body {string} 返回的消息体内容
+- err `{string}` 如果发生错误, 这个值将不为空
+- response `{HttpResponse Object}` 相关的应答消息对象
+  + statusCode `{number}` 状态码
+- body `{string}` 返回的消息体内容
 
 ## HTTP 方法
 
@@ -27,15 +27,15 @@ request(urlString, [options], callback)
 
 发起一个 GET 请求并返回请求结果
 
-- urlString {string}  HTTP URL 地址
-- options {object} 请求选项
-  + host {string} 服务器主机地址
-  + port {number} 服务器端口
-  + path {string} 文件路径
-  + timeout {number} 超时时间
-  + method {string} 请求方法
-  + headers {array} 头字段
-- callback {function} `function(err, response, body) end` 回调函数
+- urlString `{string}`  HTTP URL 地址
+- options `{object}` 请求选项
+  + host `{string}` 服务器主机地址
+  + port `{number}` 服务器端口
+  + path `{string}` 文件路径
+  + timeout `{number}` 超时时间
+  + method `{string}` 请求方法
+  + headers `{array}` 头字段
+- callback `{function}` `function(err, response, body) end` 回调函数
 
 示例:
 
@@ -59,15 +59,15 @@ request.delete(urlString, [options], callback)
 
 发起一个 DELETE 请求并返回请求结果
 
-- urlString {string} URL
-- options {object} 请求选项
-  - data {string} 请求内容为二进制数据
-  - json {string} 请求内容为 JSON 字符串
-  - form {string} 表单, 使用的格式为 `application/x-www-form-urlencoded`
-  - contentType {string} 指定请求内容格式，如 `application/json`
-  - headers {object} 头字段
-  - timeout {number} 超时时间
-- callback {function} `function(err, response, body) end` 回调函数
+- urlString `{string}` URL
+- options `{object}` 请求选项
+  - data `{string}` 请求内容为二进制数据
+  - json `{string}` 请求内容为 JSON 字符串
+  - form `{string}` 表单, 使用的格式为 `application/x-www-form-urlencoded`
+  - contentType `{string}` 指定请求内容格式，如 `application/json`
+  - headers `{object}` 头字段
+  - timeout `{number}` 超时时间
+- callback `{function}` `function(err, response, body) end` 回调函数
 
 ### request.get
 
@@ -77,9 +77,9 @@ request.get(urlString, [options], callback)
 
 发起一个 GET 请求并返回请求结果
 
-- urlString {string} URL
-- options {object} 请求选项
-- callback {function} `function(err, response, body) end` 回调函数
+- urlString `{string}` URL
+- options `{object}` 请求选项
+- callback `{function}` `function(err, response, body) end` 回调函数
 
 
 ### request.post
@@ -90,16 +90,16 @@ request.post(urlString, [options], callback)
 
 发起一个 POST 请求并返回请求结果
 
-- urlString {string} URL
-- options {object} 请求选项
-  + data {string} 二进制数据, 默认使用格式为 `application/octet-stream`
-  + json {string} JSON 字符串，使用的格式为`application/json`
-  + files {object} 文件, 使用的格式为 `multipart/form-data`
-  + form {object} 表单, 使用的格式为 `pplication/x-www-form-urlencoded`
-  + contentType {string} 指定请求内容格式，如 `application/json`
-  + headers {object} 头字段
-  + timeout {number} 超时时间
-- callback {function} `function(err, response, body) end` 回调函数
+- urlString `{string}` URL
+- options `{object}` 请求选项
+  + data `{string}` 二进制数据, 默认使用格式为 `application/octet-stream`
+  + json `{string}` JSON 字符串，使用的格式为`application/json`
+  + files `{object}` 文件, 使用的格式为 `multipart/form-data`
+  + form `{object}` 表单, 使用的格式为 `pplication/x-www-form-urlencoded`
+  + contentType `{string}` 指定请求内容格式，如 `application/json`
+  + headers `{object}` 头字段
+  + timeout `{number}` 超时时间
+- callback `{function}` `function(err, response, body) end` 回调函数
 
 POST 可以向服务器发送如下内容的数据
 
@@ -150,9 +150,9 @@ end)
 }
 ```
 
-- key {object} 代表一个字段或一个文件
-  + name {string} 文件名
-  + data {string} 文件二进制数据内容
+- key `{object}` 代表一个字段或一个文件
+  + name `{string}` 文件名
+  + data `{string}` 文件二进制数据内容
 
 示例:
 
@@ -174,9 +174,9 @@ end)
 
 发起一个 PUT 请求并返回请求结果
 
-- urlString {string} URL 
-- options {object} 请求选项, 请参考 `request.post`
-- callback {function} `function(err, response, body) end` 回调函数
+- urlString `{string}` URL 
+- options `{object}` 请求选项, 请参考 `request.post`
+- callback `{function}` `function(err, response, body) end` 回调函数
 
 示例:
 
@@ -202,13 +202,13 @@ request.download(urlString, [options], callback)
 
 下载文件
 
-- urlString {string} URL
-- options {object} 请求选项
-- callback {function}  `function(err, percent, response, body)` 回调函数
-  + err {string} 错误信息
-  + percent {number} 已下载的百分比, 当 percent 等于 100 时表示全部下载完毕
-  + response {object} 应答消息
-  + body {string} 应答消息内容
+- urlString `{string}` URL
+- options `{object}` 请求选项
+- callback `{function}`  `function(err, percent, response, body)` 回调函数
+  + err `{string}` 错误信息
+  + percent `{number}` 已下载的百分比, 当 percent 等于 100 时表示全部下载完毕
+  + response `{object}` 应答消息
+  + body `{string}` 应答消息内容
 
 
 ### request.upload
@@ -217,15 +217,15 @@ request.download(urlString, [options], callback)
 
 发起一个文件上传请求并返回请求结果
 
-- urlString {string} URL 文件上传 URL
-- options {object} 请求选项, 请参考 request.post
-  + filename {string} 要上传的文件的名称, 上传格式为表单格式
-  + filedata {string} 要上传的文件的内容, 只有当 filename 不为空时有效
-  + data {string} 要上传的数据流的内容, 只有当 filename 为空时有效, 上传格式为流的格式
-- callback {function} - `function(err, percent, response, body)` 回调函数
-  + err {string} 错误信息
-  + percent {number} 已上传的百分比，当 percent 等于 100 时表示全部上传完毕
-  + response {object} 应答消息
-  + body {string} 应答消息内容
+- urlString `{string}` URL 文件上传 URL
+- options `{object}` 请求选项, 请参考 request.post
+  + filename `{string}` 要上传的文件的名称, 上传格式为表单格式
+  + filedata `{string}` 要上传的文件的内容, 只有当 filename 不为空时有效
+  + data `{string}` 要上传的数据流的内容, 只有当 filename 为空时有效, 上传格式为流的格式
+- callback `{function}` - `function(err, percent, response, body)` 回调函数
+  + err `{string}` 错误信息
+  + percent `{number}` 已上传的百分比，当 percent 等于 100 时表示全部上传完毕
+  + response `{object}` 应答消息
+  + body `{string}` 应答消息内容
 
 

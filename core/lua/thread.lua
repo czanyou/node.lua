@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,16 +19,13 @@ limitations under the License.
 
 --- lnode thread management
 
-local meta = { }
-meta.name        = "lnode/thread"
-meta.version     = "0.1.2"
-meta.license     = "Apache 2"
-meta.description = "thread module for lnode"
-meta.tags        = { "lnode", "thread", "threadpool", "work" }
-
+local meta = {
+    description = "thread module for lnode"
+}
 local exports = { meta = meta }
 
 local uv = require('luv')
+
 local Object = require('core').Object
 
 -------------------------------------------------------------------------------
@@ -50,7 +47,13 @@ function exports.start(thread_func, ...)
 
     -- print('dumped:' .. dumped)
     local _thread_entry = function(dumped, ...)
-        pcall(require, 'init')
+        local lnode = require('lnode')
+        if (lnode.init) then
+            local init = load(lnode.load('init'))
+            pcall(init)
+        else
+            pcall(require, 'init')
+        end
 
         -- Run function with require injected
         local fn = load(dumped)
@@ -70,6 +73,7 @@ end
 -------------------------------------------------------------------------------
 --- lnode threadpool
 
+---@class Worker
 local Worker = Object:extend()
 
 function Worker:queue(...)
@@ -86,7 +90,14 @@ function exports.work(thread_func, callback)
             _G._uv_works = { }
         end
 
-        pcall(require, 'init')
+        local lnode = require('lnode')
+
+        if (lnode.init) then
+            local init = load(lnode.load('init'))
+            pcall(init)
+        else
+            pcall(require, 'init')
+        end
 
         -- try to find cached function entry
         local fn

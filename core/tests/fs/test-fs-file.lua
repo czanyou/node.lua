@@ -1,5 +1,5 @@
 local util = require('util')
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local fs = require('fs')

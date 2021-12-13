@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014-2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,93 +17,112 @@ limitations under the License.
 
 --]]
 
-local meta = { }
-meta.name        = "lnode/console"
-meta.version     = "1.0.4"
-meta.description = "A lua value pretty printer and colorizer for terminals."
-meta.tags        = { "colors", "tty" }
-meta.license     = "Apache 2"
-meta.author      = { name = "Tim Caswell" }
+local meta = {
+    description = "A lua value pretty printer and colorizer for terminals."
+}
 
 local exports = { meta = meta }
 
 local uv  = require('luv')
 local util = require('util')
 
-local dump, color, colorize
-
 local theme         = { }
 local useColors     = false
 local defaultTheme  = nil
 
-local stdout, stdin, stderr
+-------------------------------------------------------------------------------
+-- themes
+
+local function initThemes()
+    local themes = {}
+    -- nice color theme using 16 ansi colors
+    themes[16] = {
+        ["function"]= "0;35",       -- purple
+        ["nil"]     = "1;30",       -- bright-black
+        boolean     = "0;33",       -- yellow
+        braces      = "1;30",       -- bright-black
+        cdata       = "0;36",       -- cyan
+        err         = "1;31",       -- bright red
+        escape      = "1;32",       -- bright-green
+        failure     = "1;33;41",    -- bright-yellow on red
+        highlight   = "1;36;44",    -- bright-cyan on blue
+        number      = "1;33",       -- bright-yellow
+        property    = "0;37",       -- white
+        quotes      = "1;32",       -- bright-green
+        sep         = "1;30",       -- bright-black
+        string      = "0;32",       -- green
+        success     = "1;33;42",    -- bright-yellow on green
+        table       = "1;34",       -- bright blue
+        thread      = "1;35",       -- bright-purple
+        userdata    = "1;36",       -- bright cyan
+    }
+
+    -- nice color theme using ansi 256-mode colors
+    themes[256] = {
+        ["function"]= "38;5;129",   -- purple
+        ["nil"]     = "38;5;244",
+        boolean     = "38;5;220",   -- yellow-orange
+        braces      = "38;5;247",
+        cdata       = "38;5;69",    -- teal
+        err         = "38;5;196",           -- bright red
+        escape      = "38;5;46",    -- bright green
+        failure     = "38;5;215;48;5;52",   -- bright red on dark red
+        highlight   = "38;5;45;48;5;236",   -- bright teal on dark grey
+        number      = "38;5;202",   -- orange
+        property    = "38;5;253",
+        quotes      = "38;5;40",    -- green
+        sep         = "38;5;240",
+        string      = "38;5;34",    -- darker green
+        success     = "38;5;120;48;5;22",   -- bright green on dark green
+        table       = "38;5;27",    -- blue
+        thread      = "38;5;199",   -- pink
+        userdata    = "38;5;39",    -- blue2
+    }
+
+    return themes
+end
+
+local themes = initThemes()
 
 -------------------------------------------------------------------------------
 
-local themes = {}
+local symbols = {}
+local controls = {}
 
--- nice color theme using 16 ansi colors
-themes[16] = {
-    ["function"]= "0;35",       -- purple
-    ["nil"]     = "1;30",       -- bright-black
-    boolean     = "0;33",       -- yellow
-    braces      = "1;30",       -- bright-black
-    cdata       = "0;36",       -- cyan
-    err         = "1;31",       -- bright red
-    escape      = "1;32",       -- bright-green
-    failure     = "1;33;41",    -- bright-yellow on red
-    highlight   = "1;36;44",    -- bright-cyan on blue
-    number      = "1;33",       -- bright-yellow
-    property    = "0;37",       -- white
-    quotes      = "1;32",       -- bright-green
-    sep         = "1;30",       -- bright-black
-    string      = "0;32",       -- green
-    success     = "1;33;42",    -- bright-yellow on green
-    table       = "1;34",       -- bright blue
-    thread      = "1;35",       -- bright-purple
-    userdata    = "1;36",       -- bright cyan
-}
-
--- nice color theme using ansi 256-mode colors
-themes[256] = {
-    ["function"]= "38;5;129",   -- purple
-    ["nil"]     = "38;5;244",
-    boolean     = "38;5;220",   -- yellow-orange
-    braces      = "38;5;247",
-    cdata       = "38;5;69",    -- teal
-    err         = "38;5;196",           -- bright red
-    escape      = "38;5;46",    -- bright green
-    failure     = "38;5;215;48;5;52",   -- bright red on dark red
-    highlight   = "38;5;45;48;5;236",   -- bright teal on dark grey
-    number      = "38;5;202",   -- orange
-    property    = "38;5;253",
-    quotes      = "38;5;40",    -- green
-    sep         = "38;5;240",
-    string      = "38;5;34",    -- darker green
-    success     = "38;5;120;48;5;22",   -- bright green on dark green
-    table       = "38;5;27",    -- blue
-    thread      = "38;5;199",   -- pink
-    userdata    = "38;5;39",    -- blue2
-}
-
--------------------------------------------------------------------------------
-
-local special = {
-    [7]         = 'a',
-    [8]         = 'b',
-    [9]         = 't',
-    [10]        = 'n',
-    [11]        = 'v',
-    [12]        = 'f',
-    [13]        = 'r'
-}
-
-local quote, quote2, dquote, dquote2, obracket, cbracket, obrace, cbrace, comma, equals
-local controls
+exports.symbols = symbols
 
 -------------------------------------------------------------------------------
 
 function exports.loadColors(index)
+
+    function symbols.pos(x, y)
+        return '\27[' .. y .. ';' .. x .. 'H'
+    end
+
+    function symbols.up(n)
+        return '\27[' .. n .. 'A'
+    end
+
+    function symbols.down(n)
+        return '\27[' .. n .. 'B'
+    end
+
+    function symbols.left(n)
+        return '\27[' .. n .. 'D'
+    end
+
+    function symbols.right(n)
+        return '\27[' .. n .. 'C'
+    end
+
+    symbols.clear = '\27[2J'
+    symbols.reset = '\27[0m'
+    symbols.underline = '\27[04m'
+    symbols.inverse = '\27[07m'
+    symbols.clearRight = '\27[K'
+    symbols.save = '\27[s'
+    symbols.recall = '\27[u'
+
     -------------------------------------------
     -- theme
 
@@ -126,36 +145,45 @@ function exports.loadColors(index)
 
     -------------------------------------------
     -- colors
+    local colorize = exports.colorize
 
     if (useColors) then
-        quote       = colorize('quotes',    "'", 'string')
-        quote2      = colorize('quotes',    "'")
-        dquote      = colorize('quotes',    '"', 'string')
-        dquote2     = colorize('quotes',    '"')
-        obrace      = colorize('braces',    '{ ')
-        cbrace      = colorize('braces',    '}')
-        obracket    = colorize('property',  '[')
-        cbracket    = colorize('property',  ']')
-        comma       = colorize('sep',       ', ')
-        equals      = colorize('sep',       ' = ')
+        symbols.quote       = colorize('quotes',    "'", 'string')
+        symbols.quote2      = colorize('quotes',    "'")
+        symbols.dquote      = colorize('quotes',    '"', 'string')
+        symbols.dquote2     = colorize('quotes',    '"')
+        symbols.obrace      = colorize('braces',    '{ ')
+        symbols.cbrace      = colorize('braces',    '}')
+        symbols.obracket    = colorize('property',  '[')
+        symbols.cbracket    = colorize('property',  ']')
+        symbols.comma       = colorize('sep',       ', ')
+        symbols.equals      = colorize('sep',       ' = ')
 
     else
-        quote       = "'"
-        quote2      = "'"
-        dquote      = '"'
-        dquote2     = '"'
-        obrace      = "{"
-        cbrace      = "}"
-        obracket    = "["
-        cbracket    = "]"
-        comma       = ", "
-        equals      = " = "
+        symbols.quote       = "'"
+        symbols.quote2      = "'"
+        symbols.dquote      = '"'
+        symbols.dquote2     = '"'
+        symbols.obrace      = "{"
+        symbols.cbrace      = "}"
+        symbols.obracket    = "["
+        symbols.cbracket    = "]"
+        symbols.comma       = ", "
+        symbols.equals      = " = "
     end
 
     -------------------------------------------
     -- controls
 
-    controls = { }
+    local special = {
+        [7]         = 'a',
+        [8]         = 'b',
+        [9]         = 't',
+        [10]        = 'n',
+        [11]        = 'v',
+        [12]        = 'f',
+        [13]        = 'r'
+    }
 
     for i = 0, 31 do
         local c = special[i]
@@ -173,10 +201,6 @@ function exports.loadColors(index)
     end
 end
 
-local function stringEscape(c)
-    return controls[string.byte(c, 1)]
-end
-
 function exports.color(colorName)
     if (not useColors) then
         return ''
@@ -185,24 +209,24 @@ function exports.color(colorName)
     return '\27[' ..(theme[colorName] or '0') .. 'm'
 end
 
-color = exports.color
-
 function exports.colorize(colorName, string, resetName)
+    local color = exports.color
     return color(colorName) .. tostring(string) .. color(resetName)
 end
 
-colorize = exports.colorize
-
 -- 打印所有可用的主题颜色
 function exports.colors()
+    local color = exports.color
+
     local index = 1
     for k, v in pairs(theme) do
-        print(index .. '. ' .. exports.color(k) .. k .. exports.color())
+        print(index .. '. ' .. color(k) .. k .. color())
         index = index + 1
     end
 end
 
 function exports.colorful(text)
+    local color = exports.color
     local ret = text:gsub('${([^}]+)}', function(c) return color(c) end)
     return ret
 end
@@ -210,12 +234,18 @@ end
 -------------------------------------------------------------------------------
 
 function exports.dump(value, recurse, nocolor)
+
+    local function stringEscape(c)
+        return controls[string.byte(c, 1)]
+    end
+
     local seen   = { }
     local output = { }
-    local offset = 0
     local indent = 0
 
     local _process_value
+    local colorize = exports.colorize
+    local color = exports.color
 
     local _write = function (text, length)
         if (text) then
@@ -223,18 +253,23 @@ function exports.dump(value, recurse, nocolor)
         end
     end
 
-    local _process_string = function (localValue)
-        if localValue:match("'") and not localValue:match('"') then
-            _write(dquote)
+    local _process_string = function (localValue, raw)
+        if (raw) then
+            _write(color('string'))
+            _write(localValue:gsub('[%c\\]',  stringEscape))
+            _write(color())
+
+        elseif localValue:match("'") and not localValue:match('"') then
+            _write(symbols.dquote)
             --_write(localValue:gsub('[%c\\\128-\255]',  stringEscape))
             _write(localValue:gsub('[%c\\]',  stringEscape))
-            _write(dquote2)
+            _write(symbols.dquote2)
 
         else
-            _write(quote)
+            _write(symbols.quote)
             --_write(localValue:gsub("[%c\\'\128-\255]", stringEscape))
             _write(localValue:gsub("[%c\\']", stringEscape))
-            _write(quote2)
+            _write(symbols.quote2)
         end
     end
 
@@ -242,7 +277,6 @@ function exports.dump(value, recurse, nocolor)
         indent = indent + 1
 
         local LIMIT = 2
-        local i = 1
 
         -- Count the number of keys so we know when to
         -- stop adding commas
@@ -266,7 +300,7 @@ function exports.dump(value, recurse, nocolor)
         end)
 
         -- start table
-        _write(obrace) -- {
+        _write(symbols.obrace) -- {
         if (total > LIMIT) then
             _write('\n')
         end
@@ -292,27 +326,25 @@ function exports.dump(value, recurse, nocolor)
                 -- object item
                 if type(k) == "string" and string.find(k, "^[%a_][%a%d_]*$") then
                     _write(colorize("property", k))
-                    _write(equals)
+                    _write(symbols.equals)
 
                 else
-                    _write(obracket)
+                    _write(symbols.obracket)
                     _process_value(k)
-                    _write(cbracket)
-                    _write(equals)
+                    _write(symbols.cbracket)
+                    _write(symbols.equals)
                 end
 
                 _process_value(v)
             end
 
             if i < total then
-                _write(comma) -- ,
+                _write(symbols.comma) -- ,
 
                 if (total > LIMIT) then
                     _write('\n')
                 end
             end
-
-            i = i + 1
         end
 
         -- end table
@@ -324,7 +356,7 @@ function exports.dump(value, recurse, nocolor)
             _write(' ')
         end
 
-        _write(cbrace) -- }
+        _write(symbols.cbrace) -- }
     end
 
     _process_value = function (localValue)
@@ -341,25 +373,47 @@ function exports.dump(value, recurse, nocolor)
         end
     end
 
-    _process_value(value)
+    local _process_top_value = function (localValue)
+        local valueType = type(localValue)
+        if (valueType == 'string') then
+            _process_string(localValue, true)
+
+        elseif (valueType == 'table') and not seen[localValue] then
+            if not recurse then seen[localValue] = true end
+            _process_table(localValue)
+
+        else
+            _write(colorize(valueType, tostring(localValue)))
+        end
+    end
+
+    _process_top_value(value)
 
     local text = table.concat(output, "")
     return nocolor and exports.strip(text) or text
 end
 
-dump = exports.dump
-
 function exports.printr(...)
-    local n = select('#', ...)
     local arguments = { ... }
 
-    for i = 1, n do
-        arguments[i] = dump(arguments[i])
+    local total = 0
+    for index, value in pairs(arguments) do
+        if (total < index) then total = index end
+        arguments[index] = exports.dump(value)
     end
 
+    for i = 1, total do
+        if (arguments[i] == nil) then
+            arguments[i] = exports.dump(nil)
+        end
+    end
+
+    local stdout = process._stdout
     uv.write(stdout, table.concat(arguments, "\t"))
     uv.write(stdout, "\n")
 end
+
+exports.dir = exports.printr
 
 function exports.printBuffer(text, limit)
     limit = limit or 255
@@ -416,6 +470,7 @@ function exports.timeEnd(label)
     end
 
     local now = process.hrtime() // 1000000
+    local colorize = exports.colorize
     print('timeEnd:', colorize("quotes", label), now - last)
 end
 
@@ -431,6 +486,7 @@ function exports.traceHandler(message)
 end
 
 function exports.write(...)
+    local stdout = process._stdout
     local n = select('#', ...)
     local arguments = { ... }
     for i = 1, n do
@@ -446,42 +502,65 @@ end
 function exports.getFileLine()
     local file, line = util.filename(4)
     local path = require('path')
+    local dirname = path.dirname(file)
     file = path.basename(file) or ''
+    if (dirname and #dirname > 0) then
+        file = path.basename(dirname) .. '/' .. file
+    end
     return file .. ':' .. (line or 0)
 end
 
 function exports.log(message, ...)
+    local colorize = exports.colorize
     print(colorize("sep", '- ' .. exports.getFileLine()))
     exports.printr(message, ...)
 end
 
 function exports.error(message, ...)
-    print(colorize("err", 'Error: ' .. exports.getFileLine()))
+    local colorize = exports.colorize
+    print(colorize("err", '! ' .. exports.getFileLine()))
     exports.printr(message, ...)
 end
 
 function exports.info(message, ...)
-    print(colorize("quotes", 'Info: ' .. exports.getFileLine()))
+    local colorize = exports.colorize
+    print(colorize("quotes", '= ' .. exports.getFileLine()))
     exports.printr(message, ...)
 end
 
 function exports.warn(message, ...)
-    print(colorize("number", 'Warn: ' .. exports.getFileLine()))
+    local colorize = exports.colorize
+    print(colorize("number", '# ' .. exports.getFileLine()))
     exports.printr(message, ...)
 end
 
--------------------------------------------------------------------------------
---
-
-local function initConsoleStream()
-    if (_G.rawPrint) then
+function exports.assert(value, message, ...)
+    if (value) then
         return
     end
+
+    local colorize = exports.colorize
+    print(colorize("sep", '- ' .. exports.getFileLine()))
+    exports.printr(message, ...)
+end
+
+function exports.clear()
+    console.print(symbols.clear)
+end
+
+function exports.winsize()
+    return uv.tty_get_winsize(process._stdin)
+end
+
+-------------------------------------------------------------------------------
+-- print
+
+if (not exports.print) then
 
     -- Print replacement that goes through libuv.  This is useful on windows
     -- to use libuv's code to translate ansi escape codes to windows API calls.
 
-    _G.rawPrint = _G.print
+    exports.print = _G.print
     _G.print = function(...)
         local n = select('#', ...)
         local arguments = { ... }
@@ -489,29 +568,12 @@ local function initConsoleStream()
             arguments[i] = tostring(arguments[i])
         end
 
+        local stdout = process._stdout
         uv.write(stdout, table.concat(arguments, "\t"))
         uv.write(stdout, "\n")
     end
 
-    local _initStream = function(fd, mode)
-        if uv.guess_handle(fd) == 'tty' then
-            local stream = assert(uv.new_tty(fd, mode))
-            return stream, true
-
-        else
-            local stream = uv.new_pipe(false)
-            uv.pipe_open(stream, fd)
-            return stream, false
-        end
-    end
-
-    local isTTY
-    -- Fix: lua stdin bug
-    stdin,  isTTY = _initStream(0, true)
-    stderr, isTTY = _initStream(2, false)
-    stdout, isTTY = _initStream(1, false)
-
-    if (isTTY) then
+    if (process.isTTY) then
          -- auto-detect when 16 color mode should be used
         local term = os.getenv("TERM")
         if term == 'xterm' or term == 'xterm-256color' then
@@ -523,17 +585,12 @@ local function initConsoleStream()
     end
 end
 
-initConsoleStream()
-
 exports.loadColors()
 
 -------------------------------------------------------------------------------
 --
 
-exports.stderr = stderr
-exports.stdin  = stdin
-exports.stdout = stdout
-exports.theme  = theme
+exports.theme = theme
 exports.defaultTheme = defaultTheme
 
 return exports

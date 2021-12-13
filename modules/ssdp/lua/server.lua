@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ function SsdpServer:_encodeNotify(nt, nts, usn)
 	sb:append("NOTIFY * HTTP/1.1\r\n")
 	sb:append("Host:239.255.255.250:1900\r\n")
 	sb:append("Cache-Control:max-age=1800\r\n")
-	sb:append("Location:"):append(self:_getLocation()):append("\r\n")
+	--sb:append("Location:"):append(self:_getLocation()):append("\r\n")
 	sb:append("NT:"):append(nt):append("\r\n")
 	sb:append("NTS:"):append(nts):append("\r\n")
 	sb:append("Server:"):append(self.ssdpSig):append("\r\n")
@@ -76,7 +76,7 @@ function SsdpServer:_encodeResponse(serviceType, usn)
 	sb:append("HTTP/1.1 200 OK\r\n")
 	sb:append("Cache-Control:max-age=1800\r\n")
 	sb:append("Date:"):append(exports.newDateHeader()):append("\r\n")
-	sb:append("Location:"):append(self:_getLocation()):append("\r\n")
+	--sb:append("Location:"):append(self:_getLocation()):append("\r\n")
 	sb:append("Server:"):append(self.ssdpSig):append("\r\n")
 	sb:append("ST:"):append(serviceType):append("\r\n")
 	sb:append("USN:"):append(usn):append("\r\n")
@@ -168,8 +168,7 @@ function SsdpServer:start(localAddress)
 		self:_createSocket(localAddress or INET_ADDR_ANY)
 		self._started = true
 
-		self:_startNotifyLoop()
-
+		-- self:_startNotifyLoop()
 		self:notify(true)
 	end
 end

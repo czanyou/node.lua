@@ -3,6 +3,7 @@
 - [Application - 应用程序](node_app.md)
 - [RPC - 远程过程调用](node_app_rpc.md)
 - [Config - 参数配置接口](node_app_conf.md)
+- [XML - XML 工具模块](node_app_xml.md)
 
 ## 网络服务 API
 

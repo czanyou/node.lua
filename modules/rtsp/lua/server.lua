@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,17 +16,14 @@ limitations under the License.
 
 --]]
 local core 			= require('core')
-local utils 		= require('util')
 local net 			= require('net')
-local rtp 			= require('rtsp/rtp')
 
+local rtp 			= require('rtsp/rtp')
 local rconnection 	= require('rtsp/connection')
 
 local RtspConnection = rconnection.RtspConnection
 
-local meta 		= { }
-local exports 	= { meta = meta }
-
+local exports 	= {}
 
 local function onSendSample(self, sample)
 	if (not sample) then
@@ -88,15 +85,16 @@ end
 -------------------------------------------------------------------------------
 --- RtspServer
 
+---@class RtspServer
 local RtspServer = core.Emitter:extend()
 exports.RtspServer = RtspServer
 
 function RtspServer:initialize()
-	self.connections  		= {}
-	self.connectionId 		= 1
-	self.serverSocket 		= nil
 	self._getMediaSession	= nil
 	self.authCallback       = nil
+	self.connectionId 		= 1
+	self.connections  		= {}
+	self.serverSocket 		= nil
 end
 
 function RtspServer:close(errInfo)
@@ -125,6 +123,10 @@ function RtspServer:removeConnection(connection)
 	end
 
 	self.connections[connection.connectionId] = nil
+end
+
+function RtspServer:setAuthCallback(callback)
+	self.authCallback = callback
 end
 
 function RtspServer:start(port, callback)
@@ -157,7 +159,7 @@ function RtspServer:start(port, callback)
 	  	connection:on('close', function()
 	  		self:removeConnection(connection)
 	  	end)
-	  	  	
+
 	  	connection:start()
 
 	  	self.connectionId = self.connectionId + 1
@@ -187,7 +189,7 @@ function exports.startServer(port, callback)
 end
 
 setmetatable(exports, {
-	__call = function(self, ...) 
+	__call = function(self, ...)
 		return self.startServer(...)
 	end
 })

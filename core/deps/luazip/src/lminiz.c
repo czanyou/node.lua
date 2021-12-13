@@ -16,7 +16,8 @@
  */
 
 #include "luv.h"
-#include "miniz.c"
+#include "miniz.h"
+#include "miniz_zip.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // miniz
@@ -26,6 +27,8 @@ typedef struct {
 	uv_loop_t *loop;
 	uv_fs_t req;
 	uv_file fd;
+	uint8_t* rawdata;
+	size_t rawlen;
 } lmz_file_t;
 
 #define MZ_READER_NAME "miniz_reader"
@@ -56,6 +59,8 @@ static int lmz_reader_init(lua_State* L) {
 
 	// open & stat file
 	zip->loop = uv_default_loop();
+	zip->rawdata = NULL;
+	zip->rawlen = 0;
 	zip->fd = uv_fs_open(zip->loop, &(zip->req), path, O_RDONLY, 0644, NULL);
 	uv_fs_fstat(zip->loop, &(zip->req), zip->fd, NULL);
 	size = zip->req.statbuf.st_size;
@@ -72,11 +77,54 @@ static int lmz_reader_init(lua_State* L) {
 	return 1;
 }
 
+static int lmz_reader_mem_init(lua_State* L) {
+	size_t len = 0;
+	const char* data = luaL_checklstring(L, 1, &len);
+	mz_uint32 flags  = luaL_optinteger(L, 2, 0);
+
+	// archive
+	lmz_file_t* zip = lua_newuserdata(L, sizeof(*zip));
+	mz_zip_archive* archive = &(zip->archive);
+	luaL_getmetatable(L, MZ_READER_NAME);
+	lua_setmetatable(L, -2);
+	memset(archive, 0, sizeof(*archive));
+
+	// open & stat file
+	zip->loop = uv_default_loop();
+	zip->rawdata = malloc(len);
+	zip->fd = -1;
+	zip->rawlen = 0;
+	if (zip->rawdata) {
+		memcpy(zip->rawdata, data, len);
+		zip->rawlen = len;
+	}
+
+	archive->m_pIO_opaque = zip;
+
+	// init the zip reader
+	if (!mz_zip_reader_init_mem(archive, zip->rawdata, zip->rawlen, flags)) {
+		lua_pushnil(L);
+		lua_pushfstring(L, "does not appear to be a zip file");
+		return 2;
+	}
+
+	return 1;
+}
+
 static int lmz_reader_close(lua_State *L) {
 	lmz_file_t* zip = luaL_checkudata(L, 1, MZ_READER_NAME);
 
-	uv_fs_close(zip->loop, &(zip->req), zip->fd, NULL);
-	uv_fs_req_cleanup(&(zip->req));
+	if (zip->rawdata) {
+		free(zip->rawdata);
+		zip->rawdata = NULL;
+		zip->rawlen = 0;
+	}
+
+	if (zip->fd > 0) {
+		uv_fs_close(zip->loop, &(zip->req), zip->fd, NULL);
+		uv_fs_req_cleanup(&(zip->req));
+		zip->fd = -1;
+	}
 
 	mz_zip_reader_end(&(zip->archive));
 	return 0;
@@ -85,6 +133,12 @@ static int lmz_reader_close(lua_State *L) {
 static int lmz_reader_gc(lua_State *L) {
 	lmz_file_t* zip = luaL_checkudata(L, 1, MZ_READER_NAME);
 
+	if (zip->rawdata) {
+		free(zip->rawdata);
+		zip->rawdata = NULL;
+		zip->rawlen = 0;
+	}
+	
 	uv_fs_close(zip->loop, &(zip->req), zip->fd, NULL);
 	uv_fs_req_cleanup(&(zip->req));
 
@@ -92,13 +146,13 @@ static int lmz_reader_gc(lua_State *L) {
 	return 0;
 }
 
-static int lmz_reader_get_num_files(lua_State *L) {
+static int lmz_reader_get_file_count(lua_State *L) {
 	lmz_file_t* zip = luaL_checkudata(L, 1, MZ_READER_NAME);
 	lua_pushinteger(L, mz_zip_reader_get_num_files(&(zip->archive)));
 	return 1;
 }
 
-static int lmz_reader_locate_file(lua_State *L) {
+static int lmz_reader_get_index(lua_State *L) {
 	lmz_file_t* zip  = luaL_checkudata(L, 1, MZ_READER_NAME);
 	const char *path = luaL_checkstring(L, 2);
 	mz_uint32 flags  = luaL_optinteger(L, 3, 0);
@@ -184,7 +238,7 @@ static int lmz_reader_get_filename(lua_State* L) {
 	return 1;
 }
 
-static int lmz_reader_is_file_a_directory(lua_State  *L) {
+static int lmz_reader_is_directory(lua_State  *L) {
 	lmz_file_t* zip    = luaL_checkudata(L, 1, MZ_READER_NAME);
 	mz_uint file_index = luaL_checkinteger(L, 2) - 1;
 
@@ -200,6 +254,25 @@ static int lmz_reader_extract(lua_State *L) {
 
 	size_t out_len = 0;
 	char* out_buf = mz_zip_reader_extract_to_heap(&(zip->archive), file_index, &out_len, flags);
+	lua_pushlstring(L, out_buf, out_len);
+	free(out_buf);
+	return 1;
+}
+
+static int lmz_reader_read_file(lua_State *L) {
+	lmz_file_t* zip    = luaL_checkudata(L, 1, MZ_READER_NAME);
+	const char *path = luaL_checkstring(L, 2);
+	mz_uint flags      = luaL_optinteger(L, 3, 0);
+
+	int index = mz_zip_reader_locate_file(&(zip->archive), path, NULL, flags);
+	if (index < 0) {
+		lua_pushnil(L);
+		lua_pushfstring(L, "Can't find file %s.", path);
+		return 2;
+	}
+
+	size_t out_len = 0;
+	char* out_buf = mz_zip_reader_extract_to_heap(&(zip->archive), index, &out_len, flags);
 	lua_pushlstring(L, out_buf, out_len);
 	free(out_buf);
 	return 1;
@@ -280,24 +353,25 @@ static int lmz_writer_gc(lua_State *L) {
 static int lmz_inflate(lua_State* L) {
 	size_t in_len;
 	const char* in_buf = luaL_checklstring(L, 1, &in_len);
-	size_t out_len;
+	size_t out_len = 0;
 	int flags = luaL_optinteger(L, 2, 0);
 
 	char* out_buf = tinfl_decompress_mem_to_heap(in_buf, in_len, &out_len, flags);
 	lua_pushlstring(L, out_buf, out_len);
-	free(out_buf);
+	mz_free(out_buf);
+
 	return 1;
 }
 
 static int lmz_deflate(lua_State* L) {
 	size_t in_len;
 	const char* in_buf = luaL_checklstring(L, 1, &in_len);
-	size_t out_len;
+	size_t out_len = 0;
 	int flags = luaL_optinteger(L, 2, 0);
 
 	char* out_buf = tdefl_compress_mem_to_heap(in_buf, in_len, &out_len, flags);
 	lua_pushlstring(L, out_buf, out_len);
-	free(out_buf);
+	mz_free(out_buf);
 	return 1;
 }
 
@@ -305,29 +379,31 @@ static int lmz_deflate(lua_State* L) {
 // methods
 
 static const luaL_Reg lminiz_read_m[] = {
-  {"close",			lmz_reader_close},
-  {"extract",		lmz_reader_extract},
-  {"get_filename",	lmz_reader_get_filename},
-  {"get_num_files", lmz_reader_get_num_files},
-  {"is_directory",	lmz_reader_is_file_a_directory},
-  {"locate_file",	lmz_reader_locate_file},
-  {"stat",			lmz_reader_stat},
+  {"close",			lmz_reader_close },
+  {"extract",		lmz_reader_extract },
+  {"readFile",		lmz_reader_read_file },
+  {"getFileCount",  lmz_reader_get_file_count },
+  {"getFilename",	lmz_reader_get_filename },
+  {"getIndex",	    lmz_reader_get_index },
+  {"isDirectory",	lmz_reader_is_directory },
+  {"stat",			lmz_reader_stat },
   {NULL, NULL}
 };
 
 static const luaL_Reg lminiz_write_m[] = {
-  {"add",			lmz_writer_add_mem},
-  {"add_from_zip",	lmz_writer_add_from_zip_reader},
-  {"close",			lmz_writer_close},
-  {"finalize",		lmz_writer_finalize},
+  {"add",			lmz_writer_add_mem },
+  {"addFromReader",	lmz_writer_add_from_zip_reader },
+  {"close",			lmz_writer_close },
+  {"finalize",		lmz_writer_finalize },
   {NULL, NULL}
 };
 
 static const luaL_Reg lminiz_f[] = {
-  {"new_reader",	lmz_reader_init},
-  {"new_writer",	lmz_writer_init},
-  {"inflate",		lmz_inflate},
-  {"deflate",		lmz_deflate},
+  {"read",	        lmz_reader_mem_init },
+  {"createReader",	lmz_reader_init },
+  {"createWriter",	lmz_writer_init },
+  {"inflate",		lmz_inflate },
+  {"deflate",		lmz_deflate },
   {NULL, NULL}
 };
 

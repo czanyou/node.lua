@@ -1,11 +1,9 @@
-local tap    = require('ext/tap')
+local tap    = require('util/tap')
 local conf 	 = require('app/conf')
 local uv 	 = require('luv')
 local assert = require('assert')
 
-local test = tap.test
-
-test("test profile:load", function ()
+describe("test profile:load", function ()
 	local text = [[
 	{
 		"test" : {
@@ -43,7 +41,7 @@ test("test profile:load", function ()
 	assert.equal(video.none, nil)
 end)
 
-test("test profile:set", function ()
+describe("test profile:set", function ()
 	local text = '{}'
 
 	local func  	= function() end
@@ -70,9 +68,10 @@ test("test profile:set", function ()
 	profile:set("test.thread", 		thread)
 	profile:set("test.userdata", 	userdata)
 
-	profile:commit(function()
-		print("assert get")
-		--print(profile:toString())	
+	-- [[
+	profile:commit(function(err)
+		print("assert get", err)
+		--print(profile:toString())
 
 		assert.equal(profile:get("test.name"), 		"gigi")
 		assert.equal(profile:get("test.int"), 		400)
@@ -80,16 +79,17 @@ test("test profile:set", function ()
 		assert.equal(profile:get("test.true"), 		true)
 		assert.equal(profile:get("test.false"), 	false)
 		assert.equal(profile:get("test.nil"), 		nil)
-		assert.equal(profile:get("test.object.func"), 	tostring(func))
+		--assert.equal(profile:get("test.object.func"), tostring(func))
 		assert.equal(profile:get("test.function"), 	tostring(func))
 		assert.equal(profile:get("test.thread"), 	tostring(thread))
 		assert.equal(profile:get("test.userdata"), 	tostring(userdata))
 
 		os.remove(profile.filename)
 	end)
+	--]]
 end)
 
-test("test profile:set name type", function ()
+describe("test profile:set name type", function ()
 	local filename = "test.conf"
 	local profile = conf.Profile:new(filename)
 	profile:load("{}")
@@ -125,10 +125,7 @@ test("test profile:set name type", function ()
 	assert.equal(profile:get(userdata), 'v')
 end)
 
-test("test profile conf", function ()
+describe("test profile conf", function ()
 	local profile = conf('network')
 	console.log(profile)
 end)
-
-tap.run()
-

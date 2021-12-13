@@ -22,7 +22,7 @@ RTSP/HTTP 连接可以调用 getSdpString 取得这个会话的媒体信息
 
 创建一个媒体会话, 并绑定到指定名称的摄像机
 
-- name {string} 摄像机名称, `mock:<filename>` 表示由文件模拟的摄像机, `camera:<id>` 表示指定 ID 的摄像机
+- name `{string}` 摄像机名称, `mock:<filename>` 表示由文件模拟的摄像机, `camera:<id>` 表示指定 ID 的摄像机
 
 返回创建的媒体会话
 
@@ -59,7 +59,7 @@ RTSP/HTTP 连接可以调用 getSdpString 取得这个会话的媒体信息
 
 应用程序可以通过重载这个方法来改变编码规则
 
-- sample {object} 数据帧
+- sample `{object}` 数据帧
 
 #### MediaSession:onSendPacket
 
@@ -94,9 +94,9 @@ write a TS packet
 
 注意不要和 writeSample 同时使用.
 
-- packageData {string} 媒体数据，暂时只接受 188 字节长的 TS 包
-- sampleTime {number} 媒体时间戳, 单位为 1 / 1,000,000 秒
-- flags {number} 媒体数据标记, 具体定义有为:
+- packageData `{string}` 媒体数据，暂时只接受 188 字节长的 TS 包
+- sampleTime `{number}` 媒体时间戳, 单位为 1 / 1,000,000 秒
+- flags `{number}` 媒体数据标记, 具体定义有为:
   - 0x01: 同步点(关键帧)
   - 0x02: 帧结束标记
   - 0x8000: 这是一个音频帧
@@ -113,11 +113,11 @@ write a sample，媒体数据先放到会话的内部发送队列中。
 
 这个方法实际会在内部将 sample 转换成 TS 流, 再调用 writePacket 写入转换后的 TS 流.
 
-- sample {object}
-  - syncPoint {boolean} 是否是同步点
-  - sampleData {string} 包含完整的一帧媒体数据
-  - sampleTime {number} 单位为 1 / 1,000,000 秒
-  - isAudio {number} 表示这是一个音频帧
+- sample `{object}`
+  - syncPoint `{boolean}` 是否是同步点
+  - sampleData `{string}` 包含完整的一帧媒体数据
+  - sampleTime `{number}` 单位为 1 / 1,000,000 秒
+  - isAudio `{number}` 表示这是一个音频帧
 
 ## 示例
 

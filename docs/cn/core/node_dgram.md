@@ -6,8 +6,8 @@
 
 > dgram.createSocket(type, [callback])
 
-- `type` {string} 可以是 'udp4' 或 'udp6'
-- `callback` {function} 可选, 会被作为 message 事件的监听器。
+- type `{string}` 可以是 'udp4' 或 'udp6'
+- callback `{function}` 可选, 会被作为 message 事件的监听器。
 - 返回：Socket 对象
 
 创建一个指定类型的数据报 Socket。有效类型包括 udp4 和 udp6。
@@ -26,8 +26,8 @@ dgram Socket 类封装了数据报功能, 可以通过 dgram.createSocket(type, 
 
 #### 事件: 'message'
 
-- `msg` {Buffer} 对象, 消息
-- `rinfo` {object}, 远程地址信息
+- msg `{string}` 对象, 消息
+- rinfo `{object}`, 远程地址信息
 
 当套接字中有新的数据报时发生。msg 是一个 Buffer, rinfo 是一个包含了发送者地址信息的对象：
 
@@ -48,7 +48,7 @@ end)
 
 #### 事件: 'error'
 
-- `exception` {Error}
+- exception `{Error}`
 
 当发生错误时产生。
 
@@ -58,8 +58,8 @@ end)
 
 > socket.addMembership(multicastAddress, [multicastInterface])
 
-- `multicastAddress` {string}
-- `multicastInterface` {string}, 可选
+- multicastAddress `{string}`
+- multicastInterface `{string}`, 可选
 
 以 `IP_ADD_MEMBERSHIP` 套接字选项告诉内核加入一个组播分组。
 
@@ -74,9 +74,9 @@ end)
 
 > socket.bind(port, [address], [callback])
 
-- `port` {number}
-- `address` {string}, 可选
-- `callback` {function} 没有参数的 function, 可选, 当绑定完成时被调用。
+- port `{number}`
+- address `{string}`, 可选
+- callback `{function}` 没有参数的 function, 可选, 当绑定完成时被调用。
 
 对于 UDP 套接字, 在一个具名端口 port 和可选的地址 address 上监听数据报。如果 address 未指定, 
 则操作系统会尝试监听所有地址。当绑定完成后, 一个 "listening" 事件会发生, 
@@ -105,8 +105,8 @@ server:bind(41234);
 
 > socket.dropMembership(multicastAddress, [multicastInterface])
 
-- `multicastAddress` {string}
-- `multicastInterface` {string}, 可选
+- multicastAddress `{string}`
+- multicastInterface `{string}`, 可选
 
 与 addMembership 相反, 以 IP\_DROP_MEMBERSHIP 套接字选项告诉内核退出一个组播分组。
 当套接字被关闭或进程结束时内核会自动调用, 因此大多数应用都没必要调用它。
@@ -117,12 +117,12 @@ server:bind(41234);
 
 > socket.send(buffer, port, address, [callback])
 
-- `buffer` {string} 对象, 要发送的消息
-- `offset` {number}, Buffer 中消息起始偏移值。
-- `length` {number}, 消息的字节数。
-- `port` {number}, 目标端口
-- `address` {string}, 目标 IP
-- `callback` {function}, 可选, 当消息被投递后的回调。
+- buffer `{string}` 对象, 要发送的消息
+- offset `{number}`, Buffer 中消息起始偏移值。
+- length `{number}`, 消息的字节数。
+- port `{number}`, 目标端口
+- address `{string}`, 目标 IP
+- callback `{function}`, 可选, 当消息被投递后的回调。
 
 对于 UDP 套接字, 必须指定目标端口和 IP 地址。address 参数可以是一个字符串, 它会被 DNS 解析。
 可选地可以指定一个回调以用于发现任何 DNS 错误或当 buf 可被重用。请注意 DNS 
@@ -164,7 +164,7 @@ IPv4 允许最小 68 字节的 MTU, 而 IPv4 所推荐的 MTU 为 576（通常�
 
 > socket.setBroadcast(flag)
 
-- `flag` {boolean}
+- flag `{boolean}`
 
 设置或清除 SO_BROADCAST 套接字选项。当该选项被设置, 则 UDP 报文可能被发送到一个本地接口的广播地址。
 
@@ -172,7 +172,7 @@ IPv4 允许最小 68 字节的 MTU, 而 IPv4 所推荐的 MTU 为 576（通常�
 
 > socket.setMulticastLoopback(flag)
 
-- `flag` {boolean}
+- flag `{boolean}`
 
 设置或清除 `IP_MULTICAST_LOOP` 套接字选项。当该选项被设置时, 组播报文也会被本地接口收到。
 
@@ -180,7 +180,7 @@ IPv4 允许最小 68 字节的 MTU, 而 IPv4 所推荐的 MTU 为 576（通常�
 
 > socket.setMulticastTTL(ttl)
 
-- `ttl` {number}
+- ttl `{number}`
 
 设置 `IP_MULTICAST_TTL` 套接字选项。TTL 表示 “Time to Live”（生存时间）, 
 但在此上下文中它指的是报文允许通过的 IP 跃点数, 特别是组播流量。
@@ -192,7 +192,7 @@ setMulticastTTL() 的参数为介于 1 至 255 的跃点数。在大多数系统
 
 > socket.setTTL(ttl)
 
-- `ttl` {number} 生存时间
+- ttl `{number}` 生存时间
 
 设置 IP_TTL 套接字选项。TTL 表示 “Time to Live”（生存时间）, 
 但在此上下文中它指的是报文允许通过的 IP 跃点数。各个转发报文的路由器或网关都会递减 TTL。

@@ -1,4 +1,4 @@
-# WoT - Web of Things
+# WoT Script API
 
 IoT 客户端模块
 
@@ -22,12 +22,12 @@ IoT 客户端模块
   - items (array) 数据项类型
   - minItems (array) 最小长度
   - maxItems (array) 最大长度
-  - properties  (object) 属性列表
+  - properties (object) 属性列表
   - mandatory (object) 必需的属性
   - minimum (number) 最小值
-  - maximum(number) 最大值
+  - maximum (number) 最大值
   - minimum (integer) 最小值
-  - maximum(integer) 最大值
+  - maximum (integer) 最大值
   - enumeration (string) 枚举列表
 
 ## ThingDiscover
@@ -54,7 +54,7 @@ IoT 客户端模块
 
 > ThingDiscover:next()
 
-## ThingInstance
+## ThingDescription
 
 ### 属性
 
@@ -87,6 +87,8 @@ IoT 客户端模块
 事物事件列表
 
 ## ConsumedThing
+
+这个 API 暂时没有完全实现
 
 ### 属性 instance
 
@@ -182,11 +184,45 @@ IoT 客户端模块
 
 继承自 ConsumedThing
 
+用来发布一个事物，可以向云端上报数据流和事件，并接受云端的操作控制信令
+
 ### new
 
 > ExposedThing:new(thingInstance)
 
 - thingInstance `{object|string}` 事物描述
+
+### destroy
+
+> ExposedThing:destroy()
+
+销毁这个事物
+
+### emitEvent
+
+> emitEvent(name, data, options)
+
+发送事件
+
+- name `{string}` 事件名
+- data `{any}` 事件数据
+
+### expose
+
+> ExposedThing:expose()
+
+导出这个事物
+
+### sendStream
+
+> ExposedThing:sendStream(values, options, callback)
+
+发送数据流
+
+- values `table` 要发送的数据点
+- options `table` 发送选项
+  - qos `integer` 服务质量, 0 表示立即发送, 1 表示缓存到发送队列后发送，2 表示发送后需要确认
+- callback `function` 发送成功后调用
 
 ### setPropertyReadHandler
 
@@ -213,28 +249,7 @@ IoT 客户端模块
 > setActionHandler(name, handler)
 
 - name `{string}` 操作名
-- handler  `{function}` 处理函数
-
-### emitEvent
-
-> emitEvent(name, data)
-
-发送事件
-
-- name `{string}` 事件名
-- data `{any}` 事件数据
-
-### expose
-
-> ExposedThing:expose()
-
-导出这个事物
-
-### destroy
-
-> ExposedThing:destroy()
-
-销毁这个事物
+- handler `{function}` 处理函数
 
 ## wot 
 
@@ -252,7 +267,7 @@ IoT 客户端模块
 
 > wot.consume(thingInstance)
 
-- thingInstance `{ThingInstance}` 要消费的事物
+- thingInstance `{ThingDescription}` 要消费的事物
 
 ### produce
 
@@ -260,4 +275,4 @@ IoT 客户端模块
 
 > wot.produce(thingInstance)
 
-- thingInstance `{ThingInstance}` 事物模型
+- thingInstance `{ThingDescription}` 事物模型

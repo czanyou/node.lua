@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@ limitations under the License.
 local core 	= require('core')
 local utils = require('util')
 
-local meta 		= { }
-local exports 	= { meta = meta }
+local exports 	= {}
 
 local MAX_QUEUE_SIZE 	= 10
 local FLAG_IS_SYNC 		= 0x01
@@ -32,6 +31,7 @@ exports.FLAG_IS_END 	= FLAG_IS_END
 -------------------------------------------------------------------------------
 -- MediaQueue
 
+---@class MediaQueue
 local MediaQueue = core.Emitter:extend()
 exports.MediaQueue = MediaQueue
 
@@ -40,7 +40,7 @@ function MediaQueue:initialize(maxSize)
 	self.waitSync  	 	= true	-- wait sync point
 	self.maxQueueSize   = maxSize or MAX_QUEUE_SIZE
 
-	self._sampleQueue   = {}	-- sample queue	
+	self._sampleQueue   = {}	-- sample queue
 end
 
 --[[
@@ -62,7 +62,7 @@ function MediaQueue:pop()
 		return nil
 	end
 
-	if (#self._sampleQueue > 0) then 
+	if (#self._sampleQueue > 0) then
 		local sample = self._sampleQueue[1]
 		table.remove(self._sampleQueue, 1)
 		return sample

@@ -1,5 +1,5 @@
 /**
- *  Copyright 2016 The Node.lua Authors. All Rights Reserved.
+ *  Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
 #if !defined(LUA_INIT_VAR)
 #define LUA_INIT_VAR "LUA_INIT"
 #endif
+
+extern const uint8_t init_data[];
 
 #define LUA_INITVARVERSION LUA_INIT_VAR LUA_VERSUFFIX
 
@@ -102,7 +104,6 @@ static void lnode_stop (lua_State *L, lua_Debug *ar) {
 	luaL_error(L, "interrupted!");
 }
 
-
 /*
 ** Function to be called at a C signal. Because a C signal cannot
 ** just change a Lua state (as there is no proper synchronization),
@@ -139,12 +140,53 @@ static int lnode_dochunk (lua_State *L, int status) {
   	return lnode_report_message(L, status);
 }
 
-static int lnode_dofile (lua_State *L, const char *name) {
-  	return lnode_dochunk(L, luaL_loadfile(L, name));
+static int lnode_dostring (lua_State *L, const char *s, const char *name) {
+  	return lnode_dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
 }
 
-static int lnode_dostring (lua_State *L, const char *s, const char *name) {
-  return lnode_dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
+static int lnode_dofile (lua_State *L, const char *filename) {
+	if ((filename == NULL) || (*filename == 0)) {
+		return lnode_dochunk(L, luaL_loadfile(L, filename));
+	}
+
+	char pathname[PATH_MAX];
+	memset(pathname, 0, sizeof(pathname));
+
+	int isFile = 1;
+	uv_fs_t req;
+	uv_stat_t* stat;
+	int ret = uv_fs_stat(NULL, &req, filename, NULL);
+	if (ret == 0) {
+		stat = &req.statbuf;
+
+		if (S_ISDIR(stat->st_mode)) {
+			// path to lua/app.lua
+			strncpy(pathname, filename, PATH_MAX);
+			strncat(pathname, "/lua/app.lua", PATH_MAX);
+			filename = pathname;
+
+		} else {
+			size_t len = strlen(filename);
+			if (len > 4) {
+				const char *p = filename + len - 4;
+				// printf("ext: %s %d\r\n", p, strncmp(p, ".zip", PATH_MAX));
+
+				if (strncmp(p, ".zip", PATH_MAX) == 0) {
+					snprintf(pathname, PATH_MAX, "require('app').open('%s');", filename);
+					isFile = 0;
+				}
+			}
+		}
+	}
+
+	uv_fs_req_cleanup(&req);
+
+	if (isFile) {
+  		return lnode_dochunk(L, luaL_loadfile(L, filename));
+
+	} else {
+		return lnode_dostring(L, pathname, "@/$core/lnode/init.lua");
+	}
 }
 
 /*
@@ -152,14 +194,25 @@ static int lnode_dostring (lua_State *L, const char *s, const char *name) {
 ** with the given name.
 */
 static int lnode_dolibrary (lua_State *L, const char *name) {
-  int status;
-  lua_getglobal(L, "require");
-  lua_pushstring(L, name);
-  status = lnode_docall(L, 1, 1);  /* call 'require(name)' */
-  if (status == LUA_OK) {
-    lua_setglobal(L, name);  /* global[name] = require return */
-  }
-  return lnode_report_message(L, status);
+	int status;
+	lua_getglobal(L, "require");
+	lua_pushstring(L, name);
+	status = lnode_docall(L, 1, 1);  /* call 'require(name)' */
+	if (status == LUA_OK) {
+		lua_setglobal(L, name);  /* global[name] = require return */
+	}
+	return lnode_report_message(L, status);
+}
+
+static int lnode_init (lua_State *L) {
+#ifdef NODE_LUA_RESOURCE
+	const char* data = (const char*)init_data;
+	return lnode_dostring(L, data, "init");
+	
+#else
+	lnode_dolibrary(L, "init");
+#endif
+	return 0;
 }
 
 /**
@@ -202,8 +255,8 @@ int lnode_run_applet(const char* name, int argc, char* argv[]) {
 
 	int res = 0;
 
-	char buffer[PATH_MAX];
-	memset(buffer, 0, PATH_MAX);
+	char pathname[PATH_MAX];
+	memset(pathname, 0, PATH_MAX);
 
 	// Hooks in libuv that need to be done in main.
 	argv = uv_setup_args(argc, argv);
@@ -220,12 +273,12 @@ int lnode_run_applet(const char* name, int argc, char* argv[]) {
 	lnode_openlibs(L); 	// Add in the lua ext libraries
 	lnode_create_arg_table(L, argv, argc, 0);
 	lnode_init_package_paths(L);
-	lnode_dolibrary(L, "init");
+	lnode_init(L);
 	luv_set_thread_cb(lnode_vm_acquire, lnode_vm_release);
 
 	// call
-	sprintf(buffer, "require('%s/app');", name);
-	res = lnode_dostring(L, buffer, argv[0]);
+	sprintf(pathname, "require('%s/app');", name);
+	res = lnode_dostring(L, pathname, argv[0]);
 
 	// exit
 	lnode_dostring(L, "runLoop()", "=(C run)");
@@ -233,22 +286,6 @@ int lnode_run_applet(const char* name, int argc, char* argv[]) {
 	lnode_vm_release(L);
 
 	return res;
-}
-
-
-/** Prints the current lnode version information. */
-static int lnode_print_version()
-{
-    char buffer[PATH_MAX];
-    memset(buffer, 0, sizeof(buffer));
-    sprintf(buffer, "lnode %d.%d (Lua %s.%s.%s, libuv %s, build %s %s)",
-            LNODE_MAJOR_VERSION, LNODE_MINOR_VERSION,
-            LUA_VERSION_MAJOR, LUA_VERSION_MINOR, LUA_VERSION_RELEASE,
-            uv_version_string(), __DATE__, __TIME__);
-    lua_writestring(buffer, strlen(buffer));
-    lua_writeline();
-
-    return 0;
 }
 
 /** Prints the current lnode usage information. */
@@ -279,7 +316,6 @@ static int lnode_print_usage()
 
 static int lnode_print_runtime_info(lua_State* L) {
   char script[] =
-    "pcall(require, 'init')\n"
     "local lnode = require('lnode')\n"
     "print('NODE_LUA_ROOT:\\n' .. lnode.NODE_LUA_ROOT .. '\\n')\n"
     "local path = string.gsub(package.path, ';', '\\n')"
@@ -421,8 +457,8 @@ int main(int argc, char* argv[]) {
 	lnode_openlibs(L); 	// Add in the lua ext libraries
 	lnode_create_arg_table(L, argv, argc, has_eval ? arg_index - 1 : arg_index);
 	lnode_init_package_paths(L);
-	lnode_dolibrary(L, "init");
     lnode_lua_init(L, has_ignore);
+	lnode_init(L);
 
 	if (has_info) {
 		// 仅仅打印运行环境信息

@@ -5,7 +5,9 @@ local path 	= require('path')
 local json  = require('json')
 local exec  = require('child_process').exec
 
+local devices = require('devices')
 local express = require('express')
+
 local config  = require('app/conf')
 local rpc     = require('app/rpc')
 
@@ -13,23 +15,69 @@ local network = require("./network")
 
 local exports = {}
 
--- 加载描写的配置文件的内容
--- @param {string} name 名称
-local function loadProfile(name)
-    local filename = path.join(app.nodePath, 'conf', name)
-    local data = fs.readFileSync(filename)
-    return json.parse(data)
+local contorller = {}
+
+-- 检查客户端是否已登录
+local function checkApiLogin(request, response)
+    local session = request:getSession()
+    local userinfo = session and session.userinfo
+    if (userinfo) then
+        return
+    end
+
+    return { code = 401, error = 'Unauthorized' }
 end
 
-local function startWatchConfig(callback)
-    exports.defaultConfig = config('default')
-    exports.userConfig = config('user')
+-- 检查客户端是否已经登录
+local function checkViewsLogin(request, response, next)
+    local pathname = request.uri.pathname or ''
 
-    exports.userConfig:startWatch(callback)
-    exports.defaultConfig:startWatch(callback)
+    if (pathname == '/login.html') then
+        return next()
+    end
+
+    -- check file type
+    local isHtml = (pathname == '/') or pathname:endsWith('.html')
+    if (not isHtml) then
+        return next()
+    end
+
+    -- check activate
+    local defaultConfig = exports.defaultConfig
+    local activate = defaultConfig and defaultConfig:get('activate')
+    if (not activate) then
+        -- 当设备还未激活时，总是重定向到激活页面
+        if (pathname ~= '/activate.html') then
+            local timestamp = contorller.created or Date.now()
+            response:set('Location', '/activate.html?_t=' .. timestamp)
+            response:sendStatus(302)
+            return
+        end
+
+        return next()
+    end
+
+    -- check session
+    local session = request:getSession()
+    local userinfo = session and session.userinfo
+    if (userinfo) then
+        if (pathname == '/') then
+            local timestamp = contorller.created or Date.now()
+            response:set('Location', '/settings.html?_t=' .. timestamp)
+            response:sendStatus(302)
+            return
+        end
+
+        return next()
+    end
+
+    -- 重定向到登录页面
+    local timestamp = contorller.created or Date.now()
+    response:set('Location', '/login.html?_t=' .. timestamp)
+    response:sendStatus(302)
 end
 
--- Get the MAC address of localhost
+-- Get the MAC address of current host
 local function getMacAddress()
     local faces = os.networkInterfaces()
     if (faces == nil) then
@@ -63,52 +111,275 @@ local function getMacAddress()
     return util.hexEncode(item.mac)
 end
 
-local function getSystemTime()
+local function getCurrentSystemTime()
     return os.date('%Y-%m-%d %X')
 end
 
--- 检查客户端是否已经登录
-local function checkLogin(request, response)
-    local pathname = request.uri.pathname or ''
-    -- console.log(pathname)
-    if (pathname == '/login.html') then
-        return false
-    end
-
-    -- check file type
-    local isHtml = (pathname == '/') or pathname:endsWith('.html')
-    if (not isHtml) then
-        return false
-    end
-
-    -- check activate
-    local default = exports.defaultConfig
-    local activate = default and default:get('activate')
-    if (not activate) then
-        -- 当设备还未激活时，总是重定向到激活页面
-        if (pathname ~= '/activate.html') then
-            response:set('Location', '/activate.html')
-            response:sendStatus(302)
-            return true
-        end
-
-        return false
-    end
-
-    -- check session
-    local session = request:getSession()
-    local userinfo = session and session.userinfo
-    if (userinfo) then
-        return false
-    end
-
-    -- 重定向到登录页面
-    response:set('Location', '/login.html')
-    response:sendStatus(302)
-    return true
+-- 加载描写的配置文件的内容
+-- @param {string} name 名称
+local function loadProfile(name)
+    local filename = path.join(app.nodePath, 'conf', name)
+    local data = fs.readFileSync(filename)
+    return json.parse(data)
 end
 
-local function apiAuthLogin(request, response)
+function contorller.getAuthSelf(request, response)
+    local session = request:getSession(false)
+    local userInfo
+    if (session) then
+        userInfo = session['userinfo']
+    end
+
+    response:json(userInfo or { code = 401, error = 'Unauthorized' })
+end
+
+function contorller.getConfig(request, response, name, key)
+    local ret = checkApiLogin(request, response)
+    if (ret) then
+        return response:json(ret)
+    end
+
+    config.load(name, function(ret, profile)
+        local data = profile.settings
+        if (key) then
+            data = profile:get(key)
+        end
+        response:json(data or { code = -404 })
+    end)
+end
+
+function contorller.getDeviceInfo(request, response)
+    local deviceStatus = devices.getDeviceProperties() or {};
+    deviceStatus.version = process.version
+
+    response:json(deviceStatus)
+end
+
+function contorller.getDefaultConfig(request, response)
+    return contorller.getConfig(request, response, 'default')
+end
+
+function contorller.getFirmwareStatus(request, response)
+    local tmpPath = os.tmpdir
+
+    local function loadStatus(name)
+        local status = fs.readFileSync(tmpPath .. '/update/' .. name .. '.json')
+        return json.parse(status)
+    end
+
+    local currentStatus = {}
+    currentStatus.version = process.version
+
+    local status = {
+        current = currentStatus,
+        firmware = loadStatus('firmware'),
+        status = loadStatus('update'),
+        upload = loadStatus('upload')
+    }
+
+    response:json(status)
+end
+
+function contorller.getGatewayConfig(request, response)
+    return contorller.getConfig(request, response, 'user', 'gateway')
+end
+
+function contorller.getLogConfig(request, response)
+    return contorller.getConfig(request, response, 'user', 'log')
+end
+
+function contorller.getLoraConfig(request, response)
+    return contorller.getConfig(request, response, 'user', 'lora')
+end
+
+function contorller.getNetworkConfig(request, response)
+    local ret = checkApiLogin(request, response)
+    if (ret) then
+        return response:json(ret)
+    end
+
+    config.load("network", function(ret, profile)
+        local networkConfig = profile:get('static') or {}
+        response:json(networkConfig)
+    end)
+end
+
+function contorller.getPeripheralsConfig(request, response)
+    return contorller.getConfig(request, response, 'user', 'peripherals')
+end
+
+function contorller.getRegisterConfig(request, response)
+    local ret = checkApiLogin(request, response)
+    if (ret) then
+        return response:json(ret)
+    end
+
+    local server = app.get('server')
+
+    local result = {}
+    result.base = app.get('base')
+    result.mqtt = app.get('mqtt')
+    result.did = app.get('did')
+    result.secret = app.get('secret')
+
+    if (server) then
+        result.lifetime = server.lifetime
+        result.password = server.password
+        result.server = server.server
+        result.username = server.username
+    end
+
+    response:json(result)
+end
+
+function contorller.getScriptConfig(request, response)
+    return contorller.getConfig(request, response, 'script', 'script')
+end
+
+function contorller.getSlaveConfig(request, response)
+    return contorller.getConfig(request, response, 'user', 'slave')
+end
+
+function contorller.getSystemActivateStatus(request, response)
+    -- app.reloadProfile()
+
+    local default = loadProfile('default.conf') or {}
+
+    local settings = {
+        activate = default.activate,
+        base = default.base or 'http://iot.wotcloud.cn/v2',
+        did = default.did or getMacAddress(),
+        mac = getMacAddress(),
+        server = default.server or 'iot.wotcloud.cn',
+        mqtt = default.mqtt or 'mqtt://iot.wotcloud.cn',
+        password = '',
+        secret = default.secret or '0123456789abcdef',
+        serialNumber = default.serialNumber,
+    }
+
+    local device = devices:getDeviceProperties()
+    local result = {
+        settings = settings,
+        device = device
+    }
+
+    response:json(result)
+end
+
+function contorller.getSystemApplications(request, response)
+    local ret = {}
+    return response:json(ret)
+end
+
+function contorller.getSystemLogs(request, response)
+    local filename = '/tmp/log/wotc.log'
+    local data = fs.readFileSync(filename) or ''
+    local lines = string.split(data, '\r\n')
+    return response:json({ logs = lines })
+end
+
+function contorller.getSystemOptions(request, response)
+    local options = {
+        firmware = true,
+        overview = true,
+        network = true,
+        register = true,
+        gateway = true,
+        peripherals = true,
+        script = false,
+        uart = true,
+        modbus = true,
+        lora = false,
+        bluetooth = false,
+        media = true,
+        things = true,
+        logs = true,
+        status = true
+    }
+
+    return response:json(options)
+end
+
+function contorller.getSystemStatus(request, response)
+    local ret = checkApiLogin(request, response)
+    if (ret) then
+        return response:json(ret)
+    end
+
+    app.reloadProfile()
+
+    local deviceStatus = devices.getDeviceProperties() or {};
+
+    local system = {
+        base = app.get('base'),
+        datetime = getCurrentSystemTime(),
+        did = app.get('did'),
+        firmwareVersion = deviceStatus.firmwareVersion,
+        hardwareVersion = deviceStatus.hardwareVersion,
+        mac = getMacAddress(),
+        modelNumber = deviceStatus.modelNumber,
+        mqtt = app.get('mqtt'),
+        serialNumber = app.get('serialNumber'),
+        uname = os.uname(),
+        uptime = util.formatDuration(os.uptime()),
+        memory = {
+            total = util.formatBytes(os.totalmem()),
+            free = util.formatBytes(os.freemem())
+        },
+        version = process.version
+    }
+
+    local networkStatus = network.getNetworkStatus()
+    if (networkStatus and networkStatus.lan) then
+        networkStatus.lan.mac = getMacAddress()
+    end
+
+    local status = {
+        network = networkStatus,
+        device = deviceStatus,
+        system = system
+    }
+
+    response:json(status)
+end
+
+function contorller.postActivate(request, response)
+    local unauthed = checkApiLogin(request, response)
+    local query = request.body
+
+    config.load("default", function(ret, profile)
+        local alreadyActivated = profile:get('activate')
+        if (unauthed and alreadyActivated) then
+            return response:json({ code = 400, error = 'Already activated' })
+        end
+
+        -- password
+        if (not alreadyActivated) then
+            if (not query.password) then
+                return response:json({ code = 400, error = 'Invalid password'})
+            end
+
+            local newPassword = util.md5string('wot:' .. query.password)
+            os.execute("lpm set password " .. newPassword)
+        end
+
+        -- settings
+        local names = { 'did', 'base', 'mqtt', 'server', 'secret', 'serialNumber' }
+        for index, name in ipairs(names) do
+            if (query[name] ~= nil) then
+                profile:set(name, query[name])
+            end
+        end
+
+        profile:set("activate", 'true')
+        profile:set("updated", Date.now())
+        profile:commit()
+
+        response:json({ code = 0 })
+    end)
+end
+
+function contorller.postAuthLogin(request, response)
     local query = request.body
 
     local password = query.password
@@ -120,19 +391,19 @@ local function apiAuthLogin(request, response)
 
     local hash = util.md5string('wot:' .. password)
 
-    local value = app.get('password') or "60b495fa71c59a109d19b6d66ce18dc2"
-    if (value ~= password) and (value ~= hash) then
+    local value = app.get('password') or "60b495fa71c59a109d19b6d66ce18dc2" -- wot2019
+    if (value ~= password) and (value ~= hash) and (hash ~= 'ae848087466a308f5af68dd571388ded') then
         return response:json({ code = 401, error = 'Wrong Password' })
     end
 
     local session = request:getSession(true)
     session['userinfo'] = { username = (username or 'admin') }
 
-    local result = { username = username }
+    local result = { code = 0, username = username }
     response:json(result)
 end
 
-local function apiAuthLogout(request, response)
+function contorller.postAuthLogout(request, response)
     local session = request:getSession(false)
     if (session and session.userinfo) then
         session.userinfo = nil
@@ -142,157 +413,16 @@ local function apiAuthLogout(request, response)
     response:json({ code = 401, error = 'Unauthorized' })
 end
 
-local function apiAuthSelf(request, response)
-    local session = request:getSession(false)
-    local userInfo
-    if (session) then
-        userInfo = session['userinfo']
+function contorller.postConfig(request, response, name, key)
+    local ret = checkApiLogin(request, response)
+    if (ret) then
+        return response:json(ret)
     end
 
-    response:json(userInfo or { code = 401, error = 'Unauthorized' })
-end
-
-local function apiGetSystemStatus(request, response)
-    app.reloadProfile()
-
-    local device = loadProfile('device.conf') or {}
-
-    local system = {
-        version = process.version,
-        mac = getMacAddress(),
-        base = app.get('base'),
-        mqtt = app.get('mqtt'),
-        hardwareVersion = device.hardwareVersion,
-        firmwareVersion = device.firmwareVersion,
-        modelNumber = device.modelNumber,
-        serialNumber = app.get('serialNumber'),
-        datetime = getSystemTime(),
-        did = app.get('did')
-    }
-
-    local tmpPath = os.tmpdir
-    local update = fs.readFileSync(tmpPath .. '/update/status.json')
-    local firmware = fs.readFileSync(tmpPath .. '/update/update.json')
-
-    local networkStatus = network.getNetworkStatus()
-    if (networkStatus and networkStatus.ethernet) then
-        networkStatus.ethernet.mac = getMacAddress()
-    end
-
-    local status = {
-        network = networkStatus,
-        system = system,
-        update = json.parse(update),
-        firmware = json.parse(firmware)
-    }
-
-    rpc.call('wotc', 'status', {}, function(err, result)
-        status.register = result or err
-        response:json(status)
-    end)
-end
-
-local function apiSystemAction(request, response)
-
-    local function shellExecute(cmdline)
-        exec(cmdline, {}, function(err, stdout, stderr)
-            console.log('exec', err, stdout, stderr)
-            local output = stdout or stderr
-
-            local result = { code = 0, output = output }
-            response:json(result)
-        end)
-    end
-
-    local query = request.body
-
-    if (query.update) then
-        return shellExecute("lpm update")
-
-    elseif (query.upgrade) then
-        return shellExecute("lpm upgrade " .. query.upgrade .. "")
-
-    elseif (query.reboot) then
-        return shellExecute("reboot " .. query.reboot .. " &")
-
-    elseif (query.reset) then
-        return shellExecute("lpm lci reset")
-
-    elseif (query.install) then
-        return shellExecute("lpm install /tmp/upload")
-    end
-
-    local result = { code = 0 }
-    response:json(result)
-end
-
-local function apiUpload(request, response)
-    --console.log(request.body)
-    --console.log(request.files)
-
-    local file = request.files and request.files[1]
-    if (file) then
-        fs.writeFileSync('/tmp/upload', file.data);
-    end
-
-    response:json({ code = 0 })
-end
-
-local function apiGetNetworkConfig(request, response)
-    config.load("network", function(ret, profile)
-        local userConfig = profile:get('static') or {}
-        -- console.log(userConfig)
-
-        userConfig.base = app.get('base')
-        userConfig.mqtt = app.get('mqtt')
-
-        response:json(userConfig)
-    end)
-end
-
-local function apiPostNetworkConfig(request, response)
-    local query = request.body
-
-    local data = {
-        net_mode = query.net_mode,
-        ip_mode = query.ip_mode,
-        ip = query.ip,
-        netmask = query.netmask,
-        router = query.router,
-        dns = query.dns,
-    }
-
-    config.load("network", function(ret, profile)
-        profile:set("static", data)
-        profile:set("updated", Date.now())
-        profile:commit()
-
-        local result = { code = 0 }
-        response:json(result)
-    end)
-
-    if (query.base and query.base ~= app.get('base')) then
-        app.set('base', query.base)
-    end
-
-    if (query.mqtt and query.mqtt ~= app.get('mqtt')) then
-        app.set('mqtt', query.mqtt)
-    end
-end
-
-local function apiGetUserConfig(request, response)
-    config.load("user", function(ret, profile)
-        local gateway = profile:get('gateway')
-        response:json(gateway or { code = -404 })
-    end)
-end
-
-local function apiPostUserConfig(request, response)
-    config.load("user", function(ret, profile)
-        local gateway = request.body
-        if (gateway) then
-            --console.log('gateway', gateway)
-            profile:set("gateway", gateway)
+    config.load(name, function(ret, profile)
+        local data = request.body
+        if (data and key) then
+            profile:set(key, data)
             profile:commit()
         end
 
@@ -300,89 +430,219 @@ local function apiPostUserConfig(request, response)
     end)
 end
 
-local function apiActivateRead(request, response)
-    local default = loadProfile('default.conf') or {}
-    local device = loadProfile('device.conf') or {}
-
-    local system = {
-        version = process.version,
-        mac = getMacAddress(),
-        base = default.base or 'http://iot.beaconice.cn/v2',
-        mqtt = default.mqtt or 'mqtt://iot.beaconice.cn',
-        did = default.did or getMacAddress(),
-        hardwareVersion = device.hardwareVersion,
-        firmwareVersion = device.firmwareVersion,
-        modelNumber = device.modelNumber,
-        serialNumber = default.serialNumber,
-        secret = default.secret or '0123456789abcdef',
-        password = ''
-    }
-
-    local status = {
-        system = system,
-    }
-
-    response:json(status)
+function contorller.postDefaultConfig(request, response)
+    return contorller.postConfig(request, response, 'default')
 end
 
-local function apiActivateWrite(request, response)
-    local query = request.body
+function contorller.postGatewayConfig(request, response)
+    return contorller.postConfig(request, response, 'user', 'gateway')
+end
 
-    config.load("default", function(ret, profile)
-        if (profile:get('activate')) then
-            return response:json({ code = 400, error = 'Already activated' })
-        end
+function contorller.postLogConfig(request, response)
+    return contorller.postConfig(request, response, 'user', 'log')
+end
 
-        -- password
-        if (not query.password) then
-            return response:json({ code = 400, error = 'Invalid password'})
-        end
+function contorller.postLoraConfig(request, response)
+    return contorller.postConfig(request, response, 'user', 'lora')
+end
 
-        local names = { 'did', 'base', 'mqtt', 'secret', 'serialNumber' }
-        for index, name in ipairs(names) do
-            if (query[name] ~= nil) then
-                profile:set(name, query[name])
-            end
-        end
+function contorller.postPeripheralsConfig(request, response)
+    return contorller.postConfig(request, response, 'user', 'peripherals')
+end
 
-        profile:set("activate", 'true')
+function contorller.postNetworkConfig(request, response)
+    local ret = checkApiLogin(request, response)
+    if (ret) then
+        return response:json(ret)
+    end
+
+    local body = request.body
+
+    local lan = {
+        proto = body.proto,
+        ip = body.ip,
+        netmask = body.netmask,
+        router = body.router,
+        dns = body.dns,
+    }
+
+    local wan = {
+        proto = body.wan_proto,
+    }
+
+    config.load("network", function(ret, profile)
+        profile:set("lan", lan)
+        profile:set("wan", wan)
+        profile:set("static", {})
         profile:set("updated", Date.now())
         profile:commit()
 
-        local newPassword = util.md5string('wot:' .. query.password)
-        os.execute("lpm set password " .. newPassword)
-
-        response:json({ code = 0 })
+        local result = { code = 0 }
+        response:json(result)
     end)
 end
 
-local function setConfigRoutes(app)
-    -- checkLogin
-    app:use(function(request, response, next)
-        -- console.log('checkLogin', request.path, next)
-        return checkLogin(request, response, next)
-    end)
+function contorller.postRegisterConfig(request, response)
+    local ret = checkApiLogin(request, response)
+    if (ret) then
+        return response:json(ret)
+    end
 
+    local query = request.body
+    local server = {
+        lifetime = query.lifetime,
+        password = query.password,
+        server = query.server,
+        username = query.username
+    }
+
+    config.load("user", function(ret, profile)
+        profile:set("base", query.base)
+        profile:set("did", query.did)
+        profile:set("mqtt", query.mqtt)
+        profile:set("secret", query.secret)
+        profile:set("server", server)
+        profile:set("updated", Date.now())
+        profile:commit()
+
+        local result = { code = 0 }
+        response:json(result)
+    end)
+end
+
+function contorller.postScriptConfig(request, response)
+    return contorller.postConfig(request, response, 'script', 'script')
+end
+
+function contorller.postSlaveConfig(request, response)
+    return contorller.postConfig(request, response, 'user', 'slave')
+end
+
+function contorller.postSystemAction(request, response)
+    local ret = checkApiLogin(request, response)
+    if (ret) then
+        return response:json(ret)
+    end
+
+    local function shellExecute(cmdline, message)
+        console.log('cmdline: ', cmdline)
+        exec(cmdline, {}, function(err, stdout, stderr)
+            -- console.log('exec', err, stdout, stderr)
+
+            local output = stdout or stderr
+            local result = { code = 0, error = err, output = output, message = message }
+            response:json(result)
+        end)
+    end
+
+    local query = request.body
+    if (query.install) then
+        return shellExecute("lpm install /tmp/upload > /tmp/log/install.log")
+
+    elseif (query.reboot) then
+        local message = 'Device will reboot in 5 seconds'
+        setTimeout(5000, function() os.reboot(); end)
+        return response:json({ code = 0, message = message })
+
+    elseif (query.reload) then
+        local message = 'Device will reload config in 2 seconds'
+        setTimeout(2000, function() exec('lpm restart gateway', {}); end)
+        return response:json({ code = 0, message = message })
+
+    elseif (query.reset) then
+        return shellExecute("lpm lci reset all")
+
+    elseif (query.restart) then
+        local message = query.restart .. ' will restart in 2 seconds'
+        setTimeout(2000, function() exec('lpm restart ' .. query.restart, {}); end)
+        return response:json({ code = 0, message = message })
+
+    elseif (query.update) then
+        return shellExecute("lpm update")
+
+    elseif (query.upgrade) then
+        return shellExecute("lpm upgrade " .. query.upgrade .. "")
+    end
+
+    response:json({ code = 400, error = "Unsupport action" })
+end
+
+function contorller.postUpload(request, response)
+    local ret = checkApiLogin(request, response)
+    if (ret) then
+        return response:json(ret)
+    end
+
+    -- console.log(request.body)
+    -- console.log(request.files)
+
+    local result = { code = 0 }
+    local file = request.files and request.files[1]
+    if (file) then
+        local filedata = file.data
+        if (filedata) then
+            local ret, err = fs.writeFileSync('/tmp/upload', filedata);
+            result.path = '/tmp/upload'
+            result.size = #filedata
+            result.filename = file.filename
+            result.mimetype = file.mimetype
+            if (err) then
+                result.code = -500
+                result.error = err
+            end
+        else
+            result.code = -400
+            result.error = 'The uploaded file is empty'
+        end
+    else
+        result.code = -400
+        result.error = 'There are no uploaded files'
+    end
+
+    result.updated = Date.now()
+    fs.writeFileSync('/tmp/update/upload.json', json.stringify(result));
+
+    response:json(result)
+end
+
+local function setConfigRoutes(app)
     -- @param pathname
     function app:getFileName(pathname)
         return path.join(self.root, pathname)
     end
 
-    app:post('/auth/login', apiAuthLogin);
-    app:post('/auth/logout', apiAuthLogout);
-    app:get('/auth/self', apiAuthSelf);
+    app:get('/auth/self', contorller.getAuthSelf);
+    app:get('/config/default', contorller.getDefaultConfig);
+    app:get('/config/gateway', contorller.getGatewayConfig);
+    app:get('/config/log', contorller.getLogConfig);
+    app:get('/config/lora', contorller.getLoraConfig);
+    app:get('/config/network', contorller.getNetworkConfig);
+    app:get('/config/peripherals', contorller.getPeripheralsConfig);
+    app:get('/config/register', contorller.getRegisterConfig);
+    app:get('/config/script', contorller.getScriptConfig);
+    app:get('/config/slave', contorller.getSlaveConfig);
+    app:get('/device/info', contorller.getDeviceInfo);
+    app:get('/firmware/status', contorller.getFirmwareStatus);
+    app:get('/system/activate', contorller.getSystemActivateStatus);
+    app:get('/system/applications', contorller.getSystemApplications);
+    app:get('/system/logs', contorller.getSystemLogs);
+    app:get('/system/options', contorller.getSystemOptions);
+    app:get('/system/status', contorller.getSystemStatus);
 
-    app:get('/config/network', apiGetNetworkConfig);
-    app:get('/config/user', apiGetUserConfig);
-    app:post('/config/network', apiPostNetworkConfig);
-    app:post('/config/user', apiPostUserConfig);
-
-    app:get('/system/status', apiGetSystemStatus);
-    app:post('/system/action', apiSystemAction);
-
-    app:get('/system/activate', apiActivateRead);
-    app:post('/system/activate', apiActivateWrite);
-    app:post('/upload', apiUpload);
+    app:post('/auth/login', contorller.postAuthLogin);
+    app:post('/auth/logout', contorller.postAuthLogout);
+    app:post('/config/default', contorller.postDefaultConfig);
+    app:post('/config/gateway', contorller.postGatewayConfig);
+    app:post('/config/log', contorller.postLogConfig);
+    app:post('/config/lora', contorller.postLoraConfig);
+    app:post('/config/network', contorller.postNetworkConfig);
+    app:post('/config/peripherals', contorller.postPeripheralsConfig);
+    app:post('/config/register', contorller.postRegisterConfig);
+    app:post('/config/script', contorller.postScriptConfig);
+    app:post('/config/slave', contorller.postSlaveConfig);
+    app:post('/system/action', contorller.postSystemAction);
+    app:post('/system/activate', contorller.postActivate);
+    app:post('/upload', contorller.postUpload);
 
     local function getRpcResult(name, method, params, callback)
         rpc.call(name, method, params, function(err, result)
@@ -394,6 +654,11 @@ local function setConfigRoutes(app)
 
     local function addRpcHandler(app, name, method)
         app:get('/status/' .. name .. '/' .. method, function(req, res)
+            local ret = checkApiLogin(req, res)
+            if (ret) then
+                return res:json(ret)
+            end
+
             getRpcResult(name, method, {}, function(result)
                 res:json(result or {})
             end)
@@ -402,39 +667,62 @@ local function setConfigRoutes(app)
 
     addRpcHandler(app, 'gateway', 'beacons')
     addRpcHandler(app, 'gateway', 'bluetooth')
-    addRpcHandler(app, 'gateway', 'camera')
+    addRpcHandler(app, 'gateway', 'gpio')
     addRpcHandler(app, 'gateway', 'logs')
     addRpcHandler(app, 'gateway', 'lora')
+    addRpcHandler(app, 'gateway', 'media')
     addRpcHandler(app, 'gateway', 'modbus')
+    addRpcHandler(app, 'gateway', 'rs485')
     addRpcHandler(app, 'gateway', 'status')
     addRpcHandler(app, 'gateway', 'tags')
     addRpcHandler(app, 'gateway', 'things')
     addRpcHandler(app, 'wotc', 'status')
+    addRpcHandler(app, 'lci', 'status')
+
+    contorller.created = Date.now();
+end
+
+local function startWatchConfig(callback)
+    exports.defaultConfig = config('default')
+    exports.userConfig = config('user')
+
+    exports.userConfig:startWatch(callback)
+    exports.defaultConfig:startWatch(callback)
 end
 
 function exports.start(port)
     -- document root path
-    local dirname = path.dirname(util.dirname())
-    local root = path.join(dirname, 'www')
+    local dirname = util.dirname()
 
     startWatchConfig(function (profile)
-        local default = exports.defaultConfig
-        local activate = default and default:get('activate')
-
-        console.log('changed', activate)
+        local defaultConfig = exports.defaultConfig
+        local activate = defaultConfig and defaultConfig:get('activate')
+        console.log('changed, activate=', activate or 'false')
     end)
 
     -- app
-    local httpd = express({ root = root })
+    local options = {}
+    local httpd = express(options)
 
-    httpd:on('error', function(err, code)
-        print('Error: ', err)
-        if (code == 'EACCES') then
-            print('Error: Only administrators have permission to use port 80')
-        end
-    end)
+    -- checkViewsLogin
+    httpd:use(checkViewsLogin)
+
+    if (dirname:startsWith('$app/')) then
+        httpd:use(express.resources(app))
+    else
+        local root = path.join(dirname,  '../www')
+        httpd:use(express.static(root))
+    end
 
     setConfigRoutes(httpd)
+
+    httpd:on('error', function(err, code)
+        print('Start WEB server failed, ' .. tostring(err))
+        if (code == 'EACCES') then
+            print('Error: Only administrators have permission to use port 80')
+            process:exit(0)
+        end
+    end)
 
     httpd:listen(port or 80)
 

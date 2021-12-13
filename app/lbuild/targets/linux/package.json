@@ -1,13 +1,7 @@
 {
-	"description": "Media Things Gateway",
-	"name": "media-gateway",
-	"device": { 
-		"model": "DT02", 
-		"type": "mediaGateway", 
-		"manufacturer": "TDK"
-	},
-	"tags": ["linux", "core"],
-    "applications": ["lpm", "gateway"],
-    "libs": ["lsdl.so", "lsqlite.so", "lbluetooth.so", "lmodbus.so"],
-	"version": "1.0.1"
+	"description": "Web Things Gateway",
+	"name": "web-things-gateway",
+	"tags": ["linux", "wot"],
+    "applications": ["lpm", "gateway", "lci", "wotc"],
+    "libs": ["lmbedtls.so", "lsqlite.so", "lbluetooth.so", "lmodbus.so"]
 }

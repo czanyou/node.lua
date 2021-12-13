@@ -15,11 +15,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local path = require("path")
-local fs = require("fs")
-local util = require("util")
+local path = require('path')
+local fs = require('fs')
+local util = require('util')
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 local __dirname = util.dirname()
@@ -46,7 +46,7 @@ test(
         null:on(
             "error",
             function(err)
-                p(err)
+                console.log(err)
                 if err.message:find("write after end") then
                     streamEventAlreadyClosed = true
                 end
@@ -56,7 +56,7 @@ test(
         null:on(
             "closed",
             function()
-                p("closed")
+                console.log("closed")
                 streamEventClosed = true
                 null:write("after closed")
             end

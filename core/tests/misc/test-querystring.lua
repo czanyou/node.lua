@@ -1,8 +1,8 @@
 local qs = require("querystring")
-local assert = require("assert")
+local assert = require('assert')
 local deepEqual = assert.isDeepEqual
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 -- Basic code coverage

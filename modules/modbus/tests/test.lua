@@ -32,17 +32,17 @@ dev:write(msg)
 
 local data = dev:readRegisters(0,1)
 console.printBuffer(data)
-local value = string.unpack('<I2', data)
+local value = string.unpack('>I2', data)
 console.log(value * 0.1)
 
-local data = dev:readRegisters(1,1)
+data = dev:readRegisters(1,1)
 console.printBuffer(data)
-local value = string.unpack('<i2', data)
+value = string.unpack('>i2', data)
 console.log(value * 0.1)
 
-local data = dev:readRegisters(6,1)
+data = dev:readRegisters(6,1)
 console.printBuffer(data)
-local value = string.unpack('<I2', data)
+value = string.unpack('>I2', data)
 console.log(value)
 
 --[[

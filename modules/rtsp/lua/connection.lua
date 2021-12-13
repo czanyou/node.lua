@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,22 +16,19 @@ limitations under the License.
 
 --]]
 local core 	= require('core')
-local utils = require('util')
 local url 	= require('url')
 
 local codec 	= require('rtsp/codec')
 local rtp 		= require('rtsp/rtp')
 local rtsp 		= require('rtsp/message')
 local sdp 		= require('rtsp/sdp')
-local session 	= require('media/session')
 
 local TAG = 'RtspConnection'
 
-local meta 		= { }
-local exports 	= { meta = meta }
+local exports 	= {}
 
 exports.STATE_STOPPED	= 0
-exports.STATE_INIT 		= 10	-- message sent: SETUP/TEARDOWN 
+exports.STATE_INIT 		= 10	-- message sent: SETUP/TEARDOWN
 exports.STATE_READY		= 20	-- message sent: PLAY/RECORD/TEARDOWN/SETUP
 exports.STATE_PLAYING	= 30	-- message sent: PAUSE/TEARDOWN/PLAY/SETUP
 exports.STATE_RECORDING	= 40
@@ -39,6 +36,7 @@ exports.STATE_RECORDING	= 40
 -------------------------------------------------------------------------------
 --- RtspConnection
 
+---@class RtspConnection
 local RtspConnection = core.Emitter:extend()
 exports.RtspConnection = RtspConnection
 
@@ -84,7 +82,7 @@ function RtspConnection:close(errInfo)
 
 	self.connectionId   = nil
 	self.contentBase 	= nil
-	self.isMpegTSMode 	= false		
+	self.isMpegTSMode 	= false
 	self.isStreaming 	= false
 	self.lastRequest 	= nil
 	self.lastResponse 	= nil
@@ -97,10 +95,10 @@ function RtspConnection:close(errInfo)
 	self.sdpString		= nil
 	self.sendLength		= 0
 	self.sessionId 		= nil
-	self.urlObject		= nil		
-	self.urlString 		= nil	
+	self.urlObject		= nil
+	self.urlString 		= nil
 
-	self._getMediaSession	= nil	
+	self._getMediaSession	= nil
 end
 
 -- 检查客户端身份认证信息
@@ -162,7 +160,7 @@ function RtspConnection:_parseSdpString(sdpString)
 
 	self.sdpString  = sdpString
 	self.sdpSession = sdpSession
-	
+
 	self.mediaTracks = {}
 	local medias = sdpSession.medias or {}
 	for i = 1, #medias do
@@ -190,9 +188,9 @@ function RtspConnection:processANNOUNCE(request)
 
 	self:setState(exports.STATE_INIT)
 
-	if (self.rtspState == exports.STATE_INIT) then	
+	if (self.rtspState == exports.STATE_INIT) then
 		self:_parseSdpString(request.content)
-		
+
 		if (self.mediaTracks == nil) then
 			response:setStatusCode(400)
 
@@ -226,9 +224,9 @@ function RtspConnection:processDESCRIBE(request)
 		self:sendResponse(response)
 		return
 	end
-	
+
 	response:setHeader('Date', rtsp.newDateHeader())
-	
+
 	local sdpString = self:getSdpString(request.path)
 	if (sdpString) then
 		self:_parseSdpString(sdpString)
@@ -275,7 +273,7 @@ end
 
 function RtspConnection:processPAUSE(request)
 	local response = rtsp.newResponse()
-	
+
 	local state = self.rtspState
 	if (state == exports.STATE_PLAYING) or (state == exports.STATE_RECORDING) then
 		self:stopStreaming()
@@ -307,7 +305,7 @@ function RtspConnection:processPLAY(request)
 
 	elseif (state == exports.STATE_PLAYING) then
 
-	else 
+	else
 		response:setStatusCode(455)
 	end
 
@@ -316,7 +314,7 @@ end
 
 function RtspConnection:processRECORD(request)
 	local response = rtsp.newResponse()
-	
+
 	local state = self.rtspState
 	if (state == exports.STATE_READY) then
 		self:setState(exports.STATE_RECORDING)
@@ -324,9 +322,9 @@ function RtspConnection:processRECORD(request)
 		local pathname = self.urlObject.pathname
 		self:emit('record', pathname, self.mediaTracks)
 
-	elseif (state == exports.STATE_RECORDING) then	
+	elseif (state == exports.STATE_RECORDING) then
 
-	else 
+	else
 		response:setStatusCode(455)
 	end
 
@@ -355,7 +353,7 @@ function RtspConnection:processSETUP(request)
 	local sessionId = request:getHeader('Session')
 	local transport = request:getHeader('Transport')
 
-	if (not self.sessionId) then 
+	if (not self.sessionId) then
 		self.sessionId = process.now()
 	end
 
@@ -368,7 +366,7 @@ function RtspConnection:processSETUP(request)
 		response:setStatusCode(461)
 		response:setHeader('Date', rtsp.newDateHeader())
 	end
-	
+
 	self:sendResponse(response)
 end
 
@@ -390,7 +388,7 @@ function RtspConnection:processTEARDOWN(request)
 end
 
 function RtspConnection:processMessage(message)
-	-- pprint('message', message.method, message.statusCode)		
+	-- pprint('message', message.method, message.statusCode)
 	if (message.statusCode) then
 		self:processResponse(message)
 	else
@@ -411,10 +409,10 @@ function RtspConnection:processRequest(request)
 		self:processDESCRIBE(request)
 
 	elseif (method == 'GET') then
-		self:processGET(request)		
+		self:processGET(request)
 
 	elseif (method == 'GET_PARAMETER') then
-		self:processGET_PARAMETER(request)						
+		self:processGET_PARAMETER(request)
 
 	elseif (method == 'OPTIONS') then
 		self:processOPTIONS(request)
@@ -430,7 +428,7 @@ function RtspConnection:processRequest(request)
 
 	elseif (method == 'REDIRECT') then
 		self:processREDIRECT(request)
-		
+
 	elseif (method == 'SETUP') then
 		self:processSETUP(request)
 
@@ -481,6 +479,8 @@ end
 function RtspConnection:_processSampleData(sample)
 	--sample.data = nil
 	--pprint(sample)
+
+	self:emit('sample', sample)
 end
 
 function RtspConnection:_processRtpPacket(packet, offset)
@@ -493,7 +493,7 @@ function RtspConnection:_processRtpPacket(packet, offset)
 		local meta = self.rtpSession:decodeHeader(packet, offset)
 		self:onTSPacket(meta, packet, offset + 12)
 
-	 else 
+	 else
 		--local data = packet:sub(1, 20)
 		--console.printBuffer(data)
 		local sample = self.rtpSession:decode(packet, offset)
@@ -520,7 +520,7 @@ end
 function RtspConnection:sendResponse(response)
 	if not response then return end
 
-	response:setHeader('Server', 'Node RTSP Server 1.0')
+	response:setHeader('Server', 'Node.lua RTSP Server 1.0')
 
 	if (self.sessionId) then
 		response:setHeader('Session', self.sessionId)
@@ -573,7 +573,7 @@ function RtspConnection:start()
 		return
 	end
 
-	socket:on('data', function(chunk) 
+	socket:on('data', function(chunk)
 		if (not chunk) then
 	    -- If data is set the client has sent data, if unset the client has disconnected
 	      	print(TAG, "empty data")
@@ -584,23 +584,23 @@ function RtspConnection:start()
 		self:processRawData(chunk)
 	end)
 
-	socket:on('end', function() 
+	socket:on('end', function()
 		--print(TAG, "end")
 	    self:close()
 	end)
 
-	socket:on('close', function() 
+	socket:on('close', function()
 		--print(TAG, "close")
 	    self:close()
 	end)
 
-	socket:on('error', function(err) 
+	socket:on('error', function(err)
 		-- If error, print and close connection
 		--print(TAG, "error", err)
       	self:close(err)
 	end)
 
-	socket:on('drain', function(err) 
+	socket:on('drain', function(err)
 		if (not self.isStreaming) then
 			return
 		end

@@ -17,7 +17,7 @@ limitations under the License.
 --]]
 local http = require('http')
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 test("Chunked example with writeHead", function(expect)
@@ -31,16 +31,16 @@ test("Chunked example with writeHead", function(expect)
     print('Server running at http://127.0.0.1:1337/')
     
     http.get('http://127.0.0.1:1337', expect(function(res)
-            --p('res.headers', res.headers)
+            --console.log('res.headers', res.headers)
             assert(res.headers["content-type"] == "text/plain")
             assert(res.headers["transfer-encoding"] == "chunked")
             local result = ""
             res:on("data", function(chunk)
-                    --p('data', chunk)
+                    --console.log('data', chunk)
                     result = result .. chunk
             end)
             res:on("end", expect(function()
-                    --p('end', result)
+                    --console.log('end', result)
                     assert(result == body)
                     server:close()
             end))
@@ -59,7 +59,7 @@ test("Chunked example with setHeader", function(expect)
     print('Server running at http://127.0.0.1:1337/')
     
     http.get('http://127.0.0.1:1337', expect(function(res)
-            --p("headers", res.headers)
+            --console.log("headers", res.headers)
             assert(res.headers["content-type"] == "text/plain")
             assert(res.headers["transfer-encoding"] == "chunked")
             local result = ""
@@ -67,7 +67,7 @@ test("Chunked example with setHeader", function(expect)
                 result = result .. chunk
             end)
             res:on("end", expect(function()
-                    --p("end", result)
+                    --console.log("end", result)
                     assert(result == body)
                     server:close()
             end))

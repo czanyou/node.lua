@@ -30,7 +30,7 @@ local mainServer = nil -- 入口服务
 exports.tunnel = function(port, key)
 
     local tunnelServer = nil
-    
+
     local function onServerConnection(connection)
         local address = connection:address()
         console.log('tunnel server connection', address.ip)
@@ -39,7 +39,7 @@ exports.tunnel = function(port, key)
         tunnelServer.connections[key] = connection
 
         local buffer
- 
+
         -- 设置这个客户端连接的远端连接
         function connection:setRemoteConnection(remoteConnection)
             console.log('set remote tunnel connection')
@@ -54,7 +54,7 @@ exports.tunnel = function(port, key)
         -- 请求前端设备创建一个新的连接
         local function createRequest()
             tunnelSessions[key] = connection
-   
+
             local tunnelConnection = tunnelServer.connection
             if (tunnelConnection) then
                 tunnelConnection:write('request\n' .. key .. '\n\n')
@@ -86,7 +86,7 @@ exports.tunnel = function(port, key)
                 end
             end
         end
-        
+
         local function onEnd()
             -- 关闭这个连接相关的远端连接
             if (connection.remoteConnection) then
@@ -148,10 +148,10 @@ local function onServerConnection(connection)
         end
     end
 
-    local function createTunnelServer()
+    local function createTunnelServer(remotePort)
         local address = connection:address()
         local key = address.ip .. ':' .. address.port
-        local publicPort = math.random(40000, 50000)
+        local publicPort = math.floor(remotePort) or math.random(40000, 50000)
         local tunnelServer = exports.tunnel(publicPort, key)
         tunnelServer.connection = connection
         tunnelServer.publicPort = publicPort
@@ -162,11 +162,14 @@ local function onServerConnection(connection)
 
     -- 创建一个相关的 TunnelServer
     local function onPingMessage(lines)
+        local remotePort = lines and lines[2] and tonumber(lines[2])
+
         local tunnelServer = connection.tunnelServer
         if (not tunnelServer) then
-            tunnelServer = createTunnelServer()
+            tunnelServer = createTunnelServer(remotePort)
             connection.tunnelServer = tunnelServer
         end
+
 
         connection.lastPingTime = Date.now()
         connection:write('pong\n' .. tunnelServer.publicPort .. '\n' .. tunnelServer.token .. '\n\n')
@@ -221,7 +224,7 @@ local function onServerConnection(connection)
         else
             buffer = chunk
         end
-        
+
         while (buffer and #buffer > 0) do
             local position = string.find(buffer, '\n\n')
             if (not position) then
@@ -286,7 +289,7 @@ function exports.rpc()
                 port = PORT,
                 connections = {}
             }
-    
+
             for key, connection in pairs(mainServer.connections) do
                 local remoteConnection = connection.remoteConnection
                 local remoteId = remoteConnection and remoteConnection.id
@@ -298,9 +301,9 @@ function exports.rpc()
                 })
             end
         end
-    
+
         status.tunnelServers = {}
-    
+
         for key, tunnelServer in pairs(tunnelServers) do
             local connections = {}
             table.insert(status.tunnelServers, {
@@ -317,9 +320,9 @@ function exports.rpc()
                 })
             end
         end
-    
+
         status.tunnelSessions = {}
-    
+
         for key, tunnelSession in pairs(tunnelSessions) do
             table.insert(status.tunnelSessions, {
                 id = tunnelSession.id

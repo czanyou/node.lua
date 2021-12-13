@@ -2,17 +2,17 @@
 
 Node.lua 提供了一些有用的全局方法, 这里也同时列出了一些常用的 Lua 核心方法以便查阅.
 
-### 环境变量
+## 环境变量
 
-#### LUA_CPATH
+### LUA_CPATH
 
 重定义 package.cpath
 
-#### LUA_INIT
+### LUA_INIT
 
 在执行 Lua 脚本前预先执行的初始化脚本
 
-#### LUA_PATH
+### LUA_PATH
 
 重定义 package.path
 

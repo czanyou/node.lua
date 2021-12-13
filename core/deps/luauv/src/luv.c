@@ -15,8 +15,9 @@
  *
  */
 
+#include <lua.h>
 #if (LUA_VERSION_NUM != 503)
-// #include "c-api/compat-5.3.h"
+// #include "compat-5.3.h"
 #endif
 #define LUV_SOURCE
 #include "luv.h"
@@ -134,6 +135,9 @@ static const luaL_Reg luv_functions[] = {
   {"is_readable", luv_is_readable},
   {"is_writable", luv_is_writable},
   {"stream_set_blocking", luv_stream_set_blocking},
+#if LUV_UV_VERSION_GEQ(1, 19, 0)
+  {"stream_get_write_queue_size", luv_stream_get_write_queue_size},
+#endif
 
   // tcp.c
   {"new_tcp", luv_new_tcp},
@@ -146,6 +150,9 @@ static const luaL_Reg luv_functions[] = {
   {"tcp_getsockname", luv_tcp_getsockname},
   {"tcp_connect", luv_tcp_connect},
   {"tcp_write_queue_size", luv_write_queue_size},
+#if LUV_UV_VERSION_GEQ(1, 32, 0)
+  {"tcp_close_reset", luv_tcp_close_reset},
+#endif
 
   // pipe.c
   {"new_pipe", luv_new_pipe},
@@ -163,6 +170,10 @@ static const luaL_Reg luv_functions[] = {
   {"tty_set_mode", luv_tty_set_mode},
   {"tty_reset_mode", luv_tty_reset_mode},
   {"tty_get_winsize", luv_tty_get_winsize},
+#if LUV_UV_VERSION_GEQ(1, 33, 0)
+  {"tty_set_vterm_state", luv_tty_set_vterm_state},
+  {"tty_get_vterm_state", luv_tty_get_vterm_state},
+#endif
 
   // udp.c
   {"new_udp", luv_new_udp},
@@ -206,6 +217,9 @@ static const luaL_Reg luv_functions[] = {
   {"fs_write", luv_fs_write},
   {"fs_mkdir", luv_fs_mkdir},
   {"fs_mkdtemp", luv_fs_mkdtemp},
+#if LUV_UV_VERSION_GEQ(1, 34, 0)
+  {"fs_mkstemp", luv_fs_mkstemp},
+#endif
   {"fs_rmdir", luv_fs_rmdir},
   {"fs_scandir", luv_fs_scandir},
   {"fs_scandir_next", luv_fs_scandir_next},
@@ -228,6 +242,9 @@ static const luaL_Reg luv_functions[] = {
   {"fs_realpath", luv_fs_realpath},
   {"fs_chown", luv_fs_chown},
   {"fs_fchown", luv_fs_fchown},
+#if LUV_UV_VERSION_GEQ(1, 21, 0)
+  {"fs_lchown", luv_fs_lchown},
+#endif
 #if LUV_UV_VERSION_GEQ(1, 14, 0)
   {"fs_copyfile", luv_fs_copyfile },
 #endif
@@ -235,6 +252,9 @@ static const luaL_Reg luv_functions[] = {
   {"fs_opendir", luv_fs_opendir},
   {"fs_readdir", luv_fs_readdir},
   {"fs_closedir", luv_fs_closedir},
+#endif
+#if LUV_UV_VERSION_GEQ(1, 31, 0)
+  {"fs_statfs", luv_fs_statfs},
 #endif
 
   // dns.c
@@ -300,13 +320,19 @@ static const luaL_Reg luv_functions[] = {
 #if LUV_UV_VERSION_GEQ(1, 28, 0)
   {"gettimeofday", luv_gettimeofday},
 #endif
+#if LUV_UV_VERSION_GEQ(1, 31, 0)
+  {"os_environ", luv_os_environ},
+#endif
+#if LUV_UV_VERSION_GEQ(1, 33, 0)
+  {"random", luv_random},
+#endif
+  {"sleep", luv_sleep},
 
   // thread.c
   {"new_thread", luv_new_thread},
   {"thread_equal", luv_thread_equal},
   {"thread_self", luv_thread_self},
   {"thread_join", luv_thread_join},
-  {"sleep", luv_thread_sleep},
 
   // work.c
   {"new_work", luv_new_work},
@@ -377,6 +403,9 @@ static const luaL_Reg luv_stream_methods[] = {
   {"is_readable", luv_is_readable},
   {"is_writable", luv_is_writable},
   {"set_blocking", luv_stream_set_blocking},
+#if LUV_UV_VERSION_GEQ(1, 19, 0)
+  {"get_write_queue_size", luv_stream_get_write_queue_size},
+#endif
   {NULL, NULL}
 };
 
@@ -419,6 +448,9 @@ static const luaL_Reg luv_tcp_methods[] = {
   {"getsockname", luv_tcp_getsockname},
   {"connect", luv_tcp_connect},
   {"write_queue_size", luv_write_queue_size},
+#if LUV_UV_VERSION_GEQ(1, 32, 0)
+  {"close_reset", luv_tcp_close_reset},
+#endif
   {NULL, NULL}
 };
 
@@ -465,6 +497,25 @@ static const luaL_Reg luv_signal_methods[] = {
   {"stop", luv_signal_stop},
   {NULL, NULL}
 };
+
+#if LUV_UV_VERSION_GEQ(1, 28, 0)
+static const luaL_Reg luv_dir_methods[] = {
+  {"readdir", luv_fs_readdir},
+  {"closedir", luv_fs_closedir},
+  {NULL, NULL}
+};
+
+static void luv_dir_init(lua_State* L) {
+  luaL_newmetatable(L, "uv_dir");
+  lua_pushcfunction(L, luv_fs_dir_tostring);
+  lua_setfield(L, -2, "__tostring");
+  lua_pushcfunction(L, luv_fs_dir_gc);
+  lua_setfield(L, -2, "__gc");
+  luaL_newlib(L, luv_dir_methods);
+  lua_setfield(L, -2, "__index");
+  lua_pop(L, 1);
+}
+#endif
 
 static void luv_handle_init(lua_State* L) {
 
@@ -542,11 +593,12 @@ LUALIB_API int luv_cfpcall(lua_State* L, int nargs, int nresult, int flags) {
     ret = -ret;
     break;
   case LUA_ERRRUN:
-  case LUA_ERRSYNTAX:
   case LUA_ERRERR:
   default:
     if ((flags & LUVF_CALLBACK_NOERRMSG) == 0)
       fprintf(stderr, "Uncaught Error: %s\n", lua_tostring(L, -1));
+    if ((flags & LUVF_CALLBACK_NOEXIT) == 0)
+      exit(-1);
     lua_pop(L, 1);
     ret = -ret;
     break;
@@ -647,11 +699,13 @@ LUALIB_API int luaopen_luv (lua_State* L) {
 
     lua_pushstring(L, "_loop");
     loop = (uv_loop_t*)lua_newuserdata(L, sizeof(*loop));
-    lua_rawset(L, -3);  // ref to loop, avoid __gc early
-
-    // setup the metatable for __gc
+    // setup the userdata's metatable for __gc
     luaL_getmetatable(L, "uv_loop.meta");
     lua_setmetatable(L, -2);
+    // create a ref to loop, avoid __gc early
+    // this puts the loop userdata into the _loop key
+    // in the returned luv table
+    lua_rawset(L, -3);
 
     ctx->loop = loop;
     ctx->L = L;
@@ -668,6 +722,9 @@ LUALIB_API int luaopen_luv (lua_State* L) {
 
   luv_req_init(L);
   luv_handle_init(L);
+#if LUV_UV_VERSION_GEQ(1, 28, 0)
+  luv_dir_init(L);
+#endif
   luv_thread_init(L);
   luv_work_init(L);
 

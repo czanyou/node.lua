@@ -18,7 +18,7 @@ limitations under the License.
 
 local dgram = require("dgram")
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("test udp", function(expect)

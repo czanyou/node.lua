@@ -33,8 +33,12 @@ end
 
 local function onSystemBoot()
     local boot = require('./boot')
-    boot.onSystemBoot()
+    boot.start()
 end
 
-setMacAddress()
-onSystemBoot()
+local function bootstrap()
+    setMacAddress()
+    onSystemBoot()
+end
+
+bootstrap()

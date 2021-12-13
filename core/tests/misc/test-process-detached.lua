@@ -1,15 +1,12 @@
-local tap = require("ext/tap")
+local tap = require('util/tap')
+local util = require('util')
 local test = tap.test
 
-local path = require("path")
-local spawn = require("child_process").spawn
-local execFile = require("child_process").execFile
-local timer = require("timer")
-local fs = require("fs")
+local path = require('path')
+local spawn = require('child_process').spawn
 
-local __dirname = module.dir
--- console.log('__dirname', __dirname);
-console.log(process.execPath)
+local __dirname = util.dirname()
+console.log(process.execPath, __dirname)
 
 test("process execute", function()
 	local childPath = path.join(__dirname, "fixtures", "parent-process.lua")

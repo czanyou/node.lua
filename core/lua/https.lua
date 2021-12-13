@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,13 +16,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-
-local meta = {}
-meta.name        = "lnode/https"
-meta.version     = "1.0.1"
-meta.license     = "Apache 2"
-meta.description = "Node-style https client and server module for lnode"
-meta.tags        = {"lnode", "https", "stream"}
+local meta = {
+    description = "Node-style https client and server module for lnode"
+}
 
 local exports = { meta = meta }
 
@@ -75,7 +71,7 @@ function exports.get(options, onResponse)
     options.method = 'GET'
 
     local request = exports.request(options, onResponse)
-    request:done()
+    request:finish()
     return request
 end
 
@@ -85,7 +81,7 @@ function exports.request(options, callback)
         error(string.format('Protocol %s not supported', options.protocol))
     end
 
-    options.connect_emitter = 'secureConnection'
+    options.connect_emitter = 'secureConnect'
     options.port    = options.port or 443
     options.socket  = options.socket or _createConnection(options)
     return http.request(options, callback)

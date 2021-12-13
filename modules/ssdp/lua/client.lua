@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -71,9 +71,9 @@ function SsdpClient:search(serviceType)
 
 	local addresses = self:_getLocalAddresses()
 	for _, address in pairs(addresses) do
-		--print(request, address.broadcast, self.port)
+		-- print(request, address.broadcast, self.port)
 		self:_sendMessage(request, address.broadcast, self.port)
-	end	
+	end
 end
 
 function SsdpClient:start(localAddress, localPort)
@@ -90,7 +90,7 @@ function SsdpClient:stop()
 end
 
 -------------------------------------------------------------------------------
--- 
+--
 
 function exports.open(options, callback)
 	options = options or {}

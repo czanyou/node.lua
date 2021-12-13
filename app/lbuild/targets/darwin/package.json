@@ -1,8 +1,7 @@
 {
-	"description": "macos PC",
+	"description": "macOS",
 	"name": "macos",
-	"tags": ["macos", "core"],
+	"tags": ["macOS", "core"],
     "applications": ["gateway", "lpm"],
-	"files": ["install.sh"],
-	"version": "0.0.1"
+	"files": []
 }

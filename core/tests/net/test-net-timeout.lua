@@ -15,16 +15,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local net = require("net")
+local net = require('net')
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
-test("socket timeout", function(expect)
+test("socket - setTimeout", function(expect)
 	local client = net.connect(443, "luvit.io")
-	client:setTimeout(1, expect(function() console.log('setTimeout'); end))
+	client:setTimeout(1, expect(function()
+		console.log('callback: setTimeout');
+	end))
+
 	client:on("timeout", expect(function()
-		console.log('timeout')
+		console.log('event: timeout')
 		client:destroy()
 	end))
 end)

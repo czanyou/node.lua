@@ -8,6 +8,7 @@ if "%1" equ "sdk"     goto sdk
 if "%1" equ "install" goto install
 if "%1" equ "remove"  goto remove
 if "%1" equ "clean"   goto clean
+if "%1" equ "test"    goto test
 
 @set PATH=%CD%\bin;%PATH%
 
@@ -53,7 +54,6 @@ lbuild sdk
 
 goto exit
 
-
 rem -------------------------------------------
 :install
 
@@ -78,6 +78,15 @@ rem -------------------------------------------
 echo clean
 
 CALL rd /s /q build\win32
+
+goto exit
+
+rem -------------------------------------------
+:test
+
+echo test
+
+CALL bin\lnode core\tests\test-all.lua
 
 goto exit
 

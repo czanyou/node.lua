@@ -42,6 +42,91 @@ static int luv_version_string(lua_State* L) {
  return 1;
 }
 
+// requires the value at idx to be a string or number
+static void luv_prep_buf(lua_State *L, int idx, uv_buf_t *pbuf) {
+  size_t len;
+  // note: if the value is a number, lua_tolstring converts the stack value to a string
+  pbuf->base = (char*)lua_tolstring(L, idx, &len);
+  pbuf->len = len;
+}
+
+// - number of buffers is stored in *count
+// - if refs is non-NULL, then *refs is set to a heap-allocated, LUA_NOREF-terminated array
+//   of ref integers (refs are to each string in the bufs)
+// returns: heap-allocated array of uv_buf_t
+static uv_buf_t* luv_prep_bufs(lua_State* L, int index, size_t *count, int **refs) {
+  uv_buf_t *bufs;
+  size_t i;
+  *count = lua_rawlen(L, index);
+  bufs = (uv_buf_t*)malloc(sizeof(uv_buf_t) * *count);
+  int *refs_array = NULL;
+  if (refs)
+    refs_array = (int*)malloc(sizeof(int) * (*count + 1));
+  for (i = 0; i < *count; ++i) {
+    lua_rawgeti(L, index, i + 1);
+    if (!lua_isstring(L, -1)) {
+      luaL_argerror(L, index, lua_pushfstring(L, "expected table of strings, found %s in the table", luaL_typename(L, -1)));
+      return NULL;
+    }
+    luv_prep_buf(L, -1, &bufs[i]);
+    if (refs) {
+      // push the string again to ref it, will be popped by luaL_ref
+      lua_pushvalue(L, -1);
+      refs_array[i] = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+    lua_pop(L, 1);
+  }
+  if (refs) {
+    // refs array is LUA_NOREF-terminated
+    refs_array[*count] = LUA_NOREF;
+    *refs = refs_array;
+  }
+  return bufs;
+}
+
+// Sets up a uv_bufs_t array to pass to write/send libuv functions that take a uv_buf_t*
+// - count: set to length of the returned uv_buf_t array
+// - req_data: refs to the strings used are stored in req_data->data/req_data->data_ref
+// returns: heap-allocated array of uv_buf_t
+static uv_buf_t* luv_check_bufs(lua_State* L, int index, size_t* count, luv_req_t* req_data) {
+  uv_buf_t* bufs = NULL;
+  if (lua_istable(L, index)) {
+    int* refs = NULL;
+    bufs = luv_prep_bufs(L, index, count, &refs);
+    req_data->data = refs;
+    req_data->data_ref = LUV_REQ_MULTIREF;
+  }
+  else if (lua_isstring(L, index)) {
+    *count = 1;
+    bufs = (uv_buf_t*)malloc(sizeof(uv_buf_t));
+    luv_prep_buf(L, index, bufs);
+    lua_pushvalue(L, index);
+    req_data->data_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+  }
+  else {
+    luaL_argerror(L, index, lua_pushfstring(L, "data must be string or table of strings, got %s", luaL_typename(L, index)));
+  }
+  return bufs;
+}
+
+// Like luv_check_bufs but does not ref the buf strings.
+// Only meant to be used for functions like luv_udp_try_send.
+static uv_buf_t* luv_check_bufs_noref(lua_State* L, int index, size_t* count) {
+  uv_buf_t* bufs = NULL;
+  if (lua_istable(L, index)) {
+    bufs = luv_prep_bufs(L, index, count, NULL);
+  }
+  else if (lua_isstring(L, index)) {
+    *count = 1;
+    bufs = (uv_buf_t*)malloc(sizeof(uv_buf_t));
+    luv_prep_buf(L, index, bufs);
+  }
+  else {
+    luaL_argerror(L, index, lua_pushfstring(L, "data must be string or table of strings, got %s", luaL_typename(L, index)));
+  }
+  return bufs;
+}
+
 static int luv_get_process_title(lua_State* L) {
   char title[MAX_TITLE_LENGTH];
   int ret = uv_get_process_title(title, MAX_TITLE_LENGTH);
@@ -53,9 +138,7 @@ static int luv_get_process_title(lua_State* L) {
 static int luv_set_process_title(lua_State* L) {
   const char* title = luaL_checkstring(L, 1);
   int ret = uv_set_process_title(title);
-  if (ret < 0) return luv_error(L, ret);
-  lua_pushinteger(L, ret);
-  return 1;
+  return luv_result(L, ret);
 }
 
 static int luv_resident_set_memory(lua_State* L) {
@@ -248,9 +331,7 @@ static int luv_cwd(lua_State* L) {
 
 static int luv_chdir(lua_State* L) {
   int ret = uv_chdir(luaL_checkstring(L, 1));
-  if (ret < 0) return luv_error(L, ret);
-  lua_pushinteger(L, ret);
-  return 1;
+  return luv_result(L, ret);
 }
 
 static int luv_os_tmpdir(lua_State* L) {
@@ -392,9 +473,9 @@ static int luv_os_setenv(lua_State* L) {
   const char* value = luaL_checkstring(L, 2);
   int ret = uv_os_setenv(name, value);
   if (ret == 0)
-    return luv_error(L, ret);
-  else
     lua_pushboolean(L, 1);
+  else
+    return luv_error(L, ret);
   return 1;
 }
 
@@ -402,9 +483,9 @@ static int luv_os_unsetenv(lua_State* L) {
   const char* name = luaL_checkstring(L, 1);
   int ret = uv_os_unsetenv(name);
   if (ret == 0)
-    return luv_error(L, ret);
-  else
     lua_pushboolean(L, 1);
+  else
+    return luv_error(L, ret);
   return 1;
 }
 
@@ -546,3 +627,110 @@ static int luv_gettimeofday(lua_State* L) {
 }
 #endif
 
+#if LUV_UV_VERSION_GEQ(1, 31, 0)
+static int luv_os_environ(lua_State* L) {
+  int i, ret, envcount;
+  uv_env_item_t* envitems;
+  ret = uv_os_environ(&envitems, &envcount);
+  if (ret==0) {
+    lua_newtable(L);
+    for(i=0; i<envcount; i++) {
+      lua_pushstring(L, envitems[i].name);
+      lua_pushstring(L, envitems[i].value);
+      lua_rawset(L, -3);
+    }
+    uv_os_free_environ(envitems, envcount);
+    return 1;
+  }
+  return luv_error(L, ret);
+}
+#endif
+
+static int luv_sleep(lua_State* L) {
+  unsigned int msec = luaL_checkinteger(L, 1);
+#if LUV_UV_VERSION_GEQ(1, 34, 0)
+  uv_sleep(msec);
+#else
+#ifdef _WIN32
+  Sleep(msec);
+#else
+  usleep(msec * 1000);
+#endif
+#endif
+  return 0;
+}
+
+#if LUV_UV_VERSION_GEQ(1, 33, 0)
+static void luv_random_cb(uv_random_t* req, int status, void* buf, size_t buflen) {
+  luv_req_t* data = (luv_req_t*)req->data;
+  lua_State* L = data->ctx->L;
+  int nargs;
+
+  if (status < 0) {
+    luv_status(L, status);
+    nargs = 1;
+  }
+  else {
+    lua_pushnil(L);
+    lua_pushlstring(L, (const char*)buf, buflen);
+    nargs = 2;
+  }
+
+  luv_fulfill_req(L, (luv_req_t*)req->data, nargs);
+  luv_cleanup_req(L, (luv_req_t*)req->data);
+  req->data = NULL;
+}
+
+static int luv_random(lua_State* L) {
+  luv_ctx_t* ctx = luv_context(L);
+  size_t buflen = (size_t)luaL_checkinteger(L, 1);
+  // this is duplication of code in LibUV but since we need to try allocating the memory
+  // before calling uv_random, we need to do this check ahead-of-time
+  if (buflen > 0x7FFFFFFFu) {
+    return luv_error(L, UV_E2BIG);
+  }
+
+  // flags param can be nil, an integer, or a table
+  unsigned int flags = 0;
+  if (lua_type(L, 2) == LUA_TNUMBER || lua_isnoneornil(L, 2)) {
+    flags = (unsigned int)luaL_optinteger(L, 2, 0);
+  }
+  else if (lua_type(L, 2) == LUA_TTABLE) {
+    // this is for forwards-compatibility: if flags ever get added,
+    // we want to be able to take a table
+  }
+  else {
+    return luaL_argerror(L, 2, "expected nil, integer, or table");
+  }
+
+  int cb_ref = luv_check_continuation(L, 3);
+  int sync = cb_ref == LUA_NOREF;
+
+  void* buf = lua_newuserdata(L, buflen);
+  if (sync) {
+    // sync version doesn't need anything except buf, buflen, and flags
+    int ret = uv_random(NULL, NULL, buf, buflen, flags, NULL);
+    if (ret < 0) {
+      return luv_error(L, ret);
+    }
+    lua_pushlstring(L, (const char*)buf, buflen);
+    return 1;
+  }
+  else {
+    // ref buffer
+    int buf_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+    uv_random_t* req = (uv_random_t*)lua_newuserdata(L, sizeof(*req));
+    req->data = luv_setup_req(L, ctx, cb_ref);
+    ((luv_req_t*)req->data)->req_ref = buf_ref;
+
+    int ret = uv_random(ctx->loop, req, buf, buflen, flags, luv_random_cb);
+    if (ret < 0) {
+      luv_cleanup_req(L, (luv_req_t*)req->data);
+      lua_pop(L, 1);
+      return luv_error(L, ret);
+    }
+    return luv_result(L, ret);
+  }
+}
+#endif

@@ -16,13 +16,13 @@ RTMP 实时消息协议
 
 > amf0.parseValue(data, pos)
 
-- data   {Buffer} 要解析的 `amf0` 数据
-- pos {number} 可选，有效数据开始位置，默认为 1
+- data {Buffer} 要解析的 `amf0` 数据
+- pos {integer} 可选，有效数据开始位置，默认为 1
 
 返回:
 
-- value 数值
-- index 下一个 `amf0` 数据开始位置
+- value {any} 数值
+- offset {integer} 下一个 `amf0` 数据开始位置
 
 ### amf0.parseArray
 
@@ -31,13 +31,13 @@ RTMP 实时消息协议
 > amf0.parseArray(data, pos, limit)
 
 - data {Buffer} 要解析的 `amf0` 数据
-- pos {number} 可选，有效数据开始位置，默认为 1
-- limit  {number} 可选，有效数据结束限制位置
+- pos {integer} 可选，有效数据开始位置，默认为 1
+- limit {integer} 可选，有效数据结束限制位置
 
 返回:
 
-- array 数组
-- index 剩余的数据开始位置
+- result {table} 数组
+- index {integer} 剩余的数据开始位置
 
 ### amf0.encodeArray
 
@@ -58,45 +58,83 @@ RTMP 实时消息协议
 
 ## flv
 
-### flv.parseFileHeader
-
-flv.parseFileHeader(data, index)
-
-### flv.parseTagHeader
-
-flv.parseTagHeader(data, index)
-
 ### flv.encodeFileHeader
 
 flv.encodeFileHeader()
+
+- 返回 {string} header
+
+### flv.encodeAvcHeader
+
+flv.encodeAvcHeader(naluType, naluData, timestamp)
+
+- naluType {integer} 视频 NALU 类型
+- data {string} 视频 NALU 数据
+- timestamp {integer} 视频时间戳
+- 返回 {string} header
 
 ### flv.encodeTagHeader
 
 flv.encodeTagHeader(tagType, tagSize, preTagSize, timestamp)
 
+- tagType {integer} tag 类型
+- tagSize {integer} tag 大小
+- preTagSize {integer} 前一个 tag 的大小
+- timestamp {integer} -- 毫秒
+- 返回 {string} header
+
 ### flv.encodeVideoConfiguration
 
 flv.encodeVideoConfiguration(sps, pps)
 
-### flv.decodeVideoTag
+### flv.parseAudioTag
 
-flv.decodeVideoTag(data)
+flv.parseAudioTag(data, offset)
 
-### flv.decodeAudioTag
+- data {string} 音频 tag 数据
+- offset {integer} 音频 tag 数据偏移地址
+- 返回 {table} tag
 
-flv.decodeAudioTag(data)
+### flv.parseFileHeader
 
-### flv.decodeMetadataTag
+flv.parseFileHeader(data, offset)
 
-flv.decodeMetadataTag(data)
+- data {string}
+- offset {integer}
+- 返回 {integer} offset
 
-### flv.decodeConfiguration
+### flv.parseMetadataTag
 
-flv.decodeConfiguration(data, index)
+flv.parseMetadataTag(data, offset)
 
-### flv.encodeAvcHeader
+- data {string} 元数据 tag 数据
+- offset {integer} 元数据 tag 数据偏移地址
+- 返回 {table} tag
 
-flv.encodeAvcHeader(naluType, naluData, timestamp)
+### flv.parseTagHeader
+
+flv.parseTagHeader(data, index)
+
+- data {string}
+- offset {integer}
+- 返回 {integer} offset
+- 返回 {table} tag
+
+### flv.parseVideoConfiguration
+
+flv.parseVideoConfiguration(data, offset)
+
+- data {string} 视频参数集数据 tag 数据
+- offset {integer} 视频参数集数据 tag 数据偏移地址
+- 返回 {table} tag
+
+### flv.parseVideoTag
+
+flv.parseVideoTag(data, offset)
+
+- data {string} 视频 tag 数据
+- offset {integer} 视频 tag 数据偏移地址
+- 返回 {table} tag
 
 ### 示例
 
@@ -119,20 +157,18 @@ while (true) do
     end
     
     if (tag.tagType == 0x09) then
-        local result = flv.decodeVideoTag(tagData)
+        local result = flv.parseVideoTag(tagData)
         
     elseif (tag.tagType == 0x08) then
-        local result = flv.decodeAudioTag(tagData)
+        local result = flv.parseAudioTag(tagData)
         
     elseif (tag.tagType == 0x12) then
-        local result = flv.decodeMetadataTag(tagData)
+        local result = flv.parseMetadataTag(tagData)
     end
     
     index = index + tag.tagSize
 end
 ```
-
-
 
 写
 
@@ -169,30 +205,19 @@ end
 stream:finish()
 ```
 
-
-
 ## rtmp
 
 ### MESSAGE 消息类型
 
 - MESSAGE.SET_CHUNK_SIZE                  = 0x01 
-
 - MESSAGE.ABORT_MESSAGE                   = 0x02
-
 - MESSAGE.ACKNOWLEDGEMENT                 = 0x03
-
 - MESSAGE.USER_CONTROL_MESSAGE            = 0x04
-
 - MESSAGE.WINDOW_ACKNOWLEDGEMENT_SIZE     = 0x05
-
 - MESSAGE.SET_PEER_BANDWIDTH              = 0x06
-
 - MESSAGE.AUDIO_MESSAGE                   = 0x08
-
 - MESSAGE.VIDEO_MESSAGE                   = 0x09
-
 - MESSAGE.DATA_MESSAGE                    = 0x12
-
 - MESSAGE.COMMAND_MESSAGE                 = 0x14
 
 ## queue
@@ -200,9 +225,7 @@ stream:finish()
 ### 常量定义
 
 - queue.MAX_QUEUE_SIZE  = MAX_QUEUE_SIZE
-
 - queue.FLAG_IS_SYNC    = FLAG_IS_SYNC
-
 - queue.FLAG_IS_END     = FLAG_IS_END
 
 ### queue.newMediaQueue
@@ -232,8 +255,4 @@ stream:finish()
 - sampleData
 - sampleTime
 - flags
-
-
-
-
 

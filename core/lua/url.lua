@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -77,12 +77,9 @@ properties of URL objects:
     < > " ` \r \n \t { } | \ ^ '
 
 --]]
-local meta = { }
-meta.name        = "lnode/url"
-meta.version     = "1.0.4-2"
-meta.license     = "Apache 2"
-meta.description = "Node-style url codec for lnode"
-meta.tags        = { "lnode", "url", "codec" }
+local meta = {
+    description = "Node-style url codec for lnode"
+}
 
 local exports = { meta = meta }
 
@@ -250,7 +247,7 @@ Take a base URL, and a href URL, and resolve them as a browser would for an anch
 
 ]]
 function exports.resolve(from, to)
-    local path = require("path").posix
+    local path = require('path').posix
 
     local urlObject = exports.parse(from)
 

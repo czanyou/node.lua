@@ -8,6 +8,8 @@ Node.lua 是一整套基于 lua/libuv 的动态开发环境和运行平台, 主�
 
 包括了 node.lua 主程序 (lua + libuv + miniz + binding = lnode.exe) 和 lua 核心库
 
+本文档源自 Node.js 文档，可能有错误描述或未实现的接口，具体以实现为准.
+
 ## 核心库
 
 - [Assert - 断言](node_assert.md)
@@ -25,13 +27,15 @@ Node.lua 是一整套基于 lua/libuv 的动态开发环境和运行平台, 主�
 - [OS - 操作系统](node_os.md)
 - [Path - 路径](node_path.md)
 - [Process - 进程](node_process.md)
+- [Process - 进程](node_process.md)
+- [Promise - 承诺](node_promise.md)
 - [Query String - 查询字符串](node_querystring.md)
 - [Request - HTTP 请求](node_http_request.md)
 - [Stream - 流](node_stream.md)
 - [String - 字符串](node_string.md)
-- [Tap - 单元测试工具](node_ext_tap.md)
 - [Thread - 线程](node_thread.md)
 - [Timer - 定时器](node_timer.md)
 - [UDP - 数据报](node_dgram.md)
 - [URL - 统一资源定位地址](node_url.md)
 - [Util - 工具](node_util.md)
+- [Tap - 单元测试工具](node_util_tap.md)

@@ -1,8 +1,10 @@
 local core = require('core')
-local util = require("util")
+local util = require('util')
+local json = require('json')
 
 local request = require('http/request')
-local xml = require("onvif/xml")
+local xml = require('app/xml')
+local qs = require("querystring")
 
 local exports = {}
 
@@ -52,7 +54,7 @@ function exports.xmlToTable(element)
                 item[key] = { lastValue, ret }
             end
         end
-  
+
         -- properties
         if (properties and #properties > 0) then
             for _, property in ipairs(properties) do
@@ -86,6 +88,35 @@ function exports.xmlToTable(element)
     end
 end
 
+function exports.get(options, callback)
+    if (type(callback) ~= 'function') then
+        callback = noop
+    end
+
+    local host = options.address or options.ip
+    if (not host) then
+        return callback({ code = 'ParameterError', reason = 'Invalid host address'})
+    end
+
+    local url = 'http://' .. host
+    if (options.port) then
+        url = url .. ':' .. options.port
+    end
+
+    url = url .. (options.path or '/')
+    url = url .. '?' .. qs.stringify(options.params)
+
+    -- console.log('url', url, options)
+    request.get(url, options, function(err, response, body)
+        -- console.log('statusCode', response.statusCode)
+
+        if (callback) then
+            local result = json.parse(body)
+            callback(err, result)
+        end
+    end)
+end
+
 -- 发送 POST 请求
 -- @param options {object}
 -- @param callback {function}
@@ -96,7 +127,7 @@ function exports.post(options, callback)
 
     local host = options.address or options.ip
     if (not host) then
-        return callback('Invalid host address')
+        return callback({ code = 'ParameterError', reason = 'Invalid host address'})
     end
 
     local url = 'http://' .. host
@@ -107,16 +138,29 @@ function exports.post(options, callback)
     url = url .. (options.path or '/')
     -- console.log(url, options)
 
+    local function parseXmlText(data)
+        local parser = xml.newParser()
+        local result = parser:parseXmlText(data)
+        return result
+    end
+
     request.post(url, options, function(err, response, body)
         -- console.log(url, err, response, body)
 
         if (err or not body) then
-            callback(err or 'error')
+            callback({ code = 'NetworkError', reason = err or 'error' })
             return
         end
 
-        local parser = xml.newParser()
-        local data = parser:ParseXmlText(body)
+        -- console.log('body', url, #body)
+        if (body and #body > 64 * 1024) then
+            return callback({ code = 'ResponseError', reason = 'XML document too large' }, body)
+        end
+
+        local ret, data = pcall(parseXmlText, body)
+        if (not ret) or (not data) then
+            return callback({ code = 'ResponseError', reason = 'Invalid XML document' }, body)
+        end
 
         -- Envelope
         local children = data:children();
@@ -124,7 +168,7 @@ function exports.post(options, callback)
 
         local root = children and children[1] -- and data['env:Envelope']
         if (not children) then
-            return callback('Envelope element not found')
+            return callback({ code = 'ResponseError', reason = 'Envelope element not found' }, body)
         end
 
         -- console.log(root and root:name())
@@ -132,23 +176,24 @@ function exports.post(options, callback)
         -- Body
         children = root and root:children();
         if (not children) then
-            return callback('Body element not found')
+            return callback({ code = 'ResponseError', reason = 'Body element not found' }, body)
         end
 
-        local body = children and children[#children] -- and root['env:Body']
-        
+        local soapBody = children and children[#children] -- and root['env:Body']
+
         -- response
-        children = body and body:children();
-        local response = children and children[#children]; -- body['Response']
-        if (not children) then
-            return callback('Response element not found')
+        children = soapBody and soapBody:children();
+        local soapResponse = children and children[#children]; -- body['Response']
+        if (not soapResponse) then
+            return callback({ code = 'ResponseError', reason = 'Response element not found' }, body)
         end
 
-        local name = getXmlNodeName(response:name())
+        local name = getXmlNodeName(soapResponse:name())
         -- console.log(name, #children)
 
         -- result
-        local _, result = exports.xmlToTable(response)
+        local _, result = exports.xmlToTable(soapResponse)
+
         if (name == 'Fault') then
             callback(result)
         else
@@ -199,7 +244,7 @@ end
 -- 生成 SOAP 消息
 function exports.getMessage(options, body)
     local message = '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing">' ..
-    exports.getHeader(options) .. 
+    exports.getHeader(options) ..
     [[<s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">]] ..
     body .. '</s:Body></s:Envelope>'
     return message
@@ -286,6 +331,8 @@ function media.getStreamUri(options, callback)
 
     options.path = '/onvif/Media'
     options.data = message
+
+    -- console.log('getStreamUri', options)
     exports.post(options, callback)
 end
 
@@ -345,6 +392,8 @@ function ptz.continuousMove(options, callback)
 </ContinuousMove>]])
     options.path = '/onvif/ptz'
     options.data = message
+
+    -- console.log('continuousMove', options)
     exports.post(options, callback)
 end
 
@@ -401,48 +450,26 @@ end
 exports.ptz = ptz
 
 -------------------------------------------------------------------------------
--- OnvifCamera
+-- OnvifClient
 
-local OnvifCamera = core.Emitter:extend()
+---@class OnvifClient
+local OnvifClient = core.Emitter:extend()
 
 -- options
 -- - address {string} IP 地址
 -- - username {string} 用户名
 -- - password {string} 密码
-function OnvifCamera:initialize(options)
-    self.options = options
+function OnvifClient:initialize(options)
+    self.capabilities = nil
     self.deviceInformation = nil
+    self.options = options
     self.profiles = nil
     self.services = nil
-    self.capabilities = nil
+
+    -- console.log('OnvifClient:initialize', options)
 end
 
-function OnvifCamera:getPresets(callback)
-    local options = self:getPresetOptions(1)
-    ptz.getPresets(options, callback)
-end
-
-function OnvifCamera:removePreset(preset, callback)
-    local options = self:getPresetOptions(1, preset)
-    ptz.removePreset(options, callback)
-end
-
-function OnvifCamera:gotoPreset(preset, callback)
-    local options = self:getPresetOptions(1, preset)
-    ptz.gotoPreset(options, callback)
-end
-
-function OnvifCamera:setPreset(preset, callback)
-    local options = self:getPresetOptions(1, preset)
-    ptz.setPreset(options, callback)
-end
-
-function OnvifCamera:stopMove(callback)
-    local options = self:getOptions(1)
-    ptz.stop(options, callback)
-end
-
-function OnvifCamera:continuousMove(x, y, z, callback)
+function OnvifClient:continuousMove(x, y, z, callback)
     local options = self:getOptions(1)
     options.x = x;
     options.y = y;
@@ -450,12 +477,12 @@ function OnvifCamera:continuousMove(x, y, z, callback)
     ptz.continuousMove(options, callback)
 end
 
-function OnvifCamera:get(method, name, callback)
+function OnvifClient:get(method, name, callback)
     if (not callback) then callback = function() end end
 
-    if (self[name]) then
-        return callback(self[name])
-    end
+    --if (self[name]) then
+    --    return callback(nil, self[name])
+    --end
 
     local options = self:getOptions()
     method(options, function(err, response)
@@ -463,36 +490,24 @@ function OnvifCamera:get(method, name, callback)
             self[name] = response
         end
 
-        return callback(response, err)
+        return callback(err, response)
     end)
 end
 
-function OnvifCamera:getDeviceInformation(callback)
-    self:get(exports.getDeviceInformation, 'deviceInformation', callback)
-end
-
-function OnvifCamera:getCapabilities(callback)
+function OnvifClient:getCapabilities(callback)
     self:get(exports.getCapabilities, 'capabilities', callback)
 end
 
-function OnvifCamera:getServices(callback)
-    self:get(exports.getServices, 'services', callback)
+function OnvifClient:getDeviceInformation(callback)
+    self:get(exports.getDeviceInformation, 'deviceInformation', callback)
 end
 
-function OnvifCamera:getProfiles(callback)
-    self:get(media.getProfiles, 'profiles', callback)
-end
-
-function OnvifCamera:getVideoSources(callback)
-    self:get(media.getVideoSources, 'videoSources', callback)
-end
-
-function OnvifCamera:getOptions(index)
+function OnvifClient:getOptions(index)
     local options = self.options or {}
 
     local profile = nil
     if (index) then
-        profile = self.profiles and self.profiles[index]
+        profile = self:getProfile(index)
         profile = profile and (profile['@token'] or profile.Name)
     end
 
@@ -506,7 +521,21 @@ function OnvifCamera:getOptions(index)
     }
 end
 
-function OnvifCamera:getPresetOptions(index, preset)
+function OnvifClient:getProfile(index)
+    local profiles = self.profiles
+    if (profiles and profiles.Profiles) then
+        profiles = profiles.Profiles
+    end
+
+    local profile = profiles and profiles[index]
+    return profile
+end
+
+function OnvifClient:getProfiles(callback)
+    self:get(media.getProfiles, 'profiles', callback)
+end
+
+function OnvifClient:getPresetOptions(index, preset)
     local options = self:getOptions(index)
     options.preset = preset
 
@@ -520,40 +549,69 @@ function OnvifCamera:getPresetOptions(index, preset)
     return options
 end
 
-function OnvifCamera:getStreamUri(index, callback)
+function OnvifClient:getPresets(callback)
+    local options = self:getPresetOptions(1)
+    ptz.getPresets(options, callback)
+end
+
+function OnvifClient:getSegments(input, callback)
     if (not callback) then callback = function() end end
 
-    local profile = self.profiles and self.profiles[index]
-    if (not profile) then
-        return callback(nil, 'Invalid profiles')
+    ---@class SegmentsParams
+    input = input or {}
+
+    local params = {}
+    params.begintime = input['start'] or '20200521-000000'
+    params.cameraid = input['id'] or '0$0'
+    params.endtime = input['end'] or '20200521-235959'
+    params.pic = input.pic or 0
+    params.pos = 'Local'
+    params.stream = input.stream or 0
+    params.type = input.type or 1
+
+    local options = self:getOptions()
+    options.path = '/merlin/QueryRecord.cgi'
+    options.params = params
+
+    local function parseTime(time)
+        local tokens = time and time:split('-')
+        console.log(tokens)
+        local value1 = tonumber(tokens and tokens[1])
+        local value2 = tonumber(tokens and tokens[2])
+        return { d = value1, t = value2 }
     end
 
-    if (profile.streamUri) then
-        return profile.streamUri
-    end
+    exports.get(options, function(err, result)
+        -- console.log('getSegments', err, result)
 
-    local options = self:getOptions(index)
-    exports.media.getStreamUri(options, function(err, body) 
         if (err) then
-            return callback(nil, err)
+            callback(err)
+            return
         end
 
-        local response = body and body.MediaUri
-        local streamUri = response and response.Uri
-        if (not streamUri) then
-            return callback(nil, body)
+        local data = (result and result.RecordList) or {}
+        local segments = {}
+        for index, item in ipairs(data) do
+            local segment = {}
+
+            segment['start'] = (item.st)
+            segment['end'] = (item.et)
+            table.insert(segments, segment)
         end
 
-        -- console.log('streamUri', streamUri)
-        profile.streamUri = streamUri
-        return callback(streamUri)
+        -- console.log('getSegments', params, segments)
+        callback(nil, { segments = segments, params = params })
     end)
 end
 
-function OnvifCamera:getSnapshotUri(index, callback)
+function OnvifClient:getServices(callback)
+    self:get(exports.getServices, 'services', callback)
+end
+
+function OnvifClient:getSnapshotUri(index, callback)
     if (not callback) then callback = function() end end
-    
-    local profile = self.profiles and self.profiles[index]
+
+    local profile = self:getProfile(index)
     if (not profile) then
         return callback(nil)
     end
@@ -563,29 +621,85 @@ function OnvifCamera:getSnapshotUri(index, callback)
     end
 
     local options = self:getOptions(index)
-    exports.media.getSnapshotUri(options, function(err, body) 
+    exports.media.getSnapshotUri(options, function(err, body)
         if (err) then
-            return callback(nil, err)
+            return callback(err)
         end
 
         -- console.log('body', body)
         local response = body and body.MediaUri
         local snapshotUri = response and response.Uri
         if (not snapshotUri) then
-            return callback(nil, body)
+            return callback(body)
         end
 
         -- console.log('snapshotUri', snapshotUri)
         profile.snapshotUri = snapshotUri
-        callback(snapshotUri)
+        callback(nil, snapshotUri)
     end)
+end
+
+function OnvifClient:getStreamUri(index, callback)
+    if (not callback) then callback = function() end end
+
+    local profile = self:getProfile(index)
+
+    -- console.log('getStreamUri', index, callback, profile)
+    if (not profile) then
+        return callback({ code = 'ParameterError', reason = 'Invalid profiles or profile index'})
+    end
+
+    if (profile.streamUri) then
+        return profile.streamUri
+    end
+
+    local options = self:getOptions(index)
+    exports.media.getStreamUri(options, function(err, body)
+        if (err) then
+            return callback(err)
+        end
+
+        local response = body and body.MediaUri
+        local streamUri = response and response.Uri
+        if (not streamUri) then
+            return callback(body)
+        end
+
+        -- console.log('streamUri', streamUri)
+        profile.streamUri = streamUri
+        return callback(nil, streamUri)
+    end)
+end
+
+function OnvifClient:getVideoSources(callback)
+    self:get(media.getVideoSources, 'videoSources', callback)
+end
+
+function OnvifClient:gotoPreset(preset, callback)
+    local options = self:getPresetOptions(1, preset)
+    ptz.gotoPreset(options, callback)
+end
+
+function OnvifClient:removePreset(preset, callback)
+    local options = self:getPresetOptions(1, preset)
+    ptz.removePreset(options, callback)
+end
+
+function OnvifClient:setPreset(preset, callback)
+    local options = self:getPresetOptions(1, preset)
+    ptz.setPreset(options, callback)
+end
+
+function OnvifClient:stopMove(callback)
+    local options = self:getOptions(1)
+    ptz.stop(options, callback)
 end
 
 -------------------------------------------------------------------------------
 -- exports
 
-function exports.camera(options)
-    return OnvifCamera:new(options)
+function exports.createClient(options)
+    return OnvifClient:new(options)
 end
 
 return exports

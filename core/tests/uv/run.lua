@@ -1,4 +1,4 @@
-local tap  = require("ext/tap")
+local tap  = require('util/tap')
 local util = require('util')
 
 local dirname = util.dirname()

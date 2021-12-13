@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 local decoder = require('http/codec').decoder
@@ -51,7 +51,7 @@ test("http server parser", function()
         "GET /path HTTP/1.1\r\n",
         "User-Agent: Luvit-Test\r\n\r\n"
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {method = "GET", path = "/path", version = 1.1, keepAlive = true,
             {"User-Agent", "Luvit-Test"}
@@ -65,7 +65,7 @@ test("http client parser", function()
         "HTTP/1.0 200 OK\r\n",
         "User-Agent: Luvit-Test\r\n\r\n"
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {code = 200, reason = "OK", version = 1.0, keepAlive = false,
             {"User-Agent", "Luvit-Test"}
@@ -82,7 +82,7 @@ test("http 1.0 Keep-Alive", function()
         "DELETE /bad-resource HTTP/1.0\r\n",
         "Connection: Keep-Alive\r\n\r\n",
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {method = "GET", path = "/", version = 1.0, keepAlive = true,
             {"Connection", "Keep-Alive"},
@@ -102,7 +102,7 @@ test("http 1.0 Raw body", function()
         "DELETE /bad-resource HTTP/1.0\r\n",
         "Connection: Keep-Alive\r\n\r\n",
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {method = "POST", path = "/", version = 1.0, keepAlive = false,
             {"User-Agent", "Test"},
@@ -118,7 +118,7 @@ test("http 1.1 Keep-Alive", function()
         "HEAD / HTTP/1.1\r\n\r\n",
         "DELETE /bad-resource HTTP/1.1\r\n\r\n",
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {method = "HEAD", path = "/", version = 1.1, keepAlive = true},
         "",
@@ -134,7 +134,7 @@ test("http 1.1 Keep-Alive with bodies", function()
         "\r\nHello World\nDELETE ",
         "/ HTTP/1.1\r\n\r\n",
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {method = "POST", path = "/upload", version = 1.1, keepAlive = true,
             {"Content-Length", "12"},
@@ -153,7 +153,7 @@ test("http 1.1 Raw body", function()
         "User-Agent: Test\r\n\r\n",
         "DELETE /bad-resource HTTP/1.0\r\n",
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {method = "POST", path = "/", version = 1.1, keepAlive = false,
             {"Connection", "Close"},
@@ -177,7 +177,7 @@ test("chunked encoding parser", function()
         "0\r\n",
         "\r\n",
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {method = "PUT", path = "/my-file.txt", version = 1.1, keepAlive = true,
             {"Transfer-Encoding", "chunked"},
@@ -193,7 +193,7 @@ test("chunked encoding parser (oneline)", function()
     local output = testDecoder(decoder, {
         "PUT /my-file.txt HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n4\r\nWiki\r\n5\r\npedia\r\ne\r\n in\r\n\r\nchunks.\r\n0\r\n\r\n"
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {method = "PUT", path = "/my-file.txt", version = 1.1, keepAlive = true,
             {"Transfer-Encoding", "chunked"},
@@ -213,7 +213,7 @@ test("chunked encoding parser (broken)", function()
         "pedia\r\ne\r\n in\r\n\r\nch",
         "unks.\r\n0\r\n\r\n"
     })
-    p(output)
+    console.log(output)
     assert(deepEqual({
         {method = "PUT", path = "/my-file.txt", version = 1.1, keepAlive = true,
             {"Transfer-Encoding", "chunked"},

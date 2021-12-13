@@ -16,7 +16,6 @@ limitations under the License.
 
 --]]
 
-local init = require('init')
 local path = require('path')
 
 local path_base  = require('path')
@@ -31,7 +30,7 @@ else
   assert(path._internal == path_base.nt)
 end
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test('path tests', function()
@@ -71,10 +70,6 @@ test('path tests', function()
 	assert(path.basename('') == '')
 	assert(path.basename('basename.ext/') == 'basename.ext')
 	assert(path.basename('basename.ext//') == 'basename.ext')
-
-	-- test path.basename on current file
-	--assert(path.basename(module.path) == "test-path.lua")
-	--assert(path.basename(module.path, ".lua") == "test-path")
 
 	-- test path.basename os specifics
 	assert(path_base.posix:basename('/foo/bar.lua') == 'bar.lua')

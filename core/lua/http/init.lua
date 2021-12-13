@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,19 +17,16 @@ limitations under the License.
 
 --]]
 
-local meta = { }
-meta.name        = "lnode/http"
-meta.version     = "1.2.3"
-meta.license     = "Apache 2"
-meta.description = "Node-style http client and server module for lnode"
-meta.tags        = { "lnode", "http", "stream" }
+local meta = {
+    description = "Node-style http client and server module for lnode"
+}
 
 local exports = { meta = meta }
 
 local net   = require('net')
 local url   = require('url')
-local utils = require('util')
 local codec = require('http/codec')
+local tls   = require('tls')
 
 local Writable = require('stream').Writable
 
@@ -79,6 +76,7 @@ exports.headerMeta = headerMeta
 -------------------------------------------------------------------------------
 -- IncomingMessage
 
+---@class IncomingMessage
 local IncomingMessage = net.Socket:extend()
 exports.IncomingMessage = IncomingMessage
 
@@ -109,38 +107,45 @@ end
 -------------------------------------------------------------------------------
 -- ServerResponse
 
+---@class ServerResponse
 local ServerResponse = Writable:extend()
 exports.ServerResponse = ServerResponse
 
+-- Override this in the instance to not send the date
+ServerResponse.sendDate = true
+
+---@param socket Socket
 function ServerResponse:initialize(socket)
     Writable.initialize(self)
-    self.socket      = socket
-    self.encoder     = codec.encoder()
-    self.statusCode  = 200
-    self.headersSent = false
-    self.headers     = setmetatable( { }, headerMeta)
+
+    self.encoder        = codec.encoder()
+    self.headers        = setmetatable( { }, headerMeta)
+    self.headersSent    = false
+    self.sendDate       = true
+    self.socket         = socket
+    self.statusCode     = 200
+    self.statusMessage  = nil
+    self.writableEnded  = false
+    self.writableFinished = false
 
     local callbacks = {
-        close = function(...)
+        onSocketClose = function(...)
             self:emit('close', ...)
         end,
-        drain = function(...)
+        onSocketDrain = function(...)
             self:emit('drain', ...)
         end,
-        finish = function(...)
+        onSocketEnd = function(...)
             self:emit('end', ...)
         end
     }
     self._callbacks = callbacks
 
     -- console.log('close.count', self.socket:listenerCount('close'))
-    self.socket:on('close', callbacks.close)
-    self.socket:on('drain', callbacks.drain)
-    self.socket:on('end', callbacks.finish)
+    self.socket:on('close', callbacks.onSocketClose)
+    self.socket:on('drain', callbacks.onSocketDrain)
+    self.socket:on('end', callbacks.onSocketEnd)
 end
-
--- Override this in the instance to not send the date
-ServerResponse.sendDate = true
 
 function ServerResponse:setHeader(name, value)
     assert(not self.headersSent, "headers already sent")
@@ -229,16 +234,13 @@ function ServerResponse:flushHeaders()
     self.socket:write(headerData)
 end
 
-function ServerResponse:write(chunk, callback)
-    if chunk and #chunk > 0 then
-        self.hasBody = true
+-- 此方法向服务器发出信号，表明已发送所有响应头和主体，该服务器应该视为此消息已完成。 
+-- 必须在每个响应上调用此 response:finish() 方法。
+function ServerResponse:finish(chunk)
+    if (self.writableEnded) then
+        return
     end
 
-    self:flushHeaders()
-    return self.socket:write(self.encoder(chunk), callback)
-end
-
-function ServerResponse:done(chunk)
     if chunk and #chunk > 0 then
         self.hasBody = true
     end
@@ -251,40 +253,53 @@ function ServerResponse:done(chunk)
 
     last = last .. (self.encoder("") or "")
 
-    local _maybeClose = function ()
-        self:emit('finish')
+    self.writableEnded = true
 
+    -- end
+    local _maybeEnd = function ()
+        -- console.log('_maybeEnd: finish')
+        -- self:emit('finish')
+
+        -- close socket
         if not self.keepAlive then
-            self.socket:_end()
+            self.socket:finish()
         end
 
+        -- clean all listeners
         local callbacks = self._callbacks
-        -- console.log('_maybeClose', callbacks)
-
         self._callbacks = nil
         if (callbacks) then
-            self.socket:removeListener('close', callbacks.close)
-            self.socket:removeListener('drain', callbacks.drain)
-            self.socket:removeListener('end', callbacks.finish)
+            self.socket:removeListener('close', callbacks.onSocketClose)
+            self.socket:removeListener('drain', callbacks.onSocketDrain)
+            self.socket:removeListener('end', callbacks.onSocketEnd)
         end
-    
+
         self.encoder = nil
         self.headers = nil
 
-        Writable.close(self)
+        -- end this writable
+        Writable.finish(self)
     end
 
     if #last > 0 then
         self.socket:write(last, function()
-            _maybeClose()
+            _maybeEnd()
         end)
     else
-        _maybeClose()
+        _maybeEnd()
     end
 end
 
-ServerResponse._end   = ServerResponse.done
-ServerResponse.finish = ServerResponse.done
+ServerResponse._end = ServerResponse.finish
+
+function ServerResponse:write(chunk, callback)
+    if chunk and #chunk > 0 then
+        self.hasBody = true
+    end
+
+    self:flushHeaders()
+    return self.socket:write(self.encoder(chunk), callback)
+end
 
 function ServerResponse:writeHead(newStatusCode, newHeaders)
     if (self.headersSent) then
@@ -306,6 +321,8 @@ end
 -------------------------------------------------------------------------------
 -- handleConnection
 
+---@param socket Socket
+---@param onRequest function
 function exports.handleConnection(socket, onRequest)
 
     local decoder = nil
@@ -318,18 +335,22 @@ function exports.handleConnection(socket, onRequest)
         request = nil
     end
 
+    -- Socket timeout
     local _onSocketTimeout = function ()
-        socket:_end()
+        socket:finish()
     end
 
+    -- Socket is end
     local _onSocketEnd = function ()
         process:removeListener('exit', _onSocketTimeout)
         -- Just in case the stream ended and we still had an open request,
         -- end it.
-        if request then _onRequestFlush() end
+        if request then
+            _onRequestFlush()
+        end
     end
 
-    local _onHeadersEnd = function(event)
+    local _onRequestHeadersEnd = function(event)
         -- If there was an old request that never closed, end it.
         if request then
             _onRequestFlush()
@@ -355,6 +376,7 @@ function exports.handleConnection(socket, onRequest)
                 socket:pause()
                 socket:unshift(decoder.buffer)
             end
+
             onRequest(request, response)
             return true -- break
 
@@ -386,13 +408,18 @@ function exports.handleConnection(socket, onRequest)
 
     -- [[
     decoder = codec.createDecoder({}, function(event, error)
+        -- console.log('event', event, error)
+
         if (error) then
+            -- error
             socket:emit('error', error)
 
         elseif type(event) == "table" then
-            return _onHeadersEnd(event)
+            -- headers
+            return _onRequestHeadersEnd(event)
 
         elseif type(event) == "string" then
+            -- content
             if (request) then
                 return _onContentData(event)
             end
@@ -400,36 +427,42 @@ function exports.handleConnection(socket, onRequest)
     end)
 
     _onSocketData = function (chunk)
+        -- console.log('_onSocketData', chunk)
         decoder.decode(chunk)
     end
+
     --]]
 
     -- --------------------------------------------------------
     -- socket
 
+    socket:setTimeout(120000 ) -- set socket timeout
     socket:once('timeout', _onSocketTimeout)
-    socket:setTimeout(120000 )-- set socket timeout
     socket:on('data', _onSocketData)
     socket:on('end',  _onSocketEnd)
 
-    process:once('exit', _onSocketTimeout)
+    -- test only
+    -- process:once('exit', _onSocketTimeout)
 end
 
+---@param onRequest function
+---@return Server
 function exports.createServer(onRequest)
-    return net.createServer(function(socket)
-        return exports.handleConnection(socket, onRequest)
+    return net.createServer(function(connection)
+        return exports.handleConnection(connection, onRequest)
     end)
 end
 
 -------------------------------------------------------------------------------
 -- ClientRequest
 
+---@class ClientRequest
 local ClientRequest = Writable:extend()
 exports.ClientRequest = ClientRequest
 
 function exports.ClientRequest.getDefaultUserAgent()
     if exports.ClientRequest._defaultUserAgent == nil then
-        exports.ClientRequest._defaultUserAgent = 'lnode/http/' .. exports.meta.version
+        exports.ClientRequest._defaultUserAgent = 'lnode/http/' .. process.version
     end
 
     return exports.ClientRequest._defaultUserAgent
@@ -472,12 +505,19 @@ function ClientRequest:initialize(options, callback)
         table.insert(self, 1, { 'Host', options.host })
     end
 
+    -- console.log(options)
+
+    self.protocol   = options.protocol
     self.host       = options.host
     self.method     =(options.method or 'GET'):upper()
     self.path       = options.path or '/'
     self.port       = options.port or 80
     self.self_sent  = false
     self.connection = connection_found
+
+    if (self.protocol == 'https') then
+        self.port       = options.port or 443
+    end
 
     if (self.host == 'rpc') then
         self.host = nil
@@ -489,7 +529,6 @@ function ClientRequest:initialize(options, callback)
     self.encode = codec.encoder()
 
     local decoder = nil
-    local buffer = ''
     local response
 
     local _onFlush = function ()
@@ -497,16 +536,25 @@ function ClientRequest:initialize(options, callback)
         response = nil
     end
 
-    local socket = options.socket or net.createConnection(self.port, self.host)
-    local connect_emitter = options.connect_emitter or 'connect'
+    local socket = options.socket
+    if (not socket) then
+        if (self.protocol == 'https') then
+            socket = tls.connect({ host = self.host, port = self.port })
+            options.connect_emitter = 'secureConnect'
+        else
+            socket = net.createConnection(self.port, self.host)
+        end
+    end
+
+    local connectEmitter = options.connect_emitter or 'connect'
 
     self.socket = socket
     socket:on('error', function(...) self:emit('error', ...) end)
-    socket:on(connect_emitter, function()
+    socket:on(connectEmitter, function()
         self.connected = true
         self:emit('socket', socket)
 
-        --console.log('request', self)
+        -- console.log('connect', connectEmitter)
 
         local _onSocketData = nil;
 
@@ -593,9 +641,8 @@ function ClientRequest:initialize(options, callback)
         socket:on('end', _onSocketEnd)
 
         if self.ended then
-            self:_done(self.ended.data, self.ended.cb)
+            self:finish(self.ended.data, self.ended.cb)
         end
-
     end)
 end
 
@@ -629,21 +676,13 @@ function ClientRequest:_write(data, callback)
     return self.socket:write(data, callback)
 end
 
-function ClientRequest:_done(data, callback)
-    self:_end(data, function()
-        if callback then
-            callback()
-        end
-    end )
-end
-
 function ClientRequest:_setConnection()
     if not self.connection then
         table.insert(self, { 'connection', 'close' })
     end
 end
 
-function ClientRequest:done(data, callback)
+function ClientRequest:finish(data, callback)
     -- Optionally send one more chunk
     if data then
         self:write(data)
@@ -658,11 +697,13 @@ function ClientRequest:done(data, callback)
     }
 
     if self.connected then
-        self:_done(ended.data, ended.cb)
+        Writable.finish(self, ended.data, ended.cb)
     else
         self.ended = ended
     end
 end
+
+ClientRequest._end = ClientRequest.finish
 
 function ClientRequest:setTimeout(msecs, callback)
     if self.socket then
@@ -701,7 +742,7 @@ function exports.get(options, onResponse)
     options = exports.parseUrl(options)
     options.method = 'GET'
     local request = exports.request(options, onResponse)
-    request:done()
+    request:finish()
     return request
 end
 

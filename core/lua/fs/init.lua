@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014-2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,17 +17,14 @@ limitations under the License.
 
 --]]
 
-local meta = { }
-meta.name        = "lnode/fs"
-meta.version     = "1.2.2"
-meta.license     = "Apache 2"
-meta.description = "Node-style filesystem module for lnode"
-meta.tags        = { "lnode", "fs", "stream" }
+local meta = {
+    description = "Node-style filesystem module for lnode"
+}
 
 local lutils    = require('lutils')
 local util      = require('util')
 local uv        = require('luv')
-local fs        = require('./file')
+local fs        = require('fs/file')
 local Error     = require('core').Error
 
 local noop = function() end
@@ -231,7 +228,7 @@ function fs.mkdirSync(pathname, mode)
 end
 
 function fs.mkdirpSync(pathname, mode)
-    local path = require("path")
+    local path = require('path')
 
     local success, err = fs.mkdirSync(pathname, mode)
     if success or string.match(err, "^EEXIST") then
@@ -485,7 +482,7 @@ function fs.createReadStream(path, options)
     if (not ReadStream) then
         ReadStream = require('fs/stream').ReadStream
     end
-    
+
     return ReadStream:new(path, options)
 end
 

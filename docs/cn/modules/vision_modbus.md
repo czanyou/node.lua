@@ -29,7 +29,7 @@
 - dataBits `{integer}` 数据位
 - stopBits `{integer}` 停止位
 
-## ModbusDevice
+## ModbusDevice 类
 
 ### close
 
@@ -139,3 +139,142 @@
 
 - address `{integer}` 开始写入的地址
 - value `{integer}` 要写入的值
+
+## modbus/common
+
+### common.combineReadQueue
+
+> common.combineReadQueue(properties)
+
+合并连续的 Modbus 属性读操作
+
+- properties`ModbusProperty[]` 要读取的 Modbus 属性
+- 返回 `ModbusReadItem[]` 返回合并后的读序列
+
+### common.encodePropertyValue
+
+> common.encodePropertyValue(property)
+
+编码指定的属性值
+
+- property `ModbusProperty` Modbus 属性
+- 返回 `string` 返回编码后的数据
+
+### common.getActionConfig
+
+Modbus 操作配置参数
+
+### common.getModbusCommonConfig
+
+Modbus 公共配置参数
+
+### common.getModbusConfig
+
+Modbus 配置参数
+
+### common.getPropertyConfig
+
+Modbus 属性配置参数
+
+### common.parseNumberValue
+
+> parseNumberValue(value, property)
+
+解析数据类属性值
+
+### common.parsePropertyValue
+
+> common.parsePropertyValue(property, buffer)
+
+解析指定的属性的值
+
+- property `ModbusProperty` Modbus 属性
+- buffer `string` Modbus 寄存器数据
+- 返回 `number|integer` 解析后的数值
+
+### common.parsePropertyValues
+
+> common.parsePropertyValues(properties, buffer, params)
+
+解析多个属性的值
+
+- properties`ModbusProperty[]` Modbus 属性
+- buffer `string` Modbus 寄存器数据
+- 返回 `table<string, number>` 解析后的数值
+
+## modbus/master
+
+### master.openDevice
+
+> master.openDevice(options)
+
+打开 Modbus 设备
+
+### master.closeDevice
+
+> master.closeDevice()
+
+关闭 Modbus 设备 
+
+### master.readRegisters
+
+> master.readRegisters(register, quantity)
+
+读取多个连续的 Modbus 寄存器的值
+
+### master.readPropertyValue
+
+> master.readPropertyValue(property, commonConfig)
+
+读取单个 Modbus 寄存器的值
+
+### master.readConterminousPropertyValues
+
+> master.readConterminousPropertyValues(readOptions, properties, commonConfig)
+
+读取多个连续的属性的值
+
+### master.readPropertyValues
+
+> master.readPropertyValues(options)
+
+读取多个属性的值
+
+### master.writeRegister
+
+> master.writeRegister(register, value)
+
+写单个 Modbus 寄存器的值
+
+### master.writeRegisters
+
+> master.writeRegisters(register, quantity, value)
+
+写多个连续的 Modbus 寄存器的值
+
+### master.writePropertyValue
+
+> master.writePropertyValue(property, commonConfig)
+
+写单个属性的值
+
+- property 属性
+- commonConfig 公共参数
+
+### master.writePropertyValues
+
+> master.writePropertyValues(options)
+
+写多个属性的值
+
+- options 选项
+  - common 公共参数
+  - properties 属性列表
+
+### master.start
+
+> master.start()
+
+初始化这个模块
+
+## modbus

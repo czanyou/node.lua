@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,21 +16,18 @@ limitations under the License.
 
 --]]
 local core 	= require('core')
-local utils = require('util')
+local util  = require('util')
 local url 	= require('url')
 local net 	= require('net')
 
-local codec = require('rtsp/codec')
-local rtp 	= require('rtsp/rtp')
-local rtsp 	= require('rtsp/message')
-local sdp   = require('rtsp/sdp')
+local codec   = require('rtsp/codec')
+local rtp 	  = require('rtsp/rtp')
+local message = require('rtsp/message')
+local sdp     = require('rtsp/sdp')
 
-local TAG = 'RtspClient'
+local exports 	= {}
 
-local RTP_HEADER_SIZE = 12
-
-local meta 		= { }
-local exports 	= { meta = meta }
+local RTP_HEADER_SIZE   = 12
 
 local NALU_TYPE_I   	= 5
 local NALU_TYPE_SPS 	= 7
@@ -39,15 +36,33 @@ local NALU_TYPE_P   	= 1
 local NALU_TYPE_INFO 	= 6
 
 exports.STATE_STOPPED	= 0
-exports.STATE_INIT 		= 10	-- message sent: SETUP/TEARDOWN 
+exports.STATE_INIT 		= 10	-- message sent: SETUP/TEARDOWN
 exports.STATE_READY		= 20	-- message sent: PLAY/RECORD/TEARDOWN/SETUP
 exports.STATE_PLAYING	= 30	-- message sent: PAUSE/TEARDOWN/PLAY/SETUP
 exports.STATE_RECORDING	= 40
 
+-------------------------------------------------------------------------------
+--- MediaSample
+
+---@class MediaSample
+---@field public data string[] 数据内容
+---@field public isFragment boolean 表示碎片标记
+---@field public isSTAP boolean
+---@field public isStart boolean 表示一帧开始标记
+---@field public isEnd boolean 表示一帧结束标记
+---@field public isVideo boolean 表示视频帧标记
+---@field public marker boolean 表示一帧结束标记
+---@field public payload integer
+---@field public sampleTime integer 采样时间
+---@field public rtpTime integer
+---@field public sequence integer
+
+
+local MediaSample = {}
+
 --[[
 'v=0\r\no=- 1453271342214497 1 IN IP4 10.10.42.66\r\ns=MPEG Transport Stream, streamed by the LIVE555 Media Server\r\ni=hd.ts\r\nt=0 0\r\na=tool:LIVE555 Streaming Media v2015.07.31\r\na=type:broadcast\r\na=control:*\r\na=range:npt=0-\r\na=x-qt-text-nam:MPEG Transport Stream, streamed by the LIVE555 Media Server\r\na=x-qt-text-inf:hd.ts\r\nm=video 0 RTP/AVP 33\r\nc=IN IP4 0.0.0.0\r\nb=AS:5000\r\na=control:track1\r\n'
 ]]
-
 
 local function cloneSample(sample, data)
 	local newSample = {}
@@ -61,10 +76,10 @@ local function cloneSample(sample, data)
 	return newSample
 end
 
-
 -------------------------------------------------------------------------------
 --- RtspClient
 
+---@class RtspClient
 local RtspClient = core.Emitter:extend()
 exports.RtspClient = RtspClient
 
@@ -114,11 +129,12 @@ function RtspClient:close(error)
 
 	self.isMpegTSMode 		= false
 	self.lastConnectTime	= nil
+	self.lastHeartBeatTime  = 0
 	self.lastCSeq 			= 1
 	self.mediaTracks		= nil
 	self.numberOfAuthFailed	= 0
-	self.rtpSession 		= nil 
-	self.rtspCodec 			= nil 
+	self.rtpSession 		= nil
+	self.rtspCodec 			= nil
 	self.rtspSocket			= nil
 	self.rtspState			= exports.STATE_STOPPED
 	self.sentRequests   	= {}
@@ -133,7 +149,7 @@ function RtspClient:close(error)
 	self.videoTrackId		= nil
 
 	self.lastPPS			= nil
-	self.lastSPS			= nil	
+	self.lastSPS			= nil
 
 	if (error) then
 		self:emit('error', error)
@@ -142,8 +158,11 @@ function RtspClient:close(error)
 	self:closeConnectTimer()
 end
 
+---@param response RtspMessage
+---@return RtspMessage request
 function RtspClient:getRequest(response)
-	local cseq = tostring(response.headers['CSeq'] or 0)
+	local headers = response and response.headers
+	local cseq = tostring((headers and headers['CSeq']) or 0)
 	local request = self.sentRequests[cseq]
 	if (not request) then
 		console.log('RtspClient:getRequest', "request not found: ", cseq)
@@ -154,9 +173,20 @@ function RtspClient:getRequest(response)
 	return request
 end
 
+---@return integer width
+---@return integer height
 function RtspClient:getVideoSize()
 	if (not self.videoTrack) then
 		return nil, nil, 'video track is empty'
+	end
+
+	local function tointeger(value)
+		if (not value) then
+			return value
+		end
+
+		value = string.trim(value)
+		return value and tonumber(value)
 	end
 
 	local attributes = self.videoTrack.attributes or {}
@@ -166,52 +196,96 @@ function RtspClient:getVideoSize()
 	end
 
 	local tokens = dimensions:split(',')
-	return tokens[1], tokens[2]
+	return tointeger(tokens[1]), tointeger(tokens[2])
 end
 
 -- 从 SDP 中提取 H.264 的 SPS 和 PPS 数据集
+---@return string sps
+---@return string pps
+---@return string error
 function RtspClient:getParameterSets()
 	if (not self.sdpSession) then
-		return nil, nil, 'invalid sdp session'
+		return nil, 'invalid sdp session'
 	end
 
 	local session = self.sdpSession
 	local video = session:getMedia('video')
 	if (not video) then
-		return nil, nil, 'video track is empty'
+		return nil, 'video track is empty'
 	end
 
 	local fmtp = video:getFmtp()
 	if (not fmtp) then
-		return nil, nil, 'fmtp is empty'
+		return nil, 'fmtp is empty'
 	end
 
 	local value = fmtp['sprop-parameter-sets']
 	if (not value) then
-		return nil, nil, 'sprop-parameter-sets is empty'
+		return nil, 'sprop-parameter-sets is empty'
 	end
 
 	local tokens = value:split(',')
 
-	local sps = utils.base64Decode(tokens[1])
-	local pps = utils.base64Decode(tokens[2])
-	return sps, pps
+	local sps = util.base64Decode(tokens[1])
+	local pps = util.base64Decode(tokens[2])
+	return { sps = sps, pps = pps }
 end
 
+---@param newState integer
 function RtspClient:getRtspStateString(newState)
 	if (newState == exports.STATE_STOPPED) then
 		return 'stopped'
-	elseif (newState == exports.STATE_INIT) then	
+
+	elseif (newState == exports.STATE_INIT) then
 		return 'init'
-	elseif (newState == exports.STATE_READY) then	
+
+	elseif (newState == exports.STATE_READY) then
 		return 'ready'
-	elseif (newState == exports.STATE_PLAYING) then	
+
+	elseif (newState == exports.STATE_PLAYING) then
 		return 'playing'
-	elseif (newState == exports.STATE_RECORDING) then	
+
+	elseif (newState == exports.STATE_RECORDING) then
 		return 'recording'
+
 	else
 		return 'state-' .. newState
 	end
+end
+
+function RtspClient:getStatus()
+    local status = {}
+
+    status.lastActiveTime = self.lastActiveTime
+    status.rtspState = self.rtspState
+    status.sentRequests = self.sentRequests
+    status.lastCSeq = self.lastCSeq
+    status.lastConnectTime = self.lastConnectTime
+    status.id = self.id
+
+    -- audio
+    local audio = {}
+    status.audio = audio
+    audio.samples = self.audioSamples
+    -- audio.track = self.audioTrack
+    audio.trackId = self.audioTrackId
+
+    -- video
+    local video = {}
+    status.video = video
+    video.samples = self.videoSamples
+    -- video.track = self.videoTrack
+    video.trackId = self.videoTrackId
+
+    local sets, error = self:getParameterSets()
+    if (sets and sets.sps) then
+        video.sps = util.hexEncode(sets.sps)
+        video.pps = util.hexEncode(sets.pps)
+    else
+        video.sps = error
+    end
+
+    return status
 end
 
 function RtspClient:initMessageCodec()
@@ -231,68 +305,73 @@ function RtspClient:initMessageCodec()
 
 	rtspCodec:on('packet', function(packet)
 		local START_CODE = 0x24
-		local START_SIZE = 4
-		local head, channel, size = string.unpack('>BBI2', packet)
-		--print('packet', head, channel, size)
+		local offset = 4 + 1
 
+		local head, channel, size = string.unpack('>BBI2', packet)
+		-- print('packet', head, channel, size)
 		if (head ~= START_CODE) then
 			return
 		end
 
-		if (channel == 0) then
-			self:onRtpPacket(packet, START_SIZE + 1, size)
+		if (channel == 0) or (channel == 2) then
+			self:onRtpPacket(packet, offset)
 		else
-			self:onRtcpPacket(packet, START_SIZE + 1, size)
+			self:onRtcpPacket(packet, offset)
 		end
 	end)
 end
 
-function RtspClient:onRtcpPacket(packet, offset, size)
-	--print('packet', packet:byte(offset + 1), offset, size)
+function RtspClient:onRtcpPacket(packet, offset)
+	--print('rtcp packet', packet:byte(offset + 1), offset)
 	--console.printBuffer(packet)
 end
 
-function RtspClient:onRtpPacket(packet, offset, size)
-	if (not self.rtpSession) then
+---@param packet string
+---@param offset integer
+function RtspClient:onRtpPacket(packet, offset)
+	local rtpSession = self.rtpSession
+	if (not rtpSession) then
 		self.rtpSession = rtp.RtpSession:new()
+		rtpSession = self.rtpSession
 	end
 
+	-- console.log('onRtpPacket', packet, offset);
 	if (self.isMpegTSMode) then
-		local rtpInfo = self.rtpSession:decodeHeader(packet, offset)
+		local rtpInfo = rtpSession:decodeHeader(packet, offset)
 		self:onTSPacket(rtpInfo, packet, offset + RTP_HEADER_SIZE)
+		return
+	end
 
-	else
-		local sample = self.rtpSession:decode(packet, offset)
-		-- console.log(sample)
+	local sample = rtpSession:decode(packet, offset)
+	if (not sample) then
+		return
+	end
 
-		if (not sample) then
-			return
+	if (sample.isSTAP) then
+		-- 将组合包分解成多个独立的包
+		local list = sample.data
+		sample.data = nil
 
-		elseif (sample.isSTAP) then
-			-- 将组合包分解成多个独立的包
-			local list = sample.data
-			sample.data = nil
+		local count = #list
+		local index = 1
 
-			local count = #list
-			local index = 1
-
-			for _, data in ipairs(list) do
-				local newSample = cloneSample(sample, data)
-				if (index == count) then
-					newSample.marker = sample.marker
-				end
-
-				self:onSample(newSample)
-
-				index = index + 1
+		for _, data in ipairs(list) do
+			local newSample = cloneSample(sample, data)
+			if (index == count) then
+				newSample.marker = sample.marker
 			end
 
-		else
-			self:onSample(sample)
+			self:onSample(newSample)
+
+			index = index + 1
 		end
+
+	else
+		self:onSample(sample)
 	end
 end
 
+---@param data string
 function RtspClient:onRtspData(data)
 	if (not self.rtspCodec) then
 		self:initMessageCodec()
@@ -301,6 +380,11 @@ function RtspClient:onRtspData(data)
 	self.rtspCodec:decode(data)
 end
 
+function RtspClient:onAudioSample(sample)
+
+end
+
+---@param sample MediaSample
 function RtspClient:onVideoSample(sample)
 	sample.isVideo = true
 
@@ -319,10 +403,11 @@ function RtspClient:onVideoSample(sample)
 
 		if (naluType == NALU_TYPE_I) then
 			if (not self.lastSPS) then
-				local sps, pps = self:getParameterSets()
-				
-				self:emit('sample', cloneSample(sample, sps))
-				self:emit('sample', cloneSample(sample, pps))
+				local sets = self:getParameterSets()
+				if (sets and sets.sps) then
+					self:emit('sample', cloneSample(sample, sets.sps))
+					self:emit('sample', cloneSample(sample, sets.pps))
+				end
 			end
 
 			self.lastSPS = nil
@@ -336,9 +421,11 @@ function RtspClient:onVideoSample(sample)
 		end
 	end
 
+	-- console.log('onVideoSample', sample)
 	self:emit('sample', sample)
 end
 
+---@param sample MediaSample
 function RtspClient:onSample(sample)
 	if (not self.videoTrackId) then
 		if (self.videoTrack) then
@@ -346,18 +433,30 @@ function RtspClient:onSample(sample)
 		end
 	end
 
-	if (sample.payload == self.videoTrackId) then
-		self:onVideoSample(sample)
-		return
+	-- HeartBeat
+	local now = Date.now()
+	local span = now - (self.lastHeartBeatTime or 0)
+	if (span > 1000 * 60) then
+		self.lastHeartBeatTime = now
+		self:sendGET_PARAMETER()
 	end
 
-	self:emit('sample', sample)
+	if (sample.payload == self.videoTrackId) then
+		self:onVideoSample(sample)
+
+	elseif (sample.payload == self.audioTrackId) then
+		self:onAudioSample(sample)
+
+	else
+		self:emit('sample', sample)
+	end
 end
 
 function RtspClient:onTSPacket(rtpInfo, packet, offset)
 	self:emit('ts', rtpInfo, packet, offset)
 end
 
+---@param urlString string
 function RtspClient:open(urlString)
 	if (self.rtspSocket) then
 		self:close()
@@ -388,9 +487,9 @@ function RtspClient:open(urlString)
 
     	self:emit('connect')
 
-    	rtspSocket:on('data', function(chunk) 
+    	rtspSocket:on('data', function(chunk)
 			if (not chunk) then
-		    -- If data is set the client has sent data, if unset the client has disconnected
+		    	-- If data is set the client has sent data, if unset the client has disconnected
 		      	print("RtspPusher: empty data")
 		      	self:close()
 		      	return
@@ -398,8 +497,8 @@ function RtspClient:open(urlString)
 			self:onRtspData(chunk)
 		end)
 
-		rtspSocket:on('drain', function(err) 
-			
+		rtspSocket:on('drain', function(err)
+
 		end)
 
     	self:sendOPTIONS()
@@ -429,11 +528,11 @@ function RtspClient:open(urlString)
 	self.rtspSocket 	 = rtspSocket;
 
 	local timeout = 1000 * 5
-	local onTimeout = function() 
+	local onTimeout = function()
 		self:close('timeout')
 	end
 
-	self.lastConnectTime = process.now()	
+	self.lastConnectTime = process.now()
 	self.connectTimer = setTimeout(timeout, onTimeout)
 end
 
@@ -445,11 +544,15 @@ function RtspClient:play()
 	self:sendPLAY()
 end
 
+---@param request RtspMessage
 function RtspClient:processRequest(request)
-	self:emit('response', request)
+	self:emit('request', request)
 end
 
+---@param request RtspMessage
+---@param response RtspMessage
 function RtspClient:processResponse(request, response)
+	-- console.log('response', response)
 	self:emit('response', request, response)
 
 	local statusCode = response.statusCode or 0
@@ -465,7 +568,7 @@ function RtspClient:processResponse(request, response)
 	if (method == 'DESCRIBE') then
 		return self:processDESCRIBE(request, response)
 
-	elseif (method == 'SETUP') then	
+	elseif (method == 'SETUP') then
 		return self:processSETUP(request, response)
 
 	elseif (method == 'PLAY') then
@@ -485,7 +588,7 @@ end
 function RtspClient:processAuthenticate(request, response)
 	local auth = response:getHeader('WWW-Authenticate')
 
-	self.authInfo = rtsp.parseAuthenticate(auth)
+	self.authInfo = message.parseAuthenticate(auth)
 	-- console.log('Authenticate', self.authInfo)
 
 	self.numberOfAuthFailed = self.numberOfAuthFailed + 1
@@ -507,7 +610,7 @@ function RtspClient:processDESCRIBE(request, response)
 		return
 	end
 
-	if (self.rtspState ~= exports.STATE_INIT) then	
+	if (self.rtspState ~= exports.STATE_INIT) then
 		return
 	end
 
@@ -539,12 +642,16 @@ function RtspClient:processDESCRIBE(request, response)
 			self.isMpegTSMode = true
 		end
 
+		track.rtpmap = media:getRtpmap()
+		track.fmtp = media:getFmtp()
+
 		if (track.type == 'video') then
 			self.videoTrack = track
+			self.videoTrackId = track.payload
 
 		elseif (track.type == 'audio') then
 			self.audioTrack = track
-
+			self.audioTrackId = track.payload
 		end
 	end
 
@@ -564,7 +671,7 @@ function RtspClient:processPAUSE(request, response)
 		return
 	end
 
-	self:setRtspState(exports.STATE_READY)		
+	self:setRtspState(exports.STATE_READY)
 end
 
 function RtspClient:processPLAY(request, response)
@@ -594,7 +701,7 @@ function RtspClient:processSETUP(request, response)
 
 	self:setRtspState(exports.STATE_READY)
 
-	-- 
+	--
 	local setupTrackIndex = self.setupTrackIndex or 1
 	local mediaTracks = self.mediaTracks or {}
 	if (setupTrackIndex > #mediaTracks) then
@@ -616,27 +723,47 @@ end
 function RtspClient:sendDESCRIBE()
 	self:setRtspState(exports.STATE_INIT)
 
-	local request = rtsp.newRequest('DESCRIBE', self.urlString)
+	local request = message.newRequest('DESCRIBE', self.urlString)
 
+	return self:sendRequest(request)
+end
+
+function RtspClient:sendGET_PARAMETER()
+	local request = message.newRequest('GET_PARAMETER', self.urlString)
 	return self:sendRequest(request)
 end
 
 function RtspClient:sendOPTIONS()
 	local methods = 'OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER'
 
-	local request = rtsp.newRequest('OPTIONS', self.urlString)
+	local request = message.newRequest('OPTIONS', self.urlString)
 	request:setHeader('Public', methods)
 	return self:sendRequest(request)
 end
 
-function RtspClient:sendPLAY()
+function RtspClient:sendPAUSE()
+	if (self.rtspState ~= exports.STATE_PLAYING) then
+		return
+	end
+
+	local file = self.urlString or "/"
+	local request = message.newRequest('PAUSE', file)
+	return self:sendRequest(request)
+end
+
+function RtspClient:sendPLAY(scale)
 	local state = self.rtspState
 	if (state ~= exports.STATE_READY) and (state ~= exports.STATE_PLAYING) then
 		return 0, 'Invalid State: ' .. state
 	end
 
 	local file = self.urlString or "/"
-	local request = rtsp.newRequest('PLAY', file)
+	local request = message.newRequest('PLAY', file)
+	if (scale) then
+		request:setHeader('Scale', tostring(scale))
+	end
+
+	-- console.log('sendPLAY', request, scale)
 	return self:sendRequest(request)
 end
 
@@ -656,23 +783,16 @@ function RtspClient:sendSETUP()
 	end
 
 	self.setupTrackIndex = setupTrackIndex + 1
+	-- console.log('setupTrackIndex', setupTrackIndex)
 
-	local control = track.control or "track1"
+	local interleaved = (self.setupTrackIndex - 1) * 2
+	local control = track.control or ("track" .. self.setupTrackIndex)
 
 	local file = self.urlString or "/"
 	file = file .. "/" .. control
-	local request = rtsp.newRequest('SETUP', file)
-	request:setHeader('Transport', "RTP/AVP/TCP;unicast;interleaved=0-1")
-	return self:sendRequest(request)
-end
-
-function RtspClient:sendPAUSE()
-	if (self.rtspState ~= exports.STATE_PLAYING) then
-		return
-	end	
-
-	local file = self.urlString or "/"
-	local request = rtsp.newRequest('PAUSE', file)
+	local request = message.newRequest('SETUP', file)
+	interleaved = interleaved .. '-' .. (interleaved + 1)
+	request:setHeader('Transport', "RTP/AVP/TCP;unicast;interleaved=" .. interleaved)
 	return self:sendRequest(request)
 end
 
@@ -682,14 +802,14 @@ function RtspClient:sendTEARDOWN()
 	end
 
 	local file = self.urlString or "/"
-	local request = rtsp.newRequest('TEARDOWN', file)
+	local request = message.newRequest('TEARDOWN', file)
 	return self:sendRequest(request)
 end
 
 function RtspClient:sendRequest(request)
 	if not request then return end
 
-	request:setHeader('Client', 'Node RTSP Server 1.0')
+	request:setHeader('Client', 'Node.lua RTSP Client 2.0')
 
 	if (self.sessionId) then
 		request:setHeader('Session', self.sessionId)
@@ -698,6 +818,7 @@ function RtspClient:sendRequest(request)
 	if (self.authInfo and self.username) then
 		request:setAuthorization(self.authInfo, self.username, self.password)
 	end
+
 	-- console.log('Authenticate', request:getHeader('Authorization'), self.username, self.password)
 
 	local CSeq = self.lastCSeq or 1
@@ -708,14 +829,14 @@ function RtspClient:sendRequest(request)
 	if (not self.rtspCodec) then
 		self:initMessageCodec()
 	end
-	
+
 	local data = self.rtspCodec:encode(request)
 	if (self.rtspSocket) then
 		self.rtspSocket:write(data)
 	end
 
-	--console.log(TAG, 'request', data)
-	--console.log(TAG, 'request', request)
+	--console.log('rtsp:request', data)
+	--console.log('request', request)
 	--print('request: ' .. request.method)
 
 	return 0

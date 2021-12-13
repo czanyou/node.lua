@@ -23,7 +23,7 @@ elseif (APPLE)
   add_library(lmodbus STATIC ${SOURCES})
 
 elseif (LINUX)
-  add_library(lmodbus SHARED ${SOURCES})
-  set_target_properties(lmodbus PROPERTIES PREFIX "")
+  add_library(lmodbus STATIC ${SOURCES})
+  # set_target_properties(lmodbus PROPERTIES PREFIX "")
 
 endif ()

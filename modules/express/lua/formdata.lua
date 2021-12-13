@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ local buffer = require('buffer')
 
 local exports = { }
 
+---@class FormData
 local FormData = core.Emitter:extend()
 exports.FormData = FormData
 
@@ -506,36 +507,6 @@ function FormData:processData(data)
 			break
 		end
 	end
-end
-
-local function test()
-	local form = FormData:new()
-	form:on('file', function(data) 
-		console.log('file', #data, data)
-	end)
-
-	--[[
-	form:processData('------abcde\r\n')
-	form:processData('\r\ndatadata\r\n\r\n')
-	form:processData('------abcde\r\n')
-	form:processData('\r\ngcdddddddddgc')
-	form:processData('------abcde--')
-	--]]
-
-	-- [[
-	form:processData('------abcde')
-	form:processData('\r\n\r\n[filedata-')
-	form:processData('filedata-\r\n\r\n------abcd')
-	form:processData('\r\nfiledata\r\nfiledata-')
-	form:processData('filedata]\r\n------abcde\r\n')
-	form:processData('[header:data]\r\n')
-	form:processData('Content-Disposition: form-data;name="pic"; filename="photo.jpg"\r\n\r\n[filedata')
-	form:processData('\r\nfiledata]\r\n------abcde')
-	form:processData('--')
-	--]]
-
-	local buffer = form.buffer
-	--console.log('buffer', buffer:size(), buffer:toString())
 end
 
 return exports

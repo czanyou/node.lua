@@ -1,0 +1,8 @@
+{
+	"description": "T31A Gateway",
+	"name": "t31a",
+	"tags": ["t31a", "mips", "wot", "gateway"],
+    "applications": ["gateway", "lpm", "wotc", "lci"],
+	"libs": ["lmodbus.so", "lmbedtls.so", "lsdl.so"],
+	"target": "mips-linux"
+}

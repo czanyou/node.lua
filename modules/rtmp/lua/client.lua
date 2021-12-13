@@ -1,13 +1,14 @@
-local net = require("net")
-local util = require("util")
+local net = require('net')
+local util = require('util')
 local rtmp = require("rtmp")
-local fs = require("fs")
 local core  = require('core')
 local url = require('url')
+
 local queue = require('rtmp/queue')
 
 local exports = {}
 local null = rtmp.amf0.null
+local flv = rtmp.flv
 
 local RTMP_PORT = 1935;
 local RTMP_CHUNK_SIZE = 128;
@@ -36,38 +37,49 @@ exports.STATE_CREATE_STREAM = 6;
 exports.STATE_PUBLISHING = 8;
 exports.STATE_PLAYING = 9;
 
+---@class RTMPClient
 local RTMPClient = core.Emitter:extend()
 exports.RTMPClient = RTMPClient
 
+-- @events
+-- close, error, connect, audio, video, metadata, command, state, startStreaming, request, response
+
+---@param options any
 function RTMPClient:initialize(options)
-    self.appName = nil
-    self.connected = false
-    self.connectTimer = nil
-    self.isPublish = true
-    self.isStartStreaming = false
+    self.appName = nil -- RTMP application name 'live'
+    self.connected = false -- Socket connected
+    self.connectTimer = nil -- Socket connect timer
+    self.isPublish = true -- is PUBLISH mode
+    self.isStartStreaming = false -- is startStreaming
     self.lastActiveTime = process.now()
-    self.mediaQueue = queue.newMediaQueue()
-    self.options = options or {}
-    self.socket = nil
-    self.state = exports.STATE_STOPPED
-    self.streamId = 0
-    self.streamName = nil
-    self.urlObject = nil
-    self.urlString = nil
+    self.mediaQueue = queue.newMediaQueue() -- media stream queue
+    self.options = options or {} -- options
+    self.socket = nil -- Socket
+    self.state = exports.STATE_STOPPED -- RTMP state
+    self.streamId = 0 -- RTMP stream ID
+    self.streamName = nil -- RTMP stream name
+    self.urlObject = nil -- RTMP URL object
+    self.urlString = nil -- RTMP URL string
 
-    self.audioSamples = 0
-    self.localChunkSize = RTMP_CHUNK_SIZE
-    self.peerChunkSize = RTMP_CHUNK_SIZE
-    self.startTime = nil
-    self.videoConfiguration = nil
-    self.videoConfigurationSent = false
-    self.videoSamples = 0
-    self.windowAckSize = nil
+    self.audioSamples = 0 -- sent audio sample count
+    self.chunkSize = nil
+    self.localChunkSize = RTMP_CHUNK_SIZE -- local RTMP chunk size
+    self.peerChunkSize = RTMP_CHUNK_SIZE -- peer RTMP chunk size
+    self.startTime = nil -- startStreaming
+    self.videoParameterSets = nil -- AVC Video parameter sets (pps/sps)
+    self.isVideoConfigurationSent = false -- is parameter sets sent
+    self.videoSamples = 0 -- sent video sample count
+    self.windowAckSize = nil -- RTMP window ack size
 
-    self.id = (exports.INSTANCE_ID_COUNTER or 0) + 1
-	exports.INSTANCE_ID_COUNTER = self.id
+    self.id = (exports.INSTANCE_ID_COUNTER or 0) + 1 -- ID
+    exports.INSTANCE_ID_COUNTER = self.id
+
+    self.lastData = nil
+    self.isNotDrain = nil
+    self.metadata = nil
 end
 
+-- 关闭这个客户端
 function RTMPClient:close(error)
     if (self.socket) then
         self.socket:close()
@@ -89,7 +101,7 @@ function RTMPClient:close(error)
     self.localChunkSize = RTMP_CHUNK_SIZE
     self.peerChunkSize = RTMP_CHUNK_SIZE
     self.startTime = nil
-    self.videoConfigurationSent = false
+    self.isVideoConfigurationSent = false
     self.videoSamples = 0
     self.windowAckSize = nil
 
@@ -106,6 +118,8 @@ function RTMPClient:close(error)
     end
 end
 
+-- 创建 RTMP 连接
+---@param urlString string
 function RTMPClient:connect(urlString)
     if (self.socket) then
         return
@@ -132,10 +146,10 @@ function RTMPClient:connect(urlString)
         return self:close('Empty RTMP server host name')
 
     elseif (not self.appName) then
-        return self:close('Empty RTMP server app name')  
+        return self:close('Empty RTMP server app name')
 
     elseif (not self.streamName) then
-        return self:close('Empty RTMP server stream name')       
+        return self:close('Empty RTMP server stream name')
     end
 
     -- socket
@@ -183,7 +197,7 @@ function RTMPClient:connect(urlString)
                 -- S0 + S1 + S2
                 index = 3073 + 1
                 self:setState(exports.STATE_HANDSHAKE)
-                
+
             else
                 local header, body, raw = rtmp.parseChunk(chunkData, index)
                 if (header == nil) then
@@ -224,13 +238,7 @@ function RTMPClient:connect(urlString)
     -- 发送缓存区已空
     local onSocketDrain = function()
         self.isNotDrain = false
-
-        if (self.isStartStreaming) then
-            local sample = self.mediaQueue:pop()
-            if (sample) then
-                self:sendVideoMessage(sample[1], sample.sampleTime)
-            end
-        end
+        self:flushVideoStream()
     end
 
     -- Socket 被关闭
@@ -255,9 +263,52 @@ function RTMPClient:connect(urlString)
     self.socket = socket
 end
 
+-- 内部方法
+function RTMPClient:flushVideoStream()
+    if (not self.isStartStreaming) then
+        return -- 还没有开始推流
+
+    elseif (self.isNotDrain) then
+        return -- 之前的数据还在发送中
+    end
+
+    -- 发送下一帧数据
+    local sample = self.mediaQueue:pop()
+    if (sample) then
+        self:sendVideoSample(sample[1], sample.sampleTime)
+    end
+end
+
+function RTMPClient:getStatus()
+    local status = {}
+    status.appName = self.appName
+    status.isPublish = self.isPublish
+    status.lastActiveTime = self.lastActiveTime
+    status.streamId = self.streamId
+    status.streamName = self.streamName
+    status.urlObject = self.urlObject
+
+    status.connected = self.connected
+    status.id = self.id
+    status.isNotDrain = self.isNotDrain
+    status.isStartStreaming = self.isStartStreaming
+    status.lastError = self.lastError
+    status.isVideoConfigurationSent = self.isVideoConfigurationSent
+
+    status.audioSamples = self.audioSamples
+    status.metadata = self.metadata
+    status.peerChunkSize = self.peerChunkSize
+    status.startTime = self.startTime
+    status.videoSamples = self.videoSamples
+    status.windowAckSize = self.windowAckSize
+    return status
+end
+
+---@param state integer
+---@return string
 function RTMPClient:getStateString(state)
     if (state == exports.STATE_STOPPED) then
-        return 'stoped'
+        return 'stopped'
 
     elseif (state == exports.STATE_INIT) then
         return 'init'
@@ -269,20 +320,25 @@ function RTMPClient:getStateString(state)
         return 'connected'
 
     elseif (state == exports.STATE_CREATE_STREAM) then
-        return 'stream'
+        return 'create-stream'
 
     elseif (state == exports.STATE_PUBLISHING) then
         return 'publishing'
 
     elseif (state == exports.STATE_PLAYING) then
         return 'playing'
-        
+
     else
         return 'unknown'
     end
 end
 
+-- 内部方法，处理收到的 RTMP 消息
+---@param header any
+---@param body any
+---@param raw string
 function RTMPClient:processMessage(header, body, raw)
+    self:emit('response', header, body, raw)
     --console.log('processMessage: response', header.messageType, body)
 
     self.lastActiveTime = process.now()
@@ -351,7 +407,7 @@ function RTMPClient:processMessage(header, body, raw)
                 self:close(result)
                 return
 
-            elseif (result.level == 'status') then    
+            elseif (result.level == 'status') then
                 if (self.isPublish)then
                     self:setState(exports.STATE_PUBLISHING)
                     self:startStreaming()
@@ -376,6 +432,7 @@ function RTMPClient:processMessage(header, body, raw)
     end
 end
 
+-- 发送握手请求
 function RTMPClient:sendC0C1()
     local now = process.now() % 0xFFFFFFFF; -- limit to 32bit
     local header = string.pack(">BI4I4", 0x03, now, 0x00)
@@ -386,6 +443,7 @@ function RTMPClient:sendC0C1()
     self:sendData(message)
 end
 
+-- 发送握手请求
 function RTMPClient:sendC2(time)
     time = time % 0xFFFFFFFF; -- limit to 32bit
     local header = string.pack(">I4I4", time, 0x00)
@@ -395,6 +453,7 @@ function RTMPClient:sendC2(time)
     self:sendData(message)
 end
 
+-- 发送 RTMP 连接请求，在握手成功后调用
 function RTMPClient:sendConnect()
     -- 03 000000 0000f7 14 00000000 02 0007 636f6e6e656374 00 3ff0000000000000 03 0003 617070 02 0004 6c697665
     local connect = '030000000000f71400000000020007636f6e6e656374003ff00000000000000300036170700200046c6976650008666c61736856657202000e57494e2031352c302c302c323339000673776655726c0200000005746355726c02001c72746d703a2f2f696f742e626561636f6e6963652e636e2f6c6976650004667061640100000c6361706162696c697469'--c3657300406de00000000000000b617564696f436f646563730040abee0000000000000b766964656f436f6465637300406f800000000000000d766964656f46756e6374696f6e003ff000000000000000077061676555726c020000000e6f626a656374456e636f64696e67000000000000000000000009
@@ -402,8 +461,8 @@ function RTMPClient:sendConnect()
     self:sendData(message)
 
     -- c3 fmt = 3
-    local connect = 'c3657300406de00000000000000b617564696f436f646563730040abee0000000000000b766964656f436f6465637300406f800000000000000d766964656f46756e6374696f6e003ff000000000000000077061676555726c020000000e6f626a656374456e636f64696e67000000000000000000000009'
-    local message = util.hex2bin(connect)
+    connect = 'c3657300406de00000000000000b617564696f436f646563730040abee0000000000000b766964656f436f6465637300406f800000000000000d766964656f46756e6374696f6e003ff000000000000000077061676555726c020000000e6f626a656374456e636f64696e67000000000000000000000009'
+    message = util.hex2bin(connect)
     self:sendData(message)
 end
 
@@ -423,6 +482,7 @@ function RTMPClient:sendSetChunkSize()
     self.localChunkSize = chunkSize
 end
 
+-- 发送创建 RTMP 流请求
 function RTMPClient:sendCreateStream()
     local streamName = self.streamName
 
@@ -442,17 +502,19 @@ function RTMPClient:sendCreateStream()
     return self:sendCommandMessage(data)
 end
 
+-- 发送删除 RTMP 流请求
 function RTMPClient:sendDeleteStream()
     local data = { 'deleteStream', 6, null, self.streamId }
     return self:sendCommandMessage(data)
 end
 
+-- 发送推流请求
 function RTMPClient:sendPublish()
     local streamName = self.streamName
     local options = { messageStreamId = self.streamId }
     options.fmt = RTMP_CHUNK_TYPE_0
 
-    console.log('sendPublish', options)
+    -- console.log('rtmp.sendPublish', options)
 
     -- publish
     -- 1. Command Name
@@ -460,10 +522,11 @@ function RTMPClient:sendPublish()
     -- 3. Command
     -- 4. Stream Name
     -- 5. Publishing Type "live", "record" or "append"
-    local data = { 'publish', 5, null, streamName, 'live' }
+    local data = { 'publish', 5, null, streamName, self.appName or 'live' }
     return self:sendCommandMessage(data, options)
 end
 
+-- 发送拉流请求
 function RTMPClient:sendPlay()
     local streamName = self.streamName
     local options = { messageStreamId = self.streamId }
@@ -477,11 +540,19 @@ function RTMPClient:sendPlay()
     return self:sendCommandMessage(data, options)
 end
 
+-- 内部方法, 发送 RTMP 命令消息
+---@param data string
+---@param options table
+---@return boolean
 function RTMPClient:sendCommandMessage(data, options)
+    self:emit('request', data, options)
+
     local message = rtmp.encodeCommandMessage(data, options)
     return self:sendData(message)
 end
 
+-- 内部方法，发送指定的 RTMP 消息/数据包到网络层
+---@param data string
 function RTMPClient:sendData(data)
     local socket = self.socket
     if (socket) then
@@ -496,8 +567,11 @@ function RTMPClient:sendData(data)
     return false
 end
 
+-- 发送媒体元数据
 function RTMPClient:sendMetadataMessage()
     if (not self.isStartStreaming) then
+        return
+    elseif (not self.metadata) then
         return
     end
 
@@ -508,26 +582,31 @@ function RTMPClient:sendMetadataMessage()
     return self:sendData(message)
 end
 
-function RTMPClient:sendVideoMessage(body, timestamp)
+-- 内部方法，将指定的视频帧发送到网络层
+---@param body string
+---@param timestamp integer - in ms
+function RTMPClient:sendVideoSample(body, timestamp)
     if (not self.isStartStreaming) then
         return -- 还没有开始推流
     end
 
     -- 发送 pps/sps 视频数据集
-    if (not self.videoConfigurationSent) then
-        if (not self.videoConfiguration) then
+    if (not self.isVideoConfigurationSent) then
+        if (not self.videoParameterSets) then
             return
         end
 
-        local options = { 
-            chunkStreamId = 0x04, 
+        local options = {
+            chunkStreamId = 0x04,
             chunkSize = self.chunkSize,
-            timestamp = 0 
+            timestamp = 0
         }
-        
-        local message = rtmp.encodeVideoMessage(self.videoConfiguration, options)
-        local result = self:sendData(message)
-        self.videoConfigurationSent = true
+
+        local sets = self.videoParameterSets
+        local tagData = flv.encodeVideoConfiguration(sets.sps, sets.pps)
+        local message = rtmp.encodeVideoMessage(tagData, options)
+        self:sendData(message)
+        self.isVideoConfigurationSent = true
     end
 
     self.videoSamples = (self.videoSamples or 0) + 1
@@ -542,28 +621,48 @@ function RTMPClient:sendVideoMessage(body, timestamp)
     -- console.log('self.videoSamples', self.videoSamples, self.mediaQueue.slowMode);
 end
 
-function RTMPClient:sendVideo(data, timestamp, isSyncPoint)
+---@param naluData string - NALU data
+---@param timestamp integer - in ms
+---@param isSyncPoint boolean
+function RTMPClient:sendVideo(naluData, timestamp, isSyncPoint)
     local flags = queue.FLAG_IS_END
     if (isSyncPoint) then
         flags = flags | queue.FLAG_IS_SYNC
     end
-    self.mediaQueue:push(data, timestamp, flags)
 
+    -- FLV H.264(AVC) video tag
+    local naluType = naluData:byte(1) & 0x1f
+    local videoHeader = flv.encodeAvcHeader(naluType, naluData, timestamp)
+    local videoSample = videoHeader .. naluData
+
+    -- 缓存要发送的数据
+    self.mediaQueue:push(videoSample, timestamp, flags)
     self:flushVideoStream()
 end
 
-function RTMPClient:flushVideoStream()
-    if (self.isNotDrain) then
-        return -- 之前的数据还在发送中
+function RTMPClient:setMetadata(mediaInfo)
+    if (not mediaInfo) then
+        return
     end
 
-    -- 发送下一帧数据
-    local sample = self.mediaQueue:pop()
-    if (sample) then
-        self:sendVideoMessage(sample[1], sample.sampleTime)
+    ---@type RtmpMediaInfo
+    local metadata = {
+        copyright = mediaInfo.copyright or 'anyou',
+        width = mediaInfo.width or 1280,
+        height = mediaInfo.height or 720,
+        framerate = mediaInfo.framerate or 25,
+        videocodecid = mediaInfo.videocodecid or 7
+    }
+
+    if (mediaInfo.audiocodecid) then
+        metadata.audiosamplerate = mediaInfo.audiosamplerate or 8000
+        metadata.audiocodecid = mediaInfo.audiocodecid
     end
+
+    self.metadata = metadata
 end
 
+-- 内部方法
 function RTMPClient:setState(state)
     -- console.log('setState', state, self.state);
 
@@ -597,14 +696,17 @@ function RTMPClient:setState(state)
             self.connectTimer = nil
         end
     end
-    
+
     self:emit('state', state)
 end
 
+-- 内部方法
 function RTMPClient:startStreaming()
     if (self.timer) then
         return
     end
+
+    self.isStartStreaming = true
 
     -- 开始推流
     self.startTime = process.hrtime() // 1000000 -- ms

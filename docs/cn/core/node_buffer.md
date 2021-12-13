@@ -21,7 +21,7 @@ Buffer 类包含了一个内部缓存区以及两个指针, position 指针表�
 
 ### Buffer.concat(list)
 
-- `list` {Array} 要连接的 Buffer 列表
+- list {Array} 要连接的 Buffer 列表
 
 TODO: 暂未实现
 
@@ -40,9 +40,9 @@ TODO: 暂未实现
 
 分配一个新的 buffer 大小是 size 的 8 位字节.
 
-- `size` {number} 要创建的 Buffer 内部缓存区大小。
-- `str` {string} 复制 str 字符串的内容到新创建的 Buffer.
-- `buffer` {Buffer} 复制 buffer 的内容到新创建的 Buffer.
+- size `{number}` 要创建的 Buffer 内部缓存区大小。
+- str `{string}` 复制 str 字符串的内容到新创建的 Buffer.
+- buffer `{Buffer}` 复制 buffer 的内容到新创建的 Buffer.
 
 ### buffer:inspect
 
@@ -66,8 +66,8 @@ TODO: 暂未实现
 
 返回这个缓存区指定的范围的数据。
 
-- `startPos` {number} 开始的位置，从 1 开始。
-- `endPos` {number} 结束的位置，大于等于 startPos，小于等于 length。
+- startPos `{number}` 开始的位置，从 1 开始。
+- endPos `{number}` 结束的位置，大于等于 startPos，小于等于 length。
 
 返回相关的字符串值，如果失败则返回 nil。
 
@@ -110,10 +110,10 @@ buf:compress()
 
 注意只有满足条件才会被全部复制，不会只复制部分数据。
 
-- `targetBuffer` {Buffer} 目标缓存区
-- `targetStart` {number} 目标缓存区开始复制到的位置
-- `sourceStart` {number} 源缓存区开始复制的位置
-- `sourceEnd` {number} 源缓存区结束复制的位置
+- targetBuffer `{Buffer}` 目标缓存区
+- targetStart `{number}` 目标缓存区开始复制到的位置
+- sourceStart `{number}` 源缓存区开始复制的位置
+- sourceEnd `{number}` 源缓存区结束复制的位置
 
 返回 1 表示复制成功，否则表示复制失败且目标缓存区不会被改变
 
@@ -145,7 +145,7 @@ print(buf2:toString()) -- EEDDDDFFFFEEEEEEEEEEEEEEEEEEEEEE
 
 移动 limit 指针的值。
 
-- `size` {number} 要移动的大小, 不能超出缓存区的上限.
+- size `{number}` 要移动的大小, 不能超出缓存区的上限.
 
 返回实际移动的大小，如果失败则返回 0。
 
@@ -155,7 +155,7 @@ print(buf2:toString()) -- EEDDDDFFFFEEEEEEEEEEEEEEEEEEEEEE
 
 移动 position 指针。
 
-- `size` {number} 要移动的大小。
+- size `{number}` 要移动的大小。
 
 返回实际移动的大小，如果失败则返回 0 。
 
@@ -165,7 +165,7 @@ print(buf2:toString()) -- EEDDDDFFFFEEEEEEEEEEEEEEEEEEEEEE
 
 指定 limit 指针的大小。
 
-- `limit` {number} 要修改为的指针值，没是指定则不修改只读取。`1 <= limit <= (length + 1)`
+- limit `{number}` 要修改为的指针值，没是指定则不修改只读取。`1 <= limit <= (length + 1)`
 
 返回修改后的 limit 指针的值。
 
@@ -175,11 +175,11 @@ print(buf2:toString()) -- EEDDDDFFFFEEEEEEEEEEEEEEEEEEEEEE
 
 指定 position 指针的值。
 
-- `position` {number} 要修改为的指针值，没是指定则不修改只读取。`1 <= position <= length`
+- position `{number}` 要修改为的指针值，没是指定则不修改只读取。`1 <= position <= length`
 
 返回修改后的 position 指针的值。
 
-### buffer:read
+### 读操作
 
 #### buffer:read
 
@@ -195,11 +195,11 @@ print(buf2:toString()) -- EEDDDDFFFFEEEEEEEEEEEEEEEEEEEEEE
 > buffer:readUInt32BE
 > buffer:readUInt32LE
 
-- `offset` {number} 要开始读取的位置。
+- offset `{number}` 要开始读取的位置。
 
 从指定的偏移位置读取一个整数。
 
-### buffer:write
+### 写操作
 
 #### buffer:write
 
@@ -207,9 +207,9 @@ print(buf2:toString()) -- EEDDDDFFFFEEEEEEEEEEEEEEEEEEEEEE
 
 将参数 data 数据写入缓存区当前位置，这个方法不会出现写入部分字符。
 
-- `data` {string} 要写入的数据内容
-- `offset` {number} 要写入的数据内容偏移位置, 从 1 开始
-- `length` {number} 总共要写入的数据的长度，单位为字节，不能大于从 offset 开始剩余的数据长度。
+- data `{string}` 要写入的数据内容
+- offset `{number}` 要写入的数据内容偏移位置, 从 1 开始
+- length `{number}` 总共要写入的数据的长度，单位为字节，不能大于从 offset 开始剩余的数据长度。
 
 如果写入成功则返回 1，否则表示写入失败。
 
@@ -220,9 +220,9 @@ print(buf2:toString()) -- EEDDDDFFFFEEEEEEEEEEEEEEEEEEEEEE
 使用指定的值来填充这个 buffer。如果 offset (默认是 1) 并且 end (默认是 buffer.length) 没有明确给出，
 就会填充整个buffer。（buffer.fill 调用的是 C 语言的 memset 函数, 非常高效）
 
-- `value` {number} 要填入的值
-- `offset` {number} 可选参数，没有指定则为 1.
-- `endPos` {number} 可选参数，没有指定则为 buffer.length
+- value `{number}` 要填入的值
+- offset `{number}` 可选参数，没有指定则为 1.
+- endPos `{number}` 可选参数，没有指定则为 buffer.length
 
 #### buffer:put
 
@@ -230,8 +230,8 @@ print(buf2:toString()) -- EEDDDDFFFFEEEEEEEEEEEEEEEEEEEEEE
 
 将指定的字符写入缓存区指定的位置。
 
-- `offset` {number} 要写入的缓存区的偏移位置。
-- `value` {number} 要写入的字符。
+- offset `{number}` 要写入的缓存区的偏移位置。
+- value `{number}` 要写入的字符。
 
 如果写入成功则返回 1，否则表示写入失败。
 
@@ -241,10 +241,10 @@ print(buf2:toString()) -- EEDDDDFFFFEEEEEEEEEEEEEEEEEEEEEE
 
 将指定的数据的某部分写入缓存区指定的位置。
 
-- `offset` {number} 要写入的缓存区的偏移位置。
-- `data` {string} 要写入的数据内容。
-- `startPos` {number} 要写入的数据的开始位置，未指定则默认为 1。
-- `endPos` {number} 要写入的数据的结束位置，未指定则默认为数据的结尾位置。
+- offset `{number}` 要写入的缓存区的偏移位置。
+- data `{string}` 要写入的数据内容。
+- startPos `{number}` 要写入的数据的开始位置，未指定则默认为 1。
+- endPos `{number}` 要写入的数据的结束位置，未指定则默认为数据的结尾位置。
 
 如果写入成功则返回 1，否则表示写入失败。
 

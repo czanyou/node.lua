@@ -1,5 +1,5 @@
-local assert 	= require("assert")
-local tap 		= require("ext/tap")
+local assert 	= require('assert')
+local tap 		= require('util/tap')
 
 local test = tap.test
 

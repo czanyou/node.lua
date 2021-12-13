@@ -15,14 +15,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 --]]
-local core = require("core")
-local buffer = require("buffer")
+local core = require('core')
+local buffer = require('buffer')
 
 local Object = core.Object
 local Emitter = core.Emitter
 local instanceof = core.instanceof
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("test instanceof", function()

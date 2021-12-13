@@ -25,6 +25,39 @@ setmetatable(amf0.null, {
     __tostring = function() return 'null' end
 })
 
+---@param data string
+---@param pos integer
+---@param limit integer
+---@return table result
+---@return integer offset
+function amf0.parseArray(data, pos, limit)
+    local offset = pos or 1
+    local value = nil;
+    local result = {}
+
+    --console.log('parseArray', #data, limit)
+
+    while (true) do
+        if (limit) and (offset >= limit) then
+            break
+        end
+
+        value, offset = amf0.parseValue(data, offset)
+        --console.log('parseArray', value, offset)
+        if (value == nil and offset == nil) then
+            break
+        end
+
+        result[#result + 1] = value
+    end
+
+    return result, offset
+end
+
+---@param data string
+---@param pos integer
+---@return table result
+---@return integer offset
 function amf0.parseValue(data, pos)
     local index = pos or 1
     local typeId = data:byte(index)
@@ -83,7 +116,7 @@ function amf0.parseValue(data, pos)
 
             index = index + length
 
-            local typeId = data:byte(index)
+            --local typeId = data:byte(index)
             --console.log('typeId', typeId)
 
             local value = nil
@@ -102,30 +135,8 @@ function amf0.parseValue(data, pos)
     end
 end
 
-function amf0.parseArray(data, pos, limit) 
-    local index = pos or 1
-    local value = nil;
-    local result = {}
-
-    --console.log('parseArray', #data, limit)
-
-    while (true) do
-        if (limit) and (index >= limit) then
-            break
-        end
-
-        value, index = amf0.parseValue(data, index)
-        --console.log('parseArray', value, index)
-        if (value == nil and index == nil) then
-            break
-        end
-
-        result[#result + 1] = value
-    end
-
-    return result, index
-end
-
+---@param array table
+---@return string data
 function amf0.encodeArray(array)
     local data = {}
 
@@ -146,12 +157,12 @@ function amf0.encodeArray(array)
             -- TODO: item must less than 65535
             data[#data + 1] = string.pack('>BI2', 0x02, #item)
             data[#data + 1] = item
-            
+
         elseif (typeName == 'number') then
             -- number
             -- TODO: item must less than 0xffffffff
             data[#data + 1] = string.pack('>Bd', 0x00, item)
-        
+
         elseif (typeName == 'boolean') then
             -- boolean
             local value = 0
@@ -180,7 +191,7 @@ function amf0.encodeArray(array)
                 elseif (typeValue == 'nil') then
                     -- null
                     data[#data + 1] = string.pack('>B', 0x05)
-                 
+
                 elseif (typeValue == 'string') then
                     -- string
                     -- TODO: valuelength must less then 65535
@@ -216,32 +227,39 @@ end
 local flv = {}
 exports.flv = flv
 
-function flv.parseFileHeader(data, index)
-    index = index + 9
-    return index, 0
+---@public
+---@param naluType integer
+---@param naluData string
+---@param timestamp integer
+---@return string header
+function flv.encodeAvcHeader(naluType, naluData, timestamp)
+    local frameType = 0x02 -- non key frame
+    if (naluType == NALU_TYPE_I) then
+        frameType = 0x01 -- key frame
+    end
+
+    frameType = frameType << 4
+    frameType = frameType + 0x07 -- AVC
+
+    local avcPacketType = 0x01 -- nalu
+    local avcTimestamp = 0
+    local naluSize = #naluData
+    local videoHeader = string.pack('>BBI3I4', frameType, avcPacketType, avcTimestamp, naluSize)
+    return videoHeader
 end
 
-function flv.parseTagHeader(data, index)
-    local preTagSize, tagType, tagSize, timestamp, timestampEx, streamId 
-        = string.unpack(">I4BI3I3BI3", data, index)
-    local tag = {
-        preTagSize = preTagSize,
-        tagType = tagType,
-        tagSize = tagSize,
-        timestamp = timestamp,
-        streamId = streamId
-    }
-
-    index = index + 15
-    return index, tag
-end
-
+---@return string FLV file header
 function flv.encodeFileHeader()
     local flags = 0x05
     local headerSize = 9
     return string.pack(">BBBBBI4", 0x46, 0x4c, 0x56, 0x01, flags, headerSize)
 end
 
+---@param tagType boolean audio(8), video(9)
+---@param tagSize integer
+---@param preTagSize integer
+---@param tagTime integer
+---@return string FLV tag header
 function flv.encodeTagHeader(tagType, tagSize, preTagSize, tagTime)
     local timestamp = tagTime or 0x00 -- 毫秒
     local timestampEx = 0x00
@@ -250,6 +268,10 @@ function flv.encodeTagHeader(tagType, tagSize, preTagSize, tagTime)
     return string.pack(">I4BI3I3BI3", preTagSize, tagType, tagSize, timestamp, timestampEx, streamId)
 end
 
+---@public
+---@param sps string
+---@param pps string
+---@return string
 function flv.encodeVideoConfiguration(sps, pps)
     -- Header
     local frameType = 0x01 << 4 -- key frame
@@ -266,7 +288,7 @@ function flv.encodeVideoConfiguration(sps, pps)
     local lengthSizeMinusOne = 0xFC | 0x03;
     local numOfSPS = 0xE0 | 0x01;
     local spsLength = #sps;
-    local spsHeader = string.pack('>BBBBBBI2', cfgVersion, avcProfile, profileCompatibility, avcLevel, 
+    local spsHeader = string.pack('>BBBBBBI2', cfgVersion, avcProfile, profileCompatibility, avcLevel,
     lengthSizeMinusOne, numOfSPS, spsLength);
 
     -- PPS
@@ -279,8 +301,82 @@ function flv.encodeVideoConfiguration(sps, pps)
     return videoData
 end
 
-function flv.decodeVideoTag(data)
-    local index = 1
+---@param data string
+---@param offset integer
+function flv.parseAudioTag(data, offset)
+
+end
+
+---@param data string
+---@param offset integer
+---@return integer offset
+---@return integer tag
+function flv.parseFileHeader(data, offset)
+    offset = offset + 9
+    return offset, 0
+end
+
+---@param data string
+---@param offset integer
+function flv.parseMetadataTag(data, offset)
+    local meta = amf0.parseArray(data, offset)
+    return meta
+end
+
+---@param data string
+---@param offset integer
+---@return integer offset
+---@return table tag
+function flv.parseTagHeader(data, offset)
+    local preTagSize, tagType, tagSize, timestamp, timestampEx, streamId
+        = string.unpack(">I4BI3I3BI3", data, offset)
+    local tag = {
+        preTagSize = preTagSize,
+        tagType = tagType,
+        tagSize = tagSize,
+        timestamp = timestamp,
+        streamId = streamId
+    }
+
+    offset = offset + 15
+    return offset, tag
+end
+
+---@param data string
+---@param offset integer
+---@return table configuration
+function flv.parseVideoConfiguration(data, offset)
+    -- SPS
+    local cfgVersion, avcProfile, profileCompatibility, avcLevel, lengthSizeMinusOne, numOfSPS, spsLength
+            = string.unpack('>BBBBBBI2', data, offset)
+
+    lengthSizeMinusOne = lengthSizeMinusOne & 0x03
+    numOfSPS = numOfSPS & 0x1f
+
+    offset = offset + 8
+    local sps = data:sub(offset, offset + spsLength - 1)
+
+    -- PPS
+    offset = offset + spsLength
+    local numOfPPS, ppsLength = string.unpack('>BI2', data, offset)
+    offset = offset + 3
+    local pps = data:sub(offset, offset + ppsLength - 1)
+
+    -- output
+    local result = {
+        avcProfile = avcProfile, profileCompatibility = profileCompatibility, avcLevel = avcLevel,
+        pps = pps, sps = sps
+    }
+
+    return result;
+end
+
+---@public
+---@param data string
+---@param offset integer
+---@return table tag
+function flv.parseVideoTag(data, offset)
+    local index = offset or 1
 
     ---- header
     -- frameType & codecType
@@ -297,7 +393,7 @@ function flv.decodeVideoTag(data)
     index = index + 4
 
     if (packetType == 0x00) then -- AVCSequence Header
-        local result = flv.decodeConfiguration(data, index) or {}
+        local result = flv.parseVideoConfiguration(data, index) or {}
         result.frameType = frameType
         result.codecType = codecType
         result.packetType = packetType
@@ -307,65 +403,14 @@ function flv.decodeVideoTag(data)
         local naluLength = string.unpack('>I4', data, index)
         index = index + 4
         return {
-            frameType = frameType, 
-            codecType = codecType, 
-            naluLength = naluLength, 
+            frameType = frameType,
+            codecType = codecType,
+            naluLength = naluLength,
             packetType = packetType,
             timestamp = timestamp,
             index = index
         }
     end
-end
-
-function flv.decodeAudioTag(data)
-
-end
-
-function flv.decodeMetadataTag(data)
-    local meta = amf0.parseArray(data)
-    return meta
-end
-
-function flv.decodeConfiguration(data, index)
-    -- SPS
-    local cfgVersion, avcProfile, profileCompatibility, avcLevel, lengthSizeMinusOne, numOfSPS, spsLength 
-            = string.unpack('>BBBBBBI2', data, index)
-
-    lengthSizeMinusOne = lengthSizeMinusOne & 0x03
-    numOfSPS = numOfSPS & 0x1f
-
-    index = index + 8
-    local sps = data:sub(index, index + spsLength - 1)
-
-    -- PPS
-    index = index + spsLength
-    local numOfPPS, ppsLength = string.unpack('>BI2', data, index)
-    index = index + 3
-    local pps = data:sub(index, index + ppsLength - 1)
-
-    -- output
-    local result = {
-        avcProfile = avcProfile, profileCompatibility = profileCompatibility, avcLevel = avcLevel,
-        pps = pps, sps = sps
-    }
-
-    return result;
-end
-
-function flv.encodeAvcHeader(naluType, naluData, timestamp)
-    local frameType = 0x02 -- non key frame
-    if (naluType == NALU_TYPE_I) then
-        frameType = 0x01 -- key frame
-    end
-
-    frameType = frameType << 4
-    frameType = frameType + 0x07 -- AVC
-
-    local avcPacketType = 0x01 -- nalu
-    local avcTimestamp = 0
-    local naluSize = #naluData
-    local videoHeader = string.pack('>BBI3I4', frameType, avcPacketType, avcTimestamp, naluSize)
-    return videoHeader
 end
 
 -- ----------------------------------------------------------------------------
@@ -385,6 +430,32 @@ MESSAGE.VIDEO_MESSAGE                   = 0x09
 MESSAGE.DATA_MESSAGE                    = 0x12
 MESSAGE.COMMAND_MESSAGE                 = 0x14
 
+---@class RtmpChunkOptions
+---@field fmt integer
+---@field chunkStreamId integer
+---@field timestamp integer
+---@field messageStreamId integer
+---@field messageType integer
+
+-- Encode Audio Message
+---@param sampleData string Audio sample data
+---@param options RtmpChunkOptions Options
+-- @return {Buffer} message data
+function exports.encodeAudioMessage(sampleData, options)
+    options = options or {}
+    if (not options.fmt) then
+        options.fmt = RTMP_CHUNK_TYPE_0
+    end
+
+    if (not options.chunkStreamId) then
+        options.chunkStreamId = 0x04
+    end
+
+    options.messageType = MESSAGE.AUDIO_MESSAGE
+    return exports.encodeChunkMessage(sampleData, options)
+end
+
+---@param options RtmpChunkOptions options
 function exports.encodeBasicHeader(options)
     local chunkStreamId = options.chunkStreamId or 0x05
     local fmt = options.fmt or RTMP_CHUNK_TYPE_0
@@ -394,13 +465,8 @@ function exports.encodeBasicHeader(options)
 end
 
 -- Encode Chunk Header
--- @param bodySize {Number} message body length
--- @param options {Object} options
--- - fmt {Number}
--- - chunkStreamId {Number}
--- - timestamp {Number}
--- - messageStreamId {Number}
--- - messageType {Number}
+---@param bodySize integer message body length
+---@param options RtmpChunkOptions options
 -- @return {Buffer} Chunk header data
 function exports.encodeChunkHeader(bodySize, options)
     options = options or {}
@@ -434,152 +500,9 @@ function exports.encodeChunkHeader(bodySize, options)
     return header;
 end
 
--- Encode Control Message
--- @param messageType {Number} message type
--- @param value {Number} value
--- @param options {Object} options
--- - fmt {Number}
--- - chunkStreamId {Number}
--- - timestamp {Number}
--- - messageStreamId {Number}
--- @return {Buffer} message data
-function exports.encodeControlMessage(messageType, value, options)
-    local body = nil
-
-    if (messageType == MESSAGE.SET_CHUNK_SIZE) then -- Set Chunk Size
-        body = string.pack('>I4', value)
-
-    elseif (messageType == MESSAGE.ABORT_MESSAGE) then -- Abort Message
-        body = string.pack('>I4', value)
-
-    elseif (messageType == MESSAGE.ACKNOWLEDGEMENT) then -- Acknowledgement 
-        body = string.pack('>I4', value)
-
-    elseif (messageType == MESSAGE.WINDOW_ACKNOWLEDGEMENT_SIZE) then -- Window Acknowledgement Size
-        body = string.pack('>I4', value)
-
-    elseif (messageType == MESSAGE.SET_PEER_BANDWIDTH) then -- Set Peer Bandwidth
-        body = string.pack('>I4B', value, 0x02)
-    end
-
-    if (not body) then
-        return
-    end
-
-    options = options or {}
-    options.fmt = RTMP_CHUNK_TYPE_0
-
-    if (not options.chunkStreamId) then
-        options.chunkStreamId = 0x04
-    end
-
-    options.messageType = messageType
-
-    local header = exports.encodeChunkHeader(#body, options)
-    return exports.encodeChunkMessage(body, options)
-end
-
--- Encode Command Message
--- @param data {Array} Command message array
--- @param options {Object} Options
--- - fmt {Number}
--- - chunkStreamId {Number}
--- - timestamp {Number}
--- - messageStreamId {Number}
--- @return {Buffer} message data
-function exports.encodeCommandMessage(data, options)
-    options = options or {}
-
-    if (not options.fmt) then
-        options.fmt = RTMP_CHUNK_TYPE_1
-    end
-
-    if (not options.chunkStreamId) then
-        options.chunkStreamId = 0x03
-    end
-
-    options.messageType = MESSAGE.COMMAND_MESSAGE
-
-    local body = amf0.encodeArray(data)
-    return exports.encodeChunkMessage(body, options)
-end
-
--- Encode Data Message
--- @param data {Array} Data message array
--- @param options {Object} Options
--- - fmt {Number}
--- - chunkStreamId {Number}
--- - timestamp {Number}
--- - messageStreamId {Number}
--- @return {Buffer} message data
-function exports.encodeDataMessage(data, options)
-    options = options or {}
-    if (not options.fmt) then
-        options.fmt = RTMP_CHUNK_TYPE_0
-    end
-
-    if (not options.chunkStreamId) then
-        options.chunkStreamId = 0x04
-    end
-
-    options.messageType = MESSAGE.DATA_MESSAGE
-
-    local body = amf0.encodeArray(data)
-    return exports.encodeChunkMessage(body, options)
-end
-
--- Encode Video Message
--- @param data {Array} Video sample data
--- @param options {Object} Options
--- - fmt {Number}
--- - chunkStreamId {Number}
--- - timestamp {Number}
--- - messageStreamId {Number}
--- @return {Buffer} message data
-function exports.encodeVideoMessage(sampleData, options)
-    options = options or {}
-    if (not options.fmt) then
-        options.fmt = RTMP_CHUNK_TYPE_0
-    end
-
-    if (not options.chunkStreamId) then
-        options.chunkStreamId = 0x04
-    end
-
-    options.messageType = MESSAGE.VIDEO_MESSAGE
-    return exports.encodeChunkMessage(sampleData, options)
-end
-
--- Encode Audio Message
--- @param data {Array} Audio sample data
--- @param options {Object} Options
--- - fmt {Number}
--- - chunkStreamId {Number}
--- - timestamp {Number}
--- - messageStreamId {Number}
--- @return {Buffer} message data
-function exports.encodeAudioMessage(sampleData, options)
-    options = options or {}
-    if (not options.fmt) then
-        options.fmt = RTMP_CHUNK_TYPE_0
-    end
-
-    if (not options.chunkStreamId) then
-        options.chunkStreamId = 0x04
-    end
-
-    options.messageType = MESSAGE.AUDIO_MESSAGE
-    return exports.encodeChunkMessage(sampleData, options)
-end
-
 -- Encode Chunk Message
--- @param messageBody {Array} Message data
--- @param options {Object} Options
--- - fmt {Number}
--- - chunkStreamId {Number}
--- - timestamp {Number}
--- - messageStreamId {Number}
--- - messageType {Number}
+---@param messageBody string Message data
+---@param options RtmpChunkOptions Options
 -- @return {Buffer} chunks data
 function exports.encodeChunkMessage(messageBody, options)
     local header = exports.encodeChunkHeader(#messageBody, options)
@@ -611,76 +534,115 @@ function exports.encodeChunkMessage(messageBody, options)
     return message
 end
 
+-- Encode Command Message
+---@param data string Command message array
+---@param options RtmpChunkOptions options
+-- @return {Buffer} message data
+function exports.encodeCommandMessage(data, options)
+    options = options or {}
+
+    if (not options.fmt) then
+        options.fmt = RTMP_CHUNK_TYPE_1
+    end
+
+    if (not options.chunkStreamId) then
+        options.chunkStreamId = 0x03
+    end
+
+    options.messageType = MESSAGE.COMMAND_MESSAGE
+
+    local body = amf0.encodeArray(data)
+    return exports.encodeChunkMessage(body, options)
+end
+
+-- Encode Control Message
+---@param messageType integer message type
+---@param value string value
+---@param options RtmpChunkOptions options
+-- @return {Buffer} message data
+function exports.encodeControlMessage(messageType, value, options)
+    local body = nil
+
+    if (messageType == MESSAGE.SET_CHUNK_SIZE) then -- Set Chunk Size
+        body = string.pack('>I4', value)
+
+    elseif (messageType == MESSAGE.ABORT_MESSAGE) then -- Abort Message
+        body = string.pack('>I4', value)
+
+    elseif (messageType == MESSAGE.ACKNOWLEDGEMENT) then -- Acknowledgement
+        body = string.pack('>I4', value)
+
+    elseif (messageType == MESSAGE.WINDOW_ACKNOWLEDGEMENT_SIZE) then -- Window Acknowledgement Size
+        body = string.pack('>I4', value)
+
+    elseif (messageType == MESSAGE.SET_PEER_BANDWIDTH) then -- Set Peer Bandwidth
+        body = string.pack('>I4B', value, 0x02)
+    end
+
+    if (not body) then
+        return
+    end
+
+    options = options or {}
+    options.fmt = RTMP_CHUNK_TYPE_0
+
+    if (not options.chunkStreamId) then
+        options.chunkStreamId = 0x04
+    end
+
+    options.messageType = messageType
+
+    local header = exports.encodeChunkHeader(#body, options)
+    return exports.encodeChunkMessage(body, options)
+end
+
+-- Encode Data Message
+---@param data string Data message array
+---@param options RtmpChunkOptions Options
+-- @return {Buffer} message data
+function exports.encodeDataMessage(data, options)
+    options = options or {}
+    if (not options.fmt) then
+        options.fmt = RTMP_CHUNK_TYPE_0
+    end
+
+    if (not options.chunkStreamId) then
+        options.chunkStreamId = 0x04
+    end
+
+    options.messageType = MESSAGE.DATA_MESSAGE
+
+    local body = amf0.encodeArray(data)
+    return exports.encodeChunkMessage(body, options)
+end
+
+-- Encode Video Message
+---@param sampleData string Video sample data
+---@param options RtmpChunkOptions Options
+-- @return {Buffer} message data
+function exports.encodeVideoMessage(sampleData, options)
+    options = options or {}
+    if (not options.fmt) then
+        options.fmt = RTMP_CHUNK_TYPE_0
+    end
+
+    if (not options.chunkStreamId) then
+        options.chunkStreamId = 0x04
+    end
+
+    options.messageType = MESSAGE.VIDEO_MESSAGE
+    return exports.encodeChunkMessage(sampleData, options)
+end
+
 -- ----------------------------------------------------------------------------
 -- Chunk Message Decode
 
--- Parse Chunk Header
--- @param data {Array} Chunk data
--- @param pos {Number} Chunk data offset
--- @return {Object} chunk header info
-function exports.parseChunkHeader(data, pos)
-    local index = pos or 1
-    -- basic header
-    local basicHeader = data:byte(index + 0);
-    local fmt = basicHeader >> 6
-    local chunkStreamId = basicHeader & 0x3F;
-
-    -- message header
-    local timestamp, messageLength, messageType, messageStreamId;
-    local headerSize = 1
-
-    messageLength = exports.messageLength
-    messageType = exports.messageType
-
-    if (fmt == RTMP_CHUNK_TYPE_0) then
-        headerSize = 12
-        local limit = index + headerSize
-        if #data < (limit - 1) then
-            return
-        end
-
-        timestamp, messageLength, messageType, messageStreamId = string.unpack('>I3I3B<I4', data, index + 1);
-
-    elseif (fmt == RTMP_CHUNK_TYPE_1) then
-        headerSize = 8
-        local limit = index + headerSize
-        if #data < (limit - 1) then
-            return
-        end
-
-        timestamp, messageLength, messageType = string.unpack('>I3I3B', data, index + 1);
-
-    elseif (fmt == RTMP_CHUNK_TYPE_2) then
-        headerSize = 4
-        local limit = index + headerSize
-        if #data < (limit - 1) then
-            return
-        end
-
-        timestamp = string.unpack('>I3', data, index + 1);
-    end
-
-    local header = {
-        fmt = fmt,
-        chunkStreamId = chunkStreamId,
-        timestamp = timestamp,
-        headerSize = headerSize,
-        messageLength = messageLength,
-        messageType = messageType,
-        messageStreamId = messageStreamId
-    }
-
-    exports.messageLength = messageLength
-    exports.messageType = messageType
-
-    return header
-end
-
 -- Parse Chunk Body
--- @param data {Array} Chunk data
--- @param pos {Number} Chunk data offset
--- @param header {Object} chunk header info
--- @return {Object} message body info
+---@param data string Chunk data
+---@param pos integer Chunk data offset
+---@param header table chunk header
+---@return {Object} message body
+---@return {string} raw message body
 function exports.parseChunkBody(data, pos, header)
     local index = pos or 1
 
@@ -749,19 +711,82 @@ function exports.parseChunkBody(data, pos, header)
 
     elseif (messageType == 0x14) then
         type = 'AMF0 Command Message'
-        body = amf0.parseArray(data, index + headerSize, limit)    
+        body = amf0.parseArray(data, index + headerSize, limit)
     end
 
     header.type = type
-
     return body, raw
 end
 
+-- Parse Chunk Header
+---@param data string Chunk data
+---@param pos integer Chunk data offset
+---@return {Object} chunk header info
+function exports.parseChunkHeader(data, pos)
+    local index = pos or 1
+    -- basic header
+    local basicHeader = data:byte(index + 0);
+    local fmt = basicHeader >> 6
+    local chunkStreamId = basicHeader & 0x3F;
+
+    -- message header
+    local timestamp, messageLength, messageType, messageStreamId;
+    local headerSize = 1
+
+    messageLength = exports.messageLength
+    messageType = exports.messageType
+
+    if (fmt == RTMP_CHUNK_TYPE_0) then
+        headerSize = 12
+        local limit = index + headerSize
+        if #data < (limit - 1) then
+            return
+        end
+
+        timestamp, messageLength, messageType, messageStreamId = string.unpack('>I3I3B<I4', data, index + 1);
+
+    elseif (fmt == RTMP_CHUNK_TYPE_1) then
+        headerSize = 8
+        local limit = index + headerSize
+        if #data < (limit - 1) then
+            return
+        end
+
+        timestamp, messageLength, messageType = string.unpack('>I3I3B', data, index + 1);
+
+    elseif (fmt == RTMP_CHUNK_TYPE_2) then
+        headerSize = 4
+        local limit = index + headerSize
+        if #data < (limit - 1) then
+            return
+        end
+
+        timestamp = string.unpack('>I3', data, index + 1);
+    end
+
+    local header = {
+        fmt = fmt,
+        chunkStreamId = chunkStreamId,
+        timestamp = timestamp,
+        headerSize = headerSize,
+        messageLength = messageLength,
+        messageType = messageType,
+        messageStreamId = messageStreamId
+    }
+
+    exports.messageLength = messageLength
+    exports.messageType = messageType
+
+    return header
+end
+
 -- Parse Chunk
--- @param data {Array} Chunk data
--- @param pos {Number} Chunk data offset
--- @return {Object} chunk header info
--- @return {Object} message body info
+---@public
+---@param data string Chunk data
+---@param pos integer Chunk data offset
+---@return {Object} chunk header
+---@return {Object} message body
+---@return {string} raw body
 function exports.parseChunk(data, pos)
     local header = exports.parseChunkHeader(data, pos)
     if (not header) then
@@ -780,7 +805,6 @@ function exports.parseChunk(data, pos)
     end
 
     -- console.log(#data, limit)
-
     local body, raw = exports.parseChunkBody(data, pos, header);
     return header, body, raw
 end

@@ -1,7 +1,7 @@
 local http = require('http')
 local PORT = process.env.PORT or 10083
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 test('http-get-url', function(expect)

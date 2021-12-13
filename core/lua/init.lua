@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,18 +16,197 @@ limitations under the License.
 
 --]]
 local uv = require('luv')
+local lnode = require('lnode')
 
-local meta = { }
-meta.name           = "lnode/init"
-meta.version        = "0.1.2"
-meta.license        = "Apache 2"
-meta.description    = "init module for lnode"
-meta.tags           = { "lnode", "init" }
+local meta = {
+    description = "init module for lnode"
+}
 
 local exports = { meta = meta }
 
--------------------------------------------------------------------------------
+-- module extract
+
+local function writeFileSync(filename, data)
+    local fd = uv.fs_open(filename, "w", 438) --[[ 0666 ]]
+    if fd then
+        uv.fs_write(fd, data, 0)
+        uv.fs_close(fd, function() end)
+    end
+end
+
+local function extractLuaFiles()
+    local pathname = uv.os_tmpdir() .. '/.lnode/' .. lnode.build
+    local stat, err = uv.fs_stat(pathname)
+    if (stat) then
+        return
+    end
+
+    local filename = uv.os_tmpdir() .. '/core.' .. lnode.build .. '.zip'
+    -- writeFileSync(filename, lnode.core)
+
+    local miniz = require('miniz')
+    -- local reader = miniz.createReader(filename)
+    local reader = miniz.read(lnode.load('core'))
+    local total = reader:getFileCount()
+
+    -- os.remove(filename)
+    if (not total) then
+        return
+    end
+
+    local function saveFileData(filename, data)
+        -- local script = load(data, filename)
+        local script = nil
+        if (script) then
+            local output = string.dump(script, true)
+            writeFileSync(filename, output)
+        else
+            writeFileSync(filename, data)
+        end
+    end
+
+    local function saveFile(pathname, name, data)
+        local pos = string.find(name, '/')
+        if (pos) then
+            pathname = pathname .. '/' .. string.sub(name, 1, pos - 1)
+            uv.fs_mkdir(pathname, 511)
+
+            name = string.sub(name, pos + 1)
+            return saveFile(pathname, name, data)
+        end
+
+        filename = pathname .. '/' .. name
+        pcall(saveFileData, filename, data)
+    end
+
+    local tempname = uv.os_tmpdir() .. '/.lnode/'
+    uv.fs_mkdir(tempname, 511)
+    -- print(tempname)
+
+    tempname = tempname .. 'tmp'
+    uv.fs_mkdir(tempname, 511)
+
+    for i = 1, total do
+        local name = reader:getFilename(i)
+        local data = reader:extract(i)
+        saveFile(tempname, name, data)
+    end
+
+    reader:close()
+    os.rename(tempname, pathname)
+    print('Extract ' .. total .. ' lua files to: ' .. pathname)
+end
+
+if (lnode.init) then
+    local path = package.path
+    local startIndex = 1
+    local tokens = {}
+    local build = lnode.build or 100
+
+    local paths =
+        '/tmp/.lnode/' .. build .. '/?.lua;' ..
+        '/tmp/.lnode/' .. build .. '/?/init.lua'
+
+    while true do
+        local lastIndex = string.find(path, ';', startIndex, true)
+        if (lastIndex) then
+            local token = string.sub(path, startIndex, lastIndex - 1)
+            if (paths and string.byte(token, 1) == 46) then -- starts with ./
+                table.insert(tokens, paths)
+                paths = nil
+            end
+
+            table.insert(tokens, token)
+            startIndex = lastIndex + 1
+        else
+            table.insert(tokens, string.sub(path, startIndex))
+            break
+        end
+    end
+
+    package.path = table.concat(tokens, ';')
+    -- package.path = paths .. package.path
+    extractLuaFiles()
+end
+
 -- module loader
+
+local function loadLocalFile(basePath, subpath)
+    local path = basePath .. '?.lua;' .. basePath .. '?/init.lua'
+    local filename = package.searchpath(subpath, path)
+    if (filename) then
+        local script, err = loadfile(filename)
+        if (err) then error(err); end
+        return script
+    end
+end
+
+local function loadZipFile(filename, appname, subpath)
+    -- console.log('loadZipFile', filename)
+    local miniz = require('miniz')
+    local reader = package.apps and package.apps[appname]
+    if (not reader) then
+        if (not filename) then
+            return
+        end
+
+        local stat = uv.fs_stat(filename)
+        if (not stat) then
+            return
+        end
+
+        reader = miniz.createReader(filename)
+        if (not reader) then
+            return
+        end
+
+        if (not package.apps) then
+            package.apps = {}
+        end
+
+        package.apps[appname] = reader
+    end
+
+    filename = 'lua/' .. subpath .. '.lua' -- $app/lua/$module.lua
+    local data = reader:readFile(filename)
+    if (not data) then
+        filename = 'lua/' .. subpath .. '/init.lua' -- $app/lua/$module/init.lua
+        data = reader:readFile(filename)
+        if (not data) then
+            return
+        end
+    end
+
+    local script, err = load(data, '@$app/' .. appname .. '/' .. filename)
+    if (err) then error(err); end
+    return script, reader
+end
+
+package.loadZipFile = loadZipFile
+
+local function getNodePath(name, subpath)
+    if (type(name) ~= 'string') then
+        return
+
+    elseif (lnode == nil) then
+        return
+
+    elseif (name == 'lnode' or name == 'path' or name == 'fs') then
+        return
+    end
+
+    local basePath = lnode.NODE_LUA_ROOT
+    if (not basePath) then
+        return
+    end
+
+    local stat = uv.fs_stat(basePath .. '/' .. subpath)
+    if (stat == nil) then
+        basePath = basePath .. '/..'
+    end
+
+    return basePath
+end
 
 local function localSearcher(name)
     if (type(name) ~= 'string') then
@@ -46,159 +225,145 @@ local function localSearcher(name)
         return filename, currentline or -1
     end
 
-    local load_local_file = function(name)
-        local basePath = _get_script_filename()
-        if (not basePath) then
-            return nil
-        end
-
-        local path = require('path')
-        basePath = path.dirname(basePath)
-
-        local filename = path.join(basePath, name)
-        local stat = uv.fs_stat(filename)
-        if (stat and stat.type == 'directory') then
-            filename = filename .. '/init.lua'
-        else
-            filename = filename .. '.lua'
-        end
-
+    local load_zip_file = function(filename)
+        -- console.log('load_zip_file', filename)
         local module = package.loaded[filename]
         if (module) then
             return module
         end
 
-        local ret, err = loadfile(filename)
-        if (err) then print(err); os.exit() end
-
-        if (ret) then
-            ret = ret()
+        local pos = filename:find('/', 6) -- $app/appname?/lua/subpath?
+        if (not pos) then
+            return nil
         end
 
-        package.loaded[filename] = ret
-        return ret, err
+        -- console.log('filename', filename, pos)
+        local appname = filename:sub(6, pos - 1)
+        local subpath = filename:sub(pos + 5)
+
+        -- console.log('load_zip_file', appname, subpath)
+        local nodePath = getNodePath(name, 'app') .. '/app/' .. appname .. '.zip'
+        local script = loadZipFile(nodePath, appname, subpath)
+        if (script) then
+            module = script()
+        end
+
+        package.loaded[filename] = module
+        return module
     end
 
-    if (name:byte(1) == 46) then -- startsWith: `.`
-        return load_local_file(name)
+    local load_local_file = function(basePath)
+        local stat = uv.fs_stat(basePath)
+
+        local filename
+        if (stat and stat.type == 'directory') then
+            filename = basePath .. '/init.lua'
+        else
+            filename = basePath .. '.lua'
+        end
+
+        local module = package.loaded[basePath]
+        if (module) then
+            return module
+        end
+
+        local script, err = loadfile(filename)
+        if (err) then error(err) end
+
+        if (script) then
+            module = script()
+        end
+
+        package.loaded[basePath] = module
+        return module
+    end
+
+    if (name:byte(1) == 46) then -- ./?/?
+        local sourcePath = _get_script_filename()
+        if (not sourcePath) then
+            return nil
+        end
+
+        local path = require('path')
+        local basePath = path.dirname(sourcePath)
+        local filename = path.join(basePath, name)
+
+        if (filename:byte(1) == 36) then -- $app/?/lua/?
+            -- console.log('filename', filename)
+            return load_zip_file(filename)
+        else
+            return load_local_file(filename)
+        end
     end
 end
 
+-- module searcher
 local function moduleSearcher(name)
-    if (type(name) ~= 'string') then
-        return nil
+    local nodePath = getNodePath(name, 'modules')
+
+    local module = name
+    local subpath = 'init'
+    local pos = name:find('/')
+    if (pos) then
+        module = name:sub(1, pos - 1)
+        subpath = name:sub(pos + 1)
     end
 
-    if (name == 'lnode') then
-        return nil
-    end
-
-    local lnode = require('lnode')
-    local basePath = lnode.NODE_LUA_ROOT
-    if (not basePath) then
-        return nil
-    end
-
-    local stat = uv.fs_stat(basePath .. '/modules')
-    if (stat == nil) then
-        basePath = basePath .. '/../'
-    end
-
-    local filename;
-
-    --console.log(basePath)
-    local index = name:find('/')
-    if (index) then
-        local libname = name:sub(1, index - 1)
-        local subpath = name:sub(index + 1)
-
-        filename = (basePath .. '/modules/' .. libname .. '/lua/' .. subpath .. ".lua")
-
-    else
-        filename = (basePath .. '/modules/' .. name .. '/lua/' .. "init.lua")
-    end
-
-    stat = uv.fs_stat(filename)
-    if (stat == nil) then
-        return nil
-    end
-
-    local ret, err = loadfile(filename)
-    if (err) then print(err); os.exit() end
-    return ret
+    local basePath = nodePath .. '/modules/' .. module .. '/lua/'
+    return loadLocalFile(basePath, subpath)
 end
 
+-- APP module searcher
 local function appSearcher(name)
-    if (type(name) ~= 'string') then
-        return nil
+    local nodePath = getNodePath(name, 'app') -- /path/to/lnode
+
+    local appName = name
+    local subpath = 'init'
+    local pos = name:find('/')
+    if (pos) then
+        appName = name:sub(1, pos - 1)
+        subpath = name:sub(pos + 1)
     end
 
-    if (name == 'lnode' or name == 'path' or name == 'fs') then
-        return nil
-    end
-
-    local lnode = require('lnode')
-    if (lnode == nil) then
-        return
-    end
-
-    local basePath = lnode.NODE_LUA_ROOT
-    if (not basePath) then
-        return nil
-    end
-
-    local stat = uv.fs_stat(basePath .. '/app')
-    if (stat == nil) then
-        basePath = basePath .. '/../'
-    end
-
-    local filename
-
-    --console.log(basePath)
-    local index = name:find('/')
-    if (index) then
-        local libname = name:sub(1, index - 1)
-        local subpath = name:sub(index + 1)
-
-        filename = (basePath .. '/app/' .. libname .. '/lua/' .. subpath .. ".lua")
+    local appPath = nodePath .. '/app/' .. appName
+    local stat = uv.fs_stat(appPath)
+    if (not stat) then
+        -- zip app bundle
+        return loadZipFile(appPath .. '.zip', appName, subpath)
 
     else
-        filename = (basePath .. '/app/' .. name .. '/lua/' .. "init.lua")
+        -- path app bundle
+        return loadLocalFile(appPath .. '/lua/', subpath)
     end
-
-    --console.log('filename', filename)
-    stat = uv.fs_stat(filename)
-    if (stat == nil) then
-        return nil
-    end
-
-    local ret, err = loadfile(filename)
-    if (err) then print(err); os.exit() end
-    return ret, err
 end
 
-package.searchers[6] = appSearcher
-package.searchers[5] = moduleSearcher
---package.searchers[4] = package.searchers[4]
---package.searchers[3] = package.searchers[3]
---package.searchers[2] = package.searchers[2]
---package.searchers[1] = package.searchers[1]
+if (not package.searchers[6] ) then
+    package.searchers[6] = appSearcher
+    package.searchers[5] = moduleSearcher
+    --package.searchers[4]
+    --package.searchers[3]
+    --package.searchers[2]
+    --package.searchers[1]
+end
 
--------------------------------------------------------------------------------
 -- require
 
-_G._require = require
-_G.require = function(name, ...)
+if (not package.require) then
+    local _require = require
+    package.require = require
 
-    if (name and name:byte(1) == 46) then -- startsWith: `.`
-        return localSearcher(name)
+    local key = 'require'
+    _G[key] = function(name, ...)
+        if (name and name:byte(1) == 46) then -- startsWith: `.`
+            return localSearcher(name)
+        end
+
+        -- print(package.loaded[name])
+        return _require(name, ...)
     end
-
-    -- print(package.loaded[name])
-    return _require(name, ...)
 end
 
--------------------------------------------------------------------------------
+
 -- run loop
 
 if (not _G.runLoop) then
@@ -208,190 +373,28 @@ if (not _G.runLoop) then
     end
 end
 
--------------------------------------------------------------------------------
 -- process
 
--- 默认导入 process 模块
-
 if (not _G.process) then
-    _G.process = require("process")
+    _G.process = require('process')
 end
 
--------------------------------------------------------------------------------
 -- console
 
--- 默认导入 console 模块
-
 if (not _G.console) then
-    _G.console = require("console")
+    _G.console = require('console')
 end
 
--------------------------------------------------------------------------------
--- Date
-
-local Date = {}
-
-Date.now = function() 
-    local sec, usec = uv.gettimeofday()
-    return sec * 1000 + math.floor(usec / 1000)
-end
-
-function Date:new(time)
-    local date = {}
-    
-    function date:setTime(time)
-        self.time = time or Date.now()
-        self.value = os.date("*t", math.floor(self.time / 1000))
-    end
-
-    function date:setDate(day)
-        self.value.day = day
-        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
-    end
-
-    function date:setMonth(month)
-        self.value.month = month
-        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
-    end
-
-    function date:setYear(year)
-        self.value.year = year
-        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
-    end
-
-    function date:setHours(hour)
-        self.value.hour = hour
-        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
-    end
-
-    function date:setMinutes(min)
-        self.value.min = min
-        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
-    end
-
-    function date:setSeconds(sec)
-        self.value.sec = sec
-        self:setTime(os.time(self.value) * 1000 + self:getMilliseconds())
-    end
-
-    function date:setMilliseconds(milliSeconds)
-        self.time = math.floor(self.time / 1000) * 1000 + milliSeconds
-    end
-
-    function date:getTime()
-        return self.time
-    end
-
-    function date:toString()
-        return os.date("%c", math.floor(self.time / 1000))
-    end
-
-    function date:toDateString()
-        return os.date("%F", math.floor(self.time / 1000))
-    end
-
-    function date:toTimeString()
-        return os.date("%T", math.floor(self.time / 1000))
-    end
-
-    function date:toISOString()
-        local msec = self:getMilliseconds() .. 'Z'
-        return os.date("!%FT%T", math.floor(self.time / 1000)) .. "." .. msec:padLeft(4, 4, '0');
-    end
-
-    function date:getDay()
-        return self.value.wday - 1
-    end
-
-    function date:getDate()
-        return self.value.day
-    end
-
-    function date:getMonth()
-        return self.value.month
-    end
-
-    function date:getYear()
-        return self.value.year
-    end
-
-    function date:getHours()
-        return self.value.hour
-    end
-
-    function date:getMinutes()
-        return self.value.min
-    end
-
-    function date:getSeconds()
-        return self.value.sec
-    end
-
-    function date:getMilliseconds()
-        return self.time % 1000
-    end
-    
-    date:setTime(time)
-    return date
-end
-
-if (not _G.Date) then
-    _G.Date = Date
-end
-
--------------------------------------------------------------------------------
--- searcher
-
---[[
-package._searcher = package.searchers[1]
-package.searchers[1] = function(name)
-    print('_searcher', name)
-    return package._searcher(name)
-end
---]]
-
--------------------------------------------------------------------------------
 -- timer
 
--- 类似 Node.js 默认就导入 `timer` 模块的主要几个方法
-
-local timer = nil
-
-local _loadTimer = function()
-    if (not timer) then
-        timer = require('timer')
-    end
-    return timer
-end
-
-function _G.clearImmediate(timeoutObject)
-    _loadTimer()
-    return timer.clearImmediate(timeoutObject)
-end
-
-function _G.clearInterval(intervalObject)
-    _loadTimer()
-    return timer.clearInterval(intervalObject)
-end
-
-function _G.clearTimeout(timeoutObject)
-    _loadTimer()
-    return timer.clearTimeout(timeoutObject)
-end
-
-function _G.setImmediate(callback, ...)
-    _loadTimer()
-    return timer.setImmediate(callback, ...)
-end
-
-function _G.setInterval(delay, callback, ...)
-    _loadTimer()
-    return timer.setInterval(delay, callback, ...)
-end
-
-function _G.setTimeout(delay, callback, ...)
-    _loadTimer()
-    return timer.setTimeout(delay, callback, ...)
+if (not _G.setTimeout) then
+    local timer = require('timer')
+    _G.clearImmediate = timer.clearImmediate
+    _G.clearInterval = timer.clearInterval
+    _G.clearTimeout = timer.clearTimeout
+    _G.setImmediate = timer.setImmediate
+    _G.setInterval = timer.setInterval
+    _G.setTimeout = timer.setTimeout
 end
 
 return exports

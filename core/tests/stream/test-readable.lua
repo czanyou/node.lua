@@ -1,4 +1,4 @@
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local assert = require('assert')
 
 local Readable = require('stream').Readable
@@ -89,7 +89,7 @@ test("test readable.push(nil) with flowing", function()
         if (self.index == 5) then
             self:push(nil)
 
-            assert(self._readableState.ended)
+            assert(self.readableEnded)
             assert(not self._readableState.reading)
             --console.log(self._readableState)
             return
@@ -158,7 +158,7 @@ test("test readable.push", function()
     setTimeout(10, function()
         stream:push(nil)
 
-        assert(stream._readableState.ended)
+        assert(stream.readableEnded)
         assert(not stream._readableState.reading)
     end)
 end)
@@ -187,7 +187,7 @@ test("test readable.push", function()
     setTimeout(10, function()
         stream:push(nil)
 
-        assert(stream._readableState.ended)
+        assert(stream.readableEnded)
         assert(not stream._readableState.reading)
     end)
 
@@ -289,7 +289,7 @@ test("test readable.readable", function()
         local data = stream:read()
 
         -- 清空缓存区后，重新需要侦听 readable 事件
-        if (state.ended) then
+        if (stream.readableEnded) then
             assert(not state.needReadable)
         else
             assert(state.needReadable)
@@ -449,7 +449,7 @@ test("test readable.read", function()
 
     --state.flowing = true
     -- 触发读但不消费数据
-    for i = 1, 1000 * 1000 do
+    for i = 1, 100 * 1000 do
         stream:read(1024)
     end
 

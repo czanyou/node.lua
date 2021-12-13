@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,33 +33,6 @@ local IncomingMessage = http.IncomingMessage
 
 local exports = { }
 local IncomingCounter = 0
-
-function exports.checkHttpSessions()
-    local now = Date.now()
-    local httpSessions = exports.httpSessions
-    if (not httpSessions) then
-        return
-    end
-
-    for sessionId, httpSession in pairs(httpSessions) do
-        local span = now - (httpSession.updated or 0)
-        if (span > 10 * 60 * 1000) then
-            httpSessions[sessionId] = nil
-        end
-    end
-end
-
-function exports.startHttpSessions()
-    if (exports.httpSessions) then
-        return
-    end
-
-    exports.httpSessions = {}
-
-    exports.httpSessionTimer = setInterval(1000 * 10, function()
-        exports.checkHttpSessions()
-    end)
-end
 
 local function _getContentType(path)
     return mime[path:lower():match("[^.]*$")] or mime.default
@@ -96,6 +69,10 @@ end
 -- IncomingMessage
 
 function IncomingMessage:getSessionId()
+    if (self.sessionId) then
+        return self.sessionId
+    end
+
     local cookie = self.headers['Cookie']
     local sessionId = nil
 
@@ -107,16 +84,21 @@ function IncomingMessage:getSessionId()
         end
     end
 
+    self.sessionId = sessionId
     return sessionId
 end
 
+---@param create boolean 如果不存在则创建一个新的会话
 function IncomingMessage:getSession(create)
     local httpSessions = exports.httpSessions or {}
     local sessionId = self:getSessionId()
     local httpSession = sessionId and httpSessions[sessionId]
     if (not httpSession) and create then
         httpSession = {}
-        httpSessions[sessionId] = httpSession
+
+        if (sessionId) then
+            httpSessions[sessionId] = httpSession
+        end
     end
 
     if (httpSession) then
@@ -145,14 +127,18 @@ function IncomingMessage:readBody(callback)
 
     local sb = StringBuffer:new()
 
-    self:on('data', function(data)
+    local onData = function(data)
         sb:append(data)
 
         --console.log('data', contentType)
         --console.log(#data, data)
-    end)
+    end
+
+    self:on('data', onData)
 
     self:once('end', function(data)
+        self:removeListener('data', onData)
+
         sb:append(data)
 
         local content = sb:toString()
@@ -340,7 +326,6 @@ function ServerResponse:sendStaticFile(options)
     self:sendStream(fileStream, options.contentType, options.statInfo.size)
 end
 
-
 function ServerResponse:sendStatus(statusCode, message)
     self:status(statusCode)
 
@@ -408,8 +393,61 @@ function ServerResponse:type(contentType)
 end
 
 -------------------------------------------------------------------------------
+-- static
+
+local static = {}
+
+static.root = nil
+
+function static.getFileName(pathname)
+    if (not static.root) then
+        return nil
+    end
+
+    return path.join(static.root, pathname)
+end
+
+function static.handleRequest(request, response, next)
+    local filename = static.getFileName(request.path)
+    if (not filename) then
+        return response:sendStatus(404)
+    end
+
+    -- console.log(request.method, request.path, filename)
+
+    fs.stat(filename, function (err, statInfo, ...)
+        if err then
+            return next()
+
+        elseif (not statInfo) then
+            return next()
+        end
+
+        if (statInfo.type ~= 'file') then
+            return response:sendFileList(filename, request)
+
+        elseif (statInfo.type ~= 'file') then
+            return response:sendStatus(404, "Requested url is not a file")
+        end
+
+        local extName = filename:lower():match("[^.]*$")
+        local contentType = mime[extName] or mime.default
+        local options = {
+            filename = filename,
+            statInfo = statInfo,
+            contentType = contentType,
+            pathname = request.uri.pathname or '',
+            ifSince =  request.headers['If-Modified-Since']
+        }
+
+        response:sendStaticFile(options)
+    end)
+end
+
+-------------------------------------------------------------------------------
 -- Express
 
+---@class Express
 local Express = core.Emitter:extend()
 exports.Express = Express
 
@@ -424,20 +462,12 @@ function Express:initialize(options)
     self.functions  = {}
 end
 
-function Express:close()
-    if (self.server) then
-        self.server:close()
-        self.server = nil
-    end
-end
-
-function Express:use(func)
-    table.insert(self.functions, func)
-end
-
+---@param method string
+---@param pathname string
+---@param handler function
 function Express:all(method, pathname, handler)
     if (not method) or (not pathname) or (not handler) then
-        return
+        return self
     end
 
     local route = self.routes[method]
@@ -477,20 +507,21 @@ function Express:all(method, pathname, handler)
 
     route['@handler'] = handler
     -- console.log(self.routes)
+    return self
+end
+
+function Express:close()
+    if (self.server) then
+        self.server:close()
+        self.server = nil
+    end
 end
 
 function Express:get(pathname, handler)
-    self:all('GET', pathname, handler)
+    return self:all('GET', pathname, handler)
 end
 
-function Express:getFileName(pathname)
-    if (not self.root) then
-        return nil
-    end
-
-    return path.join(self.root, pathname)
-end
-
+---@param request IncomingMessage
 function Express:getHandler(request)
     local method = request.method
     local pathname = request.path or ''
@@ -535,63 +566,14 @@ function Express:getHandler(request)
     return handler
 end
 
-function Express:post(pathname, handler)
-    self:all('POST', pathname, handler)
-end
-
-function Express:handleFileRequest(request, response)
-    local filename = self:getFileName(request.path)
-    if (not filename) then
-        return response:sendStatus(404)
-    end
-
-    fs.stat(filename, function (err, statInfo, ...)
-        if err then
-            if err.code == "ENOENT" then
-                response:sendStatus(404, err.message)
-                return
-
-            elseif type(err) == 'string' and err:startsWith("ENOENT") then
-                response:sendStatus(404, err.message)
-                return
-            end
-
-            response:sendStatus(500, (err.message or tostring(err)))
-            return
-        end
-
-        --console.log(stat.type)
-
-        if (statInfo.type ~= 'file') then
-            response:sendFileList(filename, request)
-            return
-
-        elseif (statInfo.type ~= 'file') then
-            response:sendStatus(404, "Requested url is not a file")
-            return
-        end
-
-        local extName = filename:lower():match("[^.]*$")
-        local contentType = mime[extName] or mime.default
-        local options = {
-            filename = filename,
-            statInfo = statInfo,
-            contentType = contentType,
-            pathname = request.uri.pathname or '',
-            ifSince =  request.headers['If-Modified-Since']
-        }
-
-        response:sendStaticFile(options)
-    end)
-end
-
+---@param request IncomingMessage
+---@param response ServerResponse
 function Express:handleRequest(request, response)
     -- response.request = request
-    local sessionId = request:getSessionId()
-    response.sessionId = sessionId
+    response.sessionId = request:getSessionId()
 
+    -- url
     local uri           = url.parse(request.url)
-
     request.uri         = uri
     request.path        = uri.pathname
     request.hostname    = uri.hostname
@@ -599,33 +581,70 @@ function Express:handleRequest(request, response)
     request.ip          = nil
     request.query       = querystring.parse(uri.query)
 
-    -- 中间件
-    for index, func in ipairs(self.functions) do
-        local status, result = pcall(func, request, response)
-        if (status and result) then
+    local functions = self.functions or {}
+    local index = 1
+    local next = nil
+
+    -- finish
+    response:once('finish', function()
+        request.files = nil
+        request.body = nil
+
+        -- console.log(request)
+        -- console.log(response)
+    end)
+
+    local function defaultHandler()
+        -- console.log('defaultHandler', request.path)
+        -- handler
+        local handler = self:getHandler(request)
+        if (not handler) then
+            response:sendStatus(404)
             return
         end
+
+        -- read body
+        request:readBody(function()
+            local success, error = pcall(handler, request, response)
+            if (not success) then
+                response:sendStatus(500, error)
+            end
+        end)
     end
 
-    -- handler
-    local handler = self:getHandler(request)
-    if (not handler) then
-        self:handleFileRequest(request, response)
-        return
-    end
-
-    request:readBody(function()
-        local status = pcall(handler, request, response)
-        if (not status) then
-            response:sendStatus(500)
+    -- next
+    next = function()
+        if (index > #functions) then
+            return defaultHandler()
         end
-    end)
+
+        -- test only
+        -- console.log('next', index)
+
+        local func = functions[index]
+        if (not func) then
+            return
+        end
+
+        index = index + 1
+        local success, result = pcall(func, request, response, next)
+        if (not success) then
+            response:sendStatus(500, result)
+        end
+    end
+
+    next()
 end
 
+---@param port integer
+---@param callback function
+---@return Server
 function Express:listen(port, callback)
     if (self.server) then
-        return
+        return self
     end
+
+    port = math.floor(tonumber(port) or 80)
 
     local server = http.createServer(function(request, response)
         self:handleRequest(request, response)
@@ -642,16 +661,29 @@ function Express:listen(port, callback)
     server:on('listening', function()
         self:emit('listening')
 
-        if (self.root) then print("root: " .. self.root) end
-        print("HTTP server listening at http://localhost:" .. port)
+        if (self.root) then
+            print("webroot: " .. self.root)
+        end
+
+        console.log("Start HTTP server: " .. port)
     end)
 
-    self.server = server
     server:listen(port)
 
+    self.server = server
     if (callback) then
         callback(self)
     end
+
+    return self
+end
+
+function Express:post(pathname, handler)
+    return self:all('POST', pathname, handler)
+end
+
+function Express:use(func)
+    table.insert(self.functions, func)
 end
 
 -------------------------------------------------------------------------------
@@ -659,6 +691,86 @@ end
 
 function exports.app(options)
     return Express:new(options)
+end
+
+function exports.checkHttpSessions()
+    local now = Date.now()
+    local httpSessions = exports.httpSessions
+    if (not httpSessions) then
+        return
+    end
+
+    for sessionId, httpSession in pairs(httpSessions) do
+        local span = now - (httpSession.updated or 0)
+        if (span > 4 * 60 * 60 * 1000) then
+            httpSessions[sessionId] = nil
+        end
+    end
+
+    local filename = '/tmp/run/'
+    if (fs.existsSync(filename)) then
+        filename = filename .. '/sessions.json'
+        local filedata = json.stringify(httpSessions)
+        -- fs.writeFile(filename, filedata)
+    end
+end
+
+---@param app table
+---@return function
+function exports.resources(app)
+    local reader = app.bundle or (package.apps and package.apps[app.name])
+    -- console.log(app.name, app.bundle, app)
+
+    return function(req, res, next)
+        if (not reader) then
+            return next()
+        end
+
+        local filename = path.join('www', req.path)
+        if (req.path == '/') then
+            filename = 'www/index.html'
+        end
+
+        local extName = filename:lower():match("[^.]*$")
+        local contentType = mime[extName] or mime.default
+        local data = reader:readFile(filename)
+        if (not data) then
+            return next()
+        end
+
+        res:set('Cache-Control', 'max-age=3600')
+        res:send(data, contentType)
+    end
+end
+
+function exports.startHttpSessions()
+    if (exports.httpSessions) then
+        return
+    end
+
+    exports.httpSessions = {}
+
+    local filename = '/tmp/run/sessions.json'
+    if (fs.existsSync(filename)) then
+        fs.readFile(filename, function(filedata)
+            local httpSessions = json.parse(filedata)
+            if (type(httpSessions) == 'table') then
+                exports.httpSessions = httpSessions
+            end
+        end)
+    end
+
+    exports.httpSessionTimer = setInterval(1000 * 10, function()
+        exports.checkHttpSessions()
+    end)
+end
+
+---@param rootPath string
+---@param options table
+function exports.static(rootPath, options)
+    static.root = rootPath
+    static.options = options
+    return static.handleRequest
 end
 
 setmetatable( exports, {

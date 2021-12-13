@@ -1,8 +1,8 @@
-local url     = require("url")
+local url     = require('url')
 
 local deepEqual = require('assert').isDeepEqual
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test('should parse url http://localhost', function(expected)

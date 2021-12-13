@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@ limitations under the License.
 
 --]]
 
-local core 	= require("core")
-local fs   	= require("fs")
-local json  = require("json")
-local path 	= require("path")
+local core 	= require('core')
+local fs   	= require('fs')
+local json  = require('json')
+local path 	= require('path')
 local util  = require('util')
-local luv  	= require("luv")
+local luv  	= require('luv')
 
 local exports = {}
 
@@ -29,14 +29,16 @@ local exports = {}
 -- search path
 
 exports.rootPath = "/usr/local/lnode"
--- if (process.rootPath) then
---	 exports.rootPath = process.rootPath
--- end
 
 local osType = os.platform()
 if (osType == 'win32') then
 	local pathname = path.dirname(process.execPath)
 	exports.rootPath = path.dirname(pathname)
+
+else
+	if (process.nodePath) then
+		exports.rootPath = process.nodePath
+	end
 end
 
 local function trimValue(value)
@@ -73,6 +75,7 @@ end
 -------------------------------------------------------------------------------
 -- Profile
 
+---@class Profile
 local Profile = core.Emitter:extend()
 exports.Profile = Profile
 
@@ -124,8 +127,14 @@ end
 function Profile:commit(callback)
 	local tempname = self.filename .. ".tmp"
 	local data = self:toString()
+	-- console.log('commit', data)
 
-	console.log('commit')
+	if (not data) then
+		if (callback) then
+			callback('invalid data')
+		end
+		return
+	end
 
 	if (callback) then
 		fs.writeFile(tempname, data, function(err)
@@ -268,7 +277,7 @@ function Profile:set(key, value)
 				if (type(settings[token]) ~= 'table') then
 					settings[token] = {}
 				end
-	
+
 				settings = settings[token]
 			end
 		end
@@ -330,7 +339,7 @@ setmetatable(exports, {
 			self.load(name, callback)
 			return
 		end
-		
+
 		local basePath = path.join(exports.rootPath, "conf")
 		if (not fs.existsSync(basePath)) then
 			basePath = path.join(exports.rootPath, "bin")

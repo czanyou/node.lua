@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,16 +17,13 @@ limitations under the License.
 --]]
 
 local meta = {}
-meta.name        = "lnode/app"
-meta.version     = "1.0.0"
-meta.license     = "Apache 2"
 meta.description = "Application module for lnode"
-meta.tags        = { "lnode", "app" }
 
 local fs     	= require('fs')
 local json   	= require('json')
 local path   	= require('path')
 local util      = require('util')
+local miniz     = require('miniz')
 local conf      = require('app/conf')
 local process   = require('process')
 local uv        = require('luv')
@@ -68,6 +65,11 @@ local function getNodePath()
     if (osType == 'win32') then
         local pathname = path.dirname(process.execPath)
         exports.nodePath = path.dirname(pathname)
+
+    else
+        if (process.nodePath) then
+            exports.nodePath = process.nodePath
+        end
     end
 
 	return exports.nodePath
@@ -81,12 +83,20 @@ local function getAppPath()
 	end
 
 	return appPath
-
 end
 
 local function getApplicationInfo(basePath)
 	local filename = path.join(basePath, "package.json")
-	local data = fs.readFileSync(filename)
+    local data = fs.readFileSync(filename)
+    if (not data) then
+        local reader = miniz.createReader(basePath)
+        if (reader) then
+            data = reader:readFile('package.json')
+            reader:close()
+            reader = nil
+        end
+    end
+
 	return data and json.parse(data)
 end
 
@@ -94,24 +104,42 @@ end
 local function getApplicationName(cmdline)
 	if (type(cmdline) ~= 'string') then
 		return
-	end
+    end
 
+    -- /xxx/lua/app.lua
     local _, _, appName = cmdline:find('/([%w]+)/lua/app.lua')
     -- console.log(cmdline, appName)
 
     if (not appName) then
+        -- lpm xxx start
         _, _, appName = cmdline:find('/lpm%S([%w]+)%Sstart')
     end
 
     if (not appName) then
+        -- lpm start xxx
         _, _, appName = cmdline:find('/lpm%Sstart%S([%w]+)')
     end
 
+    if (not appName) then
+        -- $wotc/lua/app.lua
+        _, _, appName = cmdline:find('$([%w]+)/lua/app.lua')
+    end
+
+    -- console.log('appName', appName, cmdline)
     return appName
 end
 
 local function executeApplication(basePath, ...)
-	local filename = path.join(basePath, "lua", "app.lua")
+	local filename = basePath .. '.zip'
+    if (fs.existsSync(filename)) then
+        local appname = path.basename(basePath)
+        local script = package.loadZipFile(filename, appname, 'app')
+
+        _G.arg = table.pack(...)
+        return 0, script(...)
+	end
+
+	filename = path.join(basePath, "lua", "app.lua")
 	if (not fs.existsSync(filename)) then
 		return -3, '"' .. basePath .. '/lua/app.lua" not exists!'
 	end
@@ -143,7 +171,7 @@ setmetatable(exports, exports.meta)
 --
 exports.rootPath 		= getRootPath()
 exports.nodePath 		= getNodePath()
-exports.rootURL 		= 'http://iot.beaconice.cn/v2/'
+exports.rootURL 		= 'http://iot.wotcloud.cn/v2/'
 exports.appPath 		= getAppPath()
 
 -------------------------------------------------------------------------------
@@ -175,7 +203,7 @@ end
 function exports.watchProfile(callback)
     -- load a profile first
     local updated = exports.get('updated')
-    print('Start watch profile...', exports.appName())
+    print('Start watch profile: ' .. exports.appName())
 
     local profile = exports._defaultProfile
     if (profile) then
@@ -324,11 +352,21 @@ end
 function exports.daemon(name)
 	if (not name) or (name == '') then
         return -1, "Error: missing required argument '<name>'."
-	end
+    end
 
-	local filename = path.join(getAppPath(), name, 'lua', 'app.lua')
-	if (not fs.existsSync(filename)) then
-		return -3, '"' .. filename .. '" not exists!'
+    local appPath = getAppPath()
+    local tempPath = path.join(os.tmpdir, 'app')
+
+    local filename = path.join(tempPath, name, 'lua', 'app.lua')
+    if (not fs.existsSync(filename)) then
+        -- console.log(filename)
+        filename = path.join(appPath, name, 'lua', 'app.lua')
+        if (not fs.existsSync(filename)) then
+            filename = path.join(appPath, name .. '.zip')
+            if (not fs.existsSync(filename)) then
+                return -3, '"' .. filename .. '" not exists!'
+            end
+        end
     end
 
     updateProcessList(name)
@@ -363,6 +401,11 @@ function exports.execute(name, ...)
 	end
 
 	return executeApplication(basePath, ...)
+end
+
+function exports.load(basePath, ...)
+    -- console.log('basePath', basePath)
+    return executeApplication(basePath, ...)
 end
 
 -- 返回指定名称的应用的信息
@@ -421,10 +464,10 @@ function exports.list()
 	for i = 1, #files do
 		local file 		= files[i]
 		local filename  = path.join(appPath, file)
-		local name 		= path.basename(file)
+		local name 		= path.basename(file, ".zip")
 		local info 		= getApplicationInfo(filename)
 		if (info) then
-			info.name = info.name or name
+			info.name = name or info.name
 			list[#list + 1] = info
 		end
 	end
@@ -433,10 +476,11 @@ function exports.list()
 end
 
 function exports.main(handler, action, ...)
+    -- console.log('main', action, ...)
     local method = handler[action or 'init']
 
     exports.name = getApplicationName(util.filename(4))
-    -- console.log(method, exports.name, util.filename(4))
+    -- console.log('method', action, method, exports.name, util.filename(4))
 
     if (method) then
         return method(...)
@@ -450,7 +494,7 @@ function exports.main(handler, action, ...)
         return handler.help(action, ...)
     end
 
-    print('usage: lpm ' .. exports.name .. ' <name> [<params>...]')
+    print('usage: lpm ' .. (exports.name or '<applet>') .. ' <name> [<params>...]')
 end
 
 -- 打印所有安装的应用
@@ -473,6 +517,12 @@ end
 function exports.parseName(cmdline)
     -- lnode -d path/to/app/xxx/lua/app.lua
     local _, _, appName = cmdline:find('app/([%w]+)/lua/app.lua')
+
+    if (not appName) then
+        -- lnode -d path/to/app/xxx.zip
+        _, _, appName = cmdline:find('app/([%w]+).zip')
+    end
+
     return appName
 end
 
@@ -544,7 +594,7 @@ function exports.processes()
 	end
 
     local lines = string.split(content, '\n')
-    
+
     for _, line in ipairs(lines) do
         line = string.trim(line)
         local tokens = string.split(line, ' ')
@@ -738,6 +788,15 @@ function exports.unlock(lockfd)
     if (lockfd) then
         fs.fileLock(lockfd, 'u')
         fs.close(lockfd)
+    end
+end
+
+function exports.open(filename)
+    local appname = path.basename(filename, '.zip')
+	local script, reader = package.loadZipFile(filename, appname, 'app')
+    if (script) then
+        exports.bundle = reader
+        script()
     end
 end
 

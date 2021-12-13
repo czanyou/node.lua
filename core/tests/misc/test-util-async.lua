@@ -1,10 +1,10 @@
-local utils = require("util")
-local fs = require("fs")
-local assert = require("assert")
+local utils = require('util')
+local fs = require('fs')
+local assert = require('assert')
 
 local await = utils.await
 
-local tap = require("ext/tap")
+local tap = require('util/tap')
 local test = tap.test
 
 test("test utils.await", function(expected)

@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ limitations under the License.
 
 --]]
 local core  = require('core')
-local utils = require('util')
 local rtspMessage = require('rtsp/message')
 
 local RtspMessage = rtspMessage.RtspMessage
@@ -28,21 +27,40 @@ local exports 	= { meta = meta }
 -------------------------------------------------------------------------------
 -- RtspCodec
 
+local FMT_REQUEST_LINE = "^(%u+) ([^ ]+) (%u+)/(%d%.%d)\r?\n"
+local FMT_STATUS_LINE = "^RTSP/(%d%.%d) (%d+) ([^\r\n]+)\r?\n"
+
+---@class RtspCodec
 local RtspCodec = core.Emitter:extend()
 exports.RtspCodec = RtspCodec
 
 function RtspCodec:initialize()
     self.buffer = ''
-    self.mode   = 0
-    
+    self.count = 0
+    self.currentContectLength = nil
+    self.currentPacketLength = nil
+    self.mode = 0
+    self.offset = 0
 end
 
+--
+---@param data string
 function RtspCodec:decode(data)
+    if (not data) then
+        return
+    end
+
+    self.buffer = self.buffer .. data
+    self.count = (self.count or 0) + 1
+
     local message = nil
     local hasMore = true
+    local err = nil
 
     while (hasMore) do
-        message, hasMore = self:decodeNext(data)
+        message, hasMore, err = self:_decodeNext()
+        -- console.log('decode', hasMore, message, err)
+
         if (message == nil) then
             -- break
 
@@ -55,139 +73,164 @@ function RtspCodec:decode(data)
         else
             self:emit('request', message)
         end
-        
-        data = nil
     end
 end
 
-function RtspCodec:decodeNext(chunk)
-    if (chunk) then
-        self.buffer = self.buffer .. chunk
+--
+---@param buffer string
+---@return string packet
+---@return boolean hasMore
+function RtspCodec:_decodePacket(buffer)
+    if (#buffer < 4) then
+        return nil, nil, 2
     end
 
-    if (#self.buffer <= 0) then 
-        return 
+    local code, channel, length = string.unpack('>BBI2', buffer)
+    self.currentPacketLength = length
+    if #buffer < length + 4 then
+        return nil, nil, 3
     end
 
-    local buffer  = self.buffer
-    local hasMore = false
+    local packet = buffer:sub(1, length + 4)
+    self.buffer = buffer:sub(length + 4 + 1);
 
-    -- start 4 bytes
-    -- 
-    if (string.byte(buffer, 1) == 0x24) then
-        if (#buffer < 4) then 
-            return
+    local hasMore = self.buffer and (#self.buffer > 0)
+    --[[
+    if (hasMore) then
+        print('packet', #packet, #self.buffer)
+    end
+    --]]
+
+    return packet, hasMore
+end
+
+--
+---@param buffer string
+---@return string packet
+---@return boolean hasMore
+function RtspCodec:_decodeMessageContent(buffer)
+    if (#buffer < self.contentLength) then
+        return nil, nil, 4
+    end
+
+    local message = self.message;
+    message.content = buffer:sub(1, self.contentLength)
+
+    self.buffer     = buffer:sub(self.contentLength + 1)
+    self.mode       = 0
+    self.message    = nil
+    self.contentLength = 0
+
+    local hasMore = self.buffer and (#self.buffer > 0)
+    return message, hasMore, 5
+end
+
+--
+---@param header string
+---@return string packet
+---@return boolean hasMore
+function RtspCodec:_decodeMessageHeader(header)
+    -- Parse the status/request line
+    local head = { }
+    local _, offset
+
+    -- [[
+    _, offset, head.version, head.statusCode, head.statusMessage = header:find(FMT_STATUS_LINE)
+    if not offset then
+        _, offset, head.method, head.path, head.protocol, head.version = header:find(FMT_REQUEST_LINE)
+
+        if not offset then
+            -- error("expected RTSP data")
+            return nil, nil, 'expected RTSP data'
+        end
+    end
+    --]]
+
+    head.statusCode = head.statusCode and tonumber(head.statusCode)
+    head.version = head.version and tonumber(head.version)
+
+    -- We need to inspect some headers to know how to parse the body.
+    local contentLength = 0
+
+    local message = RtspMessage:new()
+    message.method          = head.method
+    message.path            = head.path
+    message.version         = head.version
+    message.statusCode      = head.statusCode
+    message.statusMessage   = head.statusMessage
+
+    -- Parse the header lines
+    local key, value
+
+    -- [[
+    while true do
+        _, offset, key, value = header:find("^([^:\r\n]+): *([^\r\n]+)\r?\n", offset + 1)
+        if not offset then
+            break
         end
 
-        local code, channel, length = string.unpack('>BBI2', buffer)
-        if #buffer < length + 4 then 
-            return 
+        -- Inspect a few headers and remember the values
+        local lowerKey = key:lower()
+        if lowerKey == "content-length" then
+            contentLength = tonumber(value)
         end
 
-        local data = buffer:sub(1, length + 4)
-        self.buffer = buffer:sub(length + 4 + 1);
-        --print('data', #data, #extra)
+        message.headers[key] = value;
+    end
+    --]]
 
-        hasMore = true
-        return data, hasMore
+    local hasMore = true
+
+    if contentLength > 0 then
+        self.mode = 1
+        self.contentLength = contentLength;
+        self.message = message
+        return nil, hasMore, 7
+
+    else
+        return message, hasMore, 8
+    end
+end
+
+--
+---@return string message
+---@return boolean hasMore
+---@return any err
+function RtspCodec:_decodeNext()
+    local buffer = self.buffer
+    if (not buffer) or (#buffer <= 0) then
+        return nil, nil, 1
     end
 
-    -- parse message content
+    -- Start 4 bytes
+    if (string.byte(buffer, 1) == 0x24) then -- $ - start code
+        return self:_decodePacket(buffer)
+    end
+
+    -- Parse message content
     if (self.mode == 1) then
-        if (#buffer < self.contentLength) then
-            return nil
-        end
-
-        local message = self.message;
-        message.content = buffer:sub(1, self.contentLength)
-
-        self.buffer     = buffer:sub(self.contentLength + 1)
-        self.mode       = 0
-        self.message    = nil
-        self.contentLength = 0
-
-        hasMore = true
-        return message, hasMore
+        return self:_decodeMessageContent(buffer)
     end
 
     -- Find message header end
     local _, length = buffer:find("\r?\n\r?\n", 1)
+    -- console.log('length', length)
+
     -- First make sure we have all the head before continuing
     if not length then
-        if #buffer < 8 * 1024 then return end
+        if #buffer < 8 * 1024 then
+            return nil, nil, 6
+        end
         -- But protect against evil clients by refusing heads over 8K long.
         -- error("entity too large")
 
         return nil, nil, "entity too large"
     end
 
-    -- Parse the status/request line
-    local head = { }
-    local _, offset
-    local version
-
-    _, offset, version, head.statusCode, head.statusMessage =
-        buffer:find("^RTSP/(%d%.%d) (%d+) ([^\r\n]+)\r?\n")
-
-    if offset then
-        head.statusCode = tonumber(head.statusCode)
-
-    else
-        _, offset, head.method, head.path, version =
-            buffer:find("^(%u+) ([^ ]+) RTSP/(%d%.%d)\r?\n")
-        if not offset then
-            _, offset, head.method, head.path, version =
-            buffer:find("^(%u+) ([^ ]+) HTTP/(%d%.%d)\r?\n")
-
-            if not offset then
-                -- error("expected RTSP data")
-                return nil, nil, 'expected RTSP data'
-            end
-        end
-    end
-
-    version = tonumber(version)
-    head.version = version
-
-    -- We need to inspect some headers to know how to parse the body.
-    local contentLength = 0
-
-    local message = RtspMessage:new()
-    message.method          = head.method;
-    message.path            = head.path;
-    message.version         = head.version;
-    message.statusCode      = head.statusCode;
-    message.statusMessage   = head.statusMessage;  
-
-    -- Parse the header lines
-    while true do
-        local key, value
-        _, offset, key, value = buffer:find("^([^:\r\n]+): *([^\r\n]+)\r?\n", offset + 1)
-        if not offset then break end
-        local lowerKey = key:lower()
-
-        -- Inspect a few headers and remember the values
-        if lowerKey == "content-length" then
-            contentLength = tonumber(value)
-        end
-
-        --head[#head + 1] = { key, value }
-
-        message.headers[key] = value;
-    end
-
+    local header = buffer:sub(1, length)
     self.buffer = buffer:sub(length + 1)
-    hasMore = true
 
-    if contentLength > 0 then
-        self.mode = 1
-        self.contentLength = contentLength;
-        self.message = message
-        return nil, hasMore
-
-    else
-        return message, hasMore
-    end
+    return self:_decodeMessageHeader(header)
 end
 
 -- @param message {RtspMessage}
@@ -201,7 +244,7 @@ function RtspCodec:encode(message)
         local path = message.path
         assert(path and #path > 0, "expected non-empty path")
         head = { message.method .. ' ' .. path .. ' RTSP/' .. version .. '\r\n' }
-   
+
     else
         -- Response Start Line
         local scheme = message.scheme or 'RTSP'
@@ -232,7 +275,7 @@ function RtspCodec:encode(message)
         head[#head + 1] = message.content
     end
 
-    return table.concat(head)        
+    return table.concat(head)
 end
 
 -------------------------------------------------------------------------------

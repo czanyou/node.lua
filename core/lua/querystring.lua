@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2015 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,14 +20,10 @@ limitations under the License.
 This module provides utilities for dealing with query strings. It provides
 the following methods:
 
-
 --]]
-local meta = { }
-meta.name       = "lnode/querystring"
-meta.version    = "1.0.2"
-meta.license    = "Apache 2"
-meta.description = "Node-style query-string codec for lnode"
-meta.tags       = { "lnode", "url", "codec" }
+local meta = {
+    description = "Node-style query-string codec for lnode"
+}
 
 local exports = { meta = meta }
 

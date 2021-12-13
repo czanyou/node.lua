@@ -96,19 +96,19 @@ Spaces (' ') and the following characters will be automatically escaped in the p
 
 输入一个 URL 对象，返回格式化后的 URL 字符串。
 
-- `href` 属性会被忽略处理.
-- `protocol` 无论是否有末尾的 : (冒号)，会同样的处理
+- href `{string}` 属性会被忽略处理.
+- protocol `{string}` 无论是否有末尾的 : (冒号)，会同样的处理
     + 这些协议包括 http, https, ftp, gopher, file 后缀是 `://` (冒号-斜杠-斜杠).
     + 所有其他的协议如 mailto, xmpp, aim, sftp, foo, 等 会加上后缀 : (冒号)
-- `auth` 如果有将会出现.
-- `hostname` 如果 host 属性没被定义，则会使用此属性.
-- `port` 如果 host 属性没被定义，则会使用此属性.
-- `host` 优先使用，将会替代 hostname 和 port
-- `pathname` 将会同样处理无论结尾是否有/ (斜杠)
-- `search` 将会替代 query属性
-- `query` (object类型; 详细请看 querystring) 如果没有 search,将会使用此属性.
-- `search` 无论前面是否有 ? (问号)，都会同样的处理
-- `hash` 无论前面是否有# (井号, 锚点)，都会同样处理
+- auth `{string}` 如果有将会出现.
+- hostname `{string}` 如果 host 属性没被定义，则会使用此属性.
+- port `{number}` 如果 host 属性没被定义，则会使用此属性.
+- host `{string}` 优先使用，将会替代 hostname 和 port
+- pathname `{string}` 将会同样处理无论结尾是否有/ (斜杠)
+- search `{string}` 将会替代 query属性
+- query `{object}` (object类型; 详细请看 querystring) 如果没有 search,将会使用此属性.
+- search `{string}` 无论前面是否有 ? (问号)，都会同样的处理
+- hash `{string}` 无论前面是否有# (井号, 锚点)，都会同样处理
 
 ## url.parse
 

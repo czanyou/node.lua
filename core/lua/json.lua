@@ -1,6 +1,6 @@
 --[[
 
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,12 +18,9 @@ limitations under the License.
 local cjson = require('cjson')
 local util = require('util')
 
-local meta = { }
-meta.name       = "lnode/json"
-meta.version    = "0.1.2"
-meta.license    = "Apache 2"
-meta.description = "JSON module for lnode"
-meta.tags       = { "lnode", "json" }
+local meta = {
+	description = "JSON module for lnode"
+}
 
 local exports = { meta = meta }
 

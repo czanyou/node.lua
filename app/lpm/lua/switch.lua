@@ -19,45 +19,64 @@ end
 
 -- 当固件安装完成后，调用这个方法修改链接文件将 Node.lua 切换到新版固件
 local function switchFirmwareFile()
+	local filename = '/tmp/log/switch.log'
+	fs.unlinkSync(filename)
+
+	local printInfo = function(message)
+		fs.appendFile(filename, message .. '\r\n')
+		print(message)
+	end
+
 	local rootPath = app.rootPath;
 	local nodePath = conf.rootPath;
-
-	print('Root path:' .. rootPath)
-	print('Node path:' ..  nodePath)
-
-	if (isDevelopmentPath(nodePath)) then
-		print('Warning: The "' .. rootPath .. '" is in development mode.')
-		return
-	end
+	local nodeBinPath = nodePath .. '/bin'
+	local rootBinPath = rootPath .. '/bin'
+	printInfo('Switch to root path: ' .. rootPath)
+	printInfo('Date: ' .. os.date())
 
 	if (rootPath == nodePath) then
-		print('Error: The same path')
+		printInfo('Switch error: The same root and node path')
 		return
 	end
 
-	if (not fs.existsSync(rootPath .. '/bin')) then
-		print('Error: Root path not exists ')
+	printInfo('Node path: ' ..  nodePath)
+
+	if (not fs.existsSync(rootBinPath)) then
+		printInfo('Switch error: Root bin path not exists')
 		return
 	end
 
 	-- Check that the link has been established
-	local realPath = fs.readlinkSync(nodePath .. '/bin')
+	local realPath = fs.readlinkSync(nodeBinPath)
 	if (realPath) then
-		print('Real path:' .. realPath)
-		if (rootPath .. '/bin' == realPath) then
-			print('Skip: The same path')
+		printInfo('Real node path: ' .. realPath)
+		if (rootBinPath == realPath) then
+			printInfo('Skip switch: The same read and root path')
 			return
 		end
 	end
 
-	-- create a new link
-	local cmdline = 'rm -rf ' .. nodePath .. '/bin'
-	print("Remove: " .. cmdline);
-	os.execute(cmdline);
+	if (isDevelopmentPath(nodePath)) then
+		printInfo('Warning: The "' .. rootPath .. '" is in development mode.')
 
-	cmdline = 'ln -s ' .. rootPath .. '/bin ' .. nodePath .. '/bin'
-	print("Link: " .. cmdline);
-	os.execute(cmdline);
+	else
+		-- create a new link
+		local cmdline = 'rm -rf ' .. nodeBinPath
+		printInfo("Remove: " .. cmdline);
+		os.execute(cmdline);
+
+		cmdline = 'ln -s ' .. rootBinPath .. ' ' .. nodeBinPath
+		printInfo("Link: " .. cmdline);
+		os.execute(cmdline);
+	end
+
+	realPath = fs.readlinkSync(nodeBinPath)
+	if (realPath == rootBinPath) then
+		printInfo("Switch: successful")
+		console.warn('switch successful: ' .. realPath)
+	else
+		printInfo("Switch failed: " .. realPath)
+	end
 
 	-- TODO: 执行更多固件升级后的操作
 end

@@ -1,4 +1,4 @@
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 test("test thread create", function(expect, uv)
@@ -11,7 +11,7 @@ test("test thread create", function(expect, uv)
 	uv.thread_join(thread)
 
 	local elapsed = (uv.uptime() - before) * 1000
-	--p({ delay = delay, elapsed = elapsed })
+	--console.log({ delay = delay, elapsed = elapsed })
 	assert(elapsed >= delay, "elapsed should be at least delay ")
 end)
 
@@ -41,7 +41,7 @@ test("test thread sleep msecs in main thread", function(expect, uv)
 	local now = uv.uptime()
 	local elapsed = (now - before) * 1000
 
-	p({ delay = delay, elapsed = elapsed })
+	console.log({ delay = delay, elapsed = elapsed })
 	assert(elapsed >= delay, "elapsed should be at least delay ")
 end)
 

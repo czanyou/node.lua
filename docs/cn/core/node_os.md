@@ -100,7 +100,7 @@
 
 > os.exit([code [, close]])
 
-- code {number} 进程返回值
+- code `{number}` 进程返回值
 
 调用 ISO C 函数 exit 终止宿主程序。 如果 code 为 true， 返回的状态码是 EXIT_SUCCESS； 如果 code 为 false， 返回的状态码是 EXIT_FAILURE； 如果 code 是一个数字， 返回的状态码就是这个数字。 code 的默认值为 true。
 
@@ -147,8 +147,8 @@
 
 > os.date([format [, time]])
 
-- format {string} 日期格式字符串, 如果为 '*t' 则返回一个表示时间的表格
-- time {number} 要格式化的时间, 如果没有指定则为当前时间
+- format `{string}` 日期格式字符串, 如果为 '*t' 则返回一个表示时间的表格
+- time `{number}` 要格式化的时间, 如果没有指定则为当前时间
 
 返回一个包含日期及时刻的字符串或表。 格式化方法取决于所给字符串 format。
 
@@ -174,7 +174,7 @@
 
 > os.time([table])
 
-- table {object} 要换算的时间和日期, 如果没有指定则返回当前时间
+- table `{object}` 要换算的时间和日期, 如果没有指定则返回当前时间
 
 当不传参数时，返回当前时刻。 如果传入一张表，就返回由这张表表示的时刻。 这张表必须包含域 year，month，及 day； 可以包含有　hour （默认为 12 ）， min （默认为 0）， sec （默认为 0），以及 isdst （默认为 nil）。 关于这些域的详细描述，参见 os.date 函数。
 

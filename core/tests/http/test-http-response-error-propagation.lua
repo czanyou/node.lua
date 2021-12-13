@@ -3,7 +3,7 @@ local http = require('http')
 
 local errorsCaught = 0
 
-local tap = require('ext/tap')
+local tap = require('util/tap')
 local test = tap.test
 
 test('http-response-error-propagation', function(expect)

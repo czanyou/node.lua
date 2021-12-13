@@ -2,6 +2,7 @@ local app       = require('app')
 local path      = require('path')
 local fs        = require('fs')
 local lpm       = require('lpm')
+local exec      = require('child_process').exec
 
 -------------------------------------------------------------------------------
 -- exports
@@ -22,15 +23,23 @@ local function getApplicationNames()
     -- check application name
     local list = filedata:split(",")
     for _, item in ipairs(list) do
-        if (#item > 0) then
-            local filename = path.join(exports.rootPath, 'app', item)
-            if fs.existsSync(filename) then
-                names[item] = item
-                count = count + 1
+        if (not item or #item <= 0) then
+            goto continue
+        end
+
+        local filename = path.join(exports.rootPath, 'app', item)
+        if not fs.existsSync(filename) then
+            filename = path.join(exports.rootPath, 'app', item .. '.zip')
+            if not fs.existsSync(filename) then
+                goto continue
             end
         end
+
+        names[item] = item
+        count = count + 1
+        ::continue::
     end
-    
+
     return names, count, filedata
 end
 
@@ -42,13 +51,20 @@ function exports.check()
         return
     end
 
+    -- console.log(names, procs)
     for _, proc in ipairs(procs) do
         names[proc.name] = nil
     end
 
     for name, pid in pairs(names) do
-        console.log('start:', name)
-        os.execute("lpm start " .. name)
+        local cmd = "lpm start " .. name
+        --local ret, err = os.execute(cmd)
+        --console.log('start:', cmd, ret, err)
+
+        local options = { timeout = 30 * 1000, env = process.env }
+        exec(cmd, options, function(err, stdout, stderr)
+            print(stderr or (err and err.message) or stdout)
+        end)
     end
 end
 

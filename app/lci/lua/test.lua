@@ -1,15 +1,40 @@
 local app = require('app')
 local fs = require('fs')
-
-local request = require('http/request')
-local devices = require('devices')
+local util = require('util')
+local json = require('json')
 
 local exports = {}
-local failures = 0
-local total = 0
 
-exports.start = function()
+function exports.button()
+    local devices = require('devices')
+
+    local timer = nil
+    local state, err = devices.getButtonState('reset')
+    if (err) then
+        return print('Read reset button state error: ', err)
+    end
+
+    print('Current RESET button state is: ' .. state)
+
+    if (state ~= 1) then
+        return print('Invalid reset button state', state)
+    end
+
+    print('Wait button to be pressed...')
+
+    timer = setInterval(100, function()
+        state, err = devices.getButtonState('reset')
+        if (state == 0) then
+            print('RESET button: ' .. console.dump(state or err))
+            clearInterval(timer)
+        end
+    end)
+end
+
+function exports.check()
     local errors = {}
+    local failures = 0
+    local total = 0
 
     local function assert(value, message)
         total = total + 1
@@ -55,7 +80,6 @@ exports.start = function()
 
     print("Check files: \n======")
     checkFile('/usr/local/lnode/conf/', 'default.conf');
-    checkFile('/usr/local/lnode/conf/', 'lnode.key');
     checkFile('/etc/init.d/', 'S88lnode');
     checkFile('/usr/share/udhcpc/', 'default.script');
     print("");
@@ -66,93 +90,39 @@ exports.start = function()
     console.printr(errors)
 end
 
-function exports.button()
-    local timer = nil
-    local state, err = devices.getButtonState()
-    print('Current RESET button state is: ' .. console.dump(state or err))
-    if (err) then
-        return
-    end
+function exports.cloud()
+    local request = require('http/request')
 
-    print('Wait button to be pressed...')
+    local did = app.get('did')
+    local base = app.get('base')
+    local url = base .. '/device/firmware?did=' .. did
 
-    timer = setInterval(100, function()
-        state, err = devices.getButtonState()
-        if (state == 0) then
-            print('RESET button: ' .. console.dump(state or err))
-            clearInterval(timer)
-        end
-    end)
-end
-
-function exports.switch()
-    local _, err = devices.setSwitchState('bluetooth', "1", function ()
-        local state, err = devices.getSwitchState()
-        if (state ~= 1) then
-            console.log('BLE switch state is not 1: ', state or err)
-        end
-    end)
-
-    if (err) then
-        console.log('Set BLE switch state to 1: ', err)
-    end
-
-    setTimeout(1000, function()
-        local _, err = devices.setSwitchState('bluetooth', "0", function()
-            local state, err = devices.getSwitchState()
-            if (state ~= 0) then
-                console.log('BLE switch state is not 0: ', state or err)
-            else
-                console.log('done')
-            end
-        end)
-
+    console.log(url)
+    request.get(url, function(err, res, body)
         if (err) then
-            console.log('Set BLE switch state to 0: ', err)
+            return console.log(err)
         end
+
+        console.log(res.statusCode, res.statusMessage, json.parse(body))
     end)
 end
 
-function exports.modbus()
+function exports.install()
+    local exec  = require('child_process').exec
 
-end
+    local function shellExecute(cmdline, message)
+        console.log('cmdline: ', cmdline)
+        exec(cmdline, {}, function(err, stdout, stderr)
+            console.log('exec', err, stdout, stderr)
+        end)
+    end
 
-function exports.bluetooth()
-    local uart = require('gateway/bluetooth/uart')
-
-    uart.openUart('context', function(device, data)
-        console.log('uart data:', device, data)
-        if (data) then
-            console.printBuffer(data)
-        end
-    end)
-
-    local ret, err = uart.sendMessage(0x01, 'scan=BN5003,0D0611')
-    console.log(err or ret)
-
-    setTimeout(5000, function()
-        uart.closeUart()
-    end)
-end
-
-function exports.uart()
-    local uart = require('gateway/bluetooth/uart')
-    uart.openUart(function(data, ...)
-        console.log('uart data:', data, ...)
-        if (data) then
-            console.printBuffer(data)
-        end
-    end)
-
-    local ret, err = uart.sendMessage(0x01, 'test')
-    console.log(err or ret)
-
-    setTimeout(3000, function()
-        uart.closeUart()
-    end)
+    shellExecute("lpm install /tmp/upload")
 end
 
 function exports.led()
+    local devices = require('devices')
+
     local function setLedOn()
         print("LED is on")
         devices.setLEDStatus('green', 'on')
@@ -181,45 +151,47 @@ function exports.led()
     end)
 end
 
-function exports.cloud()
-    local json = require('json')
-    local did = app.get('did')
-    local base = app.get('base')
-    local url = base .. '/device/firmware?did=' .. did
+function exports.switch()
+    local devices = require('devices')
 
-    request.get(url, function(err, res, body)
-        if (err) then
-            return console.log(err)
+    local _, err = devices.setSwitchState('bluetooth', "1", function ()
+        local state, err = devices.getSwitchState()
+        if (state ~= 1) then
+            console.log('BLE switch state is not 1: ', state or err)
         end
+    end)
 
-        console.log(res.statusCode, res.statusMessage, json.parse(body))
+    if (err) then
+        console.log('Set BLE switch state to 1: ', err)
+    end
+
+    setTimeout(1000, function()
+        local _, err = devices.setSwitchState('bluetooth', "0", function()
+            local state, err = devices.getSwitchState()
+            if (state ~= 0) then
+                console.log('BLE switch state is not 0: ', state or err)
+            else
+                console.log('done')
+            end
+        end)
+
+        if (err) then
+            console.log('Set BLE switch state to 0: ', err)
+        end
     end)
 end
 
 function exports.test(type, ...)
-    local methods = {"button", "led", "switch", "uart", "bluetooth", "cloud", "check" }
-
     local method = exports[type]
-    if (method) then
-        return method()
+
+    if (not method) then
+        local names = util.keys(exports)
+        table.sort(names)
+        print("Available tests: " .. table.concat(names, ', '))
+        return
     end
 
-    type = methods[tonumber(type)]
-    method = exports[type]
-    if (method) then
-        return method()
-    end
-
-    if (type == 'check') then
-        exports.start()
-
-    else
-        print("Usage: lpm lci test <action>\r\n")
-        print([[Actions:]])
-        for index, name in ipairs(methods) do
-            print(index .. '. ' .. name)
-        end
-    end
+    method(...)
 end
 
 return exports

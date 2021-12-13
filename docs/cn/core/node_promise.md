@@ -6,11 +6,11 @@ Promise 对象用于表示一个异步操作的最终状态（完成或失败）
 
 Promise 有以下三种状态:
 
-- `pending`: 初始状态，既不是成功，也不是失败状态 , ( 等待中 , 或者进行中 , 表示还没有得到结果 )
+- pending: 初始状态，既不是成功，也不是失败状态 , ( 等待中 , 或者进行中 , 表示还没有得到结果 )
 
-- `fulfilled`: 意味着操作成功。
+- fulfilled: 意味着操作成功。
 
-- `rejected`: 意味着操作失败。
+- rejected: 意味着操作失败。
 
 Promise 有两种状态改变的方式，而且状态只能从 pending 改变为 resolved 或者 rejected，并且不可逆。当状态发生变化，Promise.next 绑定的函数就会被调用。
 
@@ -22,8 +22,8 @@ Promise 有两种状态改变的方式，而且状态只能从 pending 改变为
 
 next() 方法执行后会返回一个新的 Promise 实例。
 
-- `onFulfilled` function(value:any) 操作成功完成时要运行的履行处理程序函数。且返回值将作为参数传入这个新 Promise 的 resolve 函数。
-- `onRejected` function(error:any) 操作被拒绝时要运行的错误处理程序函数。
+- onFulfilled `{function(value:any)}` 操作成功完成时要运行的履行处理程序函数。且返回值将作为参数传入这个新 Promise 的 resolve 函数。
+- onRejected `function(reason:any)` 操作被拒绝时要运行的错误处理程序函数。
 
 它有两个参数，分别为：Promise 从 pending 变为 fulfilled 和 rejected 时的回调函数（第二个参数非必选）。这两个函数都接受 Promise 对象传出的值(data)作为参数。
 
@@ -37,7 +37,7 @@ next() 方法执行后会返回一个新的 Promise 实例。
 
 处理 rejected 的情况，与 next 的第二个参数 onRejected 相同
 
-- `onRejected` function(reason:any)
+- onRejected `function(reason:any)`
 
 注意:
 
@@ -50,7 +50,7 @@ next() 方法执行后会返回一个新的 Promise 实例。
 
 进入 aresolved 状态
 
-- `value` Promise|any 执行结果
+- value Promise|any 执行结果
 
 ### promise:reject
 
@@ -58,7 +58,7 @@ next() 方法执行后会返回一个新的 Promise 实例。
 
 进入 rejected 状态
 
-- `reason` 错误原因
+- reason 错误原因
 
 ## promise.new
 
@@ -66,8 +66,8 @@ next() 方法执行后会返回一个新的 Promise 实例。
 
 Promise接受一个「函数」作为参数，该函数的两个参数分别是 resolve 和 reject。这两个函数就是就是「回调函数」
 
-- `resolve` function(value:any) 函数的作用：在异步操作成功时调用，并将异步操作的结果，作为参数传递出去； 
-- `reject` function(error:any) 函数的作用：在异步操作失败时调用，并将异步操作报出的错误，作为参数传递出去。
+- resolve `{function(value:any)}` 函数的作用：在异步操作成功时调用，并将异步操作的结果，作为参数传递出去； 
+- reject `function(reason:any)` 函数的作用：在异步操作失败时调用，并将异步操作报出的错误，作为参数传递出去。
 
 ## promise.all
 

@@ -1,7 +1,7 @@
 --[[
 
 Copyright 2014 The Luvit Authors. All Rights Reserved.
-Copyright 2016 The Node.lua Authors. All Rights Reserved.
+Copyright 2016-2020 The Node.lua Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -68,11 +68,21 @@ local Error  = core.Error
 -------------------------------------------------------------------------------
 -- TransformState
 
+---@class TransformState
 local TransformState = core.Object:extend()
 
-local _afterTransform, _done
+function TransformState:initialize(options, stream)
+    self.afterTransform = function(er, data)
+        return self:_afterTransform(stream, er, data)
+    end
 
-function _afterTransform(stream, err, data)
+    self.needTransform  = false
+    self.transforming   = false
+    self.writecb        = nil
+    self.writechunk     = nil
+end
+
+function TransformState:_afterTransform(stream, err, data)
     local transformState = stream._transformState
     transformState.transforming = false
 
@@ -100,46 +110,33 @@ function _afterTransform(stream, err, data)
     end
 end
 
-function _done(stream, err)
-    if err then
-        return stream:emit('error', err)
-    end
-
-    --[[
-  // if there's nothing in the write buffer, then that means
-  // that nothing more will ever be provided
-  --]]
-    local writableState  = stream._writableState
-    local transformState = stream._transformState
-
-    if writableState.length ~= 0 then
-        error('calling transform done when ws.length != 0')
-    end
-
-    if transformState.transforming then
-        error('calling transform done when still transforming')
-    end
-
-    return stream:push(nil)
-end
-
-function TransformState:initialize(options, stream)
-    self.afterTransform = function(er, data)
-        return _afterTransform(stream, er, data)
-    end
-
-    self.needTransform  = false
-    self.transforming   = false
-    self.writecb        = nil
-    self.writechunk     = nil
-end
-
 -------------------------------------------------------------------------------
 -- Transform
 
 local Transform = Duplex:extend()
 
 function Transform:initialize(options)
+    local function _done(stream, err)
+        if err then
+            return stream:emit('error', err)
+        end
+
+        -- if there's nothing in the write buffer, then that means
+        -- that nothing more will ever be provided
+        local writableState  = stream._writableState
+        local transformState = stream._transformState
+
+        if writableState.length ~= 0 then
+            error('calling transform done when ws.length != 0')
+        end
+
+        if transformState.transforming then
+            error('calling transform done when still transforming')
+        end
+
+        return stream:push(nil)
+    end
+
     --[[
   if (!(this instanceof Transform))
     return new Transform(options)
@@ -149,21 +146,15 @@ function Transform:initialize(options)
 
     self._transformState = TransformState:new(options, self)
 
-    --[[
-  // when the writable side finishes, then flush out anything remaining.
-  --]]
+    -- when the writable side finishes, then flush out anything remaining.
     local stream = self
 
-    --[[
-  // start out asking for a readable event once data is transformed.
-  --]]
+    -- start out asking for a readable event once data is transformed.
     self._readableState.needReadable = true
 
-    --[[
-  // we have implemented the _read method, and _done the other things
-  // that Readable wants before the first _read call, so unset the
-  // sync guard flag.
-  --]]
+    -- we have implemented the _read method, and _done the other things
+    -- that Readable wants before the first _read call, so unset the
+    -- sync guard flag.
     self._readableState.sync = false
 
     self:once('prefinish', function()
@@ -184,18 +175,16 @@ function Transform:push(chunk)
     return Duplex.push(self, chunk)
 end
 
---[[
-// This is the part where you do stuff!
-// override this function in implementation classes.
-// 'chunk' is an input chunk.
-//
-// Call `push(newChunk)` to pass along transformed output
-// to the readable side.  You may call 'push' zero or more times.
-//
-// Call `callback(err)` when you are done with this chunk.  If you pass
-// an error, then that'll put the hurt on the whole operation.  If you
-// never call callback(), then you'll never get another chunk.
---]]
+-- This is the part where you do stuff!
+-- override this function in implementation classes.
+-- 'chunk' is an input chunk.
+--
+-- Call `push(newChunk)` to pass along transformed output
+-- to the readable side.  You may call 'push' zero or more times.
+--
+-- Call `callback(err)` when you are done with this chunk.  If you pass
+-- an error, then that'll put the hurt on the whole operation.  If you
+-- never call callback(), then you'll never get another chunk.
 function Transform:_transform(chunk, callback)
     error('not implemented')
 end
@@ -206,32 +195,28 @@ function Transform:_write(chunk, callback)
     state.writechunk = chunk
 
     if not state.transforming then
-        local rs = self._readableState
+        local readableState = self._readableState
         if state.needTransform or
-            rs.needReadable or
-            rs.length < rs.highWaterMark then
-            self:_read(rs.highWaterMark)
+            readableState.needReadable or
+            readableState.length < readableState.highWaterMark then
+            self:_read(readableState.highWaterMark)
         end
     end
 end
 
---[[
-// Doesn't matter what the args are here.
-// _transform does all the work.
-// That we got here means that the readable side wants more data.
---]]
+-- Doesn't matter what the args are here.
+-- _transform does all the work.
+-- That we got here means that the readable side wants more data.
 function Transform:_read(n)
     local ts = self._transformState
 
     if ts.writechunk ~= nil and ts.writecb and not ts.transforming then
         ts.transforming = true
         self:_transform(ts.writechunk, ts.afterTransform)
-    else
 
-    --[[
-    // mark that we need a transform, so that any data that comes in
-    // will get processed, now that we've asked for it.
-    --]]
+    else
+        -- mark that we need a transform, so that any data that comes in
+        -- will get processed, now that we've asked for it.
         ts.needTransform = true
     end
 end

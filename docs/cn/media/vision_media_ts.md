@@ -44,10 +44,10 @@
 
 随后通过 read 方法解析 TS 流, 解析后的 ES 流通过 callback 回调给应用程序.
 
-- callback {function} `- function(sampleData, sampleTime, flags)` 回调函数
-  - sampleData {string} 媒体流内容, 可能只是一帧的一个分片
-  - sampleTime {number} 时间戳, 来自 TS 流
-  - flags {number} 标记
+- callback `{function}` `- function(sampleData, sampleTime, flags)` 回调函数
+  - sampleData `{string}` 媒体流内容, 可能只是一帧的一个分片
+  - sampleTime `{number}` 时间戳, 来自 TS 流
+  - flags `{number}` 标记
 
 这里回调方法中并不会一次返回完整的一帧, 每次只返回部分分片.
 
@@ -67,8 +67,8 @@ FLAG_IS_START 表示这个分片是一帧数据的开始, FLAG_IS_AUDIO 表示�
 
 读取并解析 TS 流
 
-- packetData {string} TS 流数据
-- flags {number} 标记, 暂时没有用到
+- packetData `{string}` TS 流数据
+- flags `{number}` 标记, 暂时没有用到
 
 这个方法可以传入任意长度的 TS 流的数据, 不必是完整的 TS 包.
 
@@ -137,10 +137,10 @@ end
 
 创建一个 TS 流 Writer.
 
-- callback {function} `- function(packet, sampleTime, flags)` 当生成新的 TS 包时调用这个方法
-  - packet {string} 代表一个完整的 TS 包
-  - sampleTime {number} 时间戳, 来源于调用 write 方法时传入的时间戳
-  - flags {number} 标记
+- callback `{function}` `- function(packet, sampleTime, flags)` 当生成新的 TS 包时调用这个方法
+  - packet `{string}` 代表一个完整的 TS 包
+  - sampleTime `{number}` 时间戳, 来源于调用 write 方法时传入的时间戳
+  - flags `{number}` 标记
 
 标记:
 
@@ -164,9 +164,9 @@ end
 
 写入流, 一次写入完整的一帧.
 
-- sampleData {string} 要写入的数据, 支持 H.264 和 AAC, 只支持以帧的方式写入.
-- sampleTime {number} 要写入的数据的时间戳, 单位为毫秒
-- flags {number} 数据标记, 可以由多个标记组成, 定义如下:
+- sampleData `{string}` 要写入的数据, 支持 H.264 和 AAC, 只支持以帧的方式写入.
+- sampleTime `{number}` 要写入的数据的时间戳, 单位为毫秒
+- flags `{number}` 数据标记, 可以由多个标记组成, 定义如下:
 
 标记:
 

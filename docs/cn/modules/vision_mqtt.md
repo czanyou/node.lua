@@ -70,10 +70,10 @@ Hello mqtt
 参数:
 
 * options 客户端选项，包含：
-  * keepalive: 默认为 `10` 秒, 设为 `0` 来禁止 keep-alive 机制
+  * keepalive: 默认为 `60` 秒, 设为 `0` 来禁止 keep-alive 机制
   * clientId: 客户端的 ID
-  * reconnectPeriod: 默认为 `60 * 1000` 毫秒, 两次重连的间隔时间
-  * connectTimeout:  默认为 `15 * 1000` 毫秒, 在收到 CONNACK 之前等待的时间
+  * reconnectPeriod: 默认为 `1000` 毫秒, 两次重连的间隔时间
+  * connectTimeout:  默认为 `30 * 1000` 毫秒, 在收到 CONNACK 之前等待的时间
   * username: 用于验证身份的用户名
   * password: 用于验证身份的密码
 
